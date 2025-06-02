@@ -27,7 +27,6 @@ class UserFactory extends Factory
         $faker = FakerFactory::create('id_ID');
         $phoneNumber = $faker->unique()->numerify('08##########');
         return [
-            'id' => (string) Str::uuid(),
             'name' => $faker->name(),
             'email' => $faker->unique()->safeEmail(),
             'email_verified_at' => now(),
