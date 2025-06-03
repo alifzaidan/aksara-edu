@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\InstructorController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -14,6 +15,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::redirect('admin', 'admin/dashboard');
         Route::get('admin/dashboard', [AdminController::class, 'index'])->name('dashboard');
         Route::resource('admin/categories', CategoryController::class);
+        Route::resource('admin/instructors', InstructorController::class);
     });
 });
 
