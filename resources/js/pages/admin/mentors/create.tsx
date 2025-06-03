@@ -4,42 +4,38 @@ import { DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitl
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm } from '@inertiajs/react';
-import { FormEventHandler, useEffect, useRef } from 'react';
+import { FormEventHandler, useRef } from 'react';
 
-interface EditInstructorProps {
-    instructor: {
-        id: string;
-        name: string;
-        email: string;
-        phone_number: string;
-    };
+interface CreateMentorProps {
     setOpen: (open: boolean) => void;
 }
 
-export default function EditInstructor({ instructor, setOpen }: EditInstructorProps) {
+export default function CreateMentor({ setOpen }: CreateMentorProps) {
     const nameInput = useRef<HTMLInputElement>(null);
+    const bioInput = useRef<HTMLInputElement>(null);
     const emailInput = useRef<HTMLInputElement>(null);
     const phoneInput = useRef<HTMLInputElement>(null);
 
-    const { data, setData, put, processing, reset, errors, clearErrors } = useForm<Required<{ name: string; email: string; phone_number: string }>>({
-        name: instructor.name,
-        email: instructor.email,
-        phone_number: instructor.phone_number,
+    const {
+        data,
+        setData,
+        submit: create,
+        processing,
+        reset,
+        errors,
+        clearErrors,
+    } = useForm<Required<{ name: string; bio: string; email: string; phone_number: string; password: string }>>({
+        name: '',
+        bio: '',
+        email: '',
+        phone_number: '',
+        password: '',
     });
 
-    useEffect(() => {
-        setData({
-            name: instructor.name,
-            email: instructor.email,
-            phone_number: instructor.phone_number,
-        });
-        clearErrors();
-    }, [instructor, setData, clearErrors]);
-
-    const updateInstructor: FormEventHandler = (e) => {
+    const createMentor: FormEventHandler = (e) => {
         e.preventDefault();
 
-        put(route('instructors.update', instructor.id), {
+        create('post', route('mentors.store'), {
             preserveScroll: true,
             onSuccess: () => {
                 setOpen(false);
@@ -52,12 +48,12 @@ export default function EditInstructor({ instructor, setOpen }: EditInstructorPr
 
     return (
         <DialogContent>
-            <DialogTitle>Edit Instruktur</DialogTitle>
-            <DialogDescription>Ubah nama, email, atau nomor telepon instruktur.</DialogDescription>
-            <form className="space-y-6" onSubmit={updateInstructor}>
+            <DialogTitle>Tambah Mentor Baru</DialogTitle>
+            <DialogDescription>Silakan masukkan data mentor baru yang ingin Anda tambahkan.</DialogDescription>
+            <form className="space-y-6" onSubmit={createMentor}>
                 <div className="grid gap-2">
                     <Label htmlFor="name" className="sr-only">
-                        Nama Instruktur
+                        Nama Mentor
                     </Label>
                     <Input
                         id="name"
@@ -68,17 +64,34 @@ export default function EditInstructor({ instructor, setOpen }: EditInstructorPr
                         onChange={(e) => {
                             setData('name', e.target.value);
                         }}
-                        placeholder="Nama Instruktur"
+                        placeholder="Nama Mentor"
                         autoComplete="off"
                     />
                     <InputError message={errors.name} />
+
+                    <Label htmlFor="bio" className="sr-only">
+                        Bio Mentor
+                    </Label>
+                    <Input
+                        id="bio"
+                        type="text"
+                        name="bio"
+                        ref={bioInput}
+                        value={data.bio}
+                        onChange={(e) => {
+                            setData('bio', e.target.value);
+                        }}
+                        placeholder="Bio Mentor, contoh: Frontend Developer, UI/UX Designer, dsb."
+                        autoComplete="off"
+                    />
+                    <InputError message={errors.bio} />
 
                     <Label htmlFor="email" className="sr-only">
                         Email
                     </Label>
                     <Input
                         id="email"
-                        type="text"
+                        type="email"
                         name="email"
                         ref={emailInput}
                         value={data.email}
@@ -97,11 +110,29 @@ export default function EditInstructor({ instructor, setOpen }: EditInstructorPr
                         name="phone_number"
                         ref={phoneInput}
                         value={data.phone_number}
-                        onChange={(e) => setData('phone_number', e.target.value)}
+                        onChange={(e) => {
+                            setData('phone_number', e.target.value);
+                            setData('password', e.target.value);
+                        }}
                         placeholder="Nomor Telepon"
                         autoComplete="off"
                     />
                     <InputError message={errors.phone_number} />
+
+                    <Label htmlFor="password" className="sr-only">
+                        Password
+                    </Label>
+                    <Input
+                        id="password"
+                        type="text"
+                        name="password"
+                        ref={phoneInput}
+                        value={data.password}
+                        placeholder="Password"
+                        autoComplete="off"
+                        disabled
+                    />
+                    <InputError message={errors.password} />
                 </div>
                 <DialogFooter className="gap-2">
                     <DialogClose asChild>
@@ -110,7 +141,7 @@ export default function EditInstructor({ instructor, setOpen }: EditInstructorPr
                         </Button>
                     </DialogClose>
                     <Button disabled={processing} asChild>
-                        <button type="submit">Simpan Perubahan</button>
+                        <button type="submit">Tambah Mentor</button>
                     </Button>
                 </DialogFooter>
             </form>

@@ -13,8 +13,8 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
-        title: 'Instruktur',
-        href: '/admin/instructors',
+        title: 'Mentor',
+        href: '/admin/mentors',
         icon: Users,
     },
     {

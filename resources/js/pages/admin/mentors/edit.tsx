@@ -4,36 +4,48 @@ import { DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitl
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm } from '@inertiajs/react';
-import { FormEventHandler, useRef } from 'react';
+import { FormEventHandler, useEffect, useRef } from 'react';
 
-interface CreateInstructorProps {
+interface EditMentorProps {
+    mentor: {
+        id: string;
+        name: string;
+        bio?: string;
+        email: string;
+        phone_number: string;
+    };
     setOpen: (open: boolean) => void;
 }
 
-export default function CreateInstructor({ setOpen }: CreateInstructorProps) {
+export default function EditMentor({ mentor, setOpen }: EditMentorProps) {
     const nameInput = useRef<HTMLInputElement>(null);
+    const bioInput = useRef<HTMLInputElement>(null);
     const emailInput = useRef<HTMLInputElement>(null);
     const phoneInput = useRef<HTMLInputElement>(null);
 
-    const {
-        data,
-        setData,
-        submit: create,
-        processing,
-        reset,
-        errors,
-        clearErrors,
-    } = useForm<Required<{ name: string; email: string; phone_number: string; password: string }>>({
-        name: '',
-        email: '',
-        phone_number: '',
-        password: '',
+    const { data, setData, put, processing, reset, errors, clearErrors } = useForm<
+        Required<{ name: string; bio: string; email: string; phone_number: string }>
+    >({
+        name: mentor.name,
+        bio: mentor.bio ?? '',
+        email: mentor.email,
+        phone_number: mentor.phone_number,
     });
 
-    const createInstructor: FormEventHandler = (e) => {
+    useEffect(() => {
+        setData({
+            name: mentor.name,
+            bio: mentor.bio ?? '',
+            email: mentor.email,
+            phone_number: mentor.phone_number,
+        });
+        clearErrors();
+    }, [mentor, setData, clearErrors]);
+
+    const updateMentor: FormEventHandler = (e) => {
         e.preventDefault();
 
-        create('post', route('instructors.store'), {
+        put(route('mentors.update', mentor.id), {
             preserveScroll: true,
             onSuccess: () => {
                 setOpen(false);
@@ -46,12 +58,12 @@ export default function CreateInstructor({ setOpen }: CreateInstructorProps) {
 
     return (
         <DialogContent>
-            <DialogTitle>Tambah Instruktur Baru</DialogTitle>
-            <DialogDescription>Silakan masukkan data instruktur baru yang ingin Anda tambahkan.</DialogDescription>
-            <form className="space-y-6" onSubmit={createInstructor}>
+            <DialogTitle>Edit Mentor</DialogTitle>
+            <DialogDescription>Ubah nama, email, atau nomor telepon mentor.</DialogDescription>
+            <form className="space-y-6" onSubmit={updateMentor}>
                 <div className="grid gap-2">
                     <Label htmlFor="name" className="sr-only">
-                        Nama Instruktur
+                        Nama Mentor
                     </Label>
                     <Input
                         id="name"
@@ -62,17 +74,34 @@ export default function CreateInstructor({ setOpen }: CreateInstructorProps) {
                         onChange={(e) => {
                             setData('name', e.target.value);
                         }}
-                        placeholder="Nama Instruktur"
+                        placeholder="Nama Mentor"
                         autoComplete="off"
                     />
                     <InputError message={errors.name} />
+
+                    <Label htmlFor="bio" className="sr-only">
+                        Bio Mentor
+                    </Label>
+                    <Input
+                        id="bio"
+                        type="text"
+                        name="bio"
+                        ref={bioInput}
+                        value={data.bio}
+                        onChange={(e) => {
+                            setData('bio', e.target.value);
+                        }}
+                        placeholder="Bio Mentor, contoh: Frontend Developer, UI/UX Designer, dsb."
+                        autoComplete="off"
+                    />
+                    <InputError message={errors.bio} />
 
                     <Label htmlFor="email" className="sr-only">
                         Email
                     </Label>
                     <Input
                         id="email"
-                        type="email"
+                        type="text"
                         name="email"
                         ref={emailInput}
                         value={data.email}
@@ -91,29 +120,11 @@ export default function CreateInstructor({ setOpen }: CreateInstructorProps) {
                         name="phone_number"
                         ref={phoneInput}
                         value={data.phone_number}
-                        onChange={(e) => {
-                            setData('phone_number', e.target.value);
-                            setData('password', e.target.value);
-                        }}
+                        onChange={(e) => setData('phone_number', e.target.value)}
                         placeholder="Nomor Telepon"
                         autoComplete="off"
                     />
                     <InputError message={errors.phone_number} />
-
-                    <Label htmlFor="password" className="sr-only">
-                        Password
-                    </Label>
-                    <Input
-                        id="password"
-                        type="text"
-                        name="password"
-                        ref={phoneInput}
-                        value={data.password}
-                        placeholder="Password"
-                        autoComplete="off"
-                        disabled
-                    />
-                    <InputError message={errors.password} />
                 </div>
                 <DialogFooter className="gap-2">
                     <DialogClose asChild>
@@ -122,7 +133,7 @@ export default function CreateInstructor({ setOpen }: CreateInstructorProps) {
                         </Button>
                     </DialogClose>
                     <Button disabled={processing} asChild>
-                        <button type="submit">Tambah Instruktur</button>
+                        <button type="submit">Simpan Perubahan</button>
                     </Button>
                 </DialogFooter>
             </form>

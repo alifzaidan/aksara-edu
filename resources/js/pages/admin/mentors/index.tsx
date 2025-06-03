@@ -5,40 +5,40 @@ import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
-import { columns, Instructor } from './columns';
-import CreateInstructor from './create';
+import { columns, Mentor } from './columns';
+import CreateMentor from './create';
 import { DataTable } from './data-table';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Instruktur',
-        href: 'admin/instructors',
+        title: 'Mentor',
+        href: 'admin/mentors',
     },
 ];
 
-export default function Instructors({ instructors }: { instructors: Instructor[] }) {
+export default function Mentors({ mentors }: { mentors: Mentor[] }) {
     const [open, setOpen] = useState(false);
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
-            <Head title="Instruktur" />
+            <Head title="Mentor" />
             <div className="px-4 py-4 md:px-6">
                 <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                        <h1 className="text-2xl font-semibold">Instruktur</h1>
-                        <p className="text-muted-foreground text-sm">Daftar semua instruktur Aksara Edu.</p>
+                        <h1 className="text-2xl font-semibold">Mentor</h1>
+                        <p className="text-muted-foreground text-sm">Daftar semua mentor Aksara Edu.</p>
                     </div>
                     <Dialog open={open} onOpenChange={setOpen}>
                         <DialogTrigger asChild>
                             <Button>
-                                Tambah Instruktur
+                                Tambah Mentor
                                 <Plus />
                             </Button>
                         </DialogTrigger>
-                        <CreateInstructor setOpen={setOpen} />
+                        <CreateMentor setOpen={setOpen} />
                     </Dialog>
                 </div>
-                <DataTable columns={columns} data={instructors} />
+                <DataTable columns={columns} data={mentors} />
             </div>
         </AdminLayout>
     );

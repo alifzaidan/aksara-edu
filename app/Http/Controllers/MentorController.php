@@ -7,24 +7,25 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 
-class InstructorController extends Controller
+class MentorController extends Controller
 {
     public function index()
     {
-        $instructors = User::role('instructor')->latest()->get();
+        $mentors = User::role('mentor')->latest()->get();
 
-        return Inertia::render('admin/instructors/index', ['instructors' => $instructors]);
+        return Inertia::render('admin/mentors/index', ['mentors' => $mentors]);
     }
 
     public function create()
     {
-        return Inertia::render('admin/instructors/create');
+        return Inertia::render('admin/mentors/create');
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'bio' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
             'phone_number' => 'required|string|max:255',
             'password' => 'required|string|min:8',
@@ -32,40 +33,42 @@ class InstructorController extends Controller
 
         $user = User::create([
             'name' => $request->name,
+            'bio' => $request->bio,
             'email' => $request->email,
             'phone_number' => $request->phone_number,
             'password' => Hash::make($request->password),
         ]);
 
-        $user->assignRole('instructor');
+        $user->assignRole('mentor');
 
-        return redirect()->route('instructors.index')->with('success', 'Instruktur berhasil ditambahkan.');
+        return redirect()->route('mentors.index')->with('success', 'Mentor berhasil ditambahkan.');
     }
 
     public function edit(string $id)
     {
-        $instructor = User::findOrFail($id);
-        return Inertia::render('admin/instructors/edit', ['instructor' => $instructor]);
+        $mentor = User::findOrFail($id);
+        return Inertia::render('admin/mentors/edit', ['mentor' => $mentor]);
     }
 
     public function update(Request $request, string $id)
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'bio' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:' . User::class . ',email,' . $id,
             'phone_number' => 'required|string|max:255',
         ]);
 
-        $instructor = User::findOrFail($id);
-        $instructor->update($request->all());
+        $mentor = User::findOrFail($id);
+        $mentor->update($request->all());
 
-        return redirect()->route('instructors.index')->with('success', 'Instruktur berhasil diperbarui.');
+        return redirect()->route('mentors.index')->with('success', 'Mentor berhasil diperbarui.');
     }
 
     public function destroy(string $id)
     {
-        $instructor = User::findOrFail($id);
-        $instructor->delete();
-        return redirect()->route('instructors.index')->with('success', 'Instruktur berhasil dihapus.');
+        $mentor = User::findOrFail($id);
+        $mentor->delete();
+        return redirect()->route('mentors.index')->with('success', 'Mentor berhasil dihapus.');
     }
 }

@@ -12,7 +12,7 @@ import { Edit, Trash } from 'lucide-react';
 import { useState } from 'react';
 import EditCategory from './edit';
 
-export default function InstructorActions({ instructor }: { instructor: Instructor }) {
+export default function MentorActions({ mentor }: { mentor: Mentor }) {
     const [open, setOpen] = useState(false);
 
     return (
@@ -24,10 +24,10 @@ export default function InstructorActions({ instructor }: { instructor: Instruct
                         Edit
                     </Button>
                 </DialogTrigger>
-                <EditCategory instructor={instructor} setOpen={setOpen} />
+                <EditCategory mentor={mentor} setOpen={setOpen} />
             </Dialog>
             <Button variant="link" asChild className="text-red-500 hover:cursor-pointer">
-                <Link method="delete" href={route('instructors.destroy', instructor.id)}>
+                <Link method="delete" href={route('mentors.destroy', mentor.id)}>
                     <Trash /> Hapus
                 </Link>
             </Button>
@@ -35,15 +35,16 @@ export default function InstructorActions({ instructor }: { instructor: Instruct
     );
 }
 
-export type Instructor = {
+export type Mentor = {
     id: string;
     name: string;
+    bio?: string;
     email: string;
     phone_number: string;
     created_at: string;
 };
 
-export const columns: ColumnDef<Instructor>[] = [
+export const columns: ColumnDef<Mentor>[] = [
     {
         id: 'select',
         header: ({ table }) => (
@@ -70,9 +71,16 @@ export const columns: ColumnDef<Instructor>[] = [
     },
     {
         accessorKey: 'name',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Nama Instruktur" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Nama Mentor" />,
         cell: ({ row }) => {
             return <div className="font-medium">{row.original.name}</div>;
+        },
+    },
+    {
+        accessorKey: 'bio',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Bio Mentor" />,
+        cell: ({ row }) => {
+            return <div className="font-medium">{row.original.bio}</div>;
         },
     },
     {
@@ -91,6 +99,6 @@ export const columns: ColumnDef<Instructor>[] = [
     {
         id: 'actions',
         header: () => <div className="text-center">Aksi</div>,
-        cell: ({ row }) => <InstructorActions instructor={row.original} />,
+        cell: ({ row }) => <MentorActions mentor={row.original} />,
     },
 ];
