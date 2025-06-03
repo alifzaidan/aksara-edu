@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ModuleModel extends Model
+class Quiz extends Model
 {
     //
 }
