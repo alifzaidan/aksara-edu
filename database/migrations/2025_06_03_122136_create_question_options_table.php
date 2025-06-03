@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('questions', function (Blueprint $table) {
+        Schema::create('question_options', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('quiz_id')->constrained('quizzes')->onDelete('cascade');
-            $table->string('question_text');
-            $table->enum('type', ['multiple_choice', 'true_false'])->default('multiple_choice');
+            $table->foreignUuid('question_id')->constrained('questions')->onDelete('cascade');
+            $table->string('option_text');
+            $table->boolean('is_correct')->default(false);
             $table->timestamps();
         });
     }
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('questions');
+        Schema::dropIfExists('question_options');
     }
 };

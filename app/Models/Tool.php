@@ -5,19 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
-class Quiz extends Model
+class Tool extends Model
 {
     use HasUuids;
 
     protected $guarded = ['created_at', 'updated_at'];
 
-    public function lesson()
+    public function courses()
     {
-        return $this->belongsTo(Lesson::class, 'lesson_id');
-    }
-
-    public function questions()
-    {
-        return $this->hasMany(Question::class);
+        return $this->belongsToMany(Course::class);
     }
 }

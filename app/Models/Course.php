@@ -11,13 +11,40 @@ class Course extends Model
 
     protected $guarded = ['created_at', 'updated_at'];
 
+    public function images()
+    {
+        return $this->hasMany(CourseImage::class);
+    }
+
+
     public function category()
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
 
+    public function tools()
+    {
+        return $this->belongsToMany(Tool::class);
+    }
+
+
     public function modules()
     {
         return $this->hasMany(Module::class);
+    }
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    public function certificates()
+    {
+        return $this->hasMany(Certificate::class);
+    }
+
+    public function courseRatings()
+    {
+        return $this->hasMany(CourseRating::class);
     }
 }

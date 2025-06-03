@@ -11,17 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('courses', function (Blueprint $table) {
+        Schema::create('certificates', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('category_id')->constrained('categories')->onDelete('cascade');
             $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignUuid('course_id')->constrained('courses')->onDelete('cascade');
+            $table->string('certificate_number')->unique();
             $table->string('title');
-            $table->text('short_description')->nullable();
             $table->text('description')->nullable();
-            $table->string('thumbnail')->nullable();
-            $table->bigInteger('price')->default(0);
-            $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
-            $table->enum('level', ['beginner', 'intermediate', 'advanced'])->default('beginner');
+            $table->date('issued_date');
+            $table->string('issued_by')->nullable();
+            $table->string('signature_image')->nullable();
             $table->timestamps();
         });
     }
@@ -31,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('courses');
+        Schema::dropIfExists('certificates');
     }
 };
