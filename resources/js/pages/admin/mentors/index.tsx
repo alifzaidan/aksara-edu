@@ -30,7 +30,7 @@ export default function Mentors({ mentors }: { mentors: Mentor[] }) {
                     </div>
                     <Dialog open={open} onOpenChange={setOpen}>
                         <DialogTrigger asChild>
-                            <Button>
+                            <Button className="hover:cursor-pointer">
                                 Tambah Mentor
                                 <Plus />
                             </Button>
