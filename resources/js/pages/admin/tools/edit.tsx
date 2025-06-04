@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useEffect, useRef } from 'react';
 
@@ -19,7 +20,7 @@ interface EditToolProps {
 
 export default function EditTool({ tool, setOpen }: EditToolProps) {
     const nameInput = useRef<HTMLInputElement>(null);
-    const descInput = useRef<HTMLInputElement>(null);
+    const descInput = useRef<HTMLTextAreaElement>(null);
     const iconInput = useRef<HTMLInputElement>(null);
 
     const { data, setData, post, processing, reset, errors, clearErrors } = useForm<
@@ -106,15 +107,14 @@ export default function EditTool({ tool, setOpen }: EditToolProps) {
                     <Label htmlFor="description" className="sr-only">
                         Deskripsi
                     </Label>
-                    <Input
+                    <Textarea
                         id="description"
-                        type="text"
                         name="description"
                         ref={descInput}
-                        value={data.description || ''}
+                        value={data.description ?? ''}
                         onChange={(e) => setData('description', e.target.value)}
                         placeholder="Deskripsi (opsional)"
-                        autoComplete="off"
+                        className="resize-none"
                     />
                     <InputError message={errors.description} />
 

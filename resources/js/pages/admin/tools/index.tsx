@@ -4,7 +4,8 @@ import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { columns, Tool } from './columns';
 import CreateTool from './create';
 import { DataTable } from './data-table';
@@ -16,8 +17,25 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Tools({ tools }: { tools: Tool[] }) {
+interface ToolProps {
+    tools: Tool[];
+    flash?: {
+        success?: string;
+        error?: string;
+    };
+}
+
+export default function Tools({ tools, flash }: ToolProps) {
     const [open, setOpen] = useState(false);
+
+    useEffect(() => {
+        if (flash?.success) {
+            toast.success(flash.success);
+        }
+        if (flash?.error) {
+            toast.error(flash.error);
+        }
+    }, [flash]);
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>

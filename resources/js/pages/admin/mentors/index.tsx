@@ -4,7 +4,8 @@ import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { columns, Mentor } from './columns';
 import CreateMentor from './create';
 import { DataTable } from './data-table';
@@ -16,8 +17,25 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Mentors({ mentors }: { mentors: Mentor[] }) {
+interface MentorProps {
+    mentors: Mentor[];
+    flash?: {
+        success?: string;
+        error?: string;
+    };
+}
+
+export default function Mentors({ mentors, flash }: MentorProps) {
     const [open, setOpen] = useState(false);
+
+    useEffect(() => {
+        if (flash?.success) {
+            toast.success(flash.success);
+        }
+        if (flash?.error) {
+            toast.error(flash.error);
+        }
+    }, [flash]);
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>

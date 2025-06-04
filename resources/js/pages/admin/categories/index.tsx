@@ -5,7 +5,8 @@ import CreateCategory from '@/pages/admin/categories/create';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { Category, columns } from './columns';
 import { DataTable } from './data-table';
 
@@ -16,8 +17,25 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Categories({ categories }: { categories: Category[] }) {
+interface CategoriesProps {
+    categories: Category[];
+    flash?: {
+        success?: string;
+        error?: string;
+    };
+}
+
+export default function Categories({ categories, flash }: CategoriesProps) {
     const [open, setOpen] = useState(false);
+
+    useEffect(() => {
+        if (flash?.success) {
+            toast.success(flash.success);
+        }
+        if (flash?.error) {
+            toast.error(flash.error);
+        }
+    }, [flash]);
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
