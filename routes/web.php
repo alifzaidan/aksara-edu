@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CourseController;
 use App\Http\Controllers\MentorController;
 use App\Http\Controllers\ToolController;
 use Illuminate\Support\Facades\Route;
@@ -19,6 +20,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('admin/mentors', MentorController::class);
         Route::resource('admin/tools', ToolController::class);
         Route::post('/admin/tools/{id}', [ToolController::class, 'update'])->name('tools.update');
+        Route::resource('admin/courses', CourseController::class);
+        Route::post('/admin/courses/{id}', [CourseController::class, 'update'])->name('courses.update');
     });
 });
 

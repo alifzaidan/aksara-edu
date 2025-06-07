@@ -18,3 +18,13 @@ export default function useHasAnyPermission(permissions: string[]): boolean {
 
     return hasPermission;
 }
+
+export const rupiahFormatter = new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+});
+
+export const parseRupiah = (value: string) => {
+    return Number(value.replace(/[^0-9,-]+/g, '').replace(',', '.'));
+};

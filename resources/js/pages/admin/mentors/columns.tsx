@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Edit, Trash } from 'lucide-react';
 import { useState } from 'react';
-import EditCategory from './edit';
+import EditMentor from './edit';
 
 export default function MentorActions({ mentor }: { mentor: Mentor }) {
     const [open, setOpen] = useState(false);
@@ -24,7 +24,7 @@ export default function MentorActions({ mentor }: { mentor: Mentor }) {
                         Edit
                     </Button>
                 </DialogTrigger>
-                <EditCategory mentor={mentor} setOpen={setOpen} />
+                <EditMentor mentor={mentor} setOpen={setOpen} />
             </Dialog>
             <Button variant="link" asChild className="text-red-500 hover:cursor-pointer">
                 <Link method="delete" href={route('mentors.destroy', mentor.id)}>

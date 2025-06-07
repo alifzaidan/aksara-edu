@@ -15,12 +15,14 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('module_id')->constrained('modules')->onDelete('cascade');
             $table->string('title');
+            $table->text('description')->nullable();
             $table->enum('type', ['text', 'video', 'file', 'quiz'])->default('text');
             $table->text('video')->nullable();
             $table->text('content')->nullable();
             $table->text('attachment')->nullable();
             $table->integer('duration')->default(0);
             $table->integer('order')->default(0);
+            $table->boolean('is_free')->default(false);
             $table->timestamps();
         });
     }

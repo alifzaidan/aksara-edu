@@ -16,6 +16,10 @@ class Course extends Model
         return $this->hasMany(CourseImage::class);
     }
 
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 
     public function category()
     {
@@ -26,7 +30,6 @@ class Course extends Model
     {
         return $this->belongsToMany(Tool::class);
     }
-
 
     public function modules()
     {
