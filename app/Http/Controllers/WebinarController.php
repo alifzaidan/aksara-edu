@@ -40,13 +40,12 @@ class WebinarController extends Controller
             'host_description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'quota' => 'required|integer|min:0',
-            'registration_link' => 'nullable|url|max:255',
             'instructions' => 'nullable|string',
             'batch' => 'nullable|string|max:255',
         ]);
 
         $data = $request->all();
-        foreach (['start_time', 'end_time', 'registration_deadline', 'registration_start_time', 'registration_end_time'] as $field) {
+        foreach (['start_time', 'end_time', 'registration_deadline'] as $field) {
             if (!empty($data[$field])) {
                 $data[$field] = Carbon::parse($data[$field])->format('Y-m-d H:i:s');
             }
@@ -108,7 +107,6 @@ class WebinarController extends Controller
             'host_description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'quota' => 'required|integer|min:0',
-            'registration_link' => 'nullable|url|max:255',
             'instructions' => 'nullable|string',
             'batch' => 'nullable|string|max:255',
         ]);
@@ -116,7 +114,7 @@ class WebinarController extends Controller
         $webinar = Webinar::findOrFail($id);
         $data = $request->all();
 
-        foreach (['start_time', 'end_time', 'registration_deadline', 'registration_start_time', 'registration_end_time'] as $field) {
+        foreach (['start_time', 'end_time', 'registration_deadline'] as $field) {
             if (!empty($data[$field])) {
                 $data[$field] = Carbon::parse($data[$field])->format('Y-m-d H:i:s');
             }

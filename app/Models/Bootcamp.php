@@ -21,8 +21,22 @@ class Bootcamp extends Model
         return $this->belongsTo(Category::class, 'category_id');
     }
 
+    public function schedules()
+    {
+        return $this->hasMany(BootcampSchedule::class);
+    }
+
     public function tools()
     {
         return $this->belongsToMany(Tool::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'start_time' => 'datetime',
+            'end_time' => 'datetime',
+            'registration_deadline' => 'datetime',
+        ];
     }
 }
