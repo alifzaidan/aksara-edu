@@ -23,14 +23,14 @@ return new class extends Migration
             $table->string('thumbnail')->nullable();
             $table->dateTime('start_time');
             $table->dateTime('end_time')->nullable();
-            $table->dateTime('registration_start_time')->nullable();
-            $table->dateTime('registration_end_time')->nullable();
+            $table->dateTime('registration_deadline')->nullable();
             $table->string('host_name')->nullable();
             $table->string('host_description')->nullable();
             $table->bigInteger('price')->default(0);
             $table->integer('quota')->default(0);
             $table->string('registration_link')->nullable();
             $table->string('batch')->nullable();
+            $table->text('instructions')->nullable();
             $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->timestamps();
         });

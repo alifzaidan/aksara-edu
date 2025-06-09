@@ -116,7 +116,7 @@ export default function CreateTool({ setOpen }: CreateToolProps) {
                         placeholder="Icon (opsional)"
                     />
                     <InputError message={errors.icon} />
-                    <p className="text-muted-foreground ms-1 text-xs">Upload Icon. Format: PNG atau JPG</p>
+                    <p className="text-muted-foreground ms-1 text-xs">Upload Icon. Format: PNG atau JPG Max 2 Mb</p>
                 </div>
                 <DialogFooter className="gap-2">
                     <DialogClose asChild>

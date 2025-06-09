@@ -34,13 +34,13 @@ class BootcampController extends Controller
             'thumbnail' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'start_time' => 'required|date',
             'end_time' => 'nullable|date|after_or_equal:start_time',
-            'registration_start_time' => 'nullable|date',
-            'registration_end_time' => 'nullable|date|after_or_equal:registration_start_time',
+            'registration_deadline' => 'nullable|date',
             'host_name' => 'nullable|string|max:255',
             'host_description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'quota' => 'required|integer|min:0',
             'registration_link' => 'nullable|url|max:255',
+            'instructions' => 'nullable|string',
             'batch' => 'nullable|string|max:255',
         ]);
 
@@ -76,13 +76,13 @@ class BootcampController extends Controller
             'thumbnail' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'start_time' => 'required|date',
             'end_time' => 'nullable|date|after_or_equal:start_time',
-            'registration_start_time' => 'nullable|date',
-            'registration_end_time' => 'nullable|date|after_or_equal:registration_start_time',
+            'registration_deadline' => 'nullable|date',
             'host_name' => 'nullable|string|max:255',
             'host_description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'quota' => 'required|integer|min:0',
             'registration_link' => 'nullable|url|max:255',
+            'instructions' => 'nullable|string',
             'batch' => 'nullable|string|max:255',
         ]);
 
