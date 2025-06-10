@@ -31,7 +31,7 @@ return new class extends Migration
             $table->integer('quota')->default(0);
             $table->string('bootcamp_url')->nullable();
             $table->string('registration_url')->nullable();
-            $table->string('batch')->nullable();
+            $table->integer('batch')->default(0);
             $table->text('instructions')->nullable();
             $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->timestamps();

@@ -17,11 +17,13 @@ import { BookMarked, CalendarFold, Check, ChevronDownIcon, ChevronsUpDown } from
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import BootcampScheduleInput, { BootcampSchedule } from './schedule-input';
 
 interface Bootcamp {
     id: string;
     title: string;
     category?: { name: string };
+    schedules?: BootcampSchedule[];
     category_id: string;
     batch?: number | null;
     price: number;
@@ -103,8 +105,16 @@ export default function EditBootcamp({ bootcamp, categories }: { bootcamp: Bootc
         },
     });
 
+    const [schedules, setSchedules] = useState<BootcampSchedule[]>(
+        bootcamp.schedules?.map((s: BootcampSchedule) => ({
+            day: s.day,
+            start_time: s.start_time,
+            end_time: s.end_time,
+        })) ?? [],
+    );
+
     function onSubmit(values: z.infer<typeof formSchema>) {
-        router.post(route('bootcamps.update', { bootcamp: bootcamp.id }), { ...values, _method: 'PUT' }, { forceFormData: true });
+        router.post(route('bootcamps.update', { bootcamp: bootcamp.id }), { ...values, schedules, _method: 'PUT' }, { forceFormData: true });
     }
 
     return (
@@ -333,137 +343,105 @@ export default function EditBootcamp({ bootcamp, categories }: { bootcamp: Bootc
                                 <CalendarFold size={16} />
                                 <h3 className="font-medium">Tanggal dan Informasi Pemateri</h3>
                             </div>
-                            <FormField
-                                control={form.control}
-                                name="start_date"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel>
-                                            Tanggal Mulai <span className="text-red-500">*</span>
-                                        </FormLabel>
-                                        <div className="flex gap-4">
-                                            <div className="flex flex-col gap-3">
-                                                <Popover open={openStartCalendar} onOpenChange={setOpenStartCalendar}>
-                                                    <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            id="date"
-                                                            className="w-32 justify-between font-normal"
-                                                            type="button"
-                                                        >
-                                                            {field.value
-                                                                ? new Date(field.value).toLocaleDateString('id-ID', {
-                                                                      day: 'numeric',
-                                                                      month: 'short',
-                                                                      year: 'numeric',
-                                                                  })
-                                                                : 'Pilih tanggal'}
-                                                            <ChevronDownIcon />
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-auto overflow-hidden p-0" align="start">
-                                                        <Calendar
-                                                            mode="single"
-                                                            selected={field.value ? new Date(field.value) : undefined}
-                                                            captionLayout="dropdown"
-                                                            onSelect={(date) => {
-                                                                if (!date) return;
-                                                                const prev = field.value ? new Date(field.value) : new Date();
-                                                                const time = prev.toTimeString().slice(0, 8) || '00:00:00';
-                                                                const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-                                                                field.onChange(`${dateStr}T${time}`);
-                                                                setOpenStartCalendar(false);
-                                                            }}
-                                                        />
-                                                    </PopoverContent>
-                                                </Popover>
+                            <div className="flex flex-col gap-4 lg:flex-row">
+                                <FormField
+                                    control={form.control}
+                                    name="start_date"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                            <FormLabel>
+                                                Waktu Mulai <span className="text-red-500">*</span>
+                                            </FormLabel>
+                                            <div className="flex gap-4">
+                                                <div className="flex flex-col gap-3">
+                                                    <Popover open={openStartCalendar} onOpenChange={setOpenStartCalendar}>
+                                                        <PopoverTrigger asChild>
+                                                            <Button
+                                                                variant="outline"
+                                                                id="date"
+                                                                className="w-32 justify-between font-normal"
+                                                                type="button"
+                                                            >
+                                                                {field.value
+                                                                    ? new Date(field.value).toLocaleDateString('id-ID', {
+                                                                          day: 'numeric',
+                                                                          month: 'short',
+                                                                          year: 'numeric',
+                                                                      })
+                                                                    : 'Pilih tanggal'}
+                                                                <ChevronDownIcon />
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+                                                            <Calendar
+                                                                mode="single"
+                                                                selected={field.value ? new Date(field.value) : undefined}
+                                                                captionLayout="dropdown"
+                                                                onSelect={(date) => {
+                                                                    if (!date) return;
+                                                                    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                                                                    field.onChange(dateStr);
+                                                                    setOpenStartCalendar(false);
+                                                                }}
+                                                            />
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                </div>
                                             </div>
-                                            <div className="flex flex-col gap-3">
-                                                <Input
-                                                    type="time"
-                                                    id="time"
-                                                    step="60"
-                                                    value={field.value ? new Date(field.value).toTimeString().slice(0, 5) : '10:30'}
-                                                    onChange={(e) => {
-                                                        const prev = field.value ? new Date(field.value) : new Date();
-                                                        const dateStr = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`;
-                                                        const time = e.target.value || '00:00';
-                                                        field.onChange(`${dateStr}T${time}:00`);
-                                                    }}
-                                                    className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                                                />
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="end_date"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                            <FormLabel>
+                                                Waktu Selesai <span className="text-red-500">*</span>
+                                            </FormLabel>
+                                            <div className="flex gap-4">
+                                                <div className="flex flex-col gap-3">
+                                                    <Popover open={openEndCalendar} onOpenChange={setOpenEndCalendar}>
+                                                        <PopoverTrigger asChild>
+                                                            <Button
+                                                                variant="outline"
+                                                                id="date"
+                                                                className="w-32 justify-between font-normal"
+                                                                type="button"
+                                                            >
+                                                                {field.value
+                                                                    ? new Date(field.value).toLocaleDateString('id-ID', {
+                                                                          day: 'numeric',
+                                                                          month: 'short',
+                                                                          year: 'numeric',
+                                                                      })
+                                                                    : 'Pilih tanggal'}
+                                                                <ChevronDownIcon />
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+                                                            <Calendar
+                                                                mode="single"
+                                                                selected={field.value ? new Date(field.value) : undefined}
+                                                                captionLayout="dropdown"
+                                                                onSelect={(date) => {
+                                                                    if (!date) return;
+                                                                    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                                                                    field.onChange(dateStr);
+                                                                    setOpenEndCalendar(false);
+                                                                }}
+                                                            />
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="end_date"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel>
-                                            Tanggal Selesai <span className="text-red-500">*</span>
-                                        </FormLabel>
-                                        <div className="flex gap-4">
-                                            <div className="flex flex-col gap-3">
-                                                <Popover open={openEndCalendar} onOpenChange={setOpenEndCalendar}>
-                                                    <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            id="date"
-                                                            className="w-32 justify-between font-normal"
-                                                            type="button"
-                                                        >
-                                                            {field.value
-                                                                ? new Date(field.value).toLocaleDateString('id-ID', {
-                                                                      day: 'numeric',
-                                                                      month: 'short',
-                                                                      year: 'numeric',
-                                                                  })
-                                                                : 'Pilih tanggal'}
-                                                            <ChevronDownIcon />
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-auto overflow-hidden p-0" align="start">
-                                                        <Calendar
-                                                            mode="single"
-                                                            selected={field.value ? new Date(field.value) : undefined}
-                                                            captionLayout="dropdown"
-                                                            onSelect={(date) => {
-                                                                const prev = field.value ? new Date(field.value) : new Date();
-                                                                const time = prev.toTimeString().split(' ')[0];
-                                                                const dateStr = date
-                                                                    ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-                                                                    : '';
-                                                                field.onChange(dateStr && time ? `${dateStr}T${time}` : '');
-                                                                setOpenEndCalendar(false);
-                                                            }}
-                                                        />
-                                                    </PopoverContent>
-                                                </Popover>
-                                            </div>
-                                            <div className="flex flex-col gap-3">
-                                                <Input
-                                                    type="time"
-                                                    id="time"
-                                                    step="60"
-                                                    value={field.value ? new Date(field.value).toTimeString().slice(0, 5) : '10:30'}
-                                                    onChange={(e) => {
-                                                        const prev = field.value ? new Date(field.value) : new Date();
-                                                        const dateStr = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`;
-                                                        const time = e.target.value || '00:00';
-                                                        field.onChange(`${dateStr}T${time}:00`);
-                                                    }}
-                                                    className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                                                />
-                                            </div>
-                                        </div>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            <BootcampScheduleInput value={schedules} onChange={setSchedules} />
                             <FormField
                                 control={form.control}
                                 name="registration_deadline"

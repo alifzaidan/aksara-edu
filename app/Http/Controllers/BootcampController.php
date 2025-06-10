@@ -103,8 +103,9 @@ class BootcampController extends Controller
 
     public function edit(string $id)
     {
-        $bootcamp = Bootcamp::findOrFail($id);
-        return Inertia::render('admin/bootcamps/edit', ['bootcamp' => $bootcamp]);
+        $bootcamp = Bootcamp::with(['schedules'])->findOrFail($id);
+        $categories = Category::all();
+        return Inertia::render('admin/bootcamps/edit', ['bootcamp' => $bootcamp, 'categories' => $categories]);
     }
 
     public function update(Request $request, string $id)
@@ -164,6 +165,22 @@ class BootcampController extends Controller
 
         $bootcamp->update($data);
 
+        if ($request->has('schedules') && is_array($request->schedules)) {
+            $bootcamp->schedules()->delete();
+            foreach ($request->schedules as $schedule) {
+                if (
+                    isset($schedule['day'], $schedule['start_time'], $schedule['end_time']) &&
+                    $schedule['day'] && $schedule['start_time'] && $schedule['end_time']
+                ) {
+                    $bootcamp->schedules()->create([
+                        'day' => $schedule['day'],
+                        'start_time' => $schedule['start_time'],
+                        'end_time' => $schedule['end_time'],
+                    ]);
+                }
+            }
+        }
+
         return redirect()->route('bootcamps.index')->with('success', 'Bootcamp berhasil diperbarui.');
     }
 
@@ -204,6 +221,14 @@ class BootcampController extends Controller
         $newBootcamp->bootcamp_url = url('/bootcamp/' . $slug);
         $newBootcamp->registration_url = url('/bootcamp/' . $slug . '/register');
         $newBootcamp->save();
+
+        foreach ($bootcamp->schedules as $schedule) {
+            $newBootcamp->schedules()->create([
+                'day' => $schedule->day,
+                'start_time' => $schedule->start_time,
+                'end_time' => $schedule->end_time,
+            ]);
+        }
 
         return redirect()->route('bootcamps.show', $newBootcamp->id)
             ->with('success', 'Bootcamp berhasil diduplikasi. Silakan edit sebelum dipublikasikan.');
