@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from '@inertiajs/react';
-import { FormEventHandler, useEffect, useRef } from 'react';
+import { FormEventHandler, useEffect, useRef, useState } from 'react';
 
 interface EditToolProps {
     tool: {
@@ -22,6 +22,7 @@ export default function EditTool({ tool, setOpen }: EditToolProps) {
     const nameInput = useRef<HTMLInputElement>(null);
     const descInput = useRef<HTMLTextAreaElement>(null);
     const iconInput = useRef<HTMLInputElement>(null);
+    const [preview, setPreview] = useState<string | null>(tool.icon ? `/storage/${tool.icon}` : null);
 
     const { data, setData, post, processing, reset, errors, clearErrors } = useForm<
         Required<{ name: string; slug: string; description: string | null; icon: File | null }>
@@ -121,12 +122,28 @@ export default function EditTool({ tool, setOpen }: EditToolProps) {
                     <Label htmlFor="icon" className="sr-only">
                         Icon
                     </Label>
+                    <img
+                        src={preview || '/assets/images/placeholder.png'}
+                        alt="Preview Icon"
+                        className="my-1 mt-2 h-24 w-24 rounded border object-cover"
+                    />
                     <Input
                         id="icon"
                         type="file"
                         name="icon"
                         ref={iconInput}
-                        onChange={(e) => setData('icon', e.target.files?.[0] ?? null)}
+                        accept="image/*"
+                        onChange={(e) => {
+                            const file = e.target.files?.[0] ?? null;
+                            setData('icon', file);
+                            if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => setPreview(ev.target?.result as string);
+                                reader.readAsDataURL(file);
+                            } else {
+                                setPreview(tool.icon ? `/storage/${tool.icon}` : null);
+                            }
+                        }}
                         placeholder="Icon (opsional)"
                     />
                     <InputError message={errors.icon} />

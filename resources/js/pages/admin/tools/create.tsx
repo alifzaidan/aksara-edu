@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from '@inertiajs/react';
-import { FormEventHandler, useRef } from 'react';
+import { FormEventHandler, useRef, useState } from 'react';
 
 interface CreateToolProps {
     setOpen: (open: boolean) => void;
@@ -15,6 +15,7 @@ export default function CreateTool({ setOpen }: CreateToolProps) {
     const nameInput = useRef<HTMLInputElement>(null);
     const descInput = useRef<HTMLTextAreaElement>(null);
     const iconInput = useRef<HTMLInputElement>(null);
+    const [preview, setPreview] = useState<string | null>(null);
 
     const {
         data,
@@ -107,13 +108,28 @@ export default function CreateTool({ setOpen }: CreateToolProps) {
                     <Label htmlFor="icon" className="sr-only">
                         Unggah Icon
                     </Label>
+                    <img
+                        src={preview || '/assets/images/placeholder.png'}
+                        alt="Preview Icon"
+                        className="my-1 mt-2 h-24 w-24 rounded border object-cover"
+                    />
                     <Input
                         id="icon"
                         type="file"
                         name="icon"
                         ref={iconInput}
-                        onChange={(e) => setData('icon', e.target.files?.[0] ?? null)}
-                        placeholder="Icon (opsional)"
+                        accept="image/*"
+                        onChange={(e) => {
+                            const file = e.target.files?.[0] ?? null;
+                            setData('icon', file);
+                            if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => setPreview(ev.target?.result as string);
+                                reader.readAsDataURL(file);
+                            } else {
+                                setPreview(null);
+                            }
+                        }}
                     />
                     <InputError message={errors.icon} />
                     <p className="text-muted-foreground ms-1 text-xs">Upload Icon. Format: PNG atau JPG Max 2 Mb</p>
