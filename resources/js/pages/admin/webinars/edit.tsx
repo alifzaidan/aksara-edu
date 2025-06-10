@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -39,6 +40,7 @@ interface Webinar {
     host_name?: string | null;
     host_description?: string | null;
     created_at: string | Date;
+    tools?: { id: string; name: string; description?: string | null }[];
 }
 
 const formSchema = z.object({
@@ -56,9 +58,18 @@ const formSchema = z.object({
     quota: z.number().min(0),
     instructions: z.string().nullable(),
     batch: z.number().min(0),
+    tools: z.array(z.string()).optional(),
 });
 
-export default function EditWebinar({ webinar, categories }: { webinar: Webinar; categories: { id: string; name: string }[] }) {
+export default function EditWebinar({
+    webinar,
+    categories,
+    tools,
+}: {
+    webinar: Webinar;
+    categories: { id: string; name: string }[];
+    tools: { id: string; name: string }[];
+}) {
     const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
     const [openStartCalendar, setOpenStartCalendar] = useState(false);
     const [openEndCalendar, setOpenEndCalendar] = useState(false);
@@ -99,7 +110,8 @@ export default function EditWebinar({ webinar, categories }: { webinar: Webinar;
             price: webinar.price ?? 0,
             quota: webinar.quota ?? 0,
             instructions: webinar.instructions ?? '',
-            batch: webinar.batch ?? 0,
+            batch: webinar.batch ?? 1,
+            tools: webinar.tools ? webinar.tools.map((tool) => tool.id) : [],
         },
     });
 
@@ -191,6 +203,42 @@ export default function EditWebinar({ webinar, categories }: { webinar: Webinar;
                                                 </Command>
                                             </PopoverContent>
                                         </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="tools"
+                                render={() => (
+                                    <FormItem>
+                                        <FormLabel>Tools yang Digunakan</FormLabel>
+                                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                                            {tools.map((tool) => (
+                                                <FormField
+                                                    key={tool.id}
+                                                    control={form.control}
+                                                    name="tools"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                                                            <FormControl>
+                                                                <Checkbox
+                                                                    checked={field.value?.includes(tool.id)}
+                                                                    onCheckedChange={(checked) => {
+                                                                        if (checked) {
+                                                                            field.onChange([...(field.value ?? []), tool.id]);
+                                                                        } else {
+                                                                            field.onChange(field.value?.filter((id: string) => id !== tool.id));
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </FormControl>
+                                                            <FormLabel className="text-sm font-normal">{tool.name}</FormLabel>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            ))}
+                                        </div>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -603,7 +651,9 @@ export default function EditWebinar({ webinar, categories }: { webinar: Webinar;
                                 )}
                             />
                         </div>
-                        <Button type="submit">Simpan Perubahan</Button>
+                        <Button type="submit" className="hover:cursor-pointer">
+                            Simpan Perubahan
+                        </Button>
                     </form>
                 </Form>
             </div>

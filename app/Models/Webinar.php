@@ -23,7 +23,7 @@ class Webinar extends Model
 
     public function tools()
     {
-        return $this->belongsToMany(Tool::class);
+        return $this->belongsToMany(Tool::class, 'webinar_tool');
     }
 
     protected function casts(): array

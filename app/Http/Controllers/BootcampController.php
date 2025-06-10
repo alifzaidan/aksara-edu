@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Bootcamp;
 use App\Models\Category;
+use App\Models\Tool;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -21,7 +22,8 @@ class BootcampController extends Controller
     public function create()
     {
         $categories = Category::all();
-        return Inertia::render('admin/bootcamps/create', ['categories' => $categories]);
+        $tools = Tool::all();
+        return Inertia::render('admin/bootcamps/create', ['categories' => $categories, 'tools' => $tools]);
     }
 
     public function store(Request $request)
@@ -43,6 +45,7 @@ class BootcampController extends Controller
             'quota' => 'required|integer|min:0',
             'batch' => 'nullable|string|max:255',
             'instructions' => 'nullable|string',
+            'tools' => 'nullable|array',
         ]);
 
         $data = $request->all();
@@ -92,20 +95,25 @@ class BootcampController extends Controller
             }
         }
 
+        if ($request->has('tools') && is_array($request->tools)) {
+            $bootcamp->tools()->sync($request->tools);
+        }
+
         return redirect()->route('bootcamps.index')->with('success', 'Bootcamp berhasil dibuat.');
     }
 
     public function show(string $id)
     {
-        $bootcamp = Bootcamp::with(['category', 'user', 'schedules'])->findOrFail($id);
+        $bootcamp = Bootcamp::with(['category', 'user', 'schedules', 'tools'])->findOrFail($id);
         return Inertia::render('admin/bootcamps/show', ['bootcamp' => $bootcamp]);
     }
 
     public function edit(string $id)
     {
-        $bootcamp = Bootcamp::with(['schedules'])->findOrFail($id);
+        $bootcamp = Bootcamp::with(['schedules', 'tools'])->findOrFail($id);
         $categories = Category::all();
-        return Inertia::render('admin/bootcamps/edit', ['bootcamp' => $bootcamp, 'categories' => $categories]);
+        $tools = Tool::all();
+        return Inertia::render('admin/bootcamps/edit', ['bootcamp' => $bootcamp, 'categories' => $categories, 'tools' => $tools]);
     }
 
     public function update(Request $request, string $id)
@@ -127,6 +135,7 @@ class BootcampController extends Controller
             'quota' => 'required|integer|min:0',
             'batch' => 'nullable|string|max:255',
             'instructions' => 'nullable|string',
+            'tools' => 'nullable|array',
         ]);
 
         $bootcamp = Bootcamp::findOrFail($id);
@@ -181,6 +190,10 @@ class BootcampController extends Controller
             }
         }
 
+        if ($request->has('tools') && is_array($request->tools)) {
+            $bootcamp->tools()->sync($request->tools);
+        }
+
         return redirect()->route('bootcamps.index')->with('success', 'Bootcamp berhasil diperbarui.');
     }
 
@@ -228,6 +241,10 @@ class BootcampController extends Controller
                 'start_time' => $schedule->start_time,
                 'end_time' => $schedule->end_time,
             ]);
+        }
+
+        if ($bootcamp->tools && $bootcamp->tools->count() > 0) {
+            $newBootcamp->tools()->sync($bootcamp->tools->pluck('id')->toArray());
         }
 
         return redirect()->route('bootcamps.show', $newBootcamp->id)

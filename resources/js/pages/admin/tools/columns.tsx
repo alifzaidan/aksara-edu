@@ -94,7 +94,7 @@ export const columns: ColumnDef<Tool>[] = [
         cell: ({ row }) => {
             const title = row.original.name;
             const icon = row.original.icon;
-            const iconUrl = icon ? `/storage/${icon}` : '/placeholder.png';
+            const iconUrl = icon ? `/storage/${icon}` : '/assets/images/placeholder.png';
             return <img src={iconUrl} alt={title} className="h-16 w-16 rounded object-cover" />;
         },
     },

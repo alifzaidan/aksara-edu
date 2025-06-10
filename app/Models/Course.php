@@ -28,7 +28,7 @@ class Course extends Model
 
     public function tools()
     {
-        return $this->belongsToMany(Tool::class);
+        return $this->belongsToMany(Tool::class, 'course_tool');
     }
 
     public function modules()

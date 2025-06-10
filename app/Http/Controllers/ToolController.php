@@ -30,11 +30,15 @@ class ToolController extends Controller
             'icon' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
         ]);
 
-        $icon = $request->file('icon');
-        $iconPath = $icon->store('icons', 'public');
-
         $data = $request->all();
-        $data['icon'] = $iconPath;
+
+        if ($request->hasFile('icon')) {
+            $icon = $request->file('icon');
+            $iconPath = $icon->store('icons', 'public');
+            $data['icon'] = $iconPath;
+        } else {
+            $data['icon'] = null;
+        }
 
         Tool::create($data);
 
@@ -61,10 +65,14 @@ class ToolController extends Controller
         $data = $request->only(['name', 'slug', 'description']);
 
         if ($request->hasFile('icon')) {
-            Storage::disk('public')->delete($tool->icon);
+            if ($tool->icon) {
+                Storage::disk('public')->delete($tool->icon);
+            }
             $icon = $request->file('icon');
             $iconPath = $icon->store('icons', 'public');
             $data['icon'] = $iconPath;
+        } else {
+            unset($data['icon']);
         }
 
         $tool->update($data);

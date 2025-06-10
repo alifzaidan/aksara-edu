@@ -28,7 +28,7 @@ class Bootcamp extends Model
 
     public function tools()
     {
-        return $this->belongsToMany(Tool::class);
+        return $this->belongsToMany(Tool::class, 'bootcamp_tool');
     }
 
     protected function casts(): array

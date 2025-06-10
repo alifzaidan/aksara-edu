@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('bootcamp_tools', function (Blueprint $table) {
+        Schema::create('bootcamp_tool', function (Blueprint $table) {
             $table->foreignUuid('bootcamp_id')->constrained()->onDelete('cascade');
             $table->foreignUuid('tool_id')->constrained()->onDelete('cascade');
             $table->primary(['bootcamp_id', 'tool_id']);
@@ -23,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('bootcamp_tools');
+        Schema::dropIfExists('bootcamp_tool');
     }
 };

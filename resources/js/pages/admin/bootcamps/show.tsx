@@ -17,6 +17,7 @@ interface Bootcamp {
     title: string;
     category?: { name: string };
     schedules?: { day: string; start_time: string; end_time: string }[];
+    tools?: { name: string; description?: string | null; icon: string | null }[];
     batch?: string | null;
     price: number;
     quota: number;

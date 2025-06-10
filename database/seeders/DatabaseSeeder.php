@@ -27,5 +27,10 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $admin->assignRole('admin');
+
+        $this->call([
+            ToolSeeder::class,
+            CategorySeeder::class,
+        ]);
     }
 }

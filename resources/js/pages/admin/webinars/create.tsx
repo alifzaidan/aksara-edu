@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -45,9 +46,10 @@ const formSchema = z.object({
     quota: z.number().min(0),
     instructions: z.string().nullable(),
     batch: z.number().min(0),
+    tools: z.array(z.string()).optional(),
 });
 
-export default function CreateWebinar(categories: { categories: { id: string; name: string }[] }) {
+export default function CreateWebinar({ categories, tools }: { categories: { id: string; name: string }[]; tools: { id: string; name: string }[] }) {
     const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
     const [openStartCalendar, setOpenStartCalendar] = useState(false);
     const [openEndCalendar, setOpenEndCalendar] = useState(false);
@@ -82,7 +84,8 @@ export default function CreateWebinar(categories: { categories: { id: string; na
             price: 0,
             quota: 0,
             instructions: '',
-            batch: 0,
+            batch: 1,
+            tools: [],
         },
     });
 
@@ -138,7 +141,7 @@ export default function CreateWebinar(categories: { categories: { id: string; na
                                                         className={cn('justify-between', !field.value && 'text-muted-foreground')}
                                                     >
                                                         {field.value
-                                                            ? categories.categories.find((category) => category.id === field.value)?.name
+                                                            ? categories.find((category) => category.id === field.value)?.name
                                                             : 'Pilih kategori'}
                                                         <span className="sr-only">Pilih kategori</span>
                                                         <ChevronsUpDown className="opacity-50" />
@@ -151,7 +154,7 @@ export default function CreateWebinar(categories: { categories: { id: string; na
                                                     <CommandList>
                                                         <CommandEmpty>Tidak ada kategori ditemukan.</CommandEmpty>
                                                         <CommandGroup>
-                                                            {categories.categories.map((category) => (
+                                                            {categories.map((category) => (
                                                                 <CommandItem
                                                                     value={category.name}
                                                                     key={category.id}
@@ -174,6 +177,43 @@ export default function CreateWebinar(categories: { categories: { id: string; na
                                                 </Command>
                                             </PopoverContent>
                                         </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="tools"
+                                render={() => (
+                                    <FormItem>
+                                        <FormLabel>Tools yang Digunakan</FormLabel>
+                                        <div className="text-muted-foreground mb-2 text-sm">Pilih tools yang digunakan pada bootcamp ini.</div>
+                                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                                            {tools.map((tool) => (
+                                                <FormField
+                                                    key={tool.id}
+                                                    control={form.control}
+                                                    name="tools"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                                                            <FormControl>
+                                                                <Checkbox
+                                                                    checked={field.value?.includes(tool.id)}
+                                                                    onCheckedChange={(checked) => {
+                                                                        if (checked) {
+                                                                            field.onChange([...(field.value ?? []), tool.id]);
+                                                                        } else {
+                                                                            field.onChange(field.value?.filter((id: string) => id !== tool.id));
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </FormControl>
+                                                            <FormLabel className="text-sm font-normal">{tool.name}</FormLabel>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            ))}
+                                        </div>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -284,23 +324,6 @@ export default function CreateWebinar(categories: { categories: { id: string; na
                                         </FormControl>
 
                                         <FormDescription className="ms-1">Isi 0 untuk kuota tak terbatas</FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="instructions"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Instruksi Peserta</FormLabel>
-                                        <Textarea
-                                            {...field}
-                                            value={field.value ?? ''}
-                                            className="w-full rounded border p-2"
-                                            placeholder="Masukkan instruksi setelah peserta mendaftar"
-                                            autoComplete="off"
-                                        />
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -580,8 +603,27 @@ export default function CreateWebinar(categories: { categories: { id: string; na
                                     </FormItem>
                                 )}
                             />
+                            <FormField
+                                control={form.control}
+                                name="instructions"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Instruksi Peserta</FormLabel>
+                                        <Textarea
+                                            {...field}
+                                            value={field.value ?? ''}
+                                            className="w-full rounded border p-2"
+                                            placeholder="Masukkan instruksi setelah peserta mendaftar"
+                                            autoComplete="off"
+                                        />
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                         </div>
-                        <Button type="submit">Simpan Draft</Button>
+                        <Button type="submit" className="hover:cursor-pointer">
+                            Simpan Draft
+                        </Button>
                     </form>
                 </Form>
             </div>

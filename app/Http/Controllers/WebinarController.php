@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Tool;
 use App\Models\Webinar;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -22,7 +23,8 @@ class WebinarController extends Controller
     public function create()
     {
         $categories = Category::all();
-        return Inertia::render('admin/webinars/create', ['categories' => $categories]);
+        $tools = Tool::all();
+        return Inertia::render('admin/webinars/create', ['categories' => $categories, 'tools' => $tools]);
     }
 
     public function store(Request $request)
@@ -42,6 +44,7 @@ class WebinarController extends Controller
             'quota' => 'required|integer|min:0',
             'instructions' => 'nullable|string',
             'batch' => 'nullable|string|max:255',
+            'tools' => 'nullable|array',
         ]);
 
         $data = $request->all();
@@ -74,22 +77,27 @@ class WebinarController extends Controller
         $data['registration_url'] = url('/webinar/' . $slug . '/register');
         $data['status'] = 'draft';
 
-        Webinar::create($data);
+        $webinar = Webinar::create($data);
+
+        if ($request->has('tools') && is_array($request->tools)) {
+            $webinar->tools()->sync($request->tools);
+        }
 
         return redirect()->route('webinars.index')->with('success', 'Webinar berhasil dibuat.');
     }
 
     public function show(string $id)
     {
-        $webinar = Webinar::with(['category', 'user'])->findOrFail($id);
+        $webinar = Webinar::with(['category', 'user', 'tools'])->findOrFail($id);
         return Inertia::render('admin/webinars/show', ['webinar' => $webinar]);
     }
 
     public function edit(string $id)
     {
-        $webinar = Webinar::findOrFail($id);
+        $webinar = Webinar::with(['tools'])->findOrFail($id);
         $categories = Category::all();
-        return Inertia::render('admin/webinars/edit', ['webinar' => $webinar, 'categories' => $categories]);
+        $tools = Tool::all();
+        return Inertia::render('admin/webinars/edit', ['webinar' => $webinar, 'categories' => $categories, 'tools' => $tools]);
     }
 
     public function update(Request $request, string $id)
@@ -109,6 +117,7 @@ class WebinarController extends Controller
             'quota' => 'required|integer|min:0',
             'instructions' => 'nullable|string',
             'batch' => 'nullable|string|max:255',
+            'tools' => 'nullable|array',
         ]);
 
         $webinar = Webinar::findOrFail($id);
@@ -146,6 +155,10 @@ class WebinarController extends Controller
         $data['registration_url'] = url('/webinar/' . $slug . '/register');
 
         $webinar->update($data);
+
+        if ($request->has('tools') && is_array($request->tools)) {
+            $webinar->tools()->sync($request->tools);
+        }
 
         return redirect()->route('webinars.index')->with('success', 'Webinar berhasil diperbarui.');
     }
@@ -187,6 +200,10 @@ class WebinarController extends Controller
         $newWebinar->webinar_url = url('/webinar/' . $slug);
         $newWebinar->registration_url = url('/webinar/' . $slug . '/register');
         $newWebinar->save();
+
+        if ($webinar->tools && $webinar->tools->count() > 0) {
+            $newWebinar->tools()->sync($webinar->tools->pluck('id')->toArray());
+        }
 
         return redirect()->route('webinars.show', $newWebinar->id)
             ->with('success', 'Webinar berhasil diduplikasi. Silakan edit sebelum dipublikasikan.');

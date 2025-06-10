@@ -12,6 +12,7 @@ interface Bootcamp {
     title: string;
     category?: { name: string };
     schedules?: { day: string; start_time: string; end_time: string }[];
+    tools?: { name: string; description?: string | null; icon: string | null }[];
     batch?: string | null;
     price: number;
     quota: number;
@@ -166,6 +167,25 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                     </TableRow>
                 </TableBody>
             </Table>
+            <div className="mb-4">
+                <h3 className="font-semibold">Tools yang Digunakan:</h3>
+                {bootcamp.tools && bootcamp.tools.length > 0 ? (
+                    <div className="grid grid-cols-3 gap-4 md:grid-cols-4 lg:grid-cols-5">
+                        {bootcamp.tools.map((tool: { name: string; description?: string | null; icon: string | null }) => (
+                            <div key={tool.name}>
+                                <img
+                                    src={tool.icon ? `/storage/${tool.icon}` : '/assets/images/placeholder.png'}
+                                    alt="Tool Icon"
+                                    className="mx-auto my-1 mt-2 h-24 rounded border object-cover"
+                                />
+                                <h4 className="text-center text-sm font-medium">{tool.name}</h4>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <span className="text-muted-foreground text-sm">Belum ada tools yang ditentukan.</span>
+                )}
+            </div>
             <div>
                 <span className="font-semibold">Thumbnail:</span>
                 <img

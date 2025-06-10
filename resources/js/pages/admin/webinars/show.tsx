@@ -16,6 +16,7 @@ interface Webinar {
     id: string;
     title: string;
     category?: { name: string };
+    tools?: { name: string; description?: string | null; icon: string | null }[];
     batch?: string | null;
     price: number;
     quota: number;
