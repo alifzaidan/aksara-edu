@@ -44,7 +44,7 @@ export default function Mentors({ mentors, flash }: MentorProps) {
                 <div className="flex items-center justify-between">
                     <div className="space-y-1">
                         <h1 className="text-2xl font-semibold">Mentor</h1>
-                        <p className="text-muted-foreground text-sm">Daftar semua mentor Aksara Edu.</p>
+                        <p className="text-muted-foreground text-sm">Daftar semua mentor.</p>
                     </div>
                     <Dialog open={open} onOpenChange={setOpen}>
                         <DialogTrigger asChild>

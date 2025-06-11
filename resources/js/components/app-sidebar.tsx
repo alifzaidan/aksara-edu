@@ -28,7 +28,7 @@ const mainNavItems: NavItem[] = [
         icon: SquareMousePointer,
     },
     {
-        title: 'Kursus',
+        title: 'Kelas Online',
         href: '/admin/courses',
         icon: BookText,
     },

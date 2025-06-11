@@ -19,12 +19,12 @@ export default function CourseActions({ course }: { course: Course }) {
                     <Button variant="link" size="icon" className="size-8" asChild>
                         <Link href={route('courses.edit', course.id)}>
                             <Edit />
-                            <span className="sr-only">Edit</span>
+                            <span className="sr-only">Edit Kelas</span>
                         </Link>
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                    <p>Edit</p>
+                    <p>Edit Kelas</p>
                 </TooltipContent>
             </Tooltip>
             <Tooltip>
@@ -32,12 +32,12 @@ export default function CourseActions({ course }: { course: Course }) {
                     <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer" asChild>
                         <Link method="delete" href={route('courses.destroy', course.id)}>
                             <Trash />
-                            <span className="sr-only">Hapus</span>
+                            <span className="sr-only">Hapus Kelas</span>
                         </Link>
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                    <p>Hapus</p>
+                    <p>Hapus Kelas</p>
                 </TooltipContent>
             </Tooltip>
         </div>

@@ -40,7 +40,7 @@ export default function Webinars({ webinars, flash }: WebinarProps) {
                 <div className="flex items-center justify-between">
                     <div className="space-y-1">
                         <h1 className="text-2xl font-semibold">Webinar</h1>
-                        <p className="text-muted-foreground text-sm">Daftar semua webinar Aksara Edu.</p>
+                        <p className="text-muted-foreground text-sm">Daftar semua webinar.</p>
                     </div>
                     <Button asChild className="hover:cursor-pointer">
                         <Link href={route('webinars.create')}>

@@ -10,7 +10,7 @@ import { DataTable } from './data-table';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Kursus',
+        title: 'Kelas Online',
         href: 'admin/courses',
     },
 ];
@@ -35,16 +35,16 @@ export default function Courses({ courses, flash }: CourseProps) {
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
-            <Head title="Kursus" />
+            <Head title="Kelas Online" />
             <div className="px-4 py-4 md:px-6">
                 <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                        <h1 className="text-2xl font-semibold">Kursus</h1>
-                        <p className="text-muted-foreground text-sm">Daftar semua kursus Aksara Edu.</p>
+                        <h1 className="text-2xl font-semibold">Kelas Online</h1>
+                        <p className="text-muted-foreground text-sm">Daftar semua kelas online.</p>
                     </div>
                     <Button asChild className="hover:cursor-pointer">
                         <Link href={route('courses.create')}>
-                            Tambah Kursus
+                            Tambah Kelas
                             <Plus />
                         </Link>
                     </Button>

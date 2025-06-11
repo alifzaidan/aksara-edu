@@ -71,7 +71,7 @@ export default function BootcampScheduleInput({ value, onChange }: BootcampSched
                     </Button>
                 </div>
             ))}
-            <Button type="button" onClick={addSchedule} className="mt-1 block">
+            <Button type="button" onClick={addSchedule} className="mt-1 block hover:cursor-pointer">
                 <div className="flex items-center gap-2">
                     <Plus /> Tambah Jadwal
                 </div>

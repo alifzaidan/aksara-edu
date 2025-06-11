@@ -23,11 +23,11 @@ import { z } from 'zod';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Kursus',
+        title: 'Kelas',
         href: route('courses.index'),
     },
     {
-        title: 'Tambah Kursus Baru',
+        title: 'Tambah Kelas Baru',
         href: route('courses.create'),
     },
 ];
@@ -68,28 +68,28 @@ export default function CreateCourse(categories: { categories: { id: string; nam
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
-            <Head title="Tambah Kursus Baru" />
+            <Head title="Tambah Kelas Baru" />
             <div className="px-4 py-4 md:px-6">
-                <h1 className="text-2xl font-semibold">Tambah Kursus Baru</h1>
+                <h1 className="text-2xl font-semibold">Tambah Kelas Baru</h1>
                 <p className="text-muted-foreground mb-6 max-w-2xl text-sm">
-                    Silakan isi form di bawah ini untuk membuat kursus baru. Setelah selesai, klik tombol "Simpan Draft" untuk menyimpan kursus
-                    sebagai draft.
+                    Silakan isi form di bawah ini untuk membuat kelas baru. Setelah selesai, klik tombol "Simpan Draft" untuk menyimpan kelas sebagai
+                    draft.
                 </p>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
-                        <div className="space-y-6 rounded-lg border px-4 py-2">
+                        <div className="space-y-6 rounded-lg border p-4">
                             <div className="flex items-center gap-2">
                                 <BookMarked size={16} />
-                                <h3 className="font-medium">Detail Informasi Kursus</h3>
+                                <h3 className="font-medium">Detail Informasi Kelas</h3>
                             </div>
                             <FormField
                                 control={form.control}
                                 name="title"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Judul Kursus</FormLabel>
+                                        <FormLabel>Judul Kelas</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Masukkan judul kursus" {...field} autoComplete="off" />
+                                            <Input placeholder="Masukkan judul kelas" {...field} autoComplete="off" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -242,11 +242,11 @@ export default function CreateCourse(categories: { categories: { id: string; nam
                                 )}
                             />
                         </div>
-                        <div className="bg-secondary space-y-4 rounded-lg border px-4 py-2">
+                        <div className="space-y-4 rounded-lg border p-4">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <BookImage size={16} />
-                                    <h3 className="font-medium">Materi Kursus</h3>
+                                    <h3 className="font-medium">Materi Kelas</h3>
                                 </div>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -522,7 +522,9 @@ export default function CreateCourse(categories: { categories: { id: string; nam
                                 </ul>
                             </div>
                         </div>
-                        <Button type="submit">Simpan Draft</Button>
+                        <Button type="submit" className="hover:cursor-pointer">
+                            Simpan Draft
+                        </Button>
                     </form>
                 </Form>
             </div>

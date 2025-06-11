@@ -150,11 +150,11 @@ export default function EditTool({ tool, setOpen }: EditToolProps) {
                 </div>
                 <DialogFooter className="gap-2">
                     <DialogClose asChild>
-                        <Button variant="secondary" onClick={() => setOpen(false)}>
+                        <Button variant="secondary" onClick={() => setOpen(false)} className="hover:cursor-pointer">
                             Batal
                         </Button>
                     </DialogClose>
-                    <Button disabled={processing} asChild>
+                    <Button disabled={processing} asChild className="hover:cursor-pointer">
                         <button type="submit">Simpan Perubahan</button>
                     </Button>
                 </DialogFooter>
