@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Course;
+use App\Models\Tool;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class CourseController extends Controller
@@ -19,7 +21,8 @@ class CourseController extends Controller
     public function create()
     {
         $categories = Category::all();
-        return Inertia::render('admin/courses/create', ['categories' => $categories]);
+        $tools = Tool::all();
+        return Inertia::render('admin/courses/create', ['categories' => $categories, 'tools' => $tools]);
     }
 
     public function store(Request $request)
@@ -32,18 +35,48 @@ class CourseController extends Controller
             'thumbnail' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'price' => 'required|numeric|min:0',
             'level' => 'required|string|in:beginner,intermediate,advanced',
+            'sneak_peek_images' => 'nullable|array|max:4',
+            'sneak_peek_images.*' => 'image|mimes:jpeg,jpg,png|max:2048',
+            'tools' => 'nullable|array',
         ]);
 
-
-        $thumbnail = $request->file('thumbnail');
-        $thumbnailPath = $thumbnail->store('thumbnails', 'public');
-
         $data = $request->all();
-        $data['thumbnail'] = $thumbnailPath;
+        $slug = Str::slug($data['title']);
+        $originalSlug = $slug;
+        $counter = 1;
+        while (Course::where('slug', $slug)->exists()) {
+            $slug = $originalSlug . '-' . $counter++;
+        }
+        $data['slug'] = $slug;
+
+        if ($request->hasFile('thumbnail')) {
+            $thumbnail = $request->file('thumbnail');
+            $thumbnailPath = $thumbnail->store('thumbnails', 'public');
+            $data['thumbnail'] = $thumbnailPath;
+        } else {
+            $data['thumbnail'] = null;
+        }
         $data['user_id'] = $request->user()->id;
+        $data['course_url'] = url('/course/' . $slug);
+        $data['registration_url'] = url('/course/' . $slug . '/register');
         $data['status'] = 'draft';
 
-        Course::create($data);
+        $course = Course::create($data);
+
+        if ($request->has('tools') && is_array($request->tools)) {
+            $course->tools()->sync($request->tools);
+        }
+
+        if ($request->hasFile('sneak_peek_images')) {
+            foreach ($request->file('sneak_peek_images') as $idx => $image) {
+                if ($idx >= 4) break;
+                $path = $image->store('course_images', 'public');
+                $course->images()->create([
+                    'image_url' => $path,
+                    'order' => $idx,
+                ]);
+            }
+        }
 
         return redirect()->route('courses.index')->with('success', 'Kursus berhasil dibuat.');
     }

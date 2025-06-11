@@ -2,8 +2,9 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -23,7 +24,7 @@ import { z } from 'zod';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Kelas',
+        title: 'Kelas Online',
         href: route('courses.index'),
     },
     {
@@ -41,10 +42,14 @@ const formSchema = z.object({
     thumbnail: z.any().nullable(),
     price: z.number().min(0),
     level: z.enum(['beginner', 'intermediate', 'advanced']),
+    tools: z.array(z.string()).optional(),
 });
 
-export default function CreateCourse(categories: { categories: { id: string; name: string }[] }) {
+export default function CreateCourse({ categories, tools }: { categories: { id: string; name: string }[]; tools: { id: string; name: string }[] }) {
     const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
+    const [preview, setPreview] = useState<string | null>(null);
+    const [sneakPeekImages, setSneakPeekImages] = useState<File[]>([]);
+    const [sneakPeekPreviews, setSneakPeekPreviews] = useState<string[]>([]);
 
     const courseId = uuidv4();
 
@@ -59,12 +64,42 @@ export default function CreateCourse(categories: { categories: { id: string; nam
             thumbnail: '',
             price: 0,
             level: 'beginner',
+            tools: [],
         },
     });
 
     function onSubmit(values: z.infer<typeof formSchema>) {
-        router.post(route('courses.store'), values);
+        const formData = new FormData();
+
+        Object.entries(values).forEach(([key, value]) => {
+            if (key === 'thumbnail' && value) {
+                formData.append('thumbnail', value);
+            } else if (key !== 'thumbnail' && key !== 'sneak_peek_images') {
+                formData.append(key, value as string);
+            }
+        });
+
+        sneakPeekImages.forEach((file, idx) => {
+            formData.append(`sneak_peek_images[${idx}]`, file);
+        });
+
+        router.post(route('courses.store'), formData, { forceFormData: true });
     }
+
+    const handleSneakPeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files ?? []).slice(0, 4);
+        setSneakPeekImages(files);
+
+        // Preview
+        const readers = files.map((file) => {
+            return new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (ev) => resolve(ev.target?.result as string);
+                reader.readAsDataURL(file);
+            });
+        });
+        Promise.all(readers).then(setSneakPeekPreviews);
+    };
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
@@ -110,7 +145,7 @@ export default function CreateCourse(categories: { categories: { id: string; nam
                                                         className={cn('justify-between', !field.value && 'text-muted-foreground')}
                                                     >
                                                         {field.value
-                                                            ? categories.categories.find((category) => category.id === field.value)?.name
+                                                            ? categories.find((category) => category.id === field.value)?.name
                                                             : 'Pilih kategori'}
                                                         <span className="sr-only">Pilih kategori</span>
                                                         <ChevronsUpDown className="opacity-50" />
@@ -123,7 +158,7 @@ export default function CreateCourse(categories: { categories: { id: string; nam
                                                     <CommandList>
                                                         <CommandEmpty>Tidak ada kategori ditemukan.</CommandEmpty>
                                                         <CommandGroup>
-                                                            {categories.categories.map((category) => (
+                                                            {categories.map((category) => (
                                                                 <CommandItem
                                                                     value={category.name}
                                                                     key={category.id}
@@ -146,6 +181,43 @@ export default function CreateCourse(categories: { categories: { id: string; nam
                                                 </Command>
                                             </PopoverContent>
                                         </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="tools"
+                                render={() => (
+                                    <FormItem>
+                                        <FormLabel>Tools yang Digunakan</FormLabel>
+                                        <div className="text-muted-foreground mb-2 text-sm">Pilih tools yang digunakan pada bootcamp ini.</div>
+                                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                                            {tools.map((tool) => (
+                                                <FormField
+                                                    key={tool.id}
+                                                    control={form.control}
+                                                    name="tools"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                                                            <FormControl>
+                                                                <Checkbox
+                                                                    checked={field.value?.includes(tool.id)}
+                                                                    onCheckedChange={(checked) => {
+                                                                        if (checked) {
+                                                                            field.onChange([...(field.value ?? []), tool.id]);
+                                                                        } else {
+                                                                            field.onChange(field.value?.filter((id: string) => id !== tool.id));
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </FormControl>
+                                                            <FormLabel className="text-sm font-normal">{tool.name}</FormLabel>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            ))}
+                                        </div>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -186,11 +258,49 @@ export default function CreateCourse(categories: { categories: { id: string; nam
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Thumbnail (File Upload)</FormLabel>
-                                        <Input type="file" name={field.name} onChange={(e) => field.onChange(e.target.files?.[0] ?? null)} />
+                                        <img
+                                            src={preview || '/assets/images/placeholder.png'}
+                                            alt="Preview Thumbnail"
+                                            className="my-1 mt-2 h-40 w-64 rounded border object-cover"
+                                        />
+                                        <Input
+                                            type="file"
+                                            name={field.name}
+                                            accept="image/*"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0] ?? null;
+                                                field.onChange(file);
+                                                if (file) {
+                                                    const reader = new FileReader();
+                                                    reader.onload = (ev) => setPreview(ev.target?.result as string);
+                                                    reader.readAsDataURL(file);
+                                                } else {
+                                                    setPreview(null);
+                                                }
+                                            }}
+                                        />
+                                        <FormDescription className="ms-1">Upload Icon. Format: PNG atau JPG Max 2 Mb</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
+                            <FormItem>
+                                <FormLabel>Sneak Peek Kelas (Maksimal 4 gambar)</FormLabel>
+                                {sneakPeekPreviews.length > 0 && (
+                                    <div className="mb-2 flex flex-wrap gap-2">
+                                        {sneakPeekPreviews.map((src, idx) => (
+                                            <img
+                                                key={idx}
+                                                src={src}
+                                                alt={`Sneak Peek ${idx + 1}`}
+                                                className="h-24 w-24 rounded border object-cover"
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                                <Input type="file" accept="image/*" multiple onChange={handleSneakPeekChange} max={4} />
+                                <FormDescription className="ms-1">Upload hingga 4 gambar. Format: PNG/JPG, max 2MB per gambar.</FormDescription>
+                            </FormItem>
                             <FormField
                                 control={form.control}
                                 name="price"
@@ -221,19 +331,19 @@ export default function CreateCourse(categories: { categories: { id: string; nam
                                                     <FormControl>
                                                         <RadioGroupItem value="beginner" />
                                                     </FormControl>
-                                                    <FormLabel className="font-normal">Pemula</FormLabel>
+                                                    <FormLabel className="font-normal">Beginner</FormLabel>
                                                 </FormItem>
                                                 <FormItem className="flex items-center gap-3">
                                                     <FormControl>
                                                         <RadioGroupItem value="intermediate" />
                                                     </FormControl>
-                                                    <FormLabel className="font-normal">Menengah</FormLabel>
+                                                    <FormLabel className="font-normal">Intermediate</FormLabel>
                                                 </FormItem>
                                                 <FormItem className="flex items-center gap-3">
                                                     <FormControl>
                                                         <RadioGroupItem value="advanced" />
                                                     </FormControl>
-                                                    <FormLabel className="font-normal">Lanjutan</FormLabel>
+                                                    <FormLabel className="font-normal">Advanced</FormLabel>
                                                 </FormItem>
                                             </RadioGroup>
                                         </FormControl>

@@ -149,7 +149,12 @@ export const columns: ColumnDef<Webinar>[] = [
         accessorKey: 'status',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
         cell: ({ row }) => {
-            return <Badge className="capitalize">{row.original.status}</Badge>;
+            const status = row.original.status;
+            let color = 'bg-gray-200 text-gray-800';
+            if (status === 'draft') color = 'bg-gray-200 text-gray-800';
+            if (status === 'published') color = 'bg-blue-100 text-blue-800';
+            if (status === 'archived') color = 'bg-zinc-300 text-zinc-700';
+            return <Badge className={`capitalize ${color} border-0`}>{status}</Badge>;
         },
     },
     {

@@ -16,10 +16,13 @@ return new class extends Migration
             $table->foreignUuid('category_id')->constrained('categories')->onDelete('cascade');
             $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
             $table->string('title');
+            $table->string('slug')->unique();
             $table->text('short_description')->nullable();
             $table->text('description')->nullable();
             $table->string('thumbnail')->nullable();
             $table->bigInteger('price')->default(0);
+            $table->string('course_url')->nullable();
+            $table->string('registration_url')->nullable();
             $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->enum('level', ['beginner', 'intermediate', 'advanced'])->default('beginner');
             $table->timestamps();

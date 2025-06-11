@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { rupiahFormatter } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
@@ -109,7 +110,7 @@ export const columns: ColumnDef<Course>[] = [
         cell: ({ row }) => {
             const title = row.original.title;
             const thumbnail = row.original.thumbnail;
-            const thumbnailUrl = thumbnail ? `/storage/${thumbnail}` : '/placeholder.png';
+            const thumbnailUrl = thumbnail ? `/storage/${thumbnail}` : '/assets/images/placeholder.png';
             return <img src={thumbnailUrl} alt={title} className="h-16 w-16 rounded object-cover" />;
         },
     },
@@ -117,24 +118,41 @@ export const columns: ColumnDef<Course>[] = [
         accessorKey: 'level',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Level" />,
         cell: ({ row }) => {
-            return <Badge className="capitalize">{row.original.level}</Badge>;
-        },
-    },
-    {
-        accessorKey: 'status',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-        cell: ({ row }) => {
-            return <Badge className="capitalize">{row.original.status}</Badge>;
+            const level = row.original.level;
+            let color = 'bg-gray-200 text-gray-800';
+            if (level === 'beginner') color = 'bg-green-100 text-green-800';
+            if (level === 'intermediate') color = 'bg-yellow-100 text-yellow-800';
+            if (level === 'advanced') color = 'bg-red-100 text-red-800';
+            return <Badge className={`capitalize ${color} border-0`}>{level}</Badge>;
         },
     },
     {
         accessorKey: 'price',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
+        cell: ({ row }) => {
+            const amount = row.getValue<number>('price');
+            if (amount === 0) {
+                return <div>Gratis</div>;
+            }
+            return <div>{rupiahFormatter.format(amount)}</div>;
+        },
     },
     {
         accessorKey: 'created_at',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Tanggal Dibuat" />,
         cell: ({ row }) => <p>{row.original.created_at ? format(new Date(row.original.created_at), 'dd MMMM yyyy', { locale: id }) : '-'}</p>,
+    },
+    {
+        accessorKey: 'status',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+        cell: ({ row }) => {
+            const status = row.original.status;
+            let color = 'bg-gray-200 text-gray-800';
+            if (status === 'draft') color = 'bg-gray-200 text-gray-800';
+            if (status === 'published') color = 'bg-blue-100 text-blue-800';
+            if (status === 'archived') color = 'bg-zinc-300 text-zinc-700';
+            return <Badge className={`capitalize ${color} border-0`}>{status}</Badge>;
+        },
     },
     {
         id: 'actions',
