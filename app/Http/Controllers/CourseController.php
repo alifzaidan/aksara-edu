@@ -37,7 +37,6 @@ class CourseController extends Controller
             'level' => 'required|string|in:beginner,intermediate,advanced',
             'sneak_peek_images' => 'nullable|array|max:4',
             'sneak_peek_images.*' => 'image|mimes:jpeg,jpg,png|max:2048',
-            'tools' => 'nullable|array',
         ]);
 
         $data = $request->all();
@@ -75,6 +74,38 @@ class CourseController extends Controller
                     'image_url' => $path,
                     'order' => $idx,
                 ]);
+            }
+        }
+
+        if ($request->has('modules')) {
+            $modules = json_decode($request->input('modules'), true);
+            if (is_array($modules)) {
+                foreach ($modules as $modIdx => $mod) {
+                    $module = $course->modules()->create([
+                        'title' => $mod['title'],
+                        'description' => $mod['description'] ?? null,
+                        'order' => $modIdx,
+                    ]);
+                    if (isset($mod['lessons']) && is_array($mod['lessons'])) {
+                        foreach ($mod['lessons'] as $lessonIdx => $lesson) {
+                            $attachmentPath = null;
+                            $fileKey = "modules.{$modIdx}.lessons.{$lessonIdx}.attachment";
+                            if ($lesson['type'] === 'file' && $request->hasFile($fileKey)) {
+                                $attachmentPath = $request->file($fileKey)->store('lesson_attachments', 'public');
+                            }
+                            $module->lessons()->create([
+                                'title' => $lesson['title'],
+                                'description' => $lesson['description'] ?? null,
+                                'type' => $lesson['type'],
+                                'content' => $lesson['content'] ?? null,
+                                'video_url' => $lesson['type'] === 'video' ? ($lesson['video_url'] ?? null) : null,
+                                'attachment' => $attachmentPath,
+                                'is_free' => $lesson['isFree'] ?? false,
+                                'order' => $lessonIdx,
+                            ]);
+                        }
+                    }
+                }
             }
         }
 

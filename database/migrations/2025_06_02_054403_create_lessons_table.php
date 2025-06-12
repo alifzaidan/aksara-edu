@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('title');
             $table->text('description')->nullable();
             $table->enum('type', ['text', 'video', 'file', 'quiz'])->default('text');
-            $table->text('video')->nullable();
+            $table->text('video_url')->nullable();
             $table->text('content')->nullable();
             $table->text('attachment')->nullable();
             $table->integer('duration')->default(0);
