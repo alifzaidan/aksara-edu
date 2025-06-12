@@ -74,9 +74,14 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                     <TableRow>
                         <TableCell>Status</TableCell>
                         <TableCell>
-                            <Badge variant={bootcamp.status === 'active' ? 'default' : 'outline'} className="capitalize">
-                                {bootcamp.status}
-                            </Badge>
+                            {(() => {
+                                const status = bootcamp.status;
+                                let color = 'bg-gray-200 text-gray-800';
+                                if (status === 'draft') color = 'bg-gray-200 text-gray-800';
+                                if (status === 'published') color = 'bg-blue-100 text-blue-800';
+                                if (status === 'archived') color = 'bg-zinc-300 text-zinc-700';
+                                return <Badge className={`capitalize ${color} border-0`}>{status}</Badge>;
+                            })()}
                         </TableCell>
                     </TableRow>
                     <TableRow>

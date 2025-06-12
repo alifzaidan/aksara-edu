@@ -57,7 +57,7 @@ class CourseController extends Controller
         }
         $data['user_id'] = $request->user()->id;
         $data['course_url'] = url('/course/' . $slug);
-        $data['registration_url'] = url('/course/' . $slug . '/register');
+        $data['registration_url'] = url('/course/' . $slug . '/checkout');
         $data['status'] = 'draft';
 
         $course = Course::create($data);
@@ -112,10 +112,18 @@ class CourseController extends Controller
         return redirect()->route('courses.index')->with('success', 'Kursus berhasil dibuat.');
     }
 
+    public function show(string $id)
+    {
+        $course = Course::with(['category', 'user', 'tools', 'images', 'modules.lessons'])->findOrFail($id);
+        return Inertia::render('admin/courses/show', ['course' => $course]);
+    }
+
     public function edit(string $id)
     {
-        $course = Course::findOrFail($id);
-        return Inertia::render('admin/courses/edit', ['course' => $course]);
+        $course = Course::with(['tools', 'images', 'modules.lessons'])->findOrFail($id);
+        $categories = Category::all();
+        $tools = Tool::all();
+        return Inertia::render('admin/courses/edit', ['course' => $course, 'categories' => $categories, 'tools' => $tools]);
     }
 
     public function update(Request $request, string $id)
@@ -153,5 +161,98 @@ class CourseController extends Controller
         $course = Course::findOrFail($id);
         $course->delete();
         return redirect()->route('courses.index')->with('success', 'Kursus berhasil dihapus.');
+    }
+
+    public function duplicate(string $id)
+    {
+        $course = Course::with(['tools', 'modules.lessons'])->findOrFail($id);
+
+        $newCourse = $course->replicate();
+        // Duplicate thumbnail if exists
+        if ($course->thumbnail && Storage::disk('public')->exists($course->thumbnail)) {
+            $originalPath = $course->thumbnail;
+            $extension = pathinfo($originalPath, PATHINFO_EXTENSION);
+            $newFileName = 'thumbnails/' . uniqid('copy_') . '.' . $extension;
+            Storage::disk('public')->copy($originalPath, $newFileName);
+            $newCourse->thumbnail = $newFileName;
+        } else {
+            $newCourse->thumbnail = null;
+        }
+
+        // Generate unique slug
+        $slug = Str::slug($newCourse->title);
+        $originalSlug = $slug;
+        $counter = 1;
+        while (Course::where('slug', $slug)->exists()) {
+            $slug = $originalSlug . '-' . $counter++;
+        }
+        $newCourse->slug = $slug;
+        $newCourse->status = 'draft';
+        $newCourse->course_url = url('/course/' . $slug);
+        $newCourse->registration_url = url('/course/' . $slug . '/checkout');
+        $newCourse->save();
+
+        // Duplicate course images
+        if ($course->images && $course->images->count() > 0) {
+            foreach ($course->images as $image) {
+                $newImagePath = null;
+                if ($image->image_url && Storage::disk('public')->exists($image->image_url)) {
+                    $ext = pathinfo($image->image_url, PATHINFO_EXTENSION);
+                    $newImagePath = 'course_images/' . uniqid('copy_') . '.' . $ext;
+                    Storage::disk('public')->copy($image->image_url, $newImagePath);
+                }
+                $newCourse->images()->create([
+                    'image_url' => $newImagePath,
+                    'order' => $image->order,
+                ]);
+            }
+        }
+
+        // Duplicate tools
+        if ($course->tools && $course->tools->count() > 0) {
+            $newCourse->tools()->sync($course->tools->pluck('id')->toArray());
+        }
+
+        // Duplicate modules and lessons
+        foreach ($course->modules as $module) {
+            $newModule = $module->replicate();
+            $newModule->course_id = $newCourse->id;
+            $newModule->save();
+
+            foreach ($module->lessons as $lesson) {
+                $newLesson = $lesson->replicate();
+                $newLesson->module_id = $newModule->id;
+                // Duplicate attachment if exists
+                if ($lesson->attachment && Storage::disk('public')->exists($lesson->attachment)) {
+                    $originalAttachment = $lesson->attachment;
+                    $ext = pathinfo($originalAttachment, PATHINFO_EXTENSION);
+                    $newAttachment = 'lesson_attachments/' . uniqid('copy_') . '.' . $ext;
+                    Storage::disk('public')->copy($originalAttachment, $newAttachment);
+                    $newLesson->attachment = $newAttachment;
+                }
+                $newLesson->save();
+            }
+        }
+
+        return redirect()->route('courses.show', $newCourse->id)
+            ->with('success', 'Kelas berhasil diduplikasi. Silakan edit sebelum dipublikasikan.');
+    }
+
+    public function publish(string $id)
+    {
+        $course = Course::findOrFail($id);
+        $course->status = 'published';
+        $course->save();
+
+        return back()->with('success', 'Kelas berhasil dipublikasikan.');
+    }
+
+    public function archive(string $id)
+    {
+        $course = Course::findOrFail($id);
+        $course->status = 'archived';
+        $course->save();
+
+        return back()->with('success', 'Kelas berhasil diarsipkan.');
     }
 }

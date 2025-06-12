@@ -71,9 +71,14 @@ export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
                     <TableRow>
                         <TableCell>Status</TableCell>
                         <TableCell>
-                            <Badge variant={webinar.status === 'active' ? 'default' : 'outline'} className="capitalize">
-                                {webinar.status}
-                            </Badge>
+                            {(() => {
+                                const status = webinar.status;
+                                let color = 'bg-gray-200 text-gray-800';
+                                if (status === 'draft') color = 'bg-gray-200 text-gray-800';
+                                if (status === 'published') color = 'bg-blue-100 text-blue-800';
+                                if (status === 'archived') color = 'bg-zinc-300 text-zinc-700';
+                                return <Badge className={`capitalize ${color} border-0`}>{status}</Badge>;
+                            })()}
                         </TableCell>
                     </TableRow>
                     <TableRow>
@@ -86,7 +91,7 @@ export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
                     </TableRow>
                     <TableRow>
                         <TableCell>Harga</TableCell>
-                        <TableCell>{webinar.price === 0 ? 'Gratis' : `Rp${webinar.price.toLocaleString('id-ID')}`}</TableCell>
+                        <TableCell>{webinar.price === 0 ? 'Gratis' : `Rp ${webinar.price.toLocaleString('id-ID')}`}</TableCell>
                     </TableRow>
                     <TableRow>
                         <TableCell>Deskripsi</TableCell>

@@ -5,6 +5,7 @@ use App\Http\Controllers\BootcampController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\MentorController;
+use App\Http\Controllers\QuizController;
 use App\Http\Controllers\ToolController;
 use App\Http\Controllers\WebinarController;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('admin/tools', ToolController::class);
         Route::post('/admin/tools/{id}', [ToolController::class, 'update'])->name('tools.update');
         Route::resource('admin/courses', CourseController::class);
+        Route::post('/admin/courses/{course}/publish', [CourseController::class, 'publish'])->name('courses.publish');
+        Route::post('/admin/courses/{course}/archive', [CourseController::class, 'archive'])->name('courses.archive');
+        Route::post('/admin/courses/{course}/duplicate', [CourseController::class, 'duplicate'])->name('courses.duplicate');
+        Route::get('/admin/quizzes/{lesson}', [QuizController::class, 'show'])->name('quizzes.show');
         Route::resource('admin/webinars', WebinarController::class);
         Route::post('/admin/webinars/{webinar}/publish', [WebinarController::class, 'publish'])->name('webinars.publish');
         Route::post('/admin/webinars/{webinar}/archive', [WebinarController::class, 'archive'])->name('webinars.archive');

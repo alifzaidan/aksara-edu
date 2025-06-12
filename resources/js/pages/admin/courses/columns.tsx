@@ -10,7 +10,7 @@ import { Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Edit, Trash } from 'lucide-react';
+import { Folder, Trash } from 'lucide-react';
 
 export default function CourseActions({ course }: { course: Course }) {
     return (
@@ -18,14 +18,14 @@ export default function CourseActions({ course }: { course: Course }) {
             <Tooltip>
                 <TooltipTrigger asChild>
                     <Button variant="link" size="icon" className="size-8" asChild>
-                        <Link href={route('courses.edit', course.id)}>
-                            <Edit />
-                            <span className="sr-only">Edit Kelas</span>
+                        <Link href={route('courses.show', course.id)}>
+                            <Folder />
+                            <span className="sr-only">Detail Kelas</span>
                         </Link>
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                    <p>Edit Kelas</p>
+                    <p>Lihat Kelas</p>
                 </TooltipContent>
             </Tooltip>
             <Tooltip>
