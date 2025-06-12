@@ -78,7 +78,9 @@ export default function CreateCourse({ categories, tools }: { categories: { id: 
         Object.entries(values).forEach(([key, value]) => {
             if (key === 'thumbnail' && value) {
                 formData.append('thumbnail', value);
-            } else if (key !== 'thumbnail' && key !== 'sneak_peek_images') {
+            } else if (key === 'tools' && Array.isArray(value)) {
+                value.forEach((toolId) => formData.append('tools[]', toolId));
+            } else if (key !== 'thumbnail' && key !== 'sneak_peek_images' && key !== 'tools') {
                 formData.append(key, value as string);
             }
         });

@@ -39,7 +39,7 @@ export default function CourseModulesSection({ modules, setModules }: CourseModu
     const [editOpen, setEditOpen] = useState(false);
     const [editIdx, setEditIdx] = useState<number | null>(null);
     const [lessonOpenIdx, setLessonOpenIdx] = useState<number | null>(null);
-    const [editLessonOpenIdx, setEditLessonOpenIdx] = useState<number | null>(null);
+    const [editLessonOpen, setEditLessonOpen] = useState<{ modIdx: number; lessonIdx: number } | null>(null);
 
     const handleAddModule = (module: Module) => {
         setModules([...modules, module]);
@@ -77,7 +77,7 @@ export default function CourseModulesSection({ modules, setModules }: CourseModu
             updated[modIdx].lessons![lessonIdx] = lesson;
             setModules(updated);
         }
-        setEditLessonOpenIdx(null);
+        setEditLessonOpen(null);
     };
 
     const handleRemoveLesson = (idx: number, lessonIdx: number) => {
@@ -188,9 +188,9 @@ export default function CourseModulesSection({ modules, setModules }: CourseModu
                                                         </TooltipContent>
                                                     </Tooltip>
                                                     <Dialog
-                                                        open={editLessonOpenIdx === lidx && lessonOpenIdx === null}
+                                                        open={editLessonOpen?.modIdx === idx && editLessonOpen?.lessonIdx === lidx}
                                                         onOpenChange={(v) => {
-                                                            if (!v) setEditLessonOpenIdx(null);
+                                                            if (!v) setEditLessonOpen(null);
                                                         }}
                                                     >
                                                         <Tooltip>
@@ -199,7 +199,7 @@ export default function CourseModulesSection({ modules, setModules }: CourseModu
                                                                     variant="link"
                                                                     size="icon"
                                                                     className="size-8 hover:cursor-pointer"
-                                                                    onClick={() => setEditLessonOpenIdx(lidx)}
+                                                                    onClick={() => setEditLessonOpen({ modIdx: idx, lessonIdx: lidx })}
                                                                 >
                                                                     <Edit />
                                                                     <span className="sr-only">Edit Materi</span>
@@ -209,10 +209,10 @@ export default function CourseModulesSection({ modules, setModules }: CourseModu
                                                                 <p>Edit Materi</p>
                                                             </TooltipContent>
                                                         </Tooltip>
-                                                        {editLessonOpenIdx === lidx && (
+                                                        {editLessonOpen?.modIdx === idx && editLessonOpen?.lessonIdx === lidx && (
                                                             <EditLesson
                                                                 setOpen={(v: boolean) => {
-                                                                    if (!v) setEditLessonOpenIdx(null);
+                                                                    if (!v) setEditLessonOpen(null);
                                                                 }}
                                                                 onEdit={(lesson: Lesson) => handleEditLesson(idx, lidx, lesson)}
                                                                 lesson={lesson}
