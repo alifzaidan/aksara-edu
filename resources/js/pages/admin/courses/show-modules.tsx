@@ -1,7 +1,8 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Link } from '@inertiajs/react';
-import { File, FileText, HelpCircle, Video } from 'lucide-react';
+import { BadgeCheck, File, FileText, HelpCircle, Lock, Video } from 'lucide-react';
 import { useState } from 'react';
 
 interface Lesson {
@@ -12,6 +13,7 @@ interface Lesson {
     content?: string | null;
     attachment?: string | null;
     video_url?: string | null;
+    is_free?: boolean;
 }
 
 interface Module {
@@ -69,75 +71,122 @@ export default function ShowModules({ modules }: { modules?: Module[] }) {
                                                 {lesson.type === 'quiz' && <HelpCircle className="mt-1 h-4 w-4 text-yellow-500" />}
                                                 <div className="flex w-full justify-between">
                                                     <div>
-                                                        <div className="font-medium">{lesson.title}</div>
+                                                        {lesson.type === 'text' && (
+                                                            <div className="mt-1">
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={!lesson.content}
+                                                                    onClick={() =>
+                                                                        lesson.content &&
+                                                                        handlePreview(
+                                                                            'text',
+                                                                            lesson.content || undefined,
+                                                                            lesson.title,
+                                                                            lesson.description || null,
+                                                                        )
+                                                                    }
+                                                                    className={
+                                                                        'font-medium hover:underline ' +
+                                                                        (lesson.content
+                                                                            ? 'hover:cursor-pointer hover:text-blue-500'
+                                                                            : 'cursor-not-allowed text-gray-400')
+                                                                    }
+                                                                >
+                                                                    {lesson.title}
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                        {lesson.type === 'file' && (
+                                                            <div className="mt-1">
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={!lesson.attachment}
+                                                                    onClick={() =>
+                                                                        lesson.attachment &&
+                                                                        handlePreview(
+                                                                            'file',
+                                                                            `/storage/${lesson.attachment}`,
+                                                                            lesson.title,
+                                                                            lesson.description || null,
+                                                                        )
+                                                                    }
+                                                                    className={
+                                                                        'font-medium hover:underline ' +
+                                                                        (lesson.attachment
+                                                                            ? 'hover:cursor-pointer hover:text-green-500'
+                                                                            : 'cursor-not-allowed text-gray-400')
+                                                                    }
+                                                                >
+                                                                    {lesson.title}
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                        {lesson.type === 'video' && (
+                                                            <div className="mt-1">
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={!lesson.video_url}
+                                                                    onClick={() =>
+                                                                        lesson.video_url &&
+                                                                        handlePreview(
+                                                                            'video',
+                                                                            lesson.video_url!,
+                                                                            lesson.title,
+                                                                            lesson.description || null,
+                                                                        )
+                                                                    }
+                                                                    className={
+                                                                        'font-medium hover:underline ' +
+                                                                        (lesson.video_url
+                                                                            ? 'hover:cursor-pointer hover:text-red-500'
+                                                                            : 'cursor-not-allowed text-gray-400')
+                                                                    }
+                                                                >
+                                                                    {lesson.title}
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                        {lesson.type === 'quiz' && (
+                                                            <div className="mt-1">
+                                                                {lesson.id ? (
+                                                                    <Link
+                                                                        href={route('quizzes.show', { lesson: lesson.id })}
+                                                                        className="font-medium hover:cursor-pointer hover:text-yellow-500 hover:underline"
+                                                                    >
+                                                                        {lesson.title}
+                                                                    </Link>
+                                                                ) : (
+                                                                    <span className="cursor-not-allowed font-medium text-gray-400">
+                                                                        {lesson.title}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                         {lesson.description && (
                                                             <div className="text-muted-foreground text-xs">{lesson.description}</div>
                                                         )}
                                                     </div>
-                                                    {lesson.type === 'text' && lesson.content && (
-                                                        <div className="mt-1">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    handlePreview(
-                                                                        'text',
-                                                                        lesson.content || undefined,
-                                                                        lesson.title,
-                                                                        lesson.description || null,
-                                                                    )
-                                                                }
-                                                                className="text-xs text-blue-600 underline hover:cursor-pointer hover:text-blue-400"
-                                                            >
-                                                                Lihat Materi Teks
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                    {lesson.type === 'file' && lesson.attachment && (
-                                                        <div className="mt-1">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    handlePreview(
-                                                                        'file',
-                                                                        `/storage/${lesson.attachment}`,
-                                                                        lesson.title,
-                                                                        lesson.description || null,
-                                                                    )
-                                                                }
-                                                                className="text-xs text-blue-600 underline hover:cursor-pointer hover:text-blue-400"
-                                                            >
-                                                                Lihat File Materi
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                    {lesson.type === 'video' && lesson.video_url && (
-                                                        <div className="mt-1">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    handlePreview(
-                                                                        'video',
-                                                                        lesson.video_url!,
-                                                                        lesson.title,
-                                                                        lesson.description || null,
-                                                                    )
-                                                                }
-                                                                className="text-xs text-blue-600 underline hover:cursor-pointer hover:text-blue-400"
-                                                            >
-                                                                Lihat Video
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                    {lesson.type === 'quiz' && (
-                                                        <div className="mt-1">
-                                                            <Link
-                                                                href={route('quizzes.show', { lesson: lesson.id })}
-                                                                className="text-xs text-blue-600 underline hover:cursor-pointer hover:text-blue-400"
-                                                            >
-                                                                Lihat Quiz
-                                                            </Link>
-                                                        </div>
-                                                    )}
+                                                    <div>
+                                                        {lesson.is_free ? (
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <BadgeCheck size="14" className="hover:text-green-500" />
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    <p>Materi Gratis</p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        ) : (
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Lock size="14" className="hover:text-red-500" />
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    <p>Materi Berbayar</p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </li>
                                         ))}

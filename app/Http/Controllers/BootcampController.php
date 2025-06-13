@@ -194,7 +194,7 @@ class BootcampController extends Controller
             $bootcamp->tools()->sync($request->tools);
         }
 
-        return redirect()->route('bootcamps.index')->with('success', 'Bootcamp berhasil diperbarui.');
+        return redirect()->route('bootcamps.show', $bootcamp->id)->with('success', 'Bootcamp berhasil diperbarui.');
     }
 
     public function destroy(string $id)

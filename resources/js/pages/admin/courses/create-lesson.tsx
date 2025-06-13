@@ -12,7 +12,7 @@ interface Lesson {
     title: string;
     type: 'text' | 'video' | 'file' | 'quiz';
     description?: string;
-    isFree: boolean;
+    is_free: boolean;
     content?: string;
     video_url?: string;
     attachment?: File | null;
@@ -51,7 +51,7 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
             title,
             type,
             description,
-            isFree,
+            is_free: isFree,
             content: type === 'text' ? content : undefined,
             video_url: type === 'video' ? videoUrl : undefined,
             attachment: type === 'file' ? attachment : undefined,

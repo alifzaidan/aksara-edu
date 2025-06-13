@@ -65,7 +65,7 @@ interface Lesson {
     title: string;
     type: 'text' | 'video' | 'file' | 'quiz';
     description?: string;
-    isFree: boolean;
+    is_free: boolean;
     content?: string;
     video?: File | null;
     attachment?: File | null;
@@ -89,8 +89,7 @@ export default function EditCourse({ course, categories, tools }: EditCourseProp
             ...mod,
             lessons: mod.lessons?.map((lesson: Lesson) => ({
                 ...lesson,
-                isFree: lesson.isFree,
-                attachment: null,
+                is_free: lesson.is_free,
             })),
         })) || [],
     );
@@ -152,8 +151,10 @@ export default function EditCourse({ course, categories, tools }: EditCourseProp
         const modulesWithoutAttachment = modules.map((mod) => ({
             ...mod,
             lessons: mod.lessons?.map((lesson: Lesson) => {
-                const { ...rest } = lesson;
-                return rest;
+                return {
+                    ...lesson,
+                    ...(lesson.type === 'file' && !(lesson.attachment instanceof File) ? { attachment: lesson.attachment } : {}),
+                };
             }),
         }));
         formData.append('modules', JSON.stringify(modulesWithoutAttachment));

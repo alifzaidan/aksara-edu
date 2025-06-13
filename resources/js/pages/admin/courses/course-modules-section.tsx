@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { BookImage, Edit, Folder, Plus, PlusCircle, Trash } from 'lucide-react';
+import { BadgeCheck, BookImage, Edit, Lock, Plus, PlusCircle, Trash } from 'lucide-react';
 import { useState } from 'react';
 import CreateLesson from './create-lesson';
 import CreateModule from './create-module';
@@ -14,7 +14,7 @@ interface Lesson {
     title: string;
     type: 'text' | 'video' | 'file' | 'quiz';
     description?: string;
-    isFree: boolean;
+    is_free: boolean;
     content?: string;
     video?: File | null;
     attachment?: File | null;
@@ -173,20 +173,30 @@ export default function CourseModulesSection({ modules, setModules }: CourseModu
                                     <div className="mt-2 space-y-2">
                                         {mod.lessons.map((lesson, lidx) => (
                                             <div key={lidx} className="flex items-center justify-between">
-                                                <span className="text-sm">{lesson.title}</span>
+                                                <div className="flex items-center gap-2">
+                                                    {lesson.is_free ? (
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <BadgeCheck size="14" className="hover:text-green-500" />
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>Materi Gratis</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    ) : (
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Lock size="14" className="hover:text-red-500" />
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>Materi Berbayar</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    )}
+                                                    <h4 className="text-sm">{lesson.title}</h4>
+                                                </div>
                                                 <div className="flex items-center justify-center">
                                                     <Badge className="mr-2">{lesson.type.charAt(0).toUpperCase() + lesson.type.slice(1)}</Badge>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <Button variant="link" size="icon" className="size-8 hover:cursor-pointer">
-                                                                <Folder />
-                                                                <span className="sr-only">Lihat Materi</span>
-                                                            </Button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>
-                                                            <p>Lihat Materi</p>
-                                                        </TooltipContent>
-                                                    </Tooltip>
                                                     <Dialog
                                                         open={editLessonOpen?.modIdx === idx && editLessonOpen?.lessonIdx === lidx}
                                                         onOpenChange={(v) => {

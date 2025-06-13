@@ -34,7 +34,7 @@ interface Lesson {
     title: string;
     type: 'text' | 'video' | 'file' | 'quiz';
     description?: string;
-    isFree: boolean;
+    is_free: boolean;
     content?: string;
     video?: File | null;
     attachment?: File | null;

@@ -12,7 +12,7 @@ interface Lesson {
     title: string;
     type: 'text' | 'video' | 'file' | 'quiz';
     description?: string;
-    isFree: boolean;
+    is_free: boolean;
     content?: string;
     video_url?: string;
     attachment?: File | null;
@@ -34,7 +34,7 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
     const [title, setTitle] = useState(lesson.title);
     const [type, setType] = useState<Lesson['type']>(lesson.type);
     const [description, setDescription] = useState(lesson.description ?? '');
-    const [isFree, setIsFree] = useState(lesson.isFree ?? false);
+    const [isFree, setIsFree] = useState(lesson.is_free ?? false);
     const [content, setContent] = useState(lesson.content ?? '');
     const [video, setVideo] = useState<string>(lesson.video_url ?? '');
     const [attachment, setAttachment] = useState<File | null>(lesson.attachment ?? null);
@@ -45,7 +45,7 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
         setTitle(lesson.title);
         setType(lesson.type);
         setDescription(lesson.description ?? '');
-        setIsFree(lesson.isFree ?? false);
+        setIsFree(lesson.is_free ?? false);
         setContent(lesson.content ?? '');
         setVideo(lesson.video_url ?? '');
         setAttachment(lesson.attachment ?? null);
@@ -63,10 +63,10 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
             title,
             type,
             description,
-            isFree,
+            is_free: isFree,
             content: type === 'text' ? content : undefined,
             video_url: type === 'video' ? video : undefined,
-            attachment: type === 'file' ? attachment : undefined,
+            attachment: type === 'file' ? (attachment ?? lesson.attachment) : undefined,
         });
     };
 
@@ -205,32 +205,49 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
                                 onChange={(e) => setAttachment(e.target.files?.[0] ?? null)}
                             />
                             {/* Preview PDF */}
-                            {attachment && (
-                                <div className="mt-2 rounded border p-2">
-                                    <div className="mb-2 flex items-center gap-2 text-xs">
-                                        <span className="font-medium">File:</span>
-                                        <span>{attachment.name}</span>
-                                        <span>({Math.round(attachment.size / 1024)} KB)</span>
-                                        <a
-                                            href={URL.createObjectURL(attachment)}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="ml-auto rounded bg-black/60 px-2 py-1 text-xs text-white hover:bg-black/80"
-                                            title="Tampilkan Fullscreen"
-                                        >
-                                            Fullscreen
-                                        </a>
-                                    </div>
-                                    <object data={URL.createObjectURL(attachment)} type="application/pdf" width="100%" height="200px">
-                                        <p>
-                                            Preview tidak tersedia.{' '}
-                                            <a href={URL.createObjectURL(attachment)} target="_blank" rel="noopener noreferrer">
-                                                Download PDF
-                                            </a>
-                                        </p>
-                                    </object>
-                                </div>
-                            )}
+                            {(() => {
+                                let preview: { type: 'file'; url: string } | null = null;
+                                if (attachment instanceof File) {
+                                    preview = { type: 'file', url: URL.createObjectURL(attachment) };
+                                } else if (typeof attachment === 'string' && attachment) {
+                                    preview = {
+                                        type: 'file',
+                                        url: (attachment as string).startsWith('http') ? attachment : `/storage/${attachment}`,
+                                    };
+                                }
+                                return (
+                                    preview?.type === 'file' &&
+                                    preview.url && (
+                                        <div className="mt-2 w-full rounded border p-2">
+                                            <div className="mt-2 flex items-center gap-2 text-xs">
+                                                <a
+                                                    href={preview.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="mb-2 rounded bg-black/60 px-2 py-1 text-xs text-white hover:bg-black/80"
+                                                    title="Tampilkan Fullscreen"
+                                                >
+                                                    {attachment instanceof File ? 'Fullscreen' : 'Lihat File Lama'}
+                                                </a>
+                                                {attachment instanceof File && (
+                                                    <>
+                                                        <span>{attachment.name}</span>
+                                                        <span>({Math.round(attachment.size / 1024)} KB)</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                            <object data={preview.url} type="application/pdf" width="100%" height="200px">
+                                                <p>
+                                                    Preview tidak tersedia.{' '}
+                                                    <a href={preview.url} target="_blank" rel="noopener noreferrer">
+                                                        Download PDF
+                                                    </a>
+                                                </p>
+                                            </object>
+                                        </div>
+                                    )
+                                );
+                            })()}
                         </div>
                     )}
                     {/* type === 'quiz' tidak ada input tambahan */}

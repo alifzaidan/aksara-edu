@@ -160,7 +160,7 @@ class WebinarController extends Controller
             $webinar->tools()->sync($request->tools);
         }
 
-        return redirect()->route('webinars.index')->with('success', 'Webinar berhasil diperbarui.');
+        return redirect()->route('webinars.show', $webinar->id)->with('success', 'Webinar berhasil diperbarui.');
     }
 
     public function destroy(string $id)

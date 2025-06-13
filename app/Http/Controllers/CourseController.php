@@ -102,7 +102,7 @@ class CourseController extends Controller
                                 'content' => $lesson['content'] ?? null,
                                 'video_url' => $lesson['type'] === 'video' ? ($lesson['video_url'] ?? null) : null,
                                 'attachment' => $attachmentPath,
-                                'is_free' => $lesson['isFree'] ?? false,
+                                'is_free' => $lesson['is_free'] ?? false,
                                 'order' => $lessonIdx,
                             ]);
                         }
@@ -224,8 +224,12 @@ class CourseController extends Controller
                         foreach ($mod['lessons'] as $lessonIdx => $lesson) {
                             $attachmentPath = null;
                             $fileKey = "modules.{$modIdx}.lessons.{$lessonIdx}.attachment";
-                            if ($lesson['type'] === 'file' && $request->hasFile($fileKey)) {
-                                $attachmentPath = $request->file($fileKey)->store('lesson_attachments', 'public');
+                            if ($lesson['type'] === 'file') {
+                                if ($request->hasFile($fileKey)) {
+                                    $attachmentPath = $request->file($fileKey)->store('lesson_attachments', 'public');
+                                } elseif (!empty($lesson['attachment'])) {
+                                    $attachmentPath = $lesson['attachment'];
+                                }
                             }
                             $module->lessons()->create([
                                 'title' => $lesson['title'],
@@ -234,7 +238,7 @@ class CourseController extends Controller
                                 'content' => $lesson['content'] ?? null,
                                 'video_url' => $lesson['type'] === 'video' ? ($lesson['video_url'] ?? null) : null,
                                 'attachment' => $attachmentPath,
-                                'is_free' => $lesson['isFree'] ?? false,
+                                'is_free' => $lesson['is_free'] ?? false,
                                 'order' => $lessonIdx,
                             ]);
                         }
@@ -243,7 +247,7 @@ class CourseController extends Controller
             }
         }
 
-        return redirect()->route('courses.index')->with('success', 'Kursus berhasil diperbarui.');
+        return redirect()->route('courses.show', $course->id)->with('success', 'Kursus berhasil diperbarui.');
     }
 
     public function destroy(string $id)
