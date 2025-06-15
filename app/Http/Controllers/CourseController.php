@@ -112,8 +112,6 @@ class CourseController extends Controller
                                     'instructions' => $quizData['instructions'] ?? null,
                                     'time_limit' => $quizData['time_limit'] ?? 0,
                                     'passing_score' => $quizData['passing_score'] ?? 0,
-                                    'status' => 'draft',
-                                    'order' => 0,
                                 ]);
                             }
                         }
@@ -212,56 +210,95 @@ class CourseController extends Controller
         if ($request->has('modules')) {
             $modules = json_decode($request->input('modules'), true);
 
-            // Remove old modules & lessons
-            foreach ($course->modules as $mod) {
-                foreach ($mod->lessons as $lesson) {
-                    if ($lesson->attachment) {
-                        Storage::disk('public')->delete($lesson->attachment);
-                    }
-                    $lesson->delete();
-                }
-                $mod->delete();
-            }
-
-            // Create new modules & lessons
             if (is_array($modules)) {
                 foreach ($modules as $modIdx => $mod) {
-                    $module = $course->modules()->create([
-                        'title' => $mod['title'],
-                        'description' => $mod['description'] ?? null,
-                        'order' => $modIdx,
-                    ]);
+                    // Update or create module
+                    $module = null;
+                    if (isset($mod['id'])) {
+                        $module = $course->modules()->where('id', $mod['id'])->first();
+                        if ($module) {
+                            $module->update([
+                                'title' => $mod['title'],
+                                'description' => $mod['description'] ?? null,
+                                'order' => $modIdx,
+                            ]);
+                        }
+                    }
+                    if (!$module) {
+                        $module = $course->modules()->create([
+                            'title' => $mod['title'],
+                            'description' => $mod['description'] ?? null,
+                            'order' => $modIdx,
+                        ]);
+                    }
+
+                    // Lessons
                     if (isset($mod['lessons']) && is_array($mod['lessons'])) {
                         foreach ($mod['lessons'] as $lessonIdx => $lesson) {
-                            $attachmentPath = null;
-                            $fileKey = "modules.{$modIdx}.lessons.{$lessonIdx}.attachment";
-                            if ($lesson['type'] === 'file') {
-                                if ($request->hasFile($fileKey)) {
-                                    $attachmentPath = $request->file($fileKey)->store('lesson_attachments', 'public');
-                                } elseif (!empty($lesson['attachment'])) {
-                                    $attachmentPath = $lesson['attachment'];
+                            $lessonModel = null;
+                            if (isset($lesson['id'])) {
+                                $lessonModel = $module->lessons()->where('id', $lesson['id'])->first();
+                                if ($lessonModel) {
+                                    // Handle attachment update
+                                    $attachmentPath = $lessonModel->attachment;
+                                    $fileKey = "modules.{$modIdx}.lessons.{$lessonIdx}.attachment";
+                                    if ($lesson['type'] === 'file' && $request->hasFile($fileKey)) {
+                                        if ($attachmentPath) {
+                                            Storage::disk('public')->delete($attachmentPath);
+                                        }
+                                        $attachmentPath = $request->file($fileKey)->store('lesson_attachments', 'public');
+                                    }
+                                    $lessonModel->update([
+                                        'title' => $lesson['title'],
+                                        'description' => $lesson['description'] ?? null,
+                                        'type' => $lesson['type'],
+                                        'content' => $lesson['content'] ?? null,
+                                        'video_url' => $lesson['type'] === 'video' ? ($lesson['video_url'] ?? null) : null,
+                                        'attachment' => $lesson['type'] === 'file' ? $attachmentPath : null,
+                                        'is_free' => $lesson['is_free'] ?? false,
+                                        'order' => $lessonIdx,
+                                    ]);
                                 }
                             }
-                            $lessonModel = $module->lessons()->create([
-                                'title' => $lesson['title'],
-                                'description' => $lesson['description'] ?? null,
-                                'type' => $lesson['type'],
-                                'content' => $lesson['content'] ?? null,
-                                'video_url' => $lesson['type'] === 'video' ? ($lesson['video_url'] ?? null) : null,
-                                'attachment' => $attachmentPath,
-                                'is_free' => $lesson['is_free'] ?? false,
-                                'order' => $lessonIdx,
-                            ]);
+                            if (!$lessonModel) {
+                                // New lesson
+                                $attachmentPath = null;
+                                $fileKey = "modules.{$modIdx}.lessons.{$lessonIdx}.attachment";
+                                if ($lesson['type'] === 'file' && $request->hasFile($fileKey)) {
+                                    $attachmentPath = $request->file($fileKey)->store('lesson_attachments', 'public');
+                                }
+                                $lessonModel = $module->lessons()->create([
+                                    'title' => $lesson['title'],
+                                    'description' => $lesson['description'] ?? null,
+                                    'type' => $lesson['type'],
+                                    'content' => $lesson['content'] ?? null,
+                                    'video_url' => $lesson['type'] === 'video' ? ($lesson['video_url'] ?? null) : null,
+                                    'attachment' => $lesson['type'] === 'file' ? $attachmentPath : null,
+                                    'is_free' => $lesson['is_free'] ?? false,
+                                    'order' => $lessonIdx,
+                                ]);
+                            }
+
+                            // Quiz
                             if ($lesson['type'] === 'quiz' && !empty($lesson['quizzes'])) {
                                 $quizData = $lesson['quizzes'][0];
-                                $lessonModel->quizzes()->create([
-                                    'title' => $lesson['title'],
-                                    'instructions' => $quizData['instructions'] ?? null,
-                                    'time_limit' => $quizData['time_limit'] ?? 0,
-                                    'passing_score' => $quizData['passing_score'] ?? 0,
-                                    'status' => 'draft',
-                                    'order' => 0,
-                                ]);
+                                $quizModel = $lessonModel->quizzes()->first();
+                                if ($quizModel) {
+                                    $quizModel->update([
+                                        'title' => $lesson['title'],
+                                        'instructions' => $quizData['instructions'] ?? null,
+                                        'time_limit' => $quizData['time_limit'] ?? 0,
+                                        'passing_score' => $quizData['passing_score'] ?? 0,
+                                    ]);
+                                } else {
+                                    $lessonModel->quizzes()->create([
+                                        'title' => $lesson['title'],
+                                        'instructions' => $quizData['instructions'] ?? null,
+                                        'time_limit' => $quizData['time_limit'] ?? 0,
+                                        'passing_score' => $quizData['passing_score'] ?? 0,
+                                    ]);
+                                }
+                                // Untuk pertanyaan dan opsi quiz, lakukan hal serupa jika diperlukan
                             }
                         }
                     }
