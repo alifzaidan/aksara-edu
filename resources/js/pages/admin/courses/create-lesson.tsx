@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { Editor } from '@tinymce/tinymce-react';
 import { FormEventHandler, useRef, useState } from 'react';
 
@@ -16,6 +17,11 @@ interface Lesson {
     content?: string;
     video_url?: string;
     attachment?: File | null;
+    quizzes?: {
+        instructions?: string;
+        time_limit?: number;
+        passing_score?: number;
+    }[];
 }
 
 interface CreateLessonProps {
@@ -38,6 +44,9 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
     const [content, setContent] = useState('');
     const [videoUrl, setVideoUrl] = useState('');
     const [attachment, setAttachment] = useState<File | null>(null);
+    const [quizInstructions, setQuizInstructions] = useState('');
+    const [quizTimeLimit, setQuizTimeLimit] = useState(0);
+    const [quizPassingScore, setQuizPassingScore] = useState(0);
     const titleInput = useRef<HTMLInputElement>(null);
 
     const handleSubmit: FormEventHandler = (e) => {
@@ -55,6 +64,16 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
             content: type === 'text' ? content : undefined,
             video_url: type === 'video' ? videoUrl : undefined,
             attachment: type === 'file' ? attachment : undefined,
+            quizzes:
+                type === 'quiz'
+                    ? [
+                          {
+                              instructions: quizInstructions,
+                              time_limit: quizTimeLimit,
+                              passing_score: quizPassingScore,
+                          },
+                      ]
+                    : undefined,
         });
         setTitle('');
         setDescription('');
@@ -90,14 +109,14 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                     <Label htmlFor="description" className="sr-only">
                         Deskripsi Materi
                     </Label>
-                    <Input
+                    <Textarea
                         id="description"
-                        type="text"
                         name="description"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Deskripsi Materi (opsional)"
-                        autoComplete="off"
+                        className="max-h-[300px] min-h-[80px] w-full resize-none break-words whitespace-pre-line"
+                        style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
                     />
 
                     <Label htmlFor="type" className="sr-only">
@@ -232,9 +251,46 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                     )}
                     {/* type === 'quiz' tidak ada input tambahan */}
                     {type === 'quiz' && (
-                        <p className="text-muted-foreground text-sm">
-                            Anda dapat menambahkan quiz melalui detail kelas online. Silahkan menyimpan perubahan terlebih dahulu.
-                        </p>
+                        <div className="space-y-2">
+                            <Label htmlFor="quiz-instructions" className="sr-only">
+                                Instruksi Quiz
+                            </Label>
+                            <Textarea
+                                id="quiz-instructions"
+                                name="quiz-instructions"
+                                value={quizInstructions}
+                                onChange={(e) => setQuizInstructions(e.target.value)}
+                                placeholder="Instruksi untuk quiz (opsional)"
+                                className="max-h-[300px] min-h-[80px] w-full resize-none break-words whitespace-pre-line"
+                                style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
+                            />
+                            <Label htmlFor="quiz-time-limit" className="mb-1 block text-sm font-medium">
+                                Time Limit (menit)
+                            </Label>
+                            <Input
+                                id="quiz-time-limit"
+                                type="number"
+                                min={0}
+                                placeholder="0 (tanpa batas waktu)"
+                                value={quizTimeLimit}
+                                onChange={(e) => setQuizTimeLimit(Number(e.target.value))}
+                            />
+                            <Label htmlFor="quiz-passing-score" className="mb-1 block text-sm font-medium">
+                                Passing Score
+                            </Label>
+                            <Input
+                                id="quiz-passing-score"
+                                type="number"
+                                min={0}
+                                max={100}
+                                placeholder="Nilai minimal lulus (0-100)"
+                                value={quizPassingScore}
+                                onChange={(e) => setQuizPassingScore(Number(e.target.value))}
+                            />
+                            <p className="text-muted-foreground text-sm">
+                                Simpan quiz terlebih dahulu. Untuk mengakses soal-soal, silahkan mengkases melalui detail kelas.
+                            </p>
+                        </div>
                     )}
                     <div className="mt-2 flex items-center space-x-2">
                         <Switch id="is-free" checked={isFree} onCheckedChange={setIsFree} />

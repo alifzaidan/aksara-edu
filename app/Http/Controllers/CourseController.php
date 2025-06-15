@@ -95,7 +95,7 @@ class CourseController extends Controller
                             if ($lesson['type'] === 'file' && $request->hasFile($fileKey)) {
                                 $attachmentPath = $request->file($fileKey)->store('lesson_attachments', 'public');
                             }
-                            $module->lessons()->create([
+                            $lessonModel = $module->lessons()->create([
                                 'title' => $lesson['title'],
                                 'description' => $lesson['description'] ?? null,
                                 'type' => $lesson['type'],
@@ -105,6 +105,17 @@ class CourseController extends Controller
                                 'is_free' => $lesson['is_free'] ?? false,
                                 'order' => $lessonIdx,
                             ]);
+                            if ($lesson['type'] === 'quiz' && !empty($lesson['quizzes'])) {
+                                $quizData = $lesson['quizzes'][0];
+                                $lessonModel->quizzes()->create([
+                                    'title' => $lesson['title'],
+                                    'instructions' => $quizData['instructions'] ?? null,
+                                    'time_limit' => $quizData['time_limit'] ?? 0,
+                                    'passing_score' => $quizData['passing_score'] ?? 0,
+                                    'status' => 'draft',
+                                    'order' => 0,
+                                ]);
+                            }
                         }
                     }
                 }
@@ -116,13 +127,13 @@ class CourseController extends Controller
 
     public function show(string $id)
     {
-        $course = Course::with(['category', 'user', 'tools', 'images', 'modules.lessons'])->findOrFail($id);
+        $course = Course::with(['category', 'user', 'tools', 'images', 'modules.lessons.quizzes.questions'])->findOrFail($id);
         return Inertia::render('admin/courses/show', ['course' => $course]);
     }
 
     public function edit(string $id)
     {
-        $course = Course::with(['tools', 'images', 'modules.lessons'])->findOrFail($id);
+        $course = Course::with(['tools', 'images', 'modules.lessons.quizzes'])->findOrFail($id);
         $categories = Category::all();
         $tools = Tool::all();
         return Inertia::render('admin/courses/edit', ['course' => $course, 'categories' => $categories, 'tools' => $tools]);
@@ -231,7 +242,7 @@ class CourseController extends Controller
                                     $attachmentPath = $lesson['attachment'];
                                 }
                             }
-                            $module->lessons()->create([
+                            $lessonModel = $module->lessons()->create([
                                 'title' => $lesson['title'],
                                 'description' => $lesson['description'] ?? null,
                                 'type' => $lesson['type'],
@@ -241,6 +252,17 @@ class CourseController extends Controller
                                 'is_free' => $lesson['is_free'] ?? false,
                                 'order' => $lessonIdx,
                             ]);
+                            if ($lesson['type'] === 'quiz' && !empty($lesson['quizzes'])) {
+                                $quizData = $lesson['quizzes'][0];
+                                $lessonModel->quizzes()->create([
+                                    'title' => $lesson['title'],
+                                    'instructions' => $quizData['instructions'] ?? null,
+                                    'time_limit' => $quizData['time_limit'] ?? 0,
+                                    'passing_score' => $quizData['passing_score'] ?? 0,
+                                    'status' => 'draft',
+                                    'order' => 0,
+                                ]);
+                            }
                         }
                     }
                 }
@@ -325,6 +347,33 @@ class CourseController extends Controller
                     $newLesson->attachment = $newAttachment;
                 }
                 $newLesson->save();
+
+                // Duplicate quizzes (jika ada)
+                if ($lesson->quizzes && $lesson->quizzes->count() > 0) {
+                    foreach ($lesson->quizzes as $quiz) {
+                        $newQuiz = $quiz->replicate();
+                        $newQuiz->lesson_id = $newLesson->id;
+                        $newQuiz->save();
+
+                        // Duplicate questions (jika ada)
+                        if ($quiz->questions && $quiz->questions->count() > 0) {
+                            foreach ($quiz->questions as $question) {
+                                $newQuestion = $question->replicate();
+                                $newQuestion->quiz_id = $newQuiz->id;
+                                $newQuestion->save();
+
+                                // Duplicate question options (jika ada)
+                                if ($question->options && $question->options->count() > 0) {
+                                    foreach ($question->options as $option) {
+                                        $newOption = $option->replicate();
+                                        $newOption->question_id = $newQuestion->id;
+                                        $newOption->save();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 

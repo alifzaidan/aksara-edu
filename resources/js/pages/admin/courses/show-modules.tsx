@@ -14,6 +14,16 @@ interface Lesson {
     attachment?: string | null;
     video_url?: string | null;
     is_free?: boolean;
+    quizzes?:
+        | {
+              id: number;
+              title: string;
+              description?: string | null;
+              questions?: {
+                  id: number;
+              }[];
+          }[]
+        | null;
 }
 
 interface Module {
@@ -28,7 +38,7 @@ function getYoutubeId(url: string) {
     return match && match[2].length === 11 ? match[2] : '';
 }
 
-export default function ShowModules({ modules }: { modules?: Module[] }) {
+export default function ShowModules({ modules, courseId }: { modules?: Module[]; courseId: string }) {
     const [open, setOpen] = useState(false);
     const [preview, setPreview] = useState<{
         type: 'video' | 'file' | 'text';
@@ -47,9 +57,38 @@ export default function ShowModules({ modules }: { modules?: Module[] }) {
         setOpen(true);
     };
 
+    const quizzesWithoutQuestions: { moduleTitle: string; lessonTitle: string }[] = [];
+    modules?.forEach((mod) => {
+        mod.lessons?.forEach((lesson) => {
+            if (
+                lesson.type === 'quiz' &&
+                lesson.quizzes &&
+                lesson.quizzes.length > 0 &&
+                (!lesson.quizzes[0].questions || lesson.quizzes[0].questions.length === 0)
+            ) {
+                quizzesWithoutQuestions.push({
+                    moduleTitle: mod.title,
+                    lessonTitle: lesson.title,
+                });
+            }
+        });
+    });
+
     return (
         <div className="mt-6 space-y-6 rounded-lg border p-4">
-            <h3 className="mb-2 text-lg font-semibold">Modul & Materi</h3>
+            <h3 className="mb-1 text-lg font-semibold">Modul & Materi</h3>
+            {quizzesWithoutQuestions.length > 0 && (
+                <div className="mb-3 rounded border border-yellow-400 bg-yellow-50 p-3 text-sm text-yellow-800">
+                    <b>Perhatian:</b> Terdapat quiz yang belum memiliki data pertanyaan:
+                    <ul className="mt-1 list-disc pl-5">
+                        {quizzesWithoutQuestions.map((q, i) => (
+                            <li key={i}>
+                                Modul: <b>{q.moduleTitle}</b>, Materi: <b>{q.lessonTitle}</b>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
             {modules && modules.length > 0 ? (
                 <Accordion type="single" collapsible className="w-full" defaultValue="mod-0">
                     {modules.map((mod, modIdx) => (
@@ -64,12 +103,12 @@ export default function ShowModules({ modules }: { modules?: Module[] }) {
                                 {mod.lessons && mod.lessons.length > 0 ? (
                                     <ol className="list-decimal space-y-2 pl-2">
                                         {mod.lessons.map((lesson, idx) => (
-                                            <li key={idx} className="flex items-start gap-2">
+                                            <li key={idx} className="flex items-center gap-2">
                                                 {lesson.type === 'text' && <FileText className="mt-1 h-4 w-4 text-blue-500" />}
                                                 {lesson.type === 'video' && <Video className="mt-1 h-4 w-4 text-red-500" />}
                                                 {lesson.type === 'file' && <File className="mt-1 h-4 w-4 text-green-500" />}
                                                 {lesson.type === 'quiz' && <HelpCircle className="mt-1 h-4 w-4 text-yellow-500" />}
-                                                <div className="flex w-full justify-between">
+                                                <div className="flex w-full items-center justify-between">
                                                     <div>
                                                         {lesson.type === 'text' && (
                                                             <div className="mt-1">
@@ -150,7 +189,10 @@ export default function ShowModules({ modules }: { modules?: Module[] }) {
                                                             <div className="mt-1">
                                                                 {lesson.id ? (
                                                                     <Link
-                                                                        href={route('quizzes.show', { lesson: lesson.id })}
+                                                                        href={route('quizzes.show', {
+                                                                            course: courseId,
+                                                                            quiz: lesson.quizzes?.[0]?.id,
+                                                                        })}
                                                                         className="font-medium hover:cursor-pointer hover:text-yellow-500 hover:underline"
                                                                     >
                                                                         {lesson.title}

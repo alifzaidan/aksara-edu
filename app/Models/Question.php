@@ -16,7 +16,7 @@ class Question extends Model
         return $this->belongsTo(Quiz::class, 'quiz_id');
     }
 
-    public function questionOptions()
+    public function options()
     {
         return $this->hasMany(QuestionOption::class);
     }

@@ -84,7 +84,7 @@ export default function ShowCourse({ course, flash }: CourseProps) {
                         </TabsList>
                         <TabsContent value="detail">
                             <CourseDetail course={course} />
-                            <ShowModules modules={course.modules} />
+                            <ShowModules modules={course.modules} courseId={course.id} />
                         </TabsContent>
                         <TabsContent value="transaksi">
                             <CourseTransaksi />

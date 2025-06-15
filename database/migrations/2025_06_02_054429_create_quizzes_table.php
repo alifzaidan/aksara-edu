@@ -18,8 +18,6 @@ return new class extends Migration
             $table->text('instructions')->nullable();
             $table->integer('time_limit')->default(0);
             $table->integer('passing_score')->default(0);
-            $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
-            $table->integer('order')->default(0);
             $table->timestamps();
         });
     }

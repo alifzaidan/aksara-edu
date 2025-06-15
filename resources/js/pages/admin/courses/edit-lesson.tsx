@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { Editor } from '@tinymce/tinymce-react';
 import { FormEventHandler, useEffect, useRef, useState } from 'react';
 
@@ -16,6 +17,11 @@ interface Lesson {
     content?: string;
     video_url?: string;
     attachment?: File | null;
+    quizzes?: {
+        instructions: string;
+        time_limit: number;
+        passing_score: number;
+    }[];
 }
 
 interface EditLessonProps {
@@ -39,6 +45,9 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
     const [video, setVideo] = useState<string>(lesson.video_url ?? '');
     const [attachment, setAttachment] = useState<File | null>(lesson.attachment ?? null);
     const [error, setError] = useState('');
+    const [quizInstructions, setQuizInstructions] = useState(lesson.quizzes?.[0]?.instructions || '');
+    const [quizTimeLimit, setQuizTimeLimit] = useState(lesson.quizzes?.[0]?.time_limit || 0);
+    const [quizPassingScore, setQuizPassingScore] = useState(lesson.quizzes?.[0]?.passing_score || 0);
     const titleInput = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -49,6 +58,10 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
         setContent(lesson.content ?? '');
         setVideo(lesson.video_url ?? '');
         setAttachment(lesson.attachment ?? null);
+        setQuizInstructions(lesson.quizzes?.[0]?.instructions || '');
+        setQuizTimeLimit(lesson.quizzes?.[0]?.time_limit || 0);
+        setQuizPassingScore(lesson.quizzes?.[0]?.passing_score || 0);
+        // Reset error when lesson changes
         setError('');
     }, [lesson]);
 
@@ -67,6 +80,16 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
             content: type === 'text' ? content : undefined,
             video_url: type === 'video' ? video : undefined,
             attachment: type === 'file' ? (attachment ?? lesson.attachment) : undefined,
+            quizzes:
+                type === 'quiz'
+                    ? [
+                          {
+                              instructions: quizInstructions,
+                              time_limit: quizTimeLimit,
+                              passing_score: quizPassingScore,
+                          },
+                      ]
+                    : undefined,
         });
     };
 
@@ -94,14 +117,14 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
                     <Label htmlFor="description" className="sr-only">
                         Deskripsi Materi
                     </Label>
-                    <Input
+                    <Textarea
                         id="description"
-                        type="text"
                         name="description"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Deskripsi Materi (opsional)"
-                        autoComplete="off"
+                        className="max-h-[300px] min-h-[80px] w-full resize-none break-words whitespace-pre-line"
+                        style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
                     />
 
                     <Label htmlFor="type" className="sr-only">
@@ -250,7 +273,45 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
                             })()}
                         </div>
                     )}
-                    {/* type === 'quiz' tidak ada input tambahan */}
+                    {type === 'quiz' && (
+                        <div className="space-y-2">
+                            <Label htmlFor="quiz-instructions" className="sr-only">
+                                Instruksi Quiz
+                            </Label>
+                            <Textarea
+                                id="quiz-instructions"
+                                name="quiz-instructions"
+                                value={quizInstructions}
+                                onChange={(e) => setQuizInstructions(e.target.value)}
+                                placeholder="Instruksi untuk quiz (opsional)"
+                                className="max-h-[300px] min-h-[80px] w-full resize-none break-words whitespace-pre-line"
+                                style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
+                            />
+                            <Label htmlFor="quiz-time-limit" className="mb-1 block text-sm font-medium">
+                                Time Limit (menit)
+                            </Label>
+                            <Input
+                                id="quiz-time-limit"
+                                type="number"
+                                min={0}
+                                placeholder="0 (tanpa batas waktu)"
+                                value={quizTimeLimit}
+                                onChange={(e) => setQuizTimeLimit(Number(e.target.value))}
+                            />
+                            <Label htmlFor="quiz-passing-score" className="mb-1 block text-sm font-medium">
+                                Passing Score
+                            </Label>
+                            <Input
+                                id="quiz-passing-score"
+                                type="number"
+                                min={0}
+                                max={100}
+                                placeholder="Nilai minimal lulus (0-100)"
+                                value={quizPassingScore}
+                                onChange={(e) => setQuizPassingScore(Number(e.target.value))}
+                            />
+                        </div>
+                    )}
                     <div className="mt-2 flex items-center space-x-2">
                         <Switch id="is-free" checked={isFree} onCheckedChange={setIsFree} />
                         <Label htmlFor="is-free">{isFree ? 'Materi ini gratis' : 'Materi ini berbayar'}</Label>
