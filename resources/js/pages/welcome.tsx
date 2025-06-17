@@ -1,5 +1,4 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { BorderTrail } from '@/components/ui/border-trail';
 import { Button } from '@/components/ui/button';
 import { Carousel, CarouselContent, CarouselIndicator, CarouselItem } from '@/components/ui/carousel';
 import { Magnetic } from '@/components/ui/magnetic';
@@ -48,84 +47,48 @@ export default function Welcome() {
                 </Carousel>
             </section>
 
-            <section className="w-full px-4 py-12">
+            <section className="w-full px-4 py-8">
                 <div className="mx-auto text-center">
-                    <p className="mx-auto mb-2 text-gray-600">Kenapa Aksarise</p>
-                    <h2 className="mx-auto mb-10 max-w-2xl text-3xl font-bold text-gray-900 sm:text-4xl">
+                    <p className="text-primary mx-auto mb-2 text-xl font-medium">Kenapa Aksarise</p>
+                    <h2 className="mx-auto mb-10 max-w-2xl text-3xl font-bold text-gray-900 italic sm:text-4xl">
                         Solusi dirancang dengan cermat untuk produktivitas yang mudah
                     </h2>
                     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-8">
                         <Tilt rotationFactor={10} isRevese>
-                            <div className="bg-sidebar relative flex h-[200px] w-full flex-col items-center justify-center rounded-md dark:bg-zinc-800">
-                                <BorderTrail
-                                    style={{
-                                        boxShadow:
-                                            '0px 0px 60px 30px rgb(255 255 255 / 50%), 0 0 100px 60px rgb(0 0 0 / 50%), 0 0 140px 90px rgb(0 0 0 / 50%)',
-                                    }}
-                                    size={100}
-                                />
-                                <div className="p-4">
-                                    <img src="/assets/images/icon-web-dev.png" alt="Web Development" className="mx-auto mb-4 h-16" />
-                                    <h2 className="mb-1 text-lg font-semibold text-gray-900">Web Development</h2>
-                                    <p className="text-sm text-gray-600">Membangun aplikasi web yang responsif dan efisien</p>
-                                </div>
+                            <div className="relative flex h-[200px] w-full flex-col items-center justify-center rounded-md bg-zinc-900 p-4 dark:bg-zinc-100">
+                                <img src="/assets/images/icon-web-dev.png" alt="Web Development" className="mx-auto mb-4 h-16" />
+                                <h2 className="mb-1 text-lg font-semibold text-zinc-100">Web Development</h2>
+                                <p className="text-sm text-zinc-300">Membangun aplikasi web yang responsif dan efisien</p>
                             </div>
                         </Tilt>
                         <Tilt rotationFactor={10} isRevese>
-                            <div className="bg-sidebar relative flex h-[200px] w-full flex-col items-center justify-center rounded-md dark:bg-zinc-800">
-                                <BorderTrail
-                                    style={{
-                                        boxShadow:
-                                            '0px 0px 60px 30px rgb(255 255 255 / 50%), 0 0 100px 60px rgb(0 0 0 / 50%), 0 0 140px 90px rgb(0 0 0 / 50%)',
-                                    }}
-                                    size={100}
-                                />
-                                <div className="p-4">
-                                    <img src="/assets/images/icon-data-science.png" alt="Data Science" className="mx-auto mb-4 h-16" />
-                                    <h2 className="mb-1 text-lg font-semibold text-gray-900">Data Science</h2>
-                                    <p className="text-sm text-gray-600">Menganalisis data untuk mendapatkan wawasan yang berharga</p>
-                                </div>
+                            <div className="bg-primary relative flex h-[200px] w-full flex-col items-center justify-center rounded-md p-4 dark:bg-zinc-800">
+                                <img src="/assets/images/icon-data-science.png" alt="Data Science" className="mx-auto mb-4 h-16" />
+                                <h2 className="mb-1 text-lg font-semibold text-zinc-100">Data Science</h2>
+                                <p className="text-sm text-zinc-300">Menganalisis data untuk mendapatkan wawasan yang berharga</p>
                             </div>
                         </Tilt>
                         <Tilt rotationFactor={10} isRevese>
-                            <div className="bg-sidebar relative flex h-[200px] w-full flex-col items-center justify-center rounded-md dark:bg-zinc-800">
-                                <BorderTrail
-                                    style={{
-                                        boxShadow:
-                                            '0px 0px 60px 30px rgb(255 255 255 / 50%), 0 0 100px 60px rgb(0 0 0 / 50%), 0 0 140px 90px rgb(0 0 0 / 50%)',
-                                    }}
-                                    size={100}
-                                />
-                                <div className="p-4">
-                                    <img src="/assets/images/icon-graphic-design.png" alt="Graphic Design" className="mx-auto mb-4 h-16" />
-                                    <h2 className="mb-1 text-lg font-semibold text-gray-900">Graphic Design</h2>
-                                    <p className="text-sm text-gray-600">Mendesain antarmuka yang menarik dan fungsional</p>
-                                </div>
+                            <div className="relative flex h-[200px] w-full flex-col items-center justify-center rounded-md bg-[#EDEBDE] p-4 dark:bg-zinc-800">
+                                <img src="/assets/images/icon-graphic-design.png" alt="Graphic Design" className="mx-auto mb-4 h-16" />
+                                <h2 className="mb-1 text-lg font-semibold text-gray-900">Graphic Design</h2>
+                                <p className="text-sm text-gray-600">Mendesain antarmuka yang menarik dan fungsional</p>
                             </div>
                         </Tilt>
                         <Tilt rotationFactor={10} isRevese>
-                            <div className="bg-sidebar relative flex h-[200px] w-full flex-col items-center justify-center rounded-md dark:bg-zinc-800">
-                                <BorderTrail
-                                    style={{
-                                        boxShadow:
-                                            '0px 0px 60px 30px rgb(255 255 255 / 50%), 0 0 100px 60px rgb(0 0 0 / 50%), 0 0 140px 90px rgb(0 0 0 / 50%)',
-                                    }}
-                                    size={100}
-                                />
-                                <div className="p-4">
-                                    <img src="/assets/images/icon-accountant.png" alt="Accounting" className="mx-auto mb-4 h-16" />
-                                    <h2 className="mb-1 text-lg font-semibold text-gray-900">Accounting</h2>
-                                    <p className="text-sm text-gray-600">Membantu mengelola keuangan dan laporan keuangan</p>
-                                </div>
+                            <div className="relative flex h-[200px] w-full flex-col items-center justify-center rounded-md bg-[#E3F0E9] p-4 dark:bg-zinc-800">
+                                <img src="/assets/images/icon-accountant.png" alt="Accounting" className="mx-auto mb-4 h-16" />
+                                <h2 className="mb-1 text-lg font-semibold text-gray-900">Accounting</h2>
+                                <p className="text-sm text-gray-600">Membantu mengelola keuangan dan laporan keuangan</p>
                             </div>
                         </Tilt>
                     </div>
                 </div>
             </section>
 
-            <section className="w-full px-4 py-12" id="program-kami">
+            <section className="w-full px-4 py-8" id="program-kami">
                 <div className="mx-auto">
-                    <p className="mx-auto text-center text-2xl font-medium text-blue-600">Program Kami</p>
+                    <p className="text-primary mx-auto text-center text-xl font-medium">Program Kami</p>
                     <div className="md:spce-y-0 space-y-8">
                         <div className="flex w-full flex-col items-center justify-center md:flex-row">
                             <img src="/assets/images/illustration-kelas-online.svg" alt="Kelas Online" className="md:w-1/4" />
@@ -197,9 +160,9 @@ export default function Welcome() {
                 </div>
             </section>
 
-            <section className="w-full px-4 py-12">
+            <section className="w-full px-4 py-8">
                 <div className="mx-auto text-center">
-                    <p className="mx-auto mb-2 text-gray-600">Paling Banyak Diminati</p>
+                    <p className="text-primary mx-auto mb-2 text-xl font-medium">Paling Banyak Diminati</p>
                     <h2 className="mx-auto mb-8 max-w-2xl text-3xl font-bold text-gray-900 sm:text-4xl">
                         Kelas yang paling banyak diminati oleh para peserta
                     </h2>
@@ -300,9 +263,9 @@ export default function Welcome() {
                 </div>
             </section>
 
-            <section className="w-full px-4 py-12">
+            <section className="w-full px-4 py-8">
                 <div className="mx-auto text-center">
-                    <p className="mx-auto mb-2 text-gray-600">Pertanyaan yang sering diajukan</p>
+                    <p className="text-primary mx-auto mb-2 text-xl font-medium">Pertanyaan yang sering diajukan</p>
                     <h2 className="mx-auto mb-8 max-w-2xl text-3xl font-bold text-gray-900 sm:text-4xl">FAQ</h2>
                 </div>
                 <Accordion
@@ -373,20 +336,20 @@ export default function Welcome() {
                 </Accordion>
             </section>
 
-            <section className="w-full rounded-xl bg-blue-900 px-4 py-12">
+            <section className="bg-primary w-full rounded-xl px-4 py-8">
                 <div className="mx-auto text-center">
                     <h2 className="mx-auto mb-8 max-w-2xl text-3xl font-bold text-gray-200 sm:text-4xl">Daftar Kelas Sekarang</h2>
                     <p className="mx-auto mb-4 max-w-2xl text-gray-300">
                         Bergabunglah dengan ribuan peserta lainnya yang telah merasakan manfaat dari kelas-kelas kami. Dapatkan akses ke materi
                         berkualitas, mentor berpengalaman, dan komunitas yang mendukung.
                     </p>
-                    <Button asChild variant="outline" className="text-blue-900">
+                    <Button asChild variant="outline" className="text-primary">
                         <Link href="/register">Daftar Sekarang</Link>
                     </Button>
                 </div>
             </section>
 
-            <footer className="bg-blue-900 px-6 py-16 text-indigo-100">
+            <footer className="bg-primary px-6 py-16 text-indigo-100">
                 <div className="mx-auto grid max-w-6xl gap-12 text-sm sm:grid-cols-2 lg:grid-cols-4">
                     <div>
                         <h4 className="mb-2 text-2xl font-bold text-white">Aksademy</h4>

@@ -1,0 +1,80 @@
+import { Button } from '@/components/ui/button';
+import { BadgeCheck } from 'lucide-react';
+
+export default function ProgramSection() {
+    return (
+        <section className="w-full px-4 py-8" id="program-kami">
+            <div className="mx-auto max-w-5xl">
+                <p className="text-primary mx-auto text-center font-medium md:text-xl">Program Kami</p>
+                <div className="space-y-8 md:space-y-0">
+                    <div className="flex w-full flex-col items-center justify-end md:flex-row">
+                        <img src="/assets/images/illustration-kelas-online.svg" alt="Kelas Online" className="w-[300px]" />
+                        <div className="space-y-2">
+                            <h2 className="text-center text-2xl font-bold text-gray-900 italic sm:text-left sm:text-3xl">Kelas Online</h2>
+                            <p className="font-medium">Pelajari berbagai skill sekali bayar, praktik, dan bersertifikat.</p>
+                            <ul>
+                                <li className="flex items-center gap-2">
+                                    <BadgeCheck size="18" className="text-green-600" />
+                                    <p>Belajar fleksibel via Video Materi, Project dan Studi Kasus</p>
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <BadgeCheck size="18" className="text-green-600" />
+                                    <p>Praktikal & Actionable. Bertahap dari level Dasar hingga Lanjut</p>
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <BadgeCheck size="18" className="text-green-600" />
+                                    <p>Grup Komunitas Diskusi Lifetime. Kelas Gratis Tiap Bulannya</p>
+                                </li>
+                            </ul>
+                            <Button className="mt-2 w-full sm:w-auto">Pelajari Sekarang</Button>
+                        </div>
+                    </div>
+                    <div className="flex w-full flex-col-reverse items-center justify-start md:flex-row">
+                        <div className="space-y-2">
+                            <h2 className="text-center text-2xl font-bold text-gray-900 italic sm:text-left sm:text-3xl">Bootcamp</h2>
+                            <p className="font-medium">Intensive Live Class bersama Experts. Praktikal & Mendalam.</p>
+                            <ul>
+                                <li className="flex items-center gap-2">
+                                    <BadgeCheck size="18" className="text-green-600" />
+                                    <p>Kombinasi Case Study, Praktik di Tiap Sesi. Basic to Advanced</p>
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <BadgeCheck size="18" className="text-green-600" />
+                                    <p>Group Mentoring Semi-Privat untuk Bangun Portfolio</p>
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <BadgeCheck size="18" className="text-green-600" />
+                                    <p>Tutor Terkurasi. Memiliki Lebih dari 30.000 Alumni</p>
+                                </li>
+                            </ul>
+                            <Button className="mt-2 w-full sm:w-auto">Pelajari Sekarang</Button>
+                        </div>
+                        <img src="/assets/images/illustration-bootcamp.svg" alt="Bootcamp" className="w-[300px]" />
+                    </div>
+                    <div className="flex w-full flex-col items-center justify-end md:flex-row">
+                        <img src="/assets/images/illustration-webinar.svg" alt="Webinar" className="w-[300px]" />
+                        <div className="space-y-2">
+                            <h2 className="text-center text-2xl font-bold text-gray-900 italic sm:text-left sm:text-3xl">Webinar</h2>
+                            <p className="font-medium">Pelajari berbagai topik terkini dari para ahli di bidangnya.</p>
+                            <ul className="">
+                                <li className="flex items-center gap-2">
+                                    <BadgeCheck size="18" className="text-green-600" />
+                                    <p>Belajar insightfull dengan pembicara yang expert dibidangnya</p>
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <BadgeCheck size="18" className="text-green-600" />
+                                    <p>Praktikal & Actionable. Bertahap dari level Dasar hingga Lanjut</p>
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <BadgeCheck size="18" className="text-green-600" />
+                                    <p>Grup Komunitas Diskusi Lifetime. Kelas Gratis Tiap Bulannya</p>
+                                </li>
+                            </ul>
+                            <Button className="mt-2 w-full sm:w-auto">Pelajari Sekarang</Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+}

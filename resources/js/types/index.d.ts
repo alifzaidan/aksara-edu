@@ -23,6 +23,16 @@ export interface NavItem {
     isActive?: boolean;
 }
 
+export interface ProductItem {
+    title: string;
+    href: string;
+}
+
+export interface ServiceItem {
+    title: string;
+    href: string;
+}
+
 export interface SharedData {
     name: string;
     quote: { message: string; author: string };

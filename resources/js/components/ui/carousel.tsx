@@ -201,7 +201,7 @@ function CarouselIndicator({
   return (
     <div
       className={cn(
-        'absolute bottom-0 z-10 flex w-full items-center justify-start ps-4',
+        'absolute bottom-4 z-10 flex w-full items-center justify-start ps-4',
         className
       )}
     >
@@ -213,10 +213,10 @@ function CarouselIndicator({
             aria-label={`Go to slide ${i + 1}`}
             onClick={() => setIndex(i)}
             className={cn(
-              'h-2 w-2 rounded-full transition-opacity duration-300',
+              'h-2 w-2 rounded-full transition-opacity duration-300 hover:cursor-pointer',
               index === i
-                ? 'bg-zinc-950 dark:bg-zinc-50'
-                : 'bg-zinc-900/50 dark:bg-zinc-100/50',
+                ? 'bg-secondary dark:bg-secondary'
+                : 'bg-secondary/50 dark:bg-secondary/50',
               classNameButton
             )}
           />
