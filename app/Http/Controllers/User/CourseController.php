@@ -17,6 +17,6 @@ class CourseController extends Controller
             ->where('status', 'published')
             ->orderBy('created_at', 'desc')
             ->get();
-        return Inertia::render('user/course/index', ['categories' => $categories, 'courses' => $courses]);
+        return Inertia::render('user/course/dashboard/index', ['categories' => $categories, 'courses' => $courses]);
     }
 }

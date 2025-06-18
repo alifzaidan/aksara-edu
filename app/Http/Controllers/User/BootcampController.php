@@ -17,6 +17,6 @@ class BootcampController extends Controller
             ->where('status', 'published')
             ->orderBy('created_at', 'desc')
             ->get();
-        return Inertia::render('user/bootcamp/index', ['categories' => $categories, 'bootcamps' => $bootcamps]);
+        return Inertia::render('user/bootcamp/dashboard/index', ['categories' => $categories, 'bootcamps' => $bootcamps]);
     }
 }
