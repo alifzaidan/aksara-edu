@@ -9,10 +9,10 @@ import ProgramSection from './program-section';
 import TestimonySection from './testimony-section';
 import ToolsSection from './tools-section';
 
-export default function Welcome() {
+export default function Home() {
     return (
         <UserLayout>
-            <Head title="Dashboard" />
+            <Head title="Beranda" />
 
             <CarouselSection />
             <AboutSection />

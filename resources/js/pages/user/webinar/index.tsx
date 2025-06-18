@@ -1,0 +1,39 @@
+import UserLayout from '@/layouts/user-layout';
+import { Head } from '@inertiajs/react';
+import FeatureSection from './feature-section';
+import HeroSection from './hero-section';
+import WebinarSection from './webinar-section';
+
+type Category = {
+    id: string;
+    name: string;
+};
+
+interface Webinar {
+    id: string;
+    title: string;
+    description: string;
+    thumbnail: string;
+    slug: string;
+    price: number;
+    start_date: string;
+    end_date: string;
+    category: Category;
+}
+
+interface WebinarProps {
+    categories: Category[];
+    webinars: Webinar[];
+}
+
+export default function Webinar({ categories, webinars }: WebinarProps) {
+    return (
+        <UserLayout>
+            <Head title="Webinar" />
+
+            <HeroSection />
+            <FeatureSection />
+            <WebinarSection categories={categories} webinars={webinars} />
+        </UserLayout>
+    );
+}

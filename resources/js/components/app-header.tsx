@@ -10,17 +10,28 @@ import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Home, Menu, Search } from 'lucide-react';
+import { Menu, Search } from 'lucide-react';
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Home',
+        title: 'Beranda',
         href: '/',
-        icon: Home,
+    },
+    {
+        title: 'Kelas Online',
+        href: '/course',
+    },
+    {
+        title: 'Bootcamp',
+        href: '/bootcamp',
+    },
+    {
+        title: 'Webinar',
+        href: '/webinar',
     },
 ];
 
-const activeItemStyles = 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
+const activeItemStyles = 'text-primary bg-accent dark:bg-primary dark:text-neutral-100';
 
 interface AppHeaderProps {
     breadcrumbs?: BreadcrumbItem[];
@@ -91,7 +102,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             {item.title}
                                         </Link>
                                         {page.url === item.href && (
-                                            <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>
+                                            <div className="bg-primary absolute bottom-0 left-0 h-0.5 w-full translate-y-px dark:bg-white"></div>
                                         )}
                                     </NavigationMenuItem>
                                 ))}
@@ -123,18 +134,12 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                             </DropdownMenu>
                         ) : (
                             <>
-                                <Link
-                                    href={route('login')}
-                                    className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
-                                >
-                                    Masuk
-                                </Link>
-                                <Link
-                                    href={route('register')}
-                                    className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
-                                >
-                                    Daftar
-                                </Link>
+                                <Button variant="outline" asChild>
+                                    <Link href={route('login')}>Masuk</Link>
+                                </Button>
+                                <Button variant="default" asChild>
+                                    <Link href={route('register')}>Daftar</Link>
+                                </Button>
                             </>
                         )}
                     </div>

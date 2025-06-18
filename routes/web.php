@@ -4,16 +4,22 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\BootcampController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CourseController;
-use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MentorController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\ToolController;
+use App\Http\Controllers\User\CourseController as UserCourseController;
+use App\Http\Controllers\User\BootcampController as UserBootcampController;
+use App\Http\Controllers\User\WebinarController as UserWebinarController;
+use App\Http\Controllers\User\HomeController;
 use App\Http\Controllers\WebinarController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/course', [UserCourseController::class, 'index'])->name('course.index');
+Route::get('/bootcamp', [UserBootcampController::class, 'index'])->name('bootcamp.index');
+Route::get('/webinar', [UserWebinarController::class, 'index'])->name('webinar.index');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['role:admin'])->group(function () {
