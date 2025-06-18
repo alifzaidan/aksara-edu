@@ -28,7 +28,7 @@ export default function CtaSection() {
                     berkualitas, mentor berpengalaman, dan komunitas yang mendukung.
                 </p>
                 <Button asChild variant="secondary">
-                    <Link href="/register">Eksplorasi Kelas</Link>
+                    <Link href="/course">Eksplorasi Kelas</Link>
                 </Button>
             </div>
         </section>

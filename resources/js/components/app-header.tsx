@@ -31,7 +31,7 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
-const activeItemStyles = 'text-primary bg-accent dark:bg-primary dark:text-neutral-100';
+const activeItemStyles = 'text-primary bg-primary/10 dark:bg-primary dark:text-neutral-100';
 
 interface AppHeaderProps {
     breadcrumbs?: BreadcrumbItem[];
@@ -43,23 +43,23 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const getInitials = useInitials();
     return (
         <>
-            <div className="border-sidebar-border/80 border-b">
+            <div className="border-sidebar-border/80 bg-tertiary border-b">
                 <div className="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
                     {/* Mobile Menu */}
                     <div className="lg:hidden">
                         <Sheet>
                             <SheetTrigger asChild>
-                                <Button variant="ghost" size="icon" className="mr-2 h-[34px] w-[34px]">
+                                <Button variant="ghost" size="icon" className="hover:bg-tertiary mr-2 h-[34px] w-[34px]">
                                     <Menu className="h-5 w-5" />
                                 </Button>
                             </SheetTrigger>
-                            <SheetContent side="left" className="bg-sidebar flex h-full w-64 flex-col items-stretch justify-between">
+                            <SheetContent side="left" className="bg-tertiary flex h-full w-64 flex-col items-stretch justify-between">
                                 <SheetTitle className="sr-only">Menu Navigasi</SheetTitle>
                                 <SheetHeader className="flex justify-start text-left">
                                     {/* Logo untuk light mode */}
-                                    <img src="/assets/images/logo-primary.svg" alt="Logo Aksara" className="block w-32 fill-current dark:hidden" />
+                                    <img src="/assets/images/logo-primary.png" alt="Aksademy" className="block w-32 fill-current dark:hidden" />
                                     {/* Logo untuk dark mode */}
-                                    <img src="/assets/images/logo-secondary.svg" alt="Logo Aksara" className="hidden w-32 fill-current dark:block" />
+                                    <img src="/assets/images/logo-secondary.png" alt="Aksademy" className="hidden w-32 fill-current dark:block" />
                                 </SheetHeader>
                                 <div className="flex h-full flex-1 flex-col space-y-4 p-4">
                                     <div className="flex h-full flex-col justify-between text-sm">
@@ -79,9 +79,9 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
 
                     <Link href="/" prefetch className="flex items-center space-x-2">
                         {/* Logo untuk light mode */}
-                        <img src="/assets/images/logo-primary.svg" alt="Logo Aksara" className="block w-32 fill-current dark:hidden" />
+                        <img src="/assets/images/logo-primary.png" alt="Aksademy" className="block w-32 fill-current dark:hidden" />
                         {/* Logo untuk dark mode */}
-                        <img src="/assets/images/logo-secondary.svg" alt="Logo Aksara" className="hidden w-32 fill-current dark:block" />
+                        <img src="/assets/images/logo-secondary.png" alt="Aksademy" className="hidden w-32 fill-current dark:block" />
                     </Link>
 
                     {/* Desktop Navigation */}
@@ -95,7 +95,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             className={cn(
                                                 navigationMenuTriggerStyle(),
                                                 page.url === item.href && activeItemStyles,
-                                                'h-9 cursor-pointer px-3',
+                                                'hover:bg-primary/5 dark:hover:bg-primary/20 h-9 cursor-pointer px-3',
                                             )}
                                         >
                                             {item.icon && <Icon iconNode={item.icon} className="mr-2 h-4 w-4" />}
@@ -112,7 +112,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
 
                     <div className="ml-auto flex items-center space-x-2">
                         <div className="relative flex items-center space-x-1">
-                            <Button variant="ghost" size="icon" className="group h-9 w-9 cursor-pointer">
+                            <Button variant="ghost" size="icon" className="group hover:bg-primary/5 h-9 w-9 cursor-pointer">
                                 <Search className="!size-5 opacity-80 group-hover:opacity-100" />
                             </Button>
                         </div>

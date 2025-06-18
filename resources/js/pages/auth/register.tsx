@@ -32,7 +32,7 @@ export default function Register() {
     };
 
     return (
-        <AuthLayout title="Buat Akun Aksara Edu" description="Silahkan isi form untuk mendaftar.">
+        <AuthLayout title="Buat Akun Aksademy" description="Silahkan isi form untuk mendaftar.">
             <Head title="Daftar" />
             <form className="flex flex-col gap-6" onSubmit={submit}>
                 <div className="grid gap-6">

@@ -8,7 +8,9 @@ export default function FaqSection() {
     return (
         <section className="mx-auto w-full max-w-7xl px-4 py-8">
             <div className="mx-auto text-center">
-                <p className="text-primary mx-auto mb-2 font-medium md:text-xl">Pertanyaan yang sering diajukan</p>
+                <p className="text-primary border-primary bg-background mx-auto mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
+                    Pertanyaan yang sering ditanyakan
+                </p>
                 <h2 className="mx-auto mb-8 max-w-2xl text-3xl font-bold text-gray-900 italic md:text-4xl">FAQ</h2>
             </div>
             <Accordion

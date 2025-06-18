@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { InfiniteSlider } from '@/components/ui/infinite-slider';
+import { Link } from '@inertiajs/react';
 import { Star, User } from 'lucide-react';
 
 export default function TestimonySection() {
@@ -13,8 +14,8 @@ export default function TestimonySection() {
                         Aksademy menyediakan komunitas belajar berbagai disiplin ilmu untuk pemula ke mahir. Dapatkan dukungan, berbagi pengalaman,
                         dan tumbuh bersama dalam perjalanan belajar Anda.
                     </p>
-                    <Button variant="secondary" className="mt-4">
-                        Gabung Sekarang
+                    <Button variant="secondary" className="mt-4" asChild>
+                        <Link href="/course">Gabung Sekarang</Link>
                     </Button>
                 </div>
                 <div className="flex h-[500px]">

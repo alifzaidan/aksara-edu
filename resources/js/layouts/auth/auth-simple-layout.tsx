@@ -15,7 +15,7 @@ export default function AuthSimpleLayout({ children, title, description }: Props
                     <div className="flex flex-col items-center gap-4">
                         <Link href={route('home')} className="flex flex-col items-center gap-2 font-medium">
                             <div className="mb-1 flex h-9 w-32 items-center justify-center rounded-md">
-                                <img src="/assets/images/logo-primary.svg" alt="Logo Aksara" className="fill-current" />
+                                <img src="/assets/images/logo-primary-2.png" alt="Logo Aksara" className="fill-current" />
                             </div>
                             <span className="sr-only">{title}</span>
                         </Link>

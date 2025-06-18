@@ -9,7 +9,9 @@ export default function BestSellerSection() {
     return (
         <section className="mx-auto w-full max-w-7xl px-4 py-8">
             <div className="mx-auto text-center">
-                <p className="text-primary mx-auto mb-2 font-medium md:text-xl">Paling Banyak Diminati</p>
+                <p className="text-primary border-primary bg-background mx-auto mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
+                    Paling Diminati
+                </p>
                 <h2 className="mx-auto mb-8 max-w-2xl text-3xl font-bold text-gray-900 italic md:text-4xl">
                     Kelas yang paling banyak diminati oleh para peserta
                 </h2>
@@ -103,8 +105,10 @@ export default function BestSellerSection() {
                     </Link>
                 </div>
                 <Magnetic>
-                    <Button type="button" className="mt-8 hover:cursor-pointer">
-                        Lihat Semua Kelas <GalleryVerticalEnd />
+                    <Button type="button" className="mt-8" asChild>
+                        <Link href="/course">
+                            Lihat Semua Kelas <GalleryVerticalEnd />
+                        </Link>
                     </Button>
                 </Magnetic>
             </div>

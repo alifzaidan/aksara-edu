@@ -61,9 +61,9 @@ export function AppSidebar() {
                         <SidebarMenuButton size="lg" asChild>
                             <Link href="/admin/dashboard" prefetch>
                                 {/* Logo untuk light mode */}
-                                <img src="/assets/images/logo-primary.svg" alt="Logo Aksara" className="block w-32 fill-current dark:hidden" />
+                                <img src="/assets/images/logo-primary.png" alt="Aksademy" className="block w-32 fill-current dark:hidden" />
                                 {/* Logo untuk dark mode */}
-                                <img src="/assets/images/logo-secondary.svg" alt="Logo Aksara" className="hidden w-32 fill-current dark:block" />
+                                <img src="/assets/images/logo-secondary.png" alt="Aksademy" className="hidden w-32 fill-current dark:block" />
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

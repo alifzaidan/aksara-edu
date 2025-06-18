@@ -16,7 +16,7 @@ export default function AuthCardLayout({
             <div className="flex w-full max-w-md flex-col gap-6">
                 <Link href={route('home')} className="flex items-center gap-2 self-center font-medium">
                     <div className="flex h-9 w-32 items-center justify-center">
-                        <img src="/assets/images/logo-primary.svg" alt="Logo Aksara" className="fill-current" />
+                        <img src="/assets/images/logo-primary-2.png" alt="Logo Aksara" className="fill-current" />
                     </div>
                 </Link>
 

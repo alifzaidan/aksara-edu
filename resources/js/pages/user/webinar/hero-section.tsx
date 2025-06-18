@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 
 export default function HeroSection() {
     return (
-        <section className="to-background relative bg-gradient-to-b from-[#EDEBDE] py-20 text-gray-900">
+        <section className="to-background from-tertiary relative bg-gradient-to-b py-20 text-gray-900">
             <div className="pointer-events-none absolute top-1/2 left-1/2 z-0 flex -translate-x-1/2 -translate-y-1/2 animate-spin items-center gap-8 duration-[10s]">
                 <div className="bg-primary h-[300px] w-[300px] rounded-full blur-[200px]" />
                 <div className="bg-secondary h-[300px] w-[300px] rounded-full blur-[200px]" />

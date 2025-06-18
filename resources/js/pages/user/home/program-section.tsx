@@ -1,11 +1,14 @@
 import { Button } from '@/components/ui/button';
+import { Link } from '@inertiajs/react';
 import { BadgeCheck } from 'lucide-react';
 
 export default function ProgramSection() {
     return (
         <section className="w-full px-4 py-8" id="program-kami">
             <div className="mx-auto max-w-5xl">
-                <p className="text-primary mx-auto text-center font-medium md:text-xl">Program Kami</p>
+                <p className="text-primary border-primary bg-background mx-auto w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
+                    Program Kami
+                </p>
                 <div className="space-y-8 md:space-y-0">
                     <div className="flex w-full flex-col items-center justify-end md:flex-row">
                         <img src="/assets/images/illustration-kelas-online.svg" alt="Kelas Online" className="w-[300px]" />
@@ -26,7 +29,9 @@ export default function ProgramSection() {
                                     <p>Grup Komunitas Diskusi Lifetime. Kelas Gratis Tiap Bulannya</p>
                                 </li>
                             </ul>
-                            <Button className="mt-2 w-full sm:w-auto">Pelajari Sekarang</Button>
+                            <Button className="mt-2 w-full sm:w-auto" asChild>
+                                <Link href="/course">Pelajari Sekarang</Link>
+                            </Button>
                         </div>
                     </div>
                     <div className="flex w-full flex-col-reverse items-center justify-start md:flex-row">
@@ -47,7 +52,9 @@ export default function ProgramSection() {
                                     <p>Tutor Terkurasi. Memiliki Lebih dari 30.000 Alumni</p>
                                 </li>
                             </ul>
-                            <Button className="mt-2 w-full sm:w-auto">Pelajari Sekarang</Button>
+                            <Button className="mt-2 w-full sm:w-auto" asChild>
+                                <Link href="/bootcamp">Pelajari Sekarang</Link>
+                            </Button>
                         </div>
                         <img src="/assets/images/illustration-bootcamp.svg" alt="Bootcamp" className="w-[300px]" />
                     </div>
@@ -70,7 +77,9 @@ export default function ProgramSection() {
                                     <p>Grup Komunitas Diskusi Lifetime. Kelas Gratis Tiap Bulannya</p>
                                 </li>
                             </ul>
-                            <Button className="mt-2 w-full sm:w-auto">Pelajari Sekarang</Button>
+                            <Button className="mt-2 w-full sm:w-auto" asChild>
+                                <Link href="/webinar">Pelajari Sekarang</Link>
+                            </Button>
                         </div>
                     </div>
                 </div>

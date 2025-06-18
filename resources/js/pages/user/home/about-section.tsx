@@ -32,7 +32,9 @@ export default function AboutSection() {
             <div className="bg-primary absolute bottom-50 -left-25 h-[200px] w-[100px] rounded-full blur-3xl xl:bottom-20 xl:-left-42"></div>
             <div className="bg-secondary absolute top-25 -right-25 h-[200px] w-[100px] blur-3xl xl:top-0 xl:-right-42"></div>
             <div className="mx-auto text-center">
-                <p className="text-primary mx-auto mb-6 font-medium md:text-xl">Kenapa Harus Belajar di Aksademy?</p>
+                <p className="text-primary border-primary bg-background mx-auto mb-10 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs sm:text-base">
+                    Kenapa Harus Belajar di Aksademy?
+                </p>
                 <h2 className="mx-auto mb-8 max-w-xl text-3xl leading-snug font-bold text-gray-900 italic md:text-4xl">
                     Solusi{' '}
                     <span className="bg-secondary text-background relative inline-flex items-center gap-2 rounded-full px-8 sm:px-10">
@@ -44,7 +46,7 @@ export default function AboutSection() {
                         />
                         <span className="invisible">_</span>
                     </span>{' '}
-                    dirancang dengan cermat untuk <span className="bg-primary text-background rounded-full px-2">produktivitas</span> yang mudah
+                    yang dirancang dengan cermat untuk <span className="bg-primary text-background rounded-full px-2">pembelajaran</span> yang mudah
                 </h2>
                 <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                     <div>

@@ -1,29 +1,30 @@
 import { ProductItem, ServiceItem } from '@/types';
+import { Link } from '@inertiajs/react';
 import { Instagram, Linkedin } from 'lucide-react';
 
 const productItems: ProductItem[] = [
     {
         title: 'Kelas Online',
-        href: '/',
+        href: '/course',
     },
     {
         title: 'Bootcamp',
-        href: '/',
+        href: '/bootcamp',
     },
     {
         title: 'Webinar',
-        href: '/',
+        href: '/webinar',
     },
 ];
 
 const serviceItems: ServiceItem[] = [
     {
         title: 'Software House',
-        href: '/',
+        href: 'https://aksarateknologi.co.id/',
     },
     {
         title: 'Pusat Bantuan',
-        href: '/',
+        href: 'https://wa.me/+6285142505797',
     },
 ];
 
@@ -33,9 +34,9 @@ export default function AppFooter() {
             <div className="mx-auto grid max-w-7xl gap-8 px-4 text-sm sm:grid-cols-2 sm:gap-12 lg:grid-cols-4">
                 <div>
                     {/* Logo untuk light mode */}
-                    <img src="/assets/images/logo-primary.svg" alt="Logo Aksara" className="block w-32 fill-current dark:hidden" />
+                    <img src="/assets/images/logo-primary-2.png" alt="Logo Aksara" className="block w-24 fill-current dark:hidden" />
                     {/* Logo untuk dark mode */}
-                    <img src="/assets/images/logo-secondary.svg" alt="Logo Aksara" className="hidden w-32 fill-current dark:block" />
+                    <img src="/assets/images/logo-secondary-2.png" alt="Logo Aksara" className="hidden w-24 fill-current dark:block" />
                     <p className="my-4">Keep Rising and Inspiring Everyone.</p>
                     <h5 className="font-semibold">CV. Aksara Teknologi Mandiri</h5>
                     <p className="text-gray-800">
@@ -47,9 +48,9 @@ export default function AppFooter() {
                     <ul className="space-y-2">
                         {productItems.map((item) => (
                             <li key={item.title}>
-                                <a href={item.href} className="hover:underline">
+                                <Link href={item.href} className="hover:underline">
                                     {item.title}
-                                </a>
+                                </Link>
                             </li>
                         ))}
                     </ul>
@@ -59,7 +60,7 @@ export default function AppFooter() {
                     <ul className="space-y-2">
                         {serviceItems.map((item) => (
                             <li key={item.title}>
-                                <a href={item.href} className="hover:underline">
+                                <a href={item.href} className="hover:underline" target="_blank" rel="noopener noreferrer">
                                     {item.title}
                                 </a>
                             </li>

@@ -3,7 +3,9 @@ import { InfiniteSlider } from '@/components/ui/infinite-slider';
 export default function ToolsSection() {
     return (
         <section className="w-fullpx-4 py-8">
-            <p className="text-primary mx-auto mb-2 text-center font-medium md:text-xl">Tools & Framework</p>
+            <p className="text-primary border-primary bg-background mx-auto mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
+                Tools & Framework
+            </p>
             <h2 className="mx-auto mb-8 max-w-2xl text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
                 Tools up-to-date yang digunakan
             </h2>
