@@ -54,10 +54,10 @@ export default function CoursesSection({ categories, courses }: CourseProps) {
 
     return (
         <section className="mx-auto w-full max-w-7xl px-4">
-            <h2 className="mx-auto mb-4 max-w-3xl text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
+            <h2 className="dark:text-primary-foreground mx-auto mb-4 max-w-3xl text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
                 Ratusan Skill Impian Kini Dalam Genggamanmu
             </h2>
-            <p className="mx-auto mb-8 text-center text-gray-600">
+            <p className="mx-auto mb-8 text-center text-gray-600 dark:text-gray-400">
                 Eksplorasi materi-materi unggulan dari rancangan experts yang akan selalu update setiap bulan.
             </p>
             <div className="mb-4 flex justify-between gap-2">
@@ -86,7 +86,7 @@ export default function CoursesSection({ categories, courses }: CourseProps) {
                         className={`rounded-xl border px-4 py-2 text-sm transition hover:cursor-pointer ${
                             selectedCategory === null
                                 ? 'to-primary text-primary-foreground border-primary bg-gradient-to-br from-black'
-                                : 'hover:bg-primary/10 border-gray-300 bg-white text-gray-800'
+                                : 'hover:bg-accent dark:hover:bg-primary/10 bg-background border-gray-300 text-gray-800 dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100'
                         } `}
                     >
                         Semua Kategori
@@ -99,7 +99,7 @@ export default function CoursesSection({ categories, courses }: CourseProps) {
                             className={`rounded-xl border px-4 py-2 text-sm transition hover:cursor-pointer ${
                                 selectedCategory === category.id
                                     ? 'to-primary text-primary-foreground border-primary bg-gradient-to-br from-black'
-                                    : 'hover:bg-primary/10 border-gray-300 bg-white text-gray-800'
+                                    : 'hover:bg-accent dark:hover:bg-primary/10 bg-background border-gray-300 text-gray-800 dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100'
                             } `}
                         >
                             {category.name}

@@ -13,7 +13,9 @@ export default function ProgramSection() {
                     <div className="flex w-full flex-col items-center justify-end md:flex-row">
                         <img src="/assets/images/illustration-kelas-online.svg" alt="Kelas Online" className="w-[300px]" />
                         <div className="space-y-2">
-                            <h2 className="text-center text-2xl font-bold text-gray-900 italic sm:text-left sm:text-3xl">Kelas Online</h2>
+                            <h2 className="dark:text-primary-foreground text-center text-2xl font-bold italic sm:text-left sm:text-3xl">
+                                Kelas Online
+                            </h2>
                             <p className="font-medium">Pelajari berbagai skill sekali bayar, praktik, dan bersertifikat.</p>
                             <ul>
                                 <li className="flex items-center gap-2">
@@ -36,7 +38,7 @@ export default function ProgramSection() {
                     </div>
                     <div className="flex w-full flex-col-reverse items-center justify-start md:flex-row">
                         <div className="space-y-2">
-                            <h2 className="text-center text-2xl font-bold text-gray-900 italic sm:text-left sm:text-3xl">Bootcamp</h2>
+                            <h2 className="dark:text-primary-foreground text-center text-2xl font-bold italic sm:text-left sm:text-3xl">Bootcamp</h2>
                             <p className="font-medium">Intensive Live Class bersama Experts. Praktikal & Mendalam.</p>
                             <ul>
                                 <li className="flex items-center gap-2">
@@ -61,7 +63,7 @@ export default function ProgramSection() {
                     <div className="flex w-full flex-col items-center justify-end md:flex-row">
                         <img src="/assets/images/illustration-webinar.svg" alt="Webinar" className="w-[300px]" />
                         <div className="space-y-2">
-                            <h2 className="text-center text-2xl font-bold text-gray-900 italic sm:text-left sm:text-3xl">Webinar</h2>
+                            <h2 className="dark:text-primary-foreground text-center text-2xl font-bold italic sm:text-left sm:text-3xl">Webinar</h2>
                             <p className="font-medium">Pelajari berbagai topik terkini dari para ahli di bidangnya.</p>
                             <ul className="">
                                 <li className="flex items-center gap-2">

@@ -28,7 +28,7 @@ export default function FeatureSection() {
             <p className="text-primary border-primary bg-background mx-auto mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
                 Kelas Online Aksademy
             </p>
-            <h2 className="mx-auto mb-4 max-w-2xl text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
+            <h2 className="dark:text-primary-foreground mx-auto mb-4 max-w-2xl text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
                 Solusi #1 Upgrade Skill Profesional
             </h2>
             <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-2">
@@ -39,12 +39,12 @@ export default function FeatureSection() {
                             onClick={() => setActiveIndex(index)}
                             className={`w-full rounded-xl border-2 border-gray-300 p-4 text-sm font-medium shadow transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/30 ${
                                 activeIndex === index
-                                    ? 'border-primary dark:bg-zinc-800 dark:text-zinc-100'
+                                    ? 'border-primary dark:border-primary dark:to-primary text-primary-foreground hover:cursor-pointer dark:bg-zinc-800 dark:bg-gradient-to-br dark:from-black dark:text-zinc-100'
                                     : 'border-gray-300 dark:bg-zinc-700 dark:text-zinc-400'
                             }`}
                         >
-                            <h2 className="mb-1 text-lg font-semibold text-gray-900">{item.title}</h2>
-                            <p className="text-sm text-gray-600">{item.subtitle}</p>
+                            <h2 className="dark:text-primary-foreground mb-1 text-lg font-semibold text-gray-900">{item.title}</h2>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{item.subtitle}</p>
                         </button>
                     ))}
                 </div>

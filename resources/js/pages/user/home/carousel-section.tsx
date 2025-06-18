@@ -13,7 +13,7 @@ export default function CarouselSection() {
     }, []);
 
     return (
-        <section className="to-background from-tertiary relative w-full bg-gradient-to-b pt-4">
+        <section className="relative w-full pt-4">
             <Carousel index={index} onIndexChange={setIndex} disableDrag>
                 <CarouselContent>
                     <CarouselItem className="px-4">

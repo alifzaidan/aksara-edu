@@ -12,7 +12,7 @@ export default function BestSellerSection() {
                 <p className="text-primary border-primary bg-background mx-auto mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
                     Paling Diminati
                 </p>
-                <h2 className="mx-auto mb-8 max-w-2xl text-3xl font-bold text-gray-900 italic md:text-4xl">
+                <h2 className="dark:text-primary-foreground mx-auto mb-8 max-w-2xl text-3xl font-bold italic md:text-4xl">
                     Kelas yang paling banyak diminati oleh para peserta
                 </h2>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

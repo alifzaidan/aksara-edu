@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 
 export default function HeroSection() {
     return (
-        <section className="to-background from-tertiary relative bg-gradient-to-b py-20 text-gray-900">
+        <section className="to-background from-background via-tertiary dark:via-background dark:to-background relative bg-gradient-to-b py-20 text-gray-900 dark:text-white">
             <div className="pointer-events-none absolute top-1/2 left-1/2 z-0 flex -translate-x-1/2 -translate-y-1/2 animate-spin items-center gap-8 duration-[10s]">
                 <div className="bg-primary h-[300px] w-[300px] rounded-full blur-[200px]" />
                 <div className="bg-secondary h-[300px] w-[300px] rounded-full blur-[200px]" />
@@ -22,7 +22,7 @@ export default function HeroSection() {
                         Bootcamp Intensif yang Memberi Hasil. Fokus Praktik & Portfolio.
                     </h1>
 
-                    <p className="mb-6 max-w-xl text-lg text-gray-600">
+                    <p className="mb-6 max-w-xl text-lg text-gray-600 dark:text-gray-400">
                         Hybrid dan Dipandu oleh Praktisi Senior. Praktikal, lebih dari sekadar Webinar. Fokus Bantu Kembangkan Skill dan Portfolio
                         Ribuan Alumni.
                     </p>

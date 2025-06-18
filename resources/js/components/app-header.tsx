@@ -31,7 +31,7 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
-const activeItemStyles = 'text-primary bg-primary/10 dark:bg-primary dark:text-neutral-100';
+const activeItemStyles = 'text-primary bg-primary/10 dark:text-white dark:bg-primary/50';
 
 interface AppHeaderProps {
     breadcrumbs?: BreadcrumbItem[];
@@ -43,17 +43,17 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const getInitials = useInitials();
     return (
         <>
-            <div className="border-sidebar-border/80 bg-tertiary border-b">
+            <div className="border-sidebar-border/80 bg-background border-b">
                 <div className="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
                     {/* Mobile Menu */}
                     <div className="lg:hidden">
                         <Sheet>
                             <SheetTrigger asChild>
-                                <Button variant="ghost" size="icon" className="hover:bg-tertiary mr-2 h-[34px] w-[34px]">
+                                <Button variant="ghost" size="icon" className="mr-2 h-[34px] w-[34px]">
                                     <Menu className="h-5 w-5" />
                                 </Button>
                             </SheetTrigger>
-                            <SheetContent side="left" className="bg-tertiary flex h-full w-64 flex-col items-stretch justify-between">
+                            <SheetContent side="left" className="flex h-full w-64 flex-col items-stretch justify-between">
                                 <SheetTitle className="sr-only">Menu Navigasi</SheetTitle>
                                 <SheetHeader className="flex justify-start text-left">
                                     {/* Logo untuk light mode */}
@@ -95,7 +95,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             className={cn(
                                                 navigationMenuTriggerStyle(),
                                                 page.url === item.href && activeItemStyles,
-                                                'hover:bg-primary/5 dark:hover:bg-primary/20 h-9 cursor-pointer px-3',
+                                                'hover:bg-primary/5 dark:hover:bg-primary/40 h-9 cursor-pointer px-3',
                                             )}
                                         >
                                             {item.icon && <Icon iconNode={item.icon} className="mr-2 h-4 w-4" />}
@@ -122,7 +122,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                     <Button variant="ghost" className="size-10 rounded-full p-1">
                                         <Avatar className="size-8 overflow-hidden rounded-full">
                                             <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
-                                            <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
+                                            <AvatarFallback className="bg-primary text-primary-foreground rounded-lg dark:bg-neutral-700 dark:text-white">
                                                 {getInitials(auth.user.name)}
                                             </AvatarFallback>
                                         </Avatar>

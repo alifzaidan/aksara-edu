@@ -11,7 +11,7 @@ export default function FaqSection() {
                 <p className="text-primary border-primary bg-background mx-auto mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
                     Pertanyaan yang sering ditanyakan
                 </p>
-                <h2 className="mx-auto mb-8 max-w-2xl text-3xl font-bold text-gray-900 italic md:text-4xl">FAQ</h2>
+                <h2 className="dark:text-primary-foreground mx-auto mb-8 max-w-2xl text-3xl font-bold italic md:text-4xl">FAQ</h2>
             </div>
             <Accordion
                 className="flex w-full flex-col gap-2 divide-y divide-zinc-200 dark:divide-zinc-700"
