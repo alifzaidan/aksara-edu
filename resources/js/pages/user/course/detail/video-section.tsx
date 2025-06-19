@@ -56,7 +56,7 @@ export default function VideoSection() {
                         </div>
                     ))}
                 </TransitionPanel>
-                <div className="col-span-1 flex h-full flex-col rounded-xl bg-white p-6 shadow">
+                <div className="col-span-1 flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
                     <h2 className="mb-4 font-semibold">20 Materi (60 Menit)</h2>
                     {items.map((item, index) => (
                         <button

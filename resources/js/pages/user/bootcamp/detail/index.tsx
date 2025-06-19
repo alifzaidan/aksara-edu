@@ -5,6 +5,7 @@ import BenefitsSection from './benefits-section';
 import HeroSection from './hero-section';
 import MentorSection from './mentor-section';
 import RegisterSection from './register-section';
+import TimelineSection from './timeline-section';
 
 type Category = {
     id: string;
@@ -36,6 +37,7 @@ export default function Bootcamp({ bootcamp }: BootcampProps) {
             <AboutSection />
             <BenefitsSection />
             <MentorSection />
+            <TimelineSection />
             <RegisterSection />
         </UserLayout>
     );

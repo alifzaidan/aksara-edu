@@ -1,4 +1,5 @@
 import { Carousel, CarouselContent, CarouselIndicator, CarouselItem } from '@/components/ui/carousel';
+import { Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 export default function CarouselSection() {
@@ -26,25 +27,31 @@ export default function CarouselSection() {
                         </a>
                     </CarouselItem>
                     <CarouselItem className="px-4">
-                        <img
-                            src="/assets/images/carousel-1.png"
-                            alt="Slide 1"
-                            className="mx-auto w-full max-w-7xl rounded-xl object-cover shadow-lg"
-                        />
+                        <Link href={route('course.index')}>
+                            <img
+                                src="/assets/images/carousel-2.png"
+                                alt="Slide 2"
+                                className="mx-auto w-full max-w-7xl rounded-xl object-cover shadow-lg"
+                            />
+                        </Link>
                     </CarouselItem>
                     <CarouselItem className="px-4">
-                        <img
-                            src="/assets/images/carousel-1.png"
-                            alt="Slide 1"
-                            className="mx-auto w-full max-w-7xl rounded-xl object-cover shadow-lg"
-                        />
+                        <Link href={route('bootcamp.index')}>
+                            <img
+                                src="/assets/images/carousel-3.png"
+                                alt="Slide 3"
+                                className="mx-auto w-full max-w-7xl rounded-xl object-cover shadow-lg"
+                            />
+                        </Link>
                     </CarouselItem>
                     <CarouselItem className="px-4">
-                        <img
-                            src="/assets/images/carousel-1.png"
-                            alt="Slide 1"
-                            className="mx-auto w-full max-w-7xl rounded-xl object-cover shadow-lg"
-                        />
+                        <Link href={route('webinar.index')}>
+                            <img
+                                src="/assets/images/carousel-4.png"
+                                alt="Slide 4"
+                                className="mx-auto w-full max-w-7xl rounded-xl object-cover shadow-lg"
+                            />
+                        </Link>
                     </CarouselItem>
                 </CarouselContent>
                 <div className="mx-auto max-w-7xl px-4">

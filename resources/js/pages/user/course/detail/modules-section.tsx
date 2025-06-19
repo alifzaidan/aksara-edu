@@ -20,7 +20,7 @@ export default function ModulesSection() {
                     <AccordionTrigger className="w-full text-left text-zinc-950 hover:cursor-pointer dark:text-zinc-50">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <div className="border-primary bg-primary/20 text-primary dark:text-primary/20 rounded-full border px-3 py-1 text-sm font-medium dark:bg-zinc-800">
+                                <div className="border-primary bg-primary/20 text-primary dark:text-primary-foreground rounded-full border px-3 py-1 text-sm font-medium dark:bg-zinc-800">
                                     <p>1</p>
                                 </div>
                                 <p className="md:text-lg">Introductions</p>
@@ -58,7 +58,7 @@ export default function ModulesSection() {
                     <AccordionTrigger className="w-full text-left text-zinc-950 hover:cursor-pointer dark:text-zinc-50">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <div className="border-primary bg-primary/20 text-primary dark:text-primary/20 rounded-full border px-3 py-1 text-sm font-medium dark:bg-zinc-800">
+                                <div className="border-primary bg-primary/20 text-primary dark:text-primary-foreground rounded-full border px-3 py-1 text-sm font-medium dark:bg-zinc-800">
                                     <p>2</p>
                                 </div>
                                 <p className="md:text-lg">Introductions</p>
@@ -96,7 +96,7 @@ export default function ModulesSection() {
                     <AccordionTrigger className="w-full text-left text-zinc-950 hover:cursor-pointer dark:text-zinc-50">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <div className="border-primary bg-primary/20 text-primary dark:text-primary/20 rounded-full border px-3 py-1 text-sm font-medium dark:bg-zinc-800">
+                                <div className="border-primary bg-primary/20 text-primary dark:text-primary-foreground rounded-full border px-3 py-1 text-sm font-medium dark:bg-zinc-800">
                                     <p>3</p>
                                 </div>
                                 <p className="md:text-lg">Introductions</p>

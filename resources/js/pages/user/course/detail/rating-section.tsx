@@ -92,12 +92,12 @@ export default function RatingSection() {
             <div className="mt-6 flex flex-col items-center justify-center gap-2">
                 <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                     {filteredRatings.map((item) => (
-                        <div key={item.id} className="max-w-sm space-y-2 rounded-lg bg-white p-4 shadow-md">
+                        <div key={item.id} className="max-w-sm space-y-2 rounded-lg bg-white p-4 shadow-md dark:bg-zinc-800">
                             <div className="flex items-center gap-2">
                                 <div className="rounded-full bg-gray-200 p-2">
                                     <User className="h-4 w-4 text-gray-500" />
                                 </div>
-                                <h3 className="font-semibold text-gray-900">{item.name}</h3>
+                                <h3 className="font-semibold">{item.name}</h3>
                             </div>
                             <div className="flex items-center gap-2">
                                 {Array.from({ length: 5 }).map((_, i) => (
@@ -109,7 +109,7 @@ export default function RatingSection() {
                                     />
                                 ))}
                             </div>
-                            <p className="text-sm text-gray-500">{item.comment}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-300">{item.comment}</p>
                         </div>
                     ))}
                 </div>

@@ -98,12 +98,12 @@ export default function WebinarSection({ categories, webinars }: WebinarProps) {
                                 <h2 className="mb-2 text-lg font-semibold">{webinar.title}</h2>
                                 <div className="flex items-center gap-2">
                                     <Tag size="18" />
-                                    <p className="text-sm text-gray-600">Rp. {webinar.price.toLocaleString('id-ID')}</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Rp. {webinar.price.toLocaleString('id-ID')}</p>
                                 </div>
                                 <div className="mt-2 flex justify-between">
                                     <div className="flex items-center gap-2">
                                         <Calendar size="18" />
-                                        <p className="text-sm text-gray-600">
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
                                             {new Date(webinar.start_time).toLocaleDateString('id-ID', {
                                                 day: 'numeric',
                                                 month: 'long',

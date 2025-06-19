@@ -7,7 +7,7 @@ export default function MentorSection() {
             <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
                 Belajar Bersama Mentor Expert
             </h2>
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-md dark:border-gray-700 dark:bg-gray-800">
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-md dark:border-zinc-700 dark:bg-zinc-800">
                 <div className="flex w-full items-center gap-4">
                     <div className="rounded-full bg-gray-200 p-2">
                         <User className="h-10 w-10 text-gray-500" />
@@ -26,7 +26,7 @@ export default function MentorSection() {
                                 <Star size={18} className="text-yellow-500" fill="currentColor" />
                                 <Star size={18} className="text-yellow-500" fill="currentColor" />
                             </div>
-                            <Link href="#" className="text-primary dark:text-primary text-sm font-medium hover:underline">
+                            <Link href="#" className="text-primary dark:text-primary-foreground text-sm font-medium hover:underline">
                                 Lihat Profil
                             </Link>
                         </div>

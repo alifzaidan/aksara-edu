@@ -10,7 +10,7 @@ export default function RegisterSection() {
             </h2>
             <p className="text-center text-gray-600 dark:text-gray-400">Jangan sampai kelewatan ya!</p>
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <div className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-md dark:border-zinc-700 dark:bg-zinc-800">
                     <img src="/assets/images/image-course.png" alt="Highlight Kelas" className="rounded-lg border border-gray-200 shadow-md" />
                     <ul className="space-y-2">
                         <li className="flex items-center gap-2 text-sm">
@@ -27,7 +27,7 @@ export default function RegisterSection() {
                         </li>
                     </ul>
                 </div>
-                <div className="flex flex-col rounded-lg border border-gray-200 bg-white p-4 shadow-md dark:border-gray-700 dark:bg-gray-800">
+                <div className="flex flex-col rounded-lg border border-gray-200 bg-white p-4 shadow-md dark:border-zinc-700 dark:bg-zinc-800">
                     <h5 className="mb-4 text-sm">Daftar Webinar Aksademy dan bangun sebuah projek nyata</h5>
 
                     <span className="text-right text-sm text-red-600 line-through dark:text-gray-400">Rp 299.000</span>
@@ -35,19 +35,19 @@ export default function RegisterSection() {
                     <Separator className="my-4" />
                     <ul className="space-y-2">
                         <li className="flex items-center gap-2 text-sm">
-                            <MapPin size="16" className="text-primary" />
+                            <MapPin size="16" className="text-primary dark:text-secondary" />
                             <p>Online</p>
                         </li>
                         <li className="flex items-center gap-2 text-sm">
-                            <Hourglass size="16" className="text-primary" />
+                            <Hourglass size="16" className="text-primary dark:text-secondary" />
                             <p>Batch 1</p>
                         </li>
                         <li className="flex items-center gap-2 text-sm">
-                            <CalendarDays size="16" className="text-primary" />
+                            <CalendarDays size="16" className="text-primary dark:text-secondary" />
                             <p>Senin, 14 Jul 2025</p>
                         </li>
                         <li className="flex items-center gap-2 text-sm">
-                            <Clock size="16" className="text-primary" />
+                            <Clock size="16" className="text-primary dark:text-secondary" />
                             <p>19:00 - 22.00 WIB</p>
                         </li>
                     </ul>

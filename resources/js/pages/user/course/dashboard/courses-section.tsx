@@ -123,7 +123,7 @@ export default function CoursesSection({ categories, courses }: CourseProps) {
                             />
                             <div className="w-full p-4 text-left">
                                 <h2 className="mb-1 text-lg font-semibold">{course.title}</h2>
-                                <p className="text-sm text-gray-600">Rp. {course.price.toLocaleString('id-ID')}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Rp. {course.price.toLocaleString('id-ID')}</p>
                                 <div className="mt-4 flex justify-between">
                                     <div className="flex items-center gap-2">
                                         <Star size={18} className="text-yellow-500" fill="currentColor" />
