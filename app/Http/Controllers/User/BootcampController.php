@@ -19,4 +19,10 @@ class BootcampController extends Controller
             ->get();
         return Inertia::render('user/bootcamp/dashboard/index', ['categories' => $categories, 'bootcamps' => $bootcamps]);
     }
+
+    public function detail(Bootcamp $bootcamp)
+    {
+        $bootcamp->load(['category', 'tools']);
+        return Inertia::render('user/bootcamp/detail/index', ['bootcamp' => $bootcamp]);
+    }
 }
