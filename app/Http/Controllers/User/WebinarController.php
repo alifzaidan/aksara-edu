@@ -17,6 +17,6 @@ class WebinarController extends Controller
             ->where('status', 'published')
             ->orderBy('created_at', 'desc')
             ->get();
-        return Inertia::render('user/webinar/index', ['categories' => $categories, 'webinars' => $webinars]);
+        return Inertia::render('user/webinar/dashboard/index', ['categories' => $categories, 'webinars' => $webinars]);
     }
 }

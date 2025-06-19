@@ -19,4 +19,10 @@ class CourseController extends Controller
             ->get();
         return Inertia::render('user/course/dashboard/index', ['categories' => $categories, 'courses' => $courses]);
     }
+
+    public function detail(Course $course)
+    {
+        $course->load(['category', 'modules', 'tools']);
+        return Inertia::render('user/course/detail/index', ['course' => $course]);
+    }
 }

@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/course', [UserCourseController::class, 'index'])->name('course.index');
+Route::get('/course/{course:slug}', [UserCourseController::class, 'detail'])->name('course.detail');
 Route::get('/bootcamp', [UserBootcampController::class, 'index'])->name('bootcamp.index');
 Route::get('/webinar', [UserWebinarController::class, 'index'])->name('webinar.index');
 
