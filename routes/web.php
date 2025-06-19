@@ -21,6 +21,7 @@ Route::get('/course/{course:slug}', [UserCourseController::class, 'detail'])->na
 Route::get('/bootcamp', [UserBootcampController::class, 'index'])->name('bootcamp.index');
 Route::get('/bootcamp/{bootcamp:slug}', [UserBootcampController::class, 'detail'])->name('bootcamp.detail');
 Route::get('/webinar', [UserWebinarController::class, 'index'])->name('webinar.index');
+Route::get('/webinar/{webinar:slug}', [UserWebinarController::class, 'detail'])->name('webinar.detail');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['role:admin'])->group(function () {

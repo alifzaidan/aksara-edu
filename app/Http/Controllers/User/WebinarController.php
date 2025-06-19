@@ -19,4 +19,10 @@ class WebinarController extends Controller
             ->get();
         return Inertia::render('user/webinar/dashboard/index', ['categories' => $categories, 'webinars' => $webinars]);
     }
+
+    public function detail(Webinar $webinar)
+    {
+        $webinar->load(['category', 'tools']);
+        return Inertia::render('user/webinar/detail/index', ['webinar' => $webinar]);
+    }
 }
