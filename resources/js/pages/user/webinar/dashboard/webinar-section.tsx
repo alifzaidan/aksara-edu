@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Magnetic } from '@/components/ui/magnetic';
 import { Spotlight } from '@/components/ui/spotlight';
 import { Link } from '@inertiajs/react';
-import { GalleryVerticalEnd, Star } from 'lucide-react';
+import { Calendar, GalleryVerticalEnd, Tag } from 'lucide-react';
 import { useState } from 'react';
 
 type Category = {
@@ -18,8 +18,7 @@ interface Webinar {
     thumbnail: string;
     slug: string;
     price: number;
-    start_date: string;
-    end_date: string;
+    start_time: string;
     category: Category;
 }
 
@@ -39,7 +38,7 @@ export default function WebinarSection({ categories, webinars }: WebinarProps) {
         return matchSearch && matchCategory;
     });
 
-    const visibleCourses = filteredWebinar.slice(0, visibleCount);
+    const visibleWebinars = filteredWebinar.slice(0, visibleCount);
 
     return (
         <section className="mx-auto w-full max-w-7xl px-4">
@@ -82,29 +81,35 @@ export default function WebinarSection({ categories, webinars }: WebinarProps) {
                 </div>
             </div>
             <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {visibleCourses.map((course) => (
+                {visibleWebinars.map((webinar) => (
                     <Link
-                        key={course.id}
-                        href={`/course/${course.slug}`}
+                        key={webinar.id}
+                        href={`/webinar/${webinar.slug}`}
                         className="relative overflow-hidden rounded-xl bg-zinc-300/30 p-[2px] dark:bg-zinc-700/30"
                     >
                         <Spotlight className="bg-primary blur-2xl" size={284} />
                         <div className="bg-sidebar relative flex w-full flex-col items-center justify-center rounded-lg dark:bg-zinc-800">
                             <img
-                                src={course.thumbnail ? `/storage/${course.thumbnail}` : '/assets/images/placeholder.png'}
-                                alt={course.title}
+                                src={webinar.thumbnail ? `/storage/${webinar.thumbnail}` : '/assets/images/placeholder.png'}
+                                alt={webinar.title}
                                 className="h-48 w-full rounded-t-lg object-cover"
                             />
                             <div className="w-full p-4 text-left">
-                                <h2 className="mb-1 text-lg font-semibold">{course.title}</h2>
-                                <p className="text-sm text-gray-600">Rp. {course.price.toLocaleString('id-ID')}</p>
-                                <div className="mt-4 flex justify-between">
+                                <h2 className="mb-2 text-lg font-semibold">{webinar.title}</h2>
+                                <div className="flex items-center gap-2">
+                                    <Tag size="18" />
+                                    <p className="text-sm text-gray-600">Rp. {webinar.price.toLocaleString('id-ID')}</p>
+                                </div>
+                                <div className="mt-2 flex justify-between">
                                     <div className="flex items-center gap-2">
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                        <Star size={18} className="text-yellow-500" />
+                                        <Calendar size="18" />
+                                        <p className="text-sm text-gray-600">
+                                            {new Date(webinar.start_time).toLocaleDateString('id-ID', {
+                                                day: 'numeric',
+                                                month: 'long',
+                                                year: 'numeric',
+                                            })}
+                                        </p>
                                     </div>
                                 </div>
                             </div>

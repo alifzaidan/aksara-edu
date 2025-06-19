@@ -16,8 +16,7 @@ interface Webinar {
     thumbnail: string;
     slug: string;
     price: number;
-    start_date: string;
-    end_date: string;
+    start_time: string;
     category: Category;
 }
 
