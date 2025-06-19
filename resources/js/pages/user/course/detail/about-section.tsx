@@ -1,27 +1,35 @@
 import { Link } from '@inertiajs/react';
 import { BadgeCheck, Mic, Star, User } from 'lucide-react';
 
-export default function AboutSection() {
+interface Course {
+    title: string;
+    description?: string | null;
+    user?: { name: string; bio: string | null };
+    images?: { image_url: string }[];
+}
+
+export default function AboutSection({ course }: { course: Course }) {
     return (
         <>
             <section className="mx-auto w-full max-w-5xl px-4" id="about">
                 <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-5xl">
                     Kembangkan Skillmu
                 </h2>
-                <p className="text-center text-gray-600 dark:text-gray-400">
-                    Laravel 12, Service Repository: Shoes Store Website Lorem ipsum dolor sit amet consectetur adipisicing elit. Sit, vero provident
-                    laborum laboriosam nam dicta aut mollitia maxime? Saepe, placeat. A eius repudiandae nulla similique molestias dolor ipsa quos
-                    temporibus!
-                </p>
+                <p className="text-center text-gray-600 dark:text-gray-400">{course.description}</p>
             </section>
             <section className="mx-auto mt-4 w-full max-w-5xl px-4">
                 <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
                     Highlight Kelas
                 </p>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <img src="/assets/images/image-course.png" alt="Highlight Kelas" className="rounded-lg border border-gray-200 shadow-md" />
-                    <img src="/assets/images/image-course.png" alt="Highlight Kelas" className="rounded-lg border border-gray-200 shadow-md" />
-                    <img src="/assets/images/image-course.png" alt="Highlight Kelas" className="rounded-lg border border-gray-200 shadow-md" />
+                    {course.images?.map((image, index) => (
+                        <img
+                            key={index}
+                            src={image.image_url ? `/storage/${image.image_url}` : '/assets/images/placeholder.png'}
+                            alt={course.title}
+                            className="aspect-video rounded-lg border border-gray-200 object-cover shadow-md"
+                        />
+                    ))}
                 </div>
             </section>
             <section className="mx-auto mt-4 w-full max-w-5xl px-4">
@@ -81,10 +89,10 @@ export default function AboutSection() {
                         </div>
                         <div className="w-full">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Hari Robiansyah, S.Kom</h3>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{course.user?.name}</h3>
                                 <Mic size={20} className="text-gray-500 dark:text-gray-400" />
                             </div>
-                            <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">Web Developer & Instructor</p>
+                            <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">{course.user?.bio}</p>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Star size={18} className="text-yellow-500" fill="currentColor" />

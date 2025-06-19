@@ -1,24 +1,21 @@
-export default function ToolsSection() {
+interface Course {
+    tools?: { name: string; description?: string | null; icon: string | null }[];
+}
+
+export default function ToolsSection({ course }: { course: Course }) {
     return (
         <section className="mx-auto mt-8 w-full max-w-5xl px-4" id="tools">
             <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">Tools Pendukung</h2>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-white px-6 py-4 shadow-md dark:bg-zinc-800">
-                    <img src="/assets/images/icon-laravel.svg" alt="Laravel" />
-                    <h3 className="text-lg font-semibold md:text-xl">Laravel</h3>
-                </div>
-                <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-white px-6 py-4 shadow-md dark:bg-zinc-800">
-                    <img src="/assets/images/icon-reactjs.svg" alt="React JS" />
-                    <h3 className="text-lg font-semibold md:text-xl">React JS</h3>
-                </div>
-                <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-white px-6 py-4 shadow-md dark:bg-zinc-800">
-                    <img src="/assets/images/icon-vue.svg" alt="Vue" />
-                    <h3 className="text-lg font-semibold md:text-xl">Vue.js</h3>
-                </div>
-                <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-white px-6 py-4 shadow-md dark:bg-zinc-800">
-                    <img src="/assets/images/icon-figma.svg" alt="Figma" />
-                    <h3 className="text-lg font-semibold md:text-xl">Figma</h3>
-                </div>
+                {course.tools?.map((tool) => (
+                    <div
+                        key={tool.name}
+                        className="flex flex-col items-center justify-center gap-2 rounded-lg bg-white px-6 py-4 shadow-md dark:bg-zinc-800"
+                    >
+                        <img src={tool.icon ? `/storage/${tool.icon}` : '/assets/images/placeholder.png'} alt={tool.name} />
+                        <h3 className="text-lg font-semibold md:text-xl">{tool.name}</h3>
+                    </div>
+                ))}
             </div>
         </section>
     );

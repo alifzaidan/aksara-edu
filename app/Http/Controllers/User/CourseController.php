@@ -22,7 +22,7 @@ class CourseController extends Controller
 
     public function detail(Course $course)
     {
-        $course->load(['category', 'modules', 'tools']);
+        $course->load(['category', 'user', 'tools', 'images', 'modules.lessons.quizzes.questions']);
         return Inertia::render('user/course/detail/index', ['course' => $course]);
     }
 }

@@ -1,9 +1,22 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { ChevronUp, Lock } from 'lucide-react';
+import { ChevronUp, Lock, PlayCircle } from 'lucide-react';
 import { useState } from 'react';
 
-export default function ModulesSection() {
-    const [expanded, setExpanded] = useState<React.Key | null>('getting-started');
+interface Course {
+    modules?: {
+        title: string;
+        description?: string | null;
+        lessons?: {
+            title: string;
+            description?: string | null;
+            type: 'text' | 'video' | 'file' | 'quiz';
+            is_free?: boolean;
+        }[];
+    }[];
+}
+
+export default function ModulesSection({ course }: { course: Course }) {
+    const [expanded, setExpanded] = useState<React.Key | null>('0');
 
     return (
         <section className="mx-auto w-full max-w-5xl px-4 pt-8" id="modules">
@@ -16,120 +29,37 @@ export default function ModulesSection() {
                 expandedValue={expanded}
                 onValueChange={setExpanded}
             >
-                <AccordionItem value="getting-started" className="rounded-lg border-2 border-gray-300 p-4">
-                    <AccordionTrigger className="w-full text-left text-zinc-950 hover:cursor-pointer dark:text-zinc-50">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="border-primary bg-primary/20 text-primary dark:text-primary-foreground rounded-full border px-3 py-1 text-sm font-medium dark:bg-zinc-800">
-                                    <p>1</p>
+                {course.modules?.map((module, idx) => (
+                    <AccordionItem key={idx} value={String(idx)} className="rounded-lg border-2 border-gray-300 p-4">
+                        <AccordionTrigger className="w-full text-left text-zinc-950 hover:cursor-pointer dark:text-zinc-50">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <div className="border-primary bg-primary/20 text-primary dark:text-primary-foreground rounded-full border px-3 py-1 text-sm font-medium dark:bg-zinc-800">
+                                        <p>{idx + 1}</p>
+                                    </div>
+                                    <p className="md:text-lg">{module.title}</p>
                                 </div>
-                                <p className="md:text-lg">Introductions</p>
+                                <ChevronUp className="text-primary h-4 w-4 transition-transform duration-200 group-data-expanded:-rotate-180 dark:text-zinc-50" />
                             </div>
-                            <ChevronUp className="text-primary h-4 w-4 transition-transform duration-200 group-data-expanded:-rotate-180 dark:text-zinc-50" />
-                        </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <ul className="mt-2 text-sm text-zinc-500 md:text-base dark:text-zinc-400">
-                            <li className="ms-8 flex items-center justify-between">
-                                <div className="flex items-center justify-between gap-2">
-                                    <Lock size="14" />
-                                    <p>Demo project kelas</p>
-                                </div>
-                                <p>10:00</p>
-                            </li>
-                            <li className="ms-8 flex items-center justify-between">
-                                <div className="flex items-center justify-between gap-2">
-                                    <Lock size="14" />
-                                    <p>Demo project kelas</p>
-                                </div>
-                                <p>10:00</p>
-                            </li>
-                            <li className="ms-8 flex items-center justify-between">
-                                <div className="flex items-center justify-between gap-2">
-                                    <Lock size="14" />
-                                    <p>Demo project kelas</p>
-                                </div>
-                                <p>10:00</p>
-                            </li>
-                        </ul>
-                    </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="getting-started-2" className="rounded-lg border-2 border-gray-300 p-4">
-                    <AccordionTrigger className="w-full text-left text-zinc-950 hover:cursor-pointer dark:text-zinc-50">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="border-primary bg-primary/20 text-primary dark:text-primary-foreground rounded-full border px-3 py-1 text-sm font-medium dark:bg-zinc-800">
-                                    <p>2</p>
-                                </div>
-                                <p className="md:text-lg">Introductions</p>
-                            </div>
-                            <ChevronUp className="text-primary h-4 w-4 transition-transform duration-200 group-data-expanded:-rotate-180 dark:text-zinc-50" />
-                        </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <ul className="mt-2 text-sm text-zinc-500 md:text-base dark:text-zinc-400">
-                            <li className="ms-8 flex items-center justify-between">
-                                <div className="flex items-center justify-between gap-2">
-                                    <Lock size="14" />
-                                    <p>Demo project kelas</p>
-                                </div>
-                                <p>10:00</p>
-                            </li>
-                            <li className="ms-8 flex items-center justify-between">
-                                <div className="flex items-center justify-between gap-2">
-                                    <Lock size="14" />
-                                    <p>Demo project kelas</p>
-                                </div>
-                                <p>10:00</p>
-                            </li>
-                            <li className="ms-8 flex items-center justify-between">
-                                <div className="flex items-center justify-between gap-2">
-                                    <Lock size="14" />
-                                    <p>Demo project kelas</p>
-                                </div>
-                                <p>10:00</p>
-                            </li>
-                        </ul>
-                    </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="getting-started-2" className="rounded-lg border-2 border-gray-300 p-4">
-                    <AccordionTrigger className="w-full text-left text-zinc-950 hover:cursor-pointer dark:text-zinc-50">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="border-primary bg-primary/20 text-primary dark:text-primary-foreground rounded-full border px-3 py-1 text-sm font-medium dark:bg-zinc-800">
-                                    <p>3</p>
-                                </div>
-                                <p className="md:text-lg">Introductions</p>
-                            </div>
-                            <ChevronUp className="text-primary h-4 w-4 transition-transform duration-200 group-data-expanded:-rotate-180 dark:text-zinc-50" />
-                        </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <ul className="mt-2 text-sm text-zinc-500 md:text-base dark:text-zinc-400">
-                            <li className="ms-8 flex items-center justify-between">
-                                <div className="flex items-center justify-between gap-2">
-                                    <Lock size="14" />
-                                    <p>Demo project kelas</p>
-                                </div>
-                                <p>10:00</p>
-                            </li>
-                            <li className="ms-8 flex items-center justify-between">
-                                <div className="flex items-center justify-between gap-2">
-                                    <Lock size="14" />
-                                    <p>Demo project kelas</p>
-                                </div>
-                                <p>10:00</p>
-                            </li>
-                            <li className="ms-8 flex items-center justify-between">
-                                <div className="flex items-center justify-between gap-2">
-                                    <Lock size="14" />
-                                    <p>Demo project kelas</p>
-                                </div>
-                                <p>10:00</p>
-                            </li>
-                        </ul>
-                    </AccordionContent>
-                </AccordionItem>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            <ul className="mt-2 text-sm text-zinc-500 md:text-base dark:text-zinc-400">
+                                {module.lessons?.length ? (
+                                    module.lessons.map((lesson, lidx) => (
+                                        <li key={lidx} className="ms-8 flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                {lesson.is_free ? <PlayCircle size="14" className="text-green-500" /> : <Lock size="14" />}
+                                                <p>{lesson.title}</p>
+                                            </div>
+                                        </li>
+                                    ))
+                                ) : (
+                                    <li className="ms-8 text-zinc-400">Belum ada materi</li>
+                                )}
+                            </ul>
+                        </AccordionContent>
+                    </AccordionItem>
+                ))}
             </Accordion>
         </section>
     );

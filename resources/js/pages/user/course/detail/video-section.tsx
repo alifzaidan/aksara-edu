@@ -3,27 +3,37 @@ import { TransitionPanel } from '@/components/ui/transition-panel';
 import { PlayCircle } from 'lucide-react';
 import { useState } from 'react';
 
+interface Course {
+    modules?: {
+        title: string;
+        description?: string | null;
+        lessons?: {
+            title: string;
+            description?: string | null;
+            type: 'text' | 'video' | 'file' | 'quiz';
+            video_url?: string | null;
+        }[];
+    }[];
+}
+
 function getYoutubeId(url: string) {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     return match && match[2].length === 11 ? match[2] : '';
 }
 
-export default function VideoSection() {
+export default function VideoSection({ course }: { course: Course }) {
     const [activeIndex, setActiveIndex] = useState(0);
 
-    const items = [
-        {
-            title: 'Install Bootstrap Offline',
-            duration: '3 Menit',
-            videoUrl: 'https://youtu.be/kXPIVdc-BvU?si=zCm8czFIh3dxjpYq',
-        },
-        {
-            title: 'Row & Container',
-            duration: '5 Menit',
-            videoUrl: 'https://youtu.be/brI3gt9girI?si=gyK4EKP1roMvimKF',
-        },
-    ];
+    const items =
+        course.modules?.flatMap((module) =>
+            (module.lessons?.filter((lesson) => lesson.type === 'video').slice(0, 2) || []).map((lesson) => ({
+                title: lesson.title,
+                videoUrl: lesson.video_url,
+            })),
+        ) || [];
+
+    const totalLessons = course.modules?.reduce((total, module) => total + (module.lessons?.length || 0), 0) || 0;
 
     return (
         <section className="mx-auto w-full max-w-7xl px-4">
@@ -44,7 +54,7 @@ export default function VideoSection() {
                                 width="100%"
                                 height="100%"
                                 src={
-                                    item.videoUrl.includes('youtube.com') || item.videoUrl.includes('youtu.be')
+                                    item?.videoUrl?.includes('youtube.com') || item?.videoUrl?.includes('youtu.be')
                                         ? `https://www.youtube.com/embed/${getYoutubeId(item.videoUrl)}`
                                         : ''
                                 }
@@ -57,7 +67,7 @@ export default function VideoSection() {
                     ))}
                 </TransitionPanel>
                 <div className="col-span-1 flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
-                    <h2 className="mb-4 font-semibold">20 Materi (60 Menit)</h2>
+                    <h2 className="mb-4 font-semibold">{totalLessons} Materi</h2>
                     {items.map((item, index) => (
                         <button
                             key={index}
@@ -67,19 +77,17 @@ export default function VideoSection() {
                             } `}
                         >
                             <h5 className="flex items-center gap-2 text-sm font-medium">
-                                <PlayCircle size="18" /> {item.title}
+                                <PlayCircle size="18" /> {item?.title ?? ''}
                             </h5>
-                            <p className="text-sm font-medium">{item.duration}</p>
                         </button>
                     ))}
                     <a
-                        href="/course"
+                        href="#modules"
                         className="hover:bg-primary/10 mb-2 flex justify-between rounded-lg border bg-gray-100 p-4 text-gray-800 transition hover:cursor-pointer"
                     >
                         <h5 className="flex items-center gap-2 text-sm font-medium">
-                            <PlayCircle size="18" /> 20 Video Lainnya
+                            <PlayCircle size="18" /> {totalLessons - 2} Materi Lainnya
                         </h5>
-                        <p className="text-sm font-medium">3 Menit</p>
                     </a>
                     <a href="#register" className="mt-auto w-full">
                         <Button className="w-full">Gabung Sekarang</Button>

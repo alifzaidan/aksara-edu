@@ -1,27 +1,15 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Check, X } from 'lucide-react';
 
-type Category = {
-    id: string;
-    name: string;
-};
-
 interface Course {
-    id: string;
     title: string;
-    description: string;
-    thumbnail: string;
-    slug: string;
-    price: number;
+    short_description?: string | null;
     level: 'beginner' | 'intermediate' | 'advanced';
-    category: Category;
+    created_at: string;
+    updated_at: string;
 }
 
-interface DetailCourseProps {
-    course: Course;
-}
-
-export default function HeroSection({ course }: DetailCourseProps) {
+export default function HeroSection({ course }: { course: Course }) {
     const courseCertificate = 'yes' as 'yes' | 'no';
     const courseConsultation = 'no' as 'yes' | 'no';
 
@@ -35,18 +23,24 @@ export default function HeroSection({ course }: DetailCourseProps) {
                 <div className="col-span-2">
                     <div className="flex justify-center gap-4">
                         <span className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                            🚀 Released date June 2022
+                            🚀 Released date{' '}
+                            {new Date(course.created_at).toLocaleDateString('id-ID', {
+                                month: 'long',
+                                year: 'numeric',
+                            })}
                         </span>
                         <span className="text-secondary border-secondary bg-background mb-4 inline-block rounded-full border bg-gradient-to-t from-[#FED6AD] to-white px-3 py-1 text-sm font-medium shadow-xs hover:text-[#FF925B]">
-                            🕛 Last updated June 2025
+                            🕛 Last updated{' '}
+                            {new Date(course.updated_at).toLocaleDateString('id-ID', {
+                                month: 'long',
+                                year: 'numeric',
+                            })}
                         </span>
                     </div>
 
-                    <h1 className="mx-auto mb-6 max-w-2xl text-4xl leading-tight font-bold italic sm:text-5xl">
-                        Kelas Online Laravel 12, Service Repository: Shoes Store Website
-                    </h1>
+                    <h1 className="mx-auto mb-4 max-w-2xl text-4xl leading-tight font-bold italic sm:text-5xl">{course.title}</h1>
 
-                    <p className="mb-6 text-lg text-gray-600 dark:text-gray-400">Cara terbaik membangun website dengan Laravel 12</p>
+                    <p className="mb-6 text-lg text-gray-600 dark:text-gray-400">{course.short_description}</p>
 
                     <div className="flex flex-wrap justify-center gap-12">
                         <div className="flex flex-col items-center space-y-2">

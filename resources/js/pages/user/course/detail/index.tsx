@@ -8,33 +8,45 @@ import RegisterSection from './register-section';
 import ToolsSection from './tools-section';
 import VideoSection from './video-section';
 
-type Category = {
-    id: string;
-    name: string;
-};
-
 interface Course {
     id: string;
     title: string;
-    description: string;
-    thumbnail: string;
-    slug: string;
+    user?: { name: string; bio: string | null };
+    category?: { name: string };
+    tools?: { name: string; description?: string | null; icon: string | null }[];
+    images?: { image_url: string }[];
+    short_description?: string | null;
+    description?: string | null;
     price: number;
+    thumbnail?: string | null;
+    course_url: string;
+    registration_url: string;
+    status: string;
     level: 'beginner' | 'intermediate' | 'advanced';
-    category: Category;
+    created_at: string;
+    updated_at: string;
+    modules?: {
+        title: string;
+        description?: string | null;
+        lessons?: {
+            title: string;
+            description?: string | null;
+            type: 'text' | 'video' | 'file' | 'quiz';
+            attachment?: string | null;
+            video_url?: string | null;
+            is_free?: boolean;
+        }[];
+    }[];
 }
 
-interface DetailCourseProps {
-    course: Course;
-}
-
-export default function DetailCourse({ course }: DetailCourseProps) {
+export default function DetailCourse({ course }: { course: Course }) {
+    console.log(course);
     return (
         <UserLayout>
             <Head title="Kelas Online" />
 
             <HeroSection course={course} />
-            <VideoSection />
+            <VideoSection course={course} />
             <div className="mx-auto mt-8 mb-4 flex w-full max-w-7xl justify-center gap-2 px-4">
                 <a
                     href="#about"
@@ -73,10 +85,10 @@ export default function DetailCourse({ course }: DetailCourseProps) {
                     Review
                 </a>
             </div>
-            <AboutSection />
-            <ModulesSection />
-            <ToolsSection />
-            <RegisterSection />
+            <AboutSection course={course} />
+            <ModulesSection course={course} />
+            <ToolsSection course={course} />
+            <RegisterSection course={course} />
             <RatingSection />
         </UserLayout>
     );

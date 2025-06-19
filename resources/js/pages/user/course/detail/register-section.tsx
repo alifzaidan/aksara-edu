@@ -1,8 +1,26 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { BadgeCheck, Clock, Presentation, TvMinimalPlay } from 'lucide-react';
+import { BadgeCheck, Presentation, TvMinimalPlay } from 'lucide-react';
 
-export default function RegisterSection() {
+interface Course {
+    title: string;
+    thumbnail?: string | null;
+    price: number;
+    registration_url: string;
+    modules?: {
+        title: string;
+        description?: string | null;
+        lessons?: {
+            title: string;
+            description?: string | null;
+            type: 'text' | 'video' | 'file' | 'quiz';
+            video_url?: string | null;
+        }[];
+    }[];
+}
+
+export default function RegisterSection({ course }: { course: Course }) {
+    const totalLessons = course.modules?.reduce((total, module) => total + (module.lessons?.length || 0), 0) || 0;
     return (
         <section className="mx-auto mt-8 w-full max-w-5xl px-4" id="register">
             <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
@@ -11,11 +29,15 @@ export default function RegisterSection() {
             <p className="text-center text-gray-600 dark:text-gray-400">Jangan sampai kelewatan ya!</p>
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-md dark:border-zinc-700 dark:bg-zinc-800">
-                    <img src="/assets/images/image-course.png" alt="Highlight Kelas" className="rounded-lg border border-gray-200 shadow-md" />
+                    <img
+                        src={course.thumbnail ? `/storage/${course.thumbnail}` : '/assets/images/placeholder.png'}
+                        alt={course.title}
+                        className="rounded-lg border border-gray-200 shadow-md"
+                    />
                     <ul className="space-y-2">
                         <li className="flex items-center gap-2 text-sm">
                             <BadgeCheck size="16" className="text-green-600" />
-                            <p>Web Developer Pemula ke Menengah</p>
+                            <p>Akses Selamanya</p>
                         </li>
                         <li className="flex items-center gap-2 text-sm">
                             <BadgeCheck size="16" className="text-green-600" />
@@ -30,17 +52,15 @@ export default function RegisterSection() {
                 <div className="flex flex-col rounded-lg border border-gray-200 bg-white p-4 shadow-md dark:border-zinc-700 dark:bg-zinc-800">
                     <h5 className="mb-4 text-sm">Miliki kelas Premium secara permanen dan bangun sebuah projek nyata</h5>
 
-                    <span className="text-right text-sm text-red-600 line-through dark:text-gray-400">Rp 299.000</span>
-                    <span className="text-right text-3xl font-bold text-gray-900 italic dark:text-gray-100">Rp 199.000</span>
+                    <span className="text-right text-sm text-red-600 line-through dark:text-gray-400">Rp 999.000</span>
+                    <span className="text-right text-3xl font-bold text-gray-900 italic dark:text-gray-100">
+                        Rp {course.price.toLocaleString('id-ID')}
+                    </span>
                     <Separator className="my-4" />
                     <ul className="space-y-2">
                         <li className="flex items-center gap-2 text-sm">
                             <TvMinimalPlay size="16" className="text-primary dark:text-secondary" />
-                            <p>22 Video</p>
-                        </li>
-                        <li className="flex items-center gap-2 text-sm">
-                            <Clock size="16" className="text-primary dark:text-secondary" />
-                            <p>4 Jam 30 Menit</p>
+                            <p>{totalLessons} Materi</p>
                         </li>
                         <li className="flex items-center gap-2 text-sm">
                             <Presentation size="16" className="text-primary dark:text-secondary" />
