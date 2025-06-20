@@ -1,26 +1,14 @@
 import { Button } from '@/components/ui/button';
 
-type Category = {
-    id: string;
-    name: string;
-};
-
 interface Webinar {
-    id: string;
     title: string;
-    description: string;
-    thumbnail: string;
-    slug: string;
-    price: number;
+    thumbnail?: string | null;
+    description?: string | null;
     start_time: string;
-    category: Category;
+    end_time: string;
 }
 
-interface WebinarProps {
-    webinar: Webinar;
-}
-
-export default function HeroSection({ webinar }: WebinarProps) {
+export default function HeroSection({ webinar }: { webinar: Webinar }) {
     return (
         <section className="to-background from-background via-tertiary dark:via-background dark:to-background relative bg-gradient-to-b py-20 text-gray-900 dark:text-white">
             <div className="pointer-events-none absolute top-1/2 left-1/2 z-0 flex -translate-x-1/2 -translate-y-1/2 animate-spin items-center gap-8 duration-[10s]">
@@ -35,14 +23,20 @@ export default function HeroSection({ webinar }: WebinarProps) {
                             day: 'numeric',
                             month: 'long',
                             year: 'numeric',
+                        })}{' '}
+                        -{' '}
+                        {new Date(webinar.end_time).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
                         })}
                     </span>
 
-                    <h1 className="mb-6 text-4xl leading-tight font-bold italic sm:text-5xl">Webinar Frontend dengan React</h1>
+                    <h1 className="mb-6 text-4xl leading-tight font-bold italic sm:text-5xl">{webinar.title}</h1>
 
                     <p className="mb-6 max-w-xl text-lg text-gray-600 dark:text-gray-400">
-                        Belajar membangun UI/UX interaktif dengan React & Next.js dalam kurikulum AI-powered yang relevan dengan industri. Program ini
-                        dirancang agar kamu bisa upskill sambil tetap bekerja.
+                        {webinar.description ||
+                            'Ikuti webinar kami untuk mendapatkan wawasan mendalam tentang topik terkini. Daftar sekarang dan jangan lewatkan kesempatan untuk belajar dari para ahli di bidangnya.'}
                     </p>
 
                     <div className="flex flex-wrap gap-4">
@@ -50,10 +44,12 @@ export default function HeroSection({ webinar }: WebinarProps) {
                         <Button variant="outline">Hubungi Kami</Button>
                     </div>
                 </div>
-                <div className="relative col-span-1 hidden lg:block">
-                    <img src="https://placehold.co/600x400?text=Preview+Image" alt="Builder preview" className="rounded-xl shadow-lg" />
-
-                    <div className="absolute top-4 left-4 rounded-full bg-white px-3 py-1 text-xs font-bold text-indigo-600 shadow">Live Preview</div>
+                <div className="col-span-1 hidden lg:block">
+                    <img
+                        src={webinar.thumbnail ? `/storage/${webinar.thumbnail}` : '/assets/images/placeholder.png'}
+                        alt={webinar.title}
+                        className="rounded-xl shadow-lg"
+                    />
                 </div>
             </div>
         </section>

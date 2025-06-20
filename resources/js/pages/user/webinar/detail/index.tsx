@@ -5,37 +5,42 @@ import BenefitsSection from './benefits-section';
 import HeroSection from './hero-section';
 import MentorSection from './mentor-section';
 import RegisterSection from './register-section';
-
-type Category = {
-    id: string;
-    name: string;
-};
+import ToolsSection from './tools-section';
 
 interface Webinar {
     id: string;
     title: string;
-    description: string;
-    thumbnail: string;
-    slug: string;
+    category?: { name: string };
+    tools?: { name: string; description?: string | null; icon: string | null }[];
+    batch?: string | null;
     price: number;
+    quota: number;
     start_time: string;
-    category: Category;
+    end_time: string;
+    registration_deadline: string;
+    status: string;
+    webinar_url: string;
+    registration_url: string;
+    thumbnail?: string | null;
+    description?: string | null;
+    benefits?: string | null;
+    instructions?: string | null;
+    host_name?: string | null;
+    host_description?: string | null;
+    created_at: string | Date;
 }
 
-interface WebinarProps {
-    webinar: Webinar;
-}
-
-export default function Webinar({ webinar }: WebinarProps) {
+export default function Webinar({ webinar }: { webinar: Webinar }) {
     return (
         <UserLayout>
             <Head title="Webinar" />
 
             <HeroSection webinar={webinar} />
             <AboutSection />
-            <BenefitsSection />
-            <MentorSection />
-            <RegisterSection />
+            <BenefitsSection webinar={webinar} />
+            <ToolsSection webinar={webinar} />
+            <MentorSection webinar={webinar} />
+            <RegisterSection webinar={webinar} />
         </UserLayout>
     );
 }

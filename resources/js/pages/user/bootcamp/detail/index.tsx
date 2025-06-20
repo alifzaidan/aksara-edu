@@ -1,44 +1,51 @@
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
 import AboutSection from './about-section';
-import BenefitsSection from './benefits-section';
 import HeroSection from './hero-section';
 import MentorSection from './mentor-section';
 import RegisterSection from './register-section';
+import RequirementSection from './requirement-section';
 import TimelineSection from './timeline-section';
-
-type Category = {
-    id: string;
-    name: string;
-};
+import ToolsSection from './tools-section';
 
 interface Bootcamp {
     id: string;
     title: string;
-    description: string;
-    thumbnail: string;
-    slug: string;
+    category?: { name: string };
+    schedules?: { day: string; start_time: string; end_time: string }[];
+    tools?: { name: string; description?: string | null; icon: string | null }[];
+    batch?: string | null;
     price: number;
+    quota: number;
     start_date: string;
     end_date: string;
-    category: Category;
+    registration_deadline: string;
+    status: string;
+    bootcamp_url: string;
+    registration_url: string;
+    thumbnail?: string | null;
+    description?: string | null;
+    benefits?: string | null;
+    instructions?: string | null;
+    requirements?: string | null;
+    curriculum?: string | null;
+    host_name?: string | null;
+    host_description?: string | null;
+    created_at: string | Date;
 }
 
-interface BootcampProps {
-    bootcamp: Bootcamp;
-}
-
-export default function Bootcamp({ bootcamp }: BootcampProps) {
+export default function Bootcamp({ bootcamp }: { bootcamp: Bootcamp }) {
     return (
         <UserLayout>
             <Head title="Bootcamp" />
 
             <HeroSection bootcamp={bootcamp} />
             <AboutSection />
-            <BenefitsSection />
-            <MentorSection />
-            <TimelineSection />
-            <RegisterSection />
+            <TimelineSection bootcamp={bootcamp} />
+            <RequirementSection bootcamp={bootcamp} />
+            <ToolsSection bootcamp={bootcamp} />
+            <MentorSection bootcamp={bootcamp} />
+            <RegisterSection bootcamp={bootcamp} />
         </UserLayout>
     );
 }

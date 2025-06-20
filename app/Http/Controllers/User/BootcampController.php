@@ -22,7 +22,7 @@ class BootcampController extends Controller
 
     public function detail(Bootcamp $bootcamp)
     {
-        $bootcamp->load(['category', 'tools']);
+        $bootcamp->load(['category', 'schedules', 'tools']);
         return Inertia::render('user/bootcamp/detail/index', ['bootcamp' => $bootcamp]);
     }
 }
