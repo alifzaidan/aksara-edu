@@ -9,7 +9,23 @@ import ProgramSection from './program-section';
 import TestimonySection from './testimony-section';
 import ToolsSection from './tools-section';
 
-export default function Home() {
+interface Tool {
+    id: string;
+    name: string;
+    description: string;
+    icon: string;
+}
+
+interface Course {
+    id: string;
+    title: string;
+    thumbnail: string;
+    slug: string;
+    price: number;
+    level: 'beginner' | 'intermediate' | 'advanced';
+}
+
+export default function Home({ courses, tools }: { courses: Course[]; tools: Tool[] }) {
     return (
         <UserLayout>
             <Head title="Beranda" />
@@ -17,8 +33,8 @@ export default function Home() {
             <CarouselSection />
             <AboutSection />
             <ProgramSection />
-            <ToolsSection />
-            <BestSellerSection />
+            <ToolsSection tools={tools} />
+            <BestSellerSection courses={courses} />
             <TestimonySection />
             <FaqSection />
             <CtaSection />

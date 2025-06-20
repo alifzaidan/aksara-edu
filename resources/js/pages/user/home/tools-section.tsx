@@ -1,6 +1,13 @@
 import { InfiniteSlider } from '@/components/ui/infinite-slider';
 
-export default function ToolsSection() {
+interface Tool {
+    id: string;
+    name: string;
+    description: string;
+    icon: string;
+}
+
+export default function ToolsSection({ tools }: { tools: Tool[] }) {
     return (
         <section className="w-fullpx-4 py-8">
             <p className="text-primary border-primary bg-background mx-auto mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
@@ -10,64 +17,26 @@ export default function ToolsSection() {
                 Tools up-to-date yang digunakan
             </h2>
             <InfiniteSlider speedOnHover={20} gap={24} className="p-4">
-                <div className="flex items-center justify-center gap-3 rounded-lg bg-white px-6 py-4 shadow-md">
-                    <img src="/assets/images/icon-laravel.svg" alt="Laravel" />
-                    <div className="md:space-y-2">
-                        <h3 className="text-xl font-semibold md:text-2xl dark:text-gray-900">Laravel</h3>
-                        <p className="text-sm text-gray-500">Backend Development</p>
+                {tools.map((tool) => (
+                    <div key={tool.id} className="flex items-center justify-center gap-3 rounded-lg bg-white px-6 py-4 shadow-md">
+                        <img src={tool.icon ? `/storage/${tool.icon}` : '/assets/images/placeholder.png'} alt={tool.name} className="h-12" />
+                        <div className="md:space-y-2">
+                            <h3 className="text-xl font-semibold md:text-2xl dark:text-gray-900">{tool.name}</h3>
+                            <p className="text-sm text-gray-500">{tool.description}</p>
+                        </div>
                     </div>
-                </div>
-                <div className="flex items-center justify-center gap-3 rounded-lg bg-white px-6 py-4 shadow-md">
-                    <img src="/assets/images/icon-reactjs.svg" alt="React JS" />
-                    <div className="md:space-y-2">
-                        <h3 className="text-xl font-semibold md:text-2xl dark:text-gray-900">React JS</h3>
-                        <p className="text-sm text-gray-500">Frontend Development</p>
-                    </div>
-                </div>
-                <div className="flex items-center justify-center gap-3 rounded-lg bg-white px-6 py-4 shadow-md">
-                    <img src="/assets/images/icon-vue.svg" alt="Vue" />
-                    <div className="md:space-y-2">
-                        <h3 className="text-xl font-semibold md:text-2xl dark:text-gray-900">Vue.js</h3>
-                        <p className="text-sm text-gray-500">Frontend Development</p>
-                    </div>
-                </div>
-                <div className="flex items-center justify-center gap-3 rounded-lg bg-white px-6 py-4 shadow-md">
-                    <img src="/assets/images/icon-figma.svg" alt="Figma" />
-                    <div className="md:space-y-2">
-                        <h3 className="text-xl font-semibold md:text-2xl dark:text-gray-900">Figma</h3>
-                        <p className="text-sm text-gray-500">UI/UX Design</p>
-                    </div>
-                </div>
+                ))}
             </InfiniteSlider>
             <InfiniteSlider speedOnHover={20} gap={24} className="p-4" reverse>
-                <div className="flex items-center justify-center gap-3 rounded-lg bg-white px-6 py-4 shadow-md">
-                    <img src="/assets/images/icon-laravel.svg" alt="Laravel" />
-                    <div className="md:space-y-2">
-                        <h3 className="text-xl font-semibold md:text-2xl dark:text-gray-900">Laravel</h3>
-                        <p className="text-sm text-gray-500">Backend Development</p>
+                {tools.map((tool) => (
+                    <div key={tool.id} className="flex items-center justify-center gap-3 rounded-lg bg-white px-6 py-4 shadow-md">
+                        <img src={tool.icon ? `/storage/${tool.icon}` : '/assets/images/placeholder.png'} alt={tool.name} className="h-12" />
+                        <div className="md:space-y-2">
+                            <h3 className="text-xl font-semibold md:text-2xl dark:text-gray-900">{tool.name}</h3>
+                            <p className="text-sm text-gray-500">{tool.description}</p>
+                        </div>
                     </div>
-                </div>
-                <div className="flex items-center justify-center gap-3 rounded-lg bg-white px-6 py-4 shadow-md">
-                    <img src="/assets/images/icon-reactjs.svg" alt="React JS" />
-                    <div className="md:space-y-2">
-                        <h3 className="text-xl font-semibold md:text-2xl dark:text-gray-900">React JS</h3>
-                        <p className="text-sm text-gray-500">Frontend Development</p>
-                    </div>
-                </div>
-                <div className="flex items-center justify-center gap-3 rounded-lg bg-white px-6 py-4 shadow-md">
-                    <img src="/assets/images/icon-vue.svg" alt="Vue" />
-                    <div className="md:space-y-2">
-                        <h3 className="text-xl font-semibold md:text-2xl dark:text-gray-900">Vue.js</h3>
-                        <p className="text-sm text-gray-500">Frontend Development</p>
-                    </div>
-                </div>
-                <div className="flex items-center justify-center gap-3 rounded-lg bg-white px-6 py-4 shadow-md">
-                    <img src="/assets/images/icon-figma.svg" alt="Figma" />
-                    <div className="md:space-y-2">
-                        <h3 className="text-xl font-semibold md:text-2xl dark:text-gray-900">Figma</h3>
-                        <p className="text-sm text-gray-500">UI/UX Design</p>
-                    </div>
-                </div>
+                ))}
             </InfiniteSlider>
         </section>
     );
