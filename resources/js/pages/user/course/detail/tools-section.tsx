@@ -12,7 +12,7 @@ export default function ToolsSection({ course }: { course: Course }) {
                         key={tool.name}
                         className="flex flex-col items-center justify-center gap-2 rounded-lg bg-white px-6 py-4 shadow-md dark:bg-zinc-800"
                     >
-                        <img src={tool.icon ? `/storage/${tool.icon}` : '/assets/images/placeholder.png'} alt={tool.name} />
+                        <img src={tool.icon ? `/storage/${tool.icon}` : '/assets/images/placeholder.png'} alt={tool.name} className="w-16" />
                         <h3 className="text-lg font-semibold md:text-xl">{tool.name}</h3>
                     </div>
                 ))}

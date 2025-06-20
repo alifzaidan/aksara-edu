@@ -90,7 +90,7 @@ export default function ShowBootcamp({ bootcamp, flash }: BootcampProps) {
                         <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
                         <div className="space-y-4 rounded-lg border p-4">
                             {(bootcamp.status === 'draft' || bootcamp.status === 'archived') && (
-                                <Button asChild className="w-full hover:cursor-pointer">
+                                <Button asChild className="w-full">
                                     <Link method="post" href={route('bootcamps.publish', { bootcamp: bootcamp.id })}>
                                         <Send />
                                         Terbitkan
@@ -98,7 +98,7 @@ export default function ShowBootcamp({ bootcamp, flash }: BootcampProps) {
                                 </Button>
                             )}
                             {bootcamp.status === 'published' && (
-                                <Button asChild className="w-full hover:cursor-pointer">
+                                <Button asChild className="w-full">
                                     <Link method="post" href={route('bootcamps.archive', { bootcamp: bootcamp.id })}>
                                         <CircleX />
                                         Tutup
@@ -107,35 +107,22 @@ export default function ShowBootcamp({ bootcamp, flash }: BootcampProps) {
                             )}
                             <Separator />
                             <div className="space-y-2">
-                                <Button
-                                    asChild
-                                    className="w-full border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
-                                    variant="secondary"
-                                >
+                                <Button asChild className="w-full" variant="secondary">
                                     <Link href={route('bootcamps.edit', { bootcamp: bootcamp.id })}>
                                         <SquarePen /> Edit
                                     </Link>
                                 </Button>
-                                <Button
-                                    asChild
-                                    className="border-primary hover:bg-primary hover:text-secondary w-full border hover:cursor-pointer"
-                                    variant="secondary"
-                                >
+                                <Button asChild className="w-full" variant="secondary">
                                     <Link method="post" href={route('bootcamps.duplicate', { bootcamp: bootcamp.id })}>
                                         <Copy /> Duplicate
                                     </Link>
                                 </Button>
-                                <Button
-                                    asChild
-                                    className="border-destructive text-destructive hover:bg-destructive w-full border hover:cursor-pointer hover:text-white"
-                                    variant="secondary"
-                                    disabled={bootcamp.status === 'archived'}
-                                >
+                                <Button asChild className="w-full" variant="secondary" disabled={bootcamp.status === 'archived'}>
                                     <Link method="post" href={route('bootcamps.archive', { bootcamp: bootcamp.id })}>
                                         <CircleX /> Tutup
                                     </Link>
                                 </Button>
-                                <Button asChild className="w-full hover:cursor-pointer" variant="destructive">
+                                <Button asChild className="w-full" variant="destructive">
                                     <Link method="delete" href={route('bootcamps.destroy', bootcamp.id)}>
                                         <Trash /> Hapus
                                     </Link>

@@ -27,8 +27,12 @@ export default function HeroSection() {
                     </p>
 
                     <div className="flex flex-wrap gap-4">
-                        <Button>Lihat Kelas</Button>
-                        <Button variant="outline">Konsultasi Gratis</Button>
+                        <a href="#course">
+                            <Button>Lihat Kelas</Button>
+                        </a>
+                        <a href="https://wa.me/+6285142505797" target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline">Konsultasi Gratis</Button>
+                        </a>
                     </div>
                 </div>
             </div>

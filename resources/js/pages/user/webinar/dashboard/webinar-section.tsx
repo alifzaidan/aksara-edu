@@ -41,7 +41,7 @@ export default function WebinarSection({ categories, webinars }: WebinarProps) {
     const visibleWebinars = filteredWebinar.slice(0, visibleCount);
 
     return (
-        <section className="mx-auto w-full max-w-7xl px-4">
+        <section className="mx-auto w-full max-w-7xl px-4" id="webinar">
             <h2 className="dark:text-primary-foreground mx-auto mb-4 max-w-3xl text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
                 Siap upgrade skill dan jadi lebih siap di dunia kerja digital.
             </h2>

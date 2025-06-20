@@ -95,7 +95,7 @@ export default function ShowCourse({ course, flash }: CourseProps) {
                         <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
                         <div className="space-y-4 rounded-lg border p-4">
                             {(course.status === 'draft' || course.status === 'archived') && (
-                                <Button asChild className="w-full hover:cursor-pointer">
+                                <Button asChild className="w-full">
                                     <Link method="post" href={route('courses.publish', { course: course.id })}>
                                         <Send />
                                         Terbitkan
@@ -103,7 +103,7 @@ export default function ShowCourse({ course, flash }: CourseProps) {
                                 </Button>
                             )}
                             {course.status === 'published' && (
-                                <Button asChild className="w-full hover:cursor-pointer">
+                                <Button asChild className="w-full">
                                     <Link method="post" href={route('courses.archive', { course: course.id })}>
                                         <CircleX />
                                         Arsipkan
@@ -112,35 +112,22 @@ export default function ShowCourse({ course, flash }: CourseProps) {
                             )}
                             <Separator />
                             <div className="space-y-2">
-                                <Button
-                                    asChild
-                                    className="w-full border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
-                                    variant="secondary"
-                                >
+                                <Button asChild className="w-full" variant="secondary">
                                     <Link href={route('courses.edit', { course: course.id })}>
                                         <SquarePen /> Edit Kelas
                                     </Link>
                                 </Button>
-                                <Button
-                                    asChild
-                                    className="border-primary hover:bg-primary hover:text-secondary w-full border hover:cursor-pointer"
-                                    variant="secondary"
-                                >
+                                <Button asChild className="w-full" variant="secondary">
                                     <Link method="post" href={route('courses.duplicate', { course: course.id })}>
                                         <Copy /> Duplicate
                                     </Link>
                                 </Button>
-                                <Button
-                                    asChild
-                                    className="border-destructive text-destructive hover:bg-destructive w-full border hover:cursor-pointer hover:text-white"
-                                    variant="secondary"
-                                    disabled={course.status === 'archived'}
-                                >
+                                <Button asChild className="w-full" variant="secondary" disabled={course.status === 'archived'}>
                                     <Link method="post" href={route('courses.archive', { course: course.id })}>
                                         <CircleX /> Arsipkan
                                     </Link>
                                 </Button>
-                                <Button asChild className="w-full hover:cursor-pointer" variant="destructive">
+                                <Button asChild className="w-full" variant="destructive">
                                     <Link method="delete" href={route('courses.destroy', course.id)}>
                                         <Trash /> Hapus
                                     </Link>

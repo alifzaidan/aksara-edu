@@ -87,7 +87,7 @@ export default function ShowWebinar({ webinar, flash }: WebinarProps) {
                         <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
                         <div className="space-y-4 rounded-lg border p-4">
                             {(webinar.status === 'draft' || webinar.status === 'archived') && (
-                                <Button asChild className="w-full hover:cursor-pointer">
+                                <Button asChild className="w-full">
                                     <Link method="post" href={route('webinars.publish', { webinar: webinar.id })}>
                                         <Send />
                                         Terbitkan
@@ -95,7 +95,7 @@ export default function ShowWebinar({ webinar, flash }: WebinarProps) {
                                 </Button>
                             )}
                             {webinar.status === 'published' && (
-                                <Button asChild className="w-full hover:cursor-pointer">
+                                <Button asChild className="w-full">
                                     <Link method="post" href={route('webinars.archive', { webinar: webinar.id })}>
                                         <CircleX />
                                         Tutup
@@ -104,35 +104,22 @@ export default function ShowWebinar({ webinar, flash }: WebinarProps) {
                             )}
                             <Separator />
                             <div className="space-y-2">
-                                <Button
-                                    asChild
-                                    className="w-full border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
-                                    variant="secondary"
-                                >
+                                <Button asChild className="w-full" variant="secondary">
                                     <Link href={route('webinars.edit', { webinar: webinar.id })}>
                                         <SquarePen /> Edit
                                     </Link>
                                 </Button>
-                                <Button
-                                    asChild
-                                    className="border-primary hover:bg-primary hover:text-secondary w-full border hover:cursor-pointer"
-                                    variant="secondary"
-                                >
+                                <Button asChild className="w-full" variant="secondary">
                                     <Link method="post" href={route('webinars.duplicate', { webinar: webinar.id })}>
                                         <Copy /> Duplicate
                                     </Link>
                                 </Button>
-                                <Button
-                                    asChild
-                                    className="border-destructive text-destructive hover:bg-destructive w-full border hover:cursor-pointer hover:text-white"
-                                    variant="secondary"
-                                    disabled={webinar.status === 'archived'}
-                                >
+                                <Button asChild className="w-full" variant="secondary" disabled={webinar.status === 'archived'}>
                                     <Link method="post" href={route('webinars.archive', { webinar: webinar.id })}>
                                         <CircleX /> Tutup
                                     </Link>
                                 </Button>
-                                <Button asChild className="w-full hover:cursor-pointer" variant="destructive">
+                                <Button asChild className="w-full" variant="destructive">
                                     <Link method="delete" href={route('webinars.destroy', webinar.id)}>
                                         <Trash /> Hapus
                                     </Link>

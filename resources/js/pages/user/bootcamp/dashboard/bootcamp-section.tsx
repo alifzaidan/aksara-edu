@@ -42,7 +42,7 @@ export default function BootcampSection({ categories, bootcamps }: BootcampProps
     const visibleBootcamps = filteredBootcamp.slice(0, visibleCount);
 
     return (
-        <section className="mx-auto w-full max-w-7xl px-4">
+        <section className="mx-auto w-full max-w-7xl px-4" id="bootcamp">
             <h2 className="dark:text-primary-foreground mx-auto mb-4 max-w-3xl text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
                 Bersiaplah Menjadi Talenta Digital dalam Hitungan Minggu.
             </h2>

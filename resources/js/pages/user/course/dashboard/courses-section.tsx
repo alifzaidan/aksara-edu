@@ -53,7 +53,7 @@ export default function CoursesSection({ categories, courses }: CourseProps) {
     const visibleCourses = filteredCourses.slice(0, visibleCount);
 
     return (
-        <section className="mx-auto w-full max-w-7xl px-4">
+        <section className="mx-auto w-full max-w-7xl px-4" id="course">
             <h2 className="dark:text-primary-foreground mx-auto mb-4 max-w-3xl text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
                 Ratusan Skill Impian Kini Dalam Genggamanmu
             </h2>

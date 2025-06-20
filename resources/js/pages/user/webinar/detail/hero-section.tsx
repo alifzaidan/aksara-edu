@@ -40,8 +40,12 @@ export default function HeroSection({ webinar }: { webinar: Webinar }) {
                     </p>
 
                     <div className="flex flex-wrap gap-4">
-                        <Button>Daftar Sekarang</Button>
-                        <Button variant="outline">Hubungi Kami</Button>
+                        <a href="#register">
+                            <Button>Daftar Sekarang</Button>
+                            <a href="https://wa.me/+6285142505797" target="_blank" rel="noopener noreferrer">
+                                <Button variant="outline">Hubungi Kami</Button>
+                            </a>
+                        </a>
                     </div>
                 </div>
                 <div className="col-span-1 hidden lg:block">
