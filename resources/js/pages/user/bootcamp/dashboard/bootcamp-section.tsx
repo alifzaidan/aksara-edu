@@ -82,47 +82,51 @@ export default function BootcampSection({ categories, bootcamps }: BootcampProps
                 </div>
             </div>
             <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {visibleBootcamps.map((bootcamp) => (
-                    <Link
-                        key={bootcamp.id}
-                        href={`/bootcamp/${bootcamp.slug}`}
-                        className="relative overflow-hidden rounded-xl bg-zinc-300/30 p-[2px] dark:bg-zinc-700/30"
-                    >
-                        <Spotlight className="bg-primary blur-2xl" size={284} />
-                        <div className="bg-sidebar relative flex w-full flex-col items-center justify-center rounded-lg dark:bg-zinc-800">
-                            <img
-                                src={bootcamp.thumbnail ? `/storage/${bootcamp.thumbnail}` : '/assets/images/placeholder.png'}
-                                alt={bootcamp.title}
-                                className="h-48 w-full rounded-t-lg object-cover"
-                            />
-                            <div className="w-full p-4 text-left">
-                                <h2 className="mb-2 text-lg font-semibold">{bootcamp.title}</h2>
-                                <div className="flex items-center gap-2">
-                                    <Tag size="18" />
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">Rp. {bootcamp.price.toLocaleString('id-ID')}</p>
-                                </div>
-                                <div className="mt-2 flex justify-between">
+                {visibleBootcamps.length === 0 ? (
+                    <div className="col-span-full py-12 text-center text-gray-500">Belum ada bootcamp yang tersedia saat ini.</div>
+                ) : (
+                    visibleBootcamps.map((bootcamp) => (
+                        <Link
+                            key={bootcamp.id}
+                            href={`/bootcamp/${bootcamp.slug}`}
+                            className="relative overflow-hidden rounded-xl bg-zinc-300/30 p-[2px] dark:bg-zinc-700/30"
+                        >
+                            <Spotlight className="bg-primary blur-2xl" size={284} />
+                            <div className="bg-sidebar relative flex w-full flex-col items-center justify-center rounded-lg dark:bg-zinc-800">
+                                <img
+                                    src={bootcamp.thumbnail ? `/storage/${bootcamp.thumbnail}` : '/assets/images/placeholder.png'}
+                                    alt={bootcamp.title}
+                                    className="h-48 w-full rounded-t-lg object-cover"
+                                />
+                                <div className="w-full p-4 text-left">
+                                    <h2 className="mb-2 text-lg font-semibold">{bootcamp.title}</h2>
                                     <div className="flex items-center gap-2">
-                                        <Calendar size="18" />
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                                            {new Date(bootcamp.start_date).toLocaleDateString('id-ID', {
-                                                day: 'numeric',
-                                                month: 'long',
-                                                year: 'numeric',
-                                            })}{' '}
-                                            -{' '}
-                                            {new Date(bootcamp.end_date).toLocaleDateString('id-ID', {
-                                                day: 'numeric',
-                                                month: 'long',
-                                                year: 'numeric',
-                                            })}
-                                        </p>
+                                        <Tag size="18" />
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">Rp. {bootcamp.price.toLocaleString('id-ID')}</p>
+                                    </div>
+                                    <div className="mt-2 flex justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Calendar size="18" />
+                                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                {new Date(bootcamp.start_date).toLocaleDateString('id-ID', {
+                                                    day: 'numeric',
+                                                    month: 'long',
+                                                    year: 'numeric',
+                                                })}{' '}
+                                                -{' '}
+                                                {new Date(bootcamp.end_date).toLocaleDateString('id-ID', {
+                                                    day: 'numeric',
+                                                    month: 'long',
+                                                    year: 'numeric',
+                                                })}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </Link>
-                ))}
+                        </Link>
+                    ))
+                )}
             </div>
             {visibleCount < filteredBootcamp.length && (
                 <div className="mb-8 flex justify-center">

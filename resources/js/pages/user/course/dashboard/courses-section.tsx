@@ -108,55 +108,59 @@ export default function CoursesSection({ categories, courses }: CourseProps) {
                 </div>
             </div>
             <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {visibleCourses.map((course) => (
-                    <Link
-                        key={course.id}
-                        href={`/course/${course.slug}`}
-                        className="relative overflow-hidden rounded-xl bg-zinc-300/30 p-[2px] dark:bg-zinc-700/30"
-                    >
-                        <Spotlight className="bg-primary blur-2xl" size={284} />
-                        <div className="bg-sidebar relative flex w-full flex-col items-center justify-center rounded-lg dark:bg-zinc-800">
-                            <img
-                                src={course.thumbnail ? `/storage/${course.thumbnail}` : '/assets/images/placeholder.png'}
-                                alt={course.title}
-                                className="h-48 w-full rounded-t-lg object-cover"
-                            />
-                            <div className="w-full p-4 text-left">
-                                <h2 className="mb-1 text-lg font-semibold">{course.title}</h2>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Rp. {course.price.toLocaleString('id-ID')}</p>
-                                <div className="mt-4 flex justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                        <Star size={18} className="text-yellow-500" />
+                {visibleCourses.length === 0 ? (
+                    <div className="col-span-full py-12 text-center text-gray-500">Belum ada kelas yang tersedia saat ini.</div>
+                ) : (
+                    visibleCourses.map((course) => (
+                        <Link
+                            key={course.id}
+                            href={`/course/${course.slug}`}
+                            className="relative overflow-hidden rounded-xl bg-zinc-300/30 p-[2px] dark:bg-zinc-700/30"
+                        >
+                            <Spotlight className="bg-primary blur-2xl" size={284} />
+                            <div className="bg-sidebar relative flex w-full flex-col items-center justify-center rounded-lg dark:bg-zinc-800">
+                                <img
+                                    src={course.thumbnail ? `/storage/${course.thumbnail}` : '/assets/images/placeholder.png'}
+                                    alt={course.title}
+                                    className="h-48 w-full rounded-t-lg object-cover"
+                                />
+                                <div className="w-full p-4 text-left">
+                                    <h2 className="mb-1 text-lg font-semibold">{course.title}</h2>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Rp. {course.price.toLocaleString('id-ID')}</p>
+                                    <div className="mt-4 flex justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Star size={18} className="text-yellow-500" fill="currentColor" />
+                                            <Star size={18} className="text-yellow-500" fill="currentColor" />
+                                            <Star size={18} className="text-yellow-500" fill="currentColor" />
+                                            <Star size={18} className="text-yellow-500" fill="currentColor" />
+                                            <Star size={18} className="text-yellow-500" />
+                                        </div>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <div
+                                                    className={
+                                                        course.level === 'beginner'
+                                                            ? 'rounded-full border border-green-300 bg-green-100 px-3 py-1 text-sm font-medium text-green-700 dark:bg-zinc-800 dark:text-green-300'
+                                                            : course.level === 'intermediate'
+                                                              ? 'rounded-full border border-yellow-300 bg-yellow-100 px-3 py-1 text-sm font-medium text-yellow-700 dark:bg-zinc-800 dark:text-yellow-300'
+                                                              : 'rounded-full border border-red-300 bg-red-100 px-3 py-1 text-sm font-medium text-red-700 dark:bg-zinc-800 dark:text-red-300'
+                                                    }
+                                                >
+                                                    <p>{course.level === 'beginner' ? '1' : course.level === 'intermediate' ? '2' : '3'}</p>
+                                                </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                {course.level === 'beginner' && <p>Level Beginner</p>}
+                                                {course.level === 'intermediate' && <p>Level Intermediate</p>}
+                                                {course.level === 'advanced' && <p>Level Advanced</p>}
+                                            </TooltipContent>
+                                        </Tooltip>
                                     </div>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <div
-                                                className={
-                                                    course.level === 'beginner'
-                                                        ? 'rounded-full border border-green-300 bg-green-100 px-3 py-1 text-sm font-medium text-green-700 dark:bg-zinc-800 dark:text-green-300'
-                                                        : course.level === 'intermediate'
-                                                          ? 'rounded-full border border-yellow-300 bg-yellow-100 px-3 py-1 text-sm font-medium text-yellow-700 dark:bg-zinc-800 dark:text-yellow-300'
-                                                          : 'rounded-full border border-red-300 bg-red-100 px-3 py-1 text-sm font-medium text-red-700 dark:bg-zinc-800 dark:text-red-300'
-                                                }
-                                            >
-                                                <p>{course.level === 'beginner' ? '1' : course.level === 'intermediate' ? '2' : '3'}</p>
-                                            </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            {course.level === 'beginner' && <p>Level Beginner</p>}
-                                            {course.level === 'intermediate' && <p>Level Intermediate</p>}
-                                            {course.level === 'advanced' && <p>Level Advanced</p>}
-                                        </TooltipContent>
-                                    </Tooltip>
                                 </div>
                             </div>
-                        </div>
-                    </Link>
-                ))}
+                        </Link>
+                    ))
+                )}
             </div>
             {visibleCount < filteredCourses.length && (
                 <div className="mb-8 flex justify-center">

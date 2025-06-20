@@ -81,41 +81,45 @@ export default function WebinarSection({ categories, webinars }: WebinarProps) {
                 </div>
             </div>
             <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {visibleWebinars.map((webinar) => (
-                    <Link
-                        key={webinar.id}
-                        href={`/webinar/${webinar.slug}`}
-                        className="relative overflow-hidden rounded-xl bg-zinc-300/30 p-[2px] dark:bg-zinc-700/30"
-                    >
-                        <Spotlight className="bg-primary blur-2xl" size={284} />
-                        <div className="bg-sidebar relative flex w-full flex-col items-center justify-center rounded-lg dark:bg-zinc-800">
-                            <img
-                                src={webinar.thumbnail ? `/storage/${webinar.thumbnail}` : '/assets/images/placeholder.png'}
-                                alt={webinar.title}
-                                className="h-48 w-full rounded-t-lg object-cover"
-                            />
-                            <div className="w-full p-4 text-left">
-                                <h2 className="mb-2 text-lg font-semibold">{webinar.title}</h2>
-                                <div className="flex items-center gap-2">
-                                    <Tag size="18" />
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">Rp. {webinar.price.toLocaleString('id-ID')}</p>
-                                </div>
-                                <div className="mt-2 flex justify-between">
+                {visibleWebinars.length === 0 ? (
+                    <div className="col-span-full py-12 text-center text-gray-500">Belum ada webinar yang tersedia saat ini.</div>
+                ) : (
+                    visibleWebinars.map((webinar) => (
+                        <Link
+                            key={webinar.id}
+                            href={`/webinar/${webinar.slug}`}
+                            className="relative overflow-hidden rounded-xl bg-zinc-300/30 p-[2px] dark:bg-zinc-700/30"
+                        >
+                            <Spotlight className="bg-primary blur-2xl" size={284} />
+                            <div className="bg-sidebar relative flex w-full flex-col items-center justify-center rounded-lg dark:bg-zinc-800">
+                                <img
+                                    src={webinar.thumbnail ? `/storage/${webinar.thumbnail}` : '/assets/images/placeholder.png'}
+                                    alt={webinar.title}
+                                    className="h-48 w-full rounded-t-lg object-cover"
+                                />
+                                <div className="w-full p-4 text-left">
+                                    <h2 className="mb-2 text-lg font-semibold">{webinar.title}</h2>
                                     <div className="flex items-center gap-2">
-                                        <Calendar size="18" />
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                                            {new Date(webinar.start_time).toLocaleDateString('id-ID', {
-                                                day: 'numeric',
-                                                month: 'long',
-                                                year: 'numeric',
-                                            })}
-                                        </p>
+                                        <Tag size="18" />
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">Rp. {webinar.price.toLocaleString('id-ID')}</p>
+                                    </div>
+                                    <div className="mt-2 flex justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Calendar size="18" />
+                                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                {new Date(webinar.start_time).toLocaleDateString('id-ID', {
+                                                    day: 'numeric',
+                                                    month: 'long',
+                                                    year: 'numeric',
+                                                })}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </Link>
-                ))}
+                        </Link>
+                    ))
+                )}
             </div>
             {visibleCount < filteredWebinar.length && (
                 <div className="mb-8 flex justify-center">
