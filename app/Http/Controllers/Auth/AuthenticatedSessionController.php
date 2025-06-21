@@ -36,6 +36,12 @@ class AuthenticatedSessionController extends Controller
 
         $user = User::find(Auth::user()->id);
 
+        $redirect = $request->input('redirect') ?? $request->query('redirect');
+
+        if ($redirect) {
+            return redirect($redirect);
+        }
+
         if ($user->hasRole('admin')) {
             return redirect()->intended(route('dashboard', absolute: false));
         } elseif ($user->hasRole('student')) {

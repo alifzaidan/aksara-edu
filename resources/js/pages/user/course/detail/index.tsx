@@ -40,7 +40,6 @@ interface Course {
 }
 
 export default function DetailCourse({ course }: { course: Course }) {
-    console.log(course);
     return (
         <UserLayout>
             <Head title="Kelas Online" />

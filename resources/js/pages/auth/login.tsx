@@ -1,6 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useEffect } from 'react';
 
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
@@ -14,6 +14,7 @@ type LoginForm = {
     email: string;
     password: string;
     remember: boolean;
+    redirect?: string;
 };
 
 interface LoginProps {
@@ -26,6 +27,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
         email: '',
         password: '',
         remember: false,
+        redirect: new URLSearchParams(window.location.search).get('redirect') ?? '',
     });
 
     const submit: FormEventHandler = (e) => {
@@ -34,6 +36,10 @@ export default function Login({ status, canResetPassword }: LoginProps) {
             onFinish: () => reset('password'),
         });
     };
+
+    useEffect(() => {
+        setData('redirect', new URLSearchParams(window.location.search).get('redirect') ?? '');
+    }, [setData]);
 
     return (
         <AuthLayout title="Masuk ke Aksademy" description="Silahkan masukkan informasi akun kamu.">
