@@ -4,11 +4,21 @@ import { BadgeCheck, Mic, Star, User } from 'lucide-react';
 interface Course {
     title: string;
     description?: string | null;
+    key_points?: string | null;
     user?: { name: string; bio: string | null };
     images?: { image_url: string }[];
 }
 
+function parseList(items?: string | null): string[] {
+    if (!items) return [];
+    const matches = items.match(/<li>(.*?)<\/li>/g);
+    if (!matches) return [];
+    return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
+}
+
 export default function AboutSection({ course }: { course: Course }) {
+    const keyPoints = parseList(course.key_points);
+
     return (
         <>
             <section className="mx-auto w-full max-w-5xl px-4" id="about">
@@ -37,45 +47,12 @@ export default function AboutSection({ course }: { course: Course }) {
                     Poin Utama
                 </p>
                 <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <li className="flex items-center gap-2">
-                        <BadgeCheck size="18" className="text-green-600" />
-                        <p>Penerapan Arsitektur Service Repository</p>
-                    </li>
-                    <li className="flex items-center gap-2">
-                        <BadgeCheck size="18" className="text-green-600" />
-                        <p>Penerapan Arsitektur Service Repository</p>
-                    </li>
-                    <li className="flex items-center gap-2">
-                        <BadgeCheck size="18" className="text-green-600" />
-                        <p>Penerapan Arsitektur Service Repository</p>
-                    </li>
-                    <li className="flex items-center gap-2">
-                        <BadgeCheck size="18" className="text-green-600" />
-                        <p>Penerapan Arsitektur Service Repository</p>
-                    </li>
-                </ul>
-            </section>
-            <section className="mx-auto mt-4 w-full max-w-5xl px-4">
-                <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                    Cocok Untuk
-                </p>
-                <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <li className="flex items-center gap-2">
-                        <BadgeCheck size="18" className="text-green-600" />
-                        <p>Web Developer Pemula ke Menengah</p>
-                    </li>
-                    <li className="flex items-center gap-2">
-                        <BadgeCheck size="18" className="text-green-600" />
-                        <p>Web Developer Pemula ke Menengah</p>
-                    </li>
-                    <li className="flex items-center gap-2">
-                        <BadgeCheck size="18" className="text-green-600" />
-                        <p>Web Developer Pemula ke Menengah</p>
-                    </li>
-                    <li className="flex items-center gap-2">
-                        <BadgeCheck size="18" className="text-green-600" />
-                        <p>Web Developer Pemula ke Menengah</p>
-                    </li>
+                    {keyPoints.map((req, idx) => (
+                        <li key={idx} className="flex items-center gap-2">
+                            <BadgeCheck size="18" className="text-green-600" />
+                            <p>{req}</p>
+                        </li>
+                    ))}
                 </ul>
             </section>
             <section className="mx-auto mt-4 w-full max-w-5xl px-4">

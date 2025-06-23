@@ -11,7 +11,7 @@ interface Course {
 
 export default function HeroSection({ course }: { course: Course }) {
     const courseCertificate = 'yes' as 'yes' | 'no';
-    const courseConsultation = 'no' as 'yes' | 'no';
+    const courseConsultation = 'yes' as 'yes' | 'no';
 
     return (
         <section className="to-background from-background via-tertiary dark:via-background dark:to-background relative bg-gradient-to-b py-12 text-gray-900 dark:text-white">

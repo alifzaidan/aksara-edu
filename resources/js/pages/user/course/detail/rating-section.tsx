@@ -1,7 +1,4 @@
-import { Button } from '@/components/ui/button';
-import { Magnetic } from '@/components/ui/magnetic';
-import { Link } from '@inertiajs/react';
-import { GalleryVerticalEnd, Star, User } from 'lucide-react';
+import { Star, User } from 'lucide-react';
 import { useState } from 'react';
 
 const ratings = [
@@ -50,7 +47,15 @@ const ratings = [
     },
 ];
 
-export default function RatingSection() {
+interface Course {
+    title: string;
+    short_description?: string | null;
+    level: 'beginner' | 'intermediate' | 'advanced';
+    created_at: string;
+    updated_at: string;
+}
+
+export default function RatingSection({ course }: { course: Course }) {
     const [selectedRating, setSelectedRating] = useState<number | null>(null);
 
     const filteredRatings = selectedRating ? ratings.filter((r) => r.rating === selectedRating) : ratings;
@@ -59,9 +64,7 @@ export default function RatingSection() {
             <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
                 Terima Kasih Para Peserta
             </h2>
-            <p className="text-center text-gray-600 dark:text-gray-400">
-                Review setelah bergabung di kelas Laravel 11, Service Repository, Filament: Web Event and Workshop Ticket
-            </p>
+            <p className="text-center text-gray-600 dark:text-gray-400">Review setelah bergabung di kelas {course.title}</p>
             <div className="mt-4 flex w-max flex-nowrap gap-2">
                 <button
                     type="button"
@@ -113,13 +116,6 @@ export default function RatingSection() {
                         </div>
                     ))}
                 </div>
-                <Magnetic>
-                    <Button type="button" className="mt-8" asChild>
-                        <Link href="/course">
-                            Lihat Semua Rating <GalleryVerticalEnd />
-                        </Link>
-                    </Button>
-                </Magnetic>
             </div>
         </section>
     );

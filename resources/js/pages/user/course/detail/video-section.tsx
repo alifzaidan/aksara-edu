@@ -86,7 +86,7 @@ export default function VideoSection({ course }: { course: Course }) {
                         className="hover:bg-primary/10 mb-2 flex justify-between rounded-lg border bg-gray-100 p-4 text-gray-800 transition hover:cursor-pointer"
                     >
                         <h5 className="flex items-center gap-2 text-sm font-medium">
-                            <PlayCircle size="18" /> {totalLessons - 2} Materi Lainnya
+                            <PlayCircle size="18" /> {totalLessons - items.length} Materi Lainnya
                         </h5>
                     </a>
                     <a href="#register" className="mt-auto w-full">

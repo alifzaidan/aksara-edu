@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BadgeCheck, Presentation, TvMinimalPlay } from 'lucide-react';
+import { BadgeCheck, InfinityIcon, Presentation, Smartphone, TvMinimalPlay } from 'lucide-react';
 
 interface Course {
     title: string;
@@ -72,6 +72,14 @@ export default function RegisterSection({ course }: { course: Course }) {
                         <li className="flex items-center gap-2 text-sm">
                             <Presentation size="16" className="text-primary dark:text-secondary" />
                             <p>Free Konsultasi</p>
+                        </li>
+                        <li className="flex items-center gap-2 text-sm">
+                            <InfinityIcon size="16" className="text-primary dark:text-secondary" />
+                            <p>Akses Selamanya</p>
+                        </li>
+                        <li className="flex items-center gap-2 text-sm">
+                            <Smartphone size="16" className="text-primary dark:text-secondary" />
+                            <p>Materi On Demand</p>
                         </li>
                     </ul>
                     <Button className="mt-auto w-full" asChild>
