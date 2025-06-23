@@ -4,7 +4,7 @@ import { Magnetic } from '@/components/ui/magnetic';
 import { Spotlight } from '@/components/ui/spotlight';
 import { Link } from '@inertiajs/react';
 import { Calendar, GalleryVerticalEnd, Tag } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 type Category = {
     id: string;
@@ -32,6 +32,32 @@ export default function BootcampSection({ categories, bootcamps }: BootcampProps
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [visibleCount, setVisibleCount] = useState(6);
+    const categoryRef = useRef<HTMLDivElement | null>(null);
+    const isDragging = useRef(false);
+    const startX = useRef(0);
+    const scrollLeft = useRef(0);
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        isDragging.current = true;
+        startX.current = e.pageX - (categoryRef.current?.offsetLeft ?? 0);
+        scrollLeft.current = categoryRef.current?.scrollLeft ?? 0;
+    };
+
+    const handleMouseLeave = () => {
+        isDragging.current = false;
+    };
+
+    const handleMouseUp = () => {
+        isDragging.current = false;
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging.current || !categoryRef.current) return;
+        e.preventDefault();
+        const x = e.pageX - categoryRef.current.offsetLeft;
+        const walk = (x - startX.current) * 1.5; // scroll speed
+        categoryRef.current.scrollLeft = scrollLeft.current - walk;
+    };
 
     const filteredBootcamp = bootcamps.filter((bootcamp) => {
         const matchSearch = bootcamp.title.toLowerCase().includes(search.toLowerCase());
@@ -52,8 +78,16 @@ export default function BootcampSection({ categories, bootcamps }: BootcampProps
             <div className="mb-4 flex">
                 <Input type="search" placeholder="Cari bootcamp..." value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
-            <div className="mb-4 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-                <div className="flex w-max flex-nowrap gap-2">
+            <div
+                className="mb-4 overflow-x-auto"
+                ref={categoryRef}
+                onMouseDown={handleMouseDown}
+                onMouseLeave={handleMouseLeave}
+                onMouseUp={handleMouseUp}
+                onMouseMove={handleMouseMove}
+                style={{ scrollbarWidth: 'none', cursor: isDragging.current ? 'grabbing' : 'grab' }}
+            >
+                <div className="flex w-max flex-nowrap gap-2 select-none">
                     <button
                         type="button"
                         onClick={() => setSelectedCategory(null)}
