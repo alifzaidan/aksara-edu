@@ -8,7 +8,7 @@ import { type PropsWithChildren } from 'react';
 
 const sidebarNavItems: NavItem[] = [
     {
-        title: 'Profile',
+        title: 'Profil',
         href: '/settings/profile',
         icon: null,
     },
@@ -18,7 +18,7 @@ const sidebarNavItems: NavItem[] = [
         icon: null,
     },
     {
-        title: 'Appearance',
+        title: 'Tampilan',
         href: '/settings/appearance',
         icon: null,
     },
