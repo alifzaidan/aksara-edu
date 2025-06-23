@@ -1,10 +1,9 @@
-import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookText, LayoutGrid, List, Monitor, MonitorPlay, Presentation, SquareMousePointer, Users } from 'lucide-react';
+import { BookText, LayoutGrid, List, MonitorPlay, Presentation, SquareMousePointer, Users } from 'lucide-react';
 
 const mainNavItems: NavItem[] = [
     {
@@ -33,22 +32,14 @@ const mainNavItems: NavItem[] = [
         icon: BookText,
     },
     {
-        title: 'Webinar',
-        href: '/admin/webinars',
-        icon: MonitorPlay,
-    },
-    {
         title: 'Bootcamp',
         href: '/admin/bootcamps',
         icon: Presentation,
     },
-];
-
-const footerNavItems: NavItem[] = [
     {
-        title: 'Website',
-        href: 'https://aksarateknologi.co.id',
-        icon: Monitor,
+        title: 'Webinar',
+        href: '/admin/webinars',
+        icon: MonitorPlay,
     },
 ];
 
@@ -75,7 +66,6 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

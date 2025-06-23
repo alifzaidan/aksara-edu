@@ -38,6 +38,16 @@ export default function Home({ courses, tools }: { courses: Course[]; tools: Too
             <TestimonySection />
             <FaqSection />
             <CtaSection />
+
+            <a
+                href="https://wa.me/+6285142505797?text=Halo%20Admin%20Aksademy,%20saya%20ingin%20bertanya%20tentang%20kelas%20online."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fixed right-10 bottom-6 z-50 flex h-16 w-16 animate-bounce items-center justify-center rounded-full bg-green-100 shadow-lg transition duration-1000 hover:bg-green-200"
+                aria-label="Chat WhatsApp"
+            >
+                <img src="/assets/images/icon-wa.svg" alt="WhatsApp" className="h-12 w-12" />
+            </a>
         </UserLayout>
     );
 }

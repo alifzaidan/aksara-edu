@@ -12,6 +12,7 @@ use App\Http\Controllers\User\CourseController as UserCourseController;
 use App\Http\Controllers\User\BootcampController as UserBootcampController;
 use App\Http\Controllers\User\WebinarController as UserWebinarController;
 use App\Http\Controllers\User\HomeController;
+use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\WebinarController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +26,13 @@ Route::get('/webinar', [UserWebinarController::class, 'index'])->name('webinar.i
 Route::get('/webinar/{webinar:slug}', [UserWebinarController::class, 'detail'])->name('webinar.detail');
 
 Route::get('/course/checkout/success', [UserCourseController::class, 'showCheckoutSuccess'])->name('course.checkout.success');
+
+Route::redirect('profile', 'profile/dashboard');
+Route::get('/profile/dashboard', [ProfileController::class, 'index'])->name('profile.index');
+Route::get('/profile/my-courses', [ProfileController::class, 'showMyCourses'])->name('profile.courses');
+Route::get('/profile/my-bootcamps', [ProfileController::class, 'showMyBootcamps'])->name('profile.bootcamps');
+Route::get('/profile/my-webinars', [ProfileController::class, 'showMyWebinars'])->name('profile.webinars');
+Route::get('/profile/transactions', [ProfileController::class, 'showTransactions'])->name('profile.transactions');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['role:admin'])->group(function () {

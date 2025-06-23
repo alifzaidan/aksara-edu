@@ -49,6 +49,7 @@ export default function AboutSection() {
                     yang dirancang dengan cermat untuk{' '}
                     <span className="bg-primary text-background dark:text-primary-foreground rounded-full px-2">pembelajaran</span> yang mudah
                 </h2>
+
                 <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                     <div>
                         <Cursor
@@ -66,17 +67,19 @@ export default function AboutSection() {
                         >
                             <div>
                                 <MouseIcon className="h-6 w-6" />
-                                <div className="bg-secondary mt-1 ml-4 rounded-[4px] px-2 py-0.5 text-neutral-50">Web Development</div>
+                                <div className="bg-secondary mt-1 ml-4 rounded-[4px] px-2 py-0.5 text-neutral-50">Web & App Development</div>
                             </div>
                         </Cursor>
                         <Tilt rotationFactor={10} isRevese>
                             <Link
                                 href="/"
-                                className="hover:border-secondary relative flex h-[200px] w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
+                                className="hover:border-secondary relative flex w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
                             >
-                                <img src="/assets/images/icon-web-dev.png" alt="Web Development" className="mx-auto mb-4 h-12 sm:h-16" />
-                                <h2 className="mb-1 text-lg font-semibold">Web Development</h2>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Membangun aplikasi web yang responsif dan efisien</p>
+                                <img src="/assets/images/web-app-icon.svg" alt="Web Development" className="mx-auto mb-4" />
+                                <h2 className="mb-1 text-lg font-semibold">Web & App Development</h2>
+                                <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
+                                    Membangun aplikasi web dan mobile yang responsif dan efisien
+                                </p>
                             </Link>
                         </Tilt>
                     </div>
@@ -102,11 +105,13 @@ export default function AboutSection() {
                         <Tilt rotationFactor={10} isRevese>
                             <Link
                                 href="/"
-                                className="hover:border-secondary relative flex h-[200px] w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
+                                className="hover:border-secondary relative flex w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
                             >
-                                <img src="/assets/images/icon-data-science.png" alt="Data Science" className="mx-auto mb-4 h-12 sm:h-16" />
+                                <img src="/assets/images/data-science-icon.svg" alt="Data Science" className="mx-auto mb-4" />
                                 <h2 className="mb-1 text-lg font-semibold">Data Science</h2>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Menganalisis data untuk mendapatkan wawasan yang berharga</p>
+                                <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
+                                    Menganalisis data untuk mendapatkan wawasan yang berharga
+                                </p>
                             </Link>
                         </Tilt>
                     </div>
@@ -133,11 +138,11 @@ export default function AboutSection() {
                         <Tilt rotationFactor={10} isRevese>
                             <Link
                                 href="/"
-                                className="hover:border-secondary relative flex h-[200px] w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
+                                className="hover:border-secondary relative flex w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
                             >
-                                <img src="/assets/images/icon-graphic-design.png" alt="Graphic Design" className="mx-auto mb-4 h-12 sm:h-16" />
+                                <img src="/assets/images/graphic-design-icon.svg" alt="Graphic Design" className="mx-auto mb-4" />
                                 <h2 className="mb-1 text-lg font-semibold">Graphic Design</h2>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Mendesain antarmuka yang menarik dan fungsional</p>
+                                <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">Mendesain antarmuka yang menarik dan fungsional</p>
                             </Link>
                         </Tilt>
                     </div>
@@ -163,11 +168,11 @@ export default function AboutSection() {
                         <Tilt rotationFactor={10} isRevese>
                             <Link
                                 href="/"
-                                className="hover:border-secondary relative flex h-[200px] w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
+                                className="hover:border-secondary relative flex w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
                             >
-                                <img src="/assets/images/icon-accountant.png" alt="Accounting" className="mx-auto mb-4 h-12 sm:h-16" />
-                                <h2 className="mb-1 text-lg font-semibold">Accounting</h2>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Membantu mengelola keuangan dan laporan keuangan</p>
+                                <img src="/assets/images/accounting-tax-icon.svg" alt="Accounting" className="mx-auto mb-4" />
+                                <h2 className="mb-1 text-lg font-semibold">Accounting, Finance, & Tax</h2>
+                                <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">Membantu mengelola keuangan dan laporan keuangan</p>
                             </Link>
                         </Tilt>
                     </div>

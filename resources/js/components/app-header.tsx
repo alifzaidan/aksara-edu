@@ -14,10 +14,6 @@ import { Menu, Search } from 'lucide-react';
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Beranda',
-        href: '/',
-    },
-    {
         title: 'Kelas Online',
         href: '/course',
     },
@@ -94,14 +90,14 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             href={item.href}
                                             className={cn(
                                                 navigationMenuTriggerStyle(),
-                                                page.url === item.href && activeItemStyles,
+                                                page.url.startsWith(item.href) && activeItemStyles,
                                                 'hover:bg-primary/5 dark:hover:bg-primary/40 h-9 cursor-pointer px-3',
                                             )}
                                         >
                                             {item.icon && <Icon iconNode={item.icon} className="mr-2 h-4 w-4" />}
                                             {item.title}
                                         </Link>
-                                        {page.url === item.href && (
+                                        {page.url.startsWith(item.href) && (
                                             <div className="bg-primary absolute bottom-0 left-0 h-0.5 w-full translate-y-px dark:bg-white"></div>
                                         )}
                                     </NavigationMenuItem>

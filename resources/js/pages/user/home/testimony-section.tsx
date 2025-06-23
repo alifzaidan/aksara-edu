@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { InfiniteSlider } from '@/components/ui/infinite-slider';
 import { Link } from '@inertiajs/react';
-import { Star, User } from 'lucide-react';
+import { User } from 'lucide-react';
 
 export default function TestimonySection() {
     return (
@@ -27,12 +27,17 @@ export default function TestimonySection() {
                                 </div>
                                 <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
                             </div>
+                            <p className="text-sm text-gray-500">
+                                Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk
+                                kita lebih cepat paham.
+                            </p>
+                        </div>
+                        <div className="max-w-sm space-y-2 rounded-lg bg-white p-4 shadow-md">
                             <div className="flex items-center gap-2">
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
+                                <div className="rounded-full bg-gray-200 p-2">
+                                    <User className="h-4 w-4 text-gray-500" />
+                                </div>
+                                <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
                             </div>
                             <p className="text-sm text-gray-500">
                                 Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk
@@ -46,13 +51,6 @@ export default function TestimonySection() {
                                 </div>
                                 <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                            </div>
                             <p className="text-sm text-gray-500">
                                 Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk
                                 kita lebih cepat paham.
@@ -64,32 +62,6 @@ export default function TestimonySection() {
                                     <User className="h-4 w-4 text-gray-500" />
                                 </div>
                                 <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                            </div>
-                            <p className="text-sm text-gray-500">
-                                Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk
-                                kita lebih cepat paham.
-                            </p>
-                        </div>
-                        <div className="max-w-sm space-y-2 rounded-lg bg-white p-4 shadow-md">
-                            <div className="flex items-center gap-2">
-                                <div className="rounded-full bg-gray-200 p-2">
-                                    <User className="h-4 w-4 text-gray-500" />
-                                </div>
-                                <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
                             </div>
                             <p className="text-sm text-gray-500">
                                 Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk
@@ -105,12 +77,17 @@ export default function TestimonySection() {
                                 </div>
                                 <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
                             </div>
+                            <p className="text-sm text-gray-500">
+                                Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk
+                                kita lebih cepat paham.
+                            </p>
+                        </div>
+                        <div className="max-w-sm space-y-2 rounded-lg bg-white p-4 shadow-md">
                             <div className="flex items-center gap-2">
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
+                                <div className="rounded-full bg-gray-200 p-2">
+                                    <User className="h-4 w-4 text-gray-500" />
+                                </div>
+                                <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
                             </div>
                             <p className="text-sm text-gray-500">
                                 Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk
@@ -124,13 +101,6 @@ export default function TestimonySection() {
                                 </div>
                                 <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                            </div>
                             <p className="text-sm text-gray-500">
                                 Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk
                                 kita lebih cepat paham.
@@ -142,32 +112,6 @@ export default function TestimonySection() {
                                     <User className="h-4 w-4 text-gray-500" />
                                 </div>
                                 <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                            </div>
-                            <p className="text-sm text-gray-500">
-                                Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk
-                                kita lebih cepat paham.
-                            </p>
-                        </div>
-                        <div className="max-w-sm space-y-2 rounded-lg bg-white p-4 shadow-md">
-                            <div className="flex items-center gap-2">
-                                <div className="rounded-full bg-gray-200 p-2">
-                                    <User className="h-4 w-4 text-gray-500" />
-                                </div>
-                                <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
-                                <Star size={16} className="text-yellow-500" fill="currentColor" />
                             </div>
                             <p className="text-sm text-gray-500">
                                 Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk

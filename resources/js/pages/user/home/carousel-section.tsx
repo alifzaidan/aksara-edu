@@ -1,4 +1,4 @@
-import { Carousel, CarouselContent, CarouselIndicator, CarouselItem } from '@/components/ui/carousel';
+import { Carousel, CarouselContent, CarouselIndicator, CarouselItem, CarouselNavigation } from '@/components/ui/carousel';
 import { Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
@@ -20,7 +20,7 @@ export default function CarouselSection() {
                     <CarouselItem className="px-4">
                         <a href="#program-kami">
                             <img
-                                src="/assets/images/carousel-1.png"
+                                src="/assets/images/carousel-1-1.png"
                                 alt="Slide 1"
                                 className="mx-auto w-full max-w-7xl rounded-xl object-cover shadow-lg"
                             />
@@ -54,6 +54,7 @@ export default function CarouselSection() {
                         </Link>
                     </CarouselItem>
                 </CarouselContent>
+                <CarouselNavigation />
                 <div className="mx-auto max-w-7xl px-4">
                     <CarouselIndicator />
                 </div>
