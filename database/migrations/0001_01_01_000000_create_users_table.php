@@ -19,6 +19,10 @@ return new class extends Migration
             $table->string('phone_number')->nullable();
             $table->string('bio')->nullable();
             $table->string('password');
+            $table->char('affiliate_code', 36)->nullable();
+            $table->enum('affiliate_status', ['Active', 'Not Active'])->default('Not Active');
+            $table->tinyInteger('commission')->default(0);
+            $table->string('avatar')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

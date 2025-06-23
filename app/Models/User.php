@@ -26,6 +26,10 @@ class User extends Authenticatable
         'phone_number',
         'bio',
         'password',
+        'affiliate_code',
+        'affiliate_status',
+        'commission',
+        'avatar',
     ];
 
     /**

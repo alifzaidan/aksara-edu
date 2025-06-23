@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AffiliateController;
 use App\Http\Controllers\BootcampController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CourseController;
@@ -40,6 +41,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('admin/dashboard', [AdminController::class, 'index'])->name('dashboard');
         Route::resource('admin/categories', CategoryController::class);
         Route::resource('admin/mentors', MentorController::class);
+        Route::resource('admin/affiliates', AffiliateController::class);
+        Route::post('admin/affiliates/{affiliate}/toggle-status', [AffiliateController::class, 'toggleStatus'])->name('affiliates.toggleStatus');
         Route::resource('admin/tools', ToolController::class);
         Route::post('/admin/tools/{id}', [ToolController::class, 'update'])->name('tools.update');
         Route::resource('admin/courses', CourseController::class);

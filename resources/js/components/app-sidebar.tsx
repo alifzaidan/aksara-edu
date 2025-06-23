@@ -3,13 +3,18 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookText, LayoutGrid, List, MonitorPlay, Presentation, SquareMousePointer, Users } from 'lucide-react';
+import { BookText, LayoutGrid, List, MonitorPlay, Presentation, SquareMousePointer, UserCheck, Users } from 'lucide-react';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: '/admin/dashboard',
         icon: LayoutGrid,
+    },
+    {
+        title: 'Afiliasi',
+        href: '/admin/affiliates',
+        icon: UserCheck,
     },
     {
         title: 'Mentor',
