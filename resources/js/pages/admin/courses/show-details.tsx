@@ -13,6 +13,7 @@ interface Course {
     images?: { image_url: string }[];
     short_description?: string | null;
     description?: string | null;
+    key_points?: string | null;
     price: number;
     thumbnail?: string | null;
     course_url: string;
@@ -108,6 +109,12 @@ export default function CourseDetail({ course }: { course: Course }) {
                         <TableCell>Deskripsi Lengkap</TableCell>
                         <TableCell>
                             <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: course.description ?? '-' }} />
+                        </TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell>Poin Utama</TableCell>
+                        <TableCell>
+                            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: course.key_points ?? '-' }} />
                         </TableCell>
                     </TableRow>
                 </TableBody>

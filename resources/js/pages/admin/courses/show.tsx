@@ -21,6 +21,7 @@ interface Course {
     images?: { image_url: string }[];
     short_description?: string | null;
     description?: string | null;
+    key_points?: string | null;
     price: number;
     thumbnail?: string | null;
     course_url: string;

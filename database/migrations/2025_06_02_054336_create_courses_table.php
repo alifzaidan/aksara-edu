@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->text('short_description')->nullable();
             $table->text('description')->nullable();
+            $table->text('key_points')->nullable();
             $table->string('thumbnail')->nullable();
             $table->bigInteger('price')->default(0);
             $table->string('course_url')->nullable();

@@ -13,9 +13,11 @@ import { cn, parseRupiah, rupiahFormatter } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Head, router } from '@inertiajs/react';
+import { Editor } from '@tinymce/tinymce-react';
 import { BookMarked, Check, ChevronsUpDown } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 import CourseModulesSection from './course-modules-section';
 
@@ -45,6 +47,7 @@ const formSchema = z.object({
     category_id: z.string().nonempty('Kategori harus dipilih'),
     short_description: z.string().max(200).nullable(),
     description: z.string().max(1000).nullable(),
+    key_points: z.string().max(1000).nullable(),
     thumbnail: z.any().nullable(),
     price: z.number().min(0),
     level: z.enum(['beginner', 'intermediate', 'advanced']),
@@ -56,6 +59,9 @@ export default function CreateCourse({ categories, tools }: { categories: { id: 
     const [preview, setPreview] = useState<string | null>(null);
     const [sneakPeekImages, setSneakPeekImages] = useState<File[]>([]);
     const [sneakPeekPreviews, setSneakPeekPreviews] = useState<string[]>([]);
+    const [thumbnailError, setThumbnailError] = useState(false);
+    const [sneakPeekError, setSneakPeekError] = useState(false);
+
     const [modules, setModules] = useState<{ title: string; description?: string; lessons?: Lesson[] }[]>([]);
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -65,6 +71,11 @@ export default function CreateCourse({ categories, tools }: { categories: { id: 
             category_id: '',
             short_description: '',
             description: '',
+            key_points: `<ul>
+                            <li>Mempelajari fitur-fitur untuk bikin web modern</li>
+                            <li>Membuat dashboard, cms, dan restful api dengan filament</li>
+                            <li>Memahami cara kerja hooks pada reactjs dan nextjs</li>
+                        </ul>`,
             thumbnail: '',
             price: 0,
             level: 'beginner',
@@ -111,6 +122,15 @@ export default function CreateCourse({ categories, tools }: { categories: { id: 
 
     const handleSneakPeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files ?? []).slice(0, 4);
+
+        // Cek ukuran file
+        const oversize = files.some((file) => file.size > 2 * 1024 * 1024);
+        setSneakPeekError(oversize);
+        if (oversize) {
+            toast('Ukuran setiap gambar maksimal 2MB!');
+            return;
+        }
+
         setSneakPeekImages(files);
 
         // Preview
@@ -283,6 +303,48 @@ export default function CreateCourse({ categories, tools }: { categories: { id: 
                                 />
                                 <FormField
                                     control={form.control}
+                                    name="key_points"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Syarat Peserta</FormLabel>
+                                            <Editor
+                                                apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
+                                                value={field.value ?? ''}
+                                                onEditorChange={(content) => field.onChange(content)}
+                                                init={{
+                                                    plugins: [
+                                                        'anchor',
+                                                        'autolink',
+                                                        'charmap',
+                                                        'codesample',
+                                                        'emoticons',
+                                                        'image',
+                                                        'link',
+                                                        'lists',
+                                                        'media',
+                                                        'searchreplace',
+                                                        'table',
+                                                        'visualblocks',
+                                                        'wordcount',
+                                                    ],
+                                                    onboarding: false,
+                                                    toolbar:
+                                                        'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+                                                    tinycomments_mode: 'embedded',
+                                                    tinycomments_author: 'Author name',
+                                                    mergetags_list: [
+                                                        { value: 'First.Name', title: 'First Name' },
+                                                        { value: 'Email', title: 'Email' },
+                                                    ],
+                                                    height: 300,
+                                                }}
+                                            />
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
                                     name="thumbnail"
                                     render={({ field }) => (
                                         <FormItem>
@@ -296,8 +358,15 @@ export default function CreateCourse({ categories, tools }: { categories: { id: 
                                                 type="file"
                                                 name={field.name}
                                                 accept="image/*"
+                                                className={thumbnailError ? 'border-red-500 focus-visible:ring-red-500' : ''}
                                                 onChange={(e) => {
                                                     const file = e.target.files?.[0] ?? null;
+                                                    if (file && file.size > 2 * 1024 * 1024) {
+                                                        setThumbnailError(true);
+                                                        toast('Ukuran file maksimal 2MB!');
+                                                        return;
+                                                    }
+                                                    setThumbnailError(false);
                                                     field.onChange(file);
                                                     if (file) {
                                                         const reader = new FileReader();
@@ -327,7 +396,14 @@ export default function CreateCourse({ categories, tools }: { categories: { id: 
                                             ))}
                                         </div>
                                     )}
-                                    <Input type="file" accept="image/*" multiple onChange={handleSneakPeekChange} max={4} />
+                                    <Input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={handleSneakPeekChange}
+                                        max={4}
+                                        className={sneakPeekError ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                                    />
                                     <FormDescription className="ms-1">Upload hingga 4 gambar. Format: PNG/JPG, max 2MB per gambar.</FormDescription>
                                 </FormItem>
                                 <FormField
