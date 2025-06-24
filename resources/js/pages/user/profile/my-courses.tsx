@@ -37,7 +37,7 @@ interface Invoice {
     amount: number;
     status: string;
     paid_at: string | null;
-    items: EnrollmentItem[];
+    course_items: EnrollmentItem[];
     created_at: string;
     payment_channel: string | null;
     payment_method: string | null;
@@ -52,7 +52,7 @@ export default function MyCourses({ myCourses }: CourseProps) {
     const [visibleCount, setVisibleCount] = useState(6);
 
     const allItems = myCourses.flatMap((invoice) =>
-        invoice.items.map((item) => ({
+        invoice.course_items.map((item) => ({
             ...item,
             invoice_status: invoice.status,
             invoice_code: invoice.invoice_code,

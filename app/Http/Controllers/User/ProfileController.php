@@ -20,24 +20,36 @@ class ProfileController extends Controller
     public function showMyCourses()
     {
         $userId = Auth::id();
-        $myCourses = Invoice::with('items.course.category')->where('user_id', $userId)->orderBy('created_at', 'desc')->get();
+        $myCourses = Invoice::with('courseItems.course.category')->where('user_id', $userId)->orderBy('created_at', 'desc')->get();
         return Inertia::render('user/profile/my-courses', ['myCourses' => $myCourses]);
     }
 
     public function showMyBootcamps()
     {
-        return Inertia::render('user/profile/my-bootcamps');
+        $userId = Auth::id();
+        $myBootcamps = Invoice::with('bootcampItems.bootcamp.category')->where('user_id', $userId)->orderBy('created_at', 'desc')->get();
+        return Inertia::render('user/profile/my-bootcamps', ['myBootcamps' => $myBootcamps]);
     }
 
     public function showMyWebinars()
     {
-        return Inertia::render('user/profile/my-webinars');
+        $userId = Auth::id();
+        $myWebinars = Invoice::with('webinarItems.webinar.category')->where('user_id', $userId)->orderBy('created_at', 'desc')->get();
+        return Inertia::render('user/profile/my-webinars', ['myWebinars' => $myWebinars]);
     }
 
     public function showTransactions()
     {
         $userId = Auth::id();
-        $myCourses = Invoice::with('items.course')->where('user_id', $userId)->orderBy('created_at', 'desc')->get();
-        return Inertia::render('user/profile/transactions', ['myCourses' => $myCourses]);
+        $myTransactions = Invoice::with([
+            'courseItems.course',
+            'bootcampItems.bootcamp',
+            'webinarItems.webinar'
+        ])
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return Inertia::render('user/profile/transactions', ['myTransactions' => $myTransactions]);
     }
 }

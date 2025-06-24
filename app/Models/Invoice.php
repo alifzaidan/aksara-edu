@@ -16,8 +16,18 @@ class Invoice extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function items()
+    public function courseItems()
     {
         return $this->hasMany(EnrollmentCourse::class);
+    }
+
+    public function bootcampItems()
+    {
+        return $this->hasMany(EnrollmentBootcamp::class);
+    }
+
+    public function webinarItems()
+    {
+        return $this->hasMany(EnrollmentWebinar::class);
     }
 }

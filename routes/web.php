@@ -24,10 +24,14 @@ Route::get('/course/{course:slug}', [UserCourseController::class, 'detail'])->na
 Route::get('/course/{course:slug}/checkout', [UserCourseController::class, 'showCheckout'])->name('course.checkout');
 Route::get('/bootcamp', [UserBootcampController::class, 'index'])->name('bootcamp.index');
 Route::get('/bootcamp/{bootcamp:slug}', [UserBootcampController::class, 'detail'])->name('bootcamp.detail');
+Route::get('/bootcamp/{bootcamp:slug}/register', [UserBootcampController::class, 'showRegister'])->name('bootcamp.register');
 Route::get('/webinar', [UserWebinarController::class, 'index'])->name('webinar.index');
 Route::get('/webinar/{webinar:slug}', [UserWebinarController::class, 'detail'])->name('webinar.detail');
+Route::get('/webinar/{webinar:slug}/register', [UserWebinarController::class, 'showRegister'])->name('webinar.register');
 
 Route::get('/course/checkout/success', [UserCourseController::class, 'showCheckoutSuccess'])->name('course.checkout.success');
+Route::get('/bootcamp/register/success', [UserBootcampController::class, 'showRegisterSuccess'])->name('bootcamp.register.success');
+Route::get('/webinar/register/success', [UserWebinarController::class, 'showRegisterSuccess'])->name('webinar.register.success');
 
 Route::get('/invoice', [InvoiceController::class, 'index'])->name('invoice.index');
 Route::post('/invoice', [InvoiceController::class, 'store'])->name('invoice.store');

@@ -16,6 +16,7 @@ interface Course {
     thumbnail: string;
     slug: string;
     price: number;
+    key_points?: string | null;
     level: 'beginner' | 'intermediate' | 'advanced';
     modules?: {
         title: string;
@@ -37,10 +38,18 @@ function getYoutubeId(url: string) {
     return match && match[2].length === 11 ? match[2] : '';
 }
 
+function parseList(items?: string | null): string[] {
+    if (!items) return [];
+    const matches = items.match(/<li>(.*?)<\/li>/g);
+    if (!matches) return [];
+    return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
+}
+
 export default function CheckoutCourse({ course }: { course: Course }) {
     const firstVideoLesson = course.modules?.flatMap((module) => module.lessons || []).find((lesson) => lesson.type === 'video' && lesson.video_url);
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
+    const keyPointList = parseList(course.key_points);
 
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,7 +66,7 @@ export default function CheckoutCourse({ course }: { course: Course }) {
                     'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
                 },
                 credentials: 'same-origin',
-                body: JSON.stringify({ course_id: course.id }),
+                body: JSON.stringify({ type: 'course', id: course.id }),
             });
             const data = await res.json();
             if (data.url) {
@@ -92,35 +101,17 @@ export default function CheckoutCourse({ course }: { course: Course }) {
                         </TabsList>
                         <TabsContent value="detail">
                             <div className="h-full rounded-lg border p-4">
-                                <h2 className="text-3xl font-bold italic">Yang akan kamu dapatkan</h2>
+                                <h2 className="text-3xl font-bold italic">Yang akan kamu pelajari</h2>
                                 <p className="mt-2 mb-4 text-sm text-gray-600">
-                                    Dengan membeli paket belajar ini, kamu akan mendapatkan semua benefit berikut:
+                                    Berikut adalah beberapa poin penting yang akan kamu pelajari dalam kelas "{course.title}".
                                 </p>
                                 <ul className="space-y-2">
-                                    <li className="flex items-center gap-2">
-                                        <BadgeCheck size="18" className="text-green-600" />
-                                        <p>Materi & Silabus Terupdate</p>
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <BadgeCheck size="18" className="text-green-600" />
-                                        <p>Sertifikat Resmi dari Aksademy</p>
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <BadgeCheck size="18" className="text-green-600" />
-                                        <p>Kelas Dapat Diakses Secara Lifetime</p>
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <BadgeCheck size="18" className="text-green-600" />
-                                        <p>Video Belajar On-Demand</p>
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <BadgeCheck size="18" className="text-green-600" />
-                                        <p>Modul & Study Case</p>
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <BadgeCheck size="18" className="text-green-600" />
-                                        <p>Latihan Soal/Quiz</p>
-                                    </li>
+                                    {keyPointList.map((keyPoint, idx) => (
+                                        <li key={idx} className="flex items-center gap-2">
+                                            <BadgeCheck size="18" className="text-green-600" />
+                                            <p>{keyPoint}</p>
+                                        </li>
+                                    ))}
                                 </ul>
                             </div>
                         </TabsContent>

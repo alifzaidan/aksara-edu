@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bootcamp;
 use App\Models\Cart;
 use App\Models\Course;
+use App\Models\EnrollmentBootcamp;
 use App\Models\EnrollmentCourse;
+use App\Models\EnrollmentWebinar;
 use App\Models\Invoice;
+use App\Models\Webinar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -35,15 +39,31 @@ class InvoiceController extends Controller
         DB::beginTransaction();
         try {
             $userId = Auth::id();
-            $courseId = $request->input('course_id');
-            $course = Course::findOrFail($courseId);
+            $type = $request->input('type', 'course');
+            $itemId = $request->input('id');
 
-            $amount = $course->price;
+            if ($type === 'course') {
+                $item = Course::findOrFail($itemId);
+                $enrollmentTable = EnrollmentCourse::class;
+                $enrollmentField = 'course_id';
+            } elseif ($type === 'bootcamp') {
+                $item = Bootcamp::findOrFail($itemId);
+                $enrollmentTable = EnrollmentBootcamp::class;
+                $enrollmentField = 'bootcamp_id';
+            } elseif ($type === 'webinar') {
+                $item = Webinar::findOrFail($itemId);
+                $enrollmentTable = EnrollmentWebinar::class;
+                $enrollmentField = 'webinar_id';
+            } else {
+                throw new \Exception('Tipe pembelian tidak valid');
+            }
+
+            $amount = $item->price;
 
             $items = [
                 [
-                    'name' => $course->title,
-                    'price' => $course->price,
+                    'name' => $item->title,
+                    'price' => $item->price,
                     'quantity' => 1,
                 ]
             ];
@@ -82,11 +102,11 @@ class InvoiceController extends Controller
                 'invoice_url' => $xendit_invoice['invoice_url'],
             ]);
 
-            // Simpan detail invoice
-            EnrollmentCourse::create([
+            // Simpan detail invoice ke tabel enrollment yang sesuai
+            $enrollmentTable::create([
                 'invoice_id' => $invoice->id,
-                'course_id' => $course->id,
-                'price' => $course->price,
+                $enrollmentField => $item->id,
+                'price' => $item->price,
                 'completed_at' => null,
                 'progress' => 0,
             ]);
@@ -98,14 +118,16 @@ class InvoiceController extends Controller
             ], 200);
         } catch (\Throwable $th) {
             DB::rollBack();
-            throw $th;
+            return response()->json([
+                'message' => $th->getMessage(),
+            ], 500);
         }
     }
 
     public function show($id)
     {
-        $invoice = Invoice::with('items', 'items.course')->findOrFail($id);
-        return Inertia::render('user/course/checkout/success', ['invoice' => $invoice]);
+        $invoice = Invoice::with(['courseItems.course', 'bootcampItems.bootcamp', 'webinarItems.webinar'])->findOrFail($id);
+        return Inertia::render('user/checkout/success', ['invoice' => $invoice]);
     }
 
     public function callbackXendit(Request $request)

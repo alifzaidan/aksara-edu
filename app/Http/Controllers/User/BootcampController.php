@@ -25,4 +25,15 @@ class BootcampController extends Controller
         $bootcamp->load(['category', 'schedules', 'tools']);
         return Inertia::render('user/bootcamp/detail/index', ['bootcamp' => $bootcamp]);
     }
+
+    public function showRegister(Bootcamp $bootcamp)
+    {
+        $bootcamp->load(['schedules']);
+        return Inertia::render('user/bootcamp/register/index', ['bootcamp' => $bootcamp]);
+    }
+
+    public function showRegisterSuccess()
+    {
+        return Inertia::render('user/bootcamp/register/success');
+    }
 }

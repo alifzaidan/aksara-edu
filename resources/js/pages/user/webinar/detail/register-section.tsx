@@ -1,5 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 import { BadgeCheck, CalendarDays, Clock, Hourglass, MapPin, Users } from 'lucide-react';
 
 interface Webinar {
@@ -10,10 +12,15 @@ interface Webinar {
     start_time: string;
     end_time: string;
     registration_deadline: string;
+    registration_url: string;
     thumbnail?: string | null;
 }
 
 export default function RegisterSection({ webinar }: { webinar: Webinar }) {
+    const page = usePage<SharedData>();
+    const { auth } = page.props;
+    const user = auth.user;
+
     return (
         <section className="mx-auto my-8 w-full max-w-5xl px-4" id="register">
             <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
@@ -100,7 +107,11 @@ export default function RegisterSection({ webinar }: { webinar: Webinar }) {
                                 year: 'numeric',
                             })}
                         </p>
-                        <Button className="w-full">Daftar Sekarang</Button>
+                        <Button className="mt-auto w-full" asChild>
+                            <Link href={user ? webinar.registration_url : `/login?redirect=${encodeURIComponent(webinar.registration_url)}`}>
+                                Daftar Sekarang
+                            </Link>
+                        </Button>
                     </div>
                 </div>
             </div>

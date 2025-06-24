@@ -25,4 +25,16 @@ class WebinarController extends Controller
         $webinar->load(['category', 'tools']);
         return Inertia::render('user/webinar/detail/index', ['webinar' => $webinar]);
     }
+
+
+    public function showRegister(Webinar $webinar)
+    {
+        $webinar->load(['tools']);
+        return Inertia::render('user/webinar/register/index', ['webinar' => $webinar]);
+    }
+
+    public function showRegisterSuccess()
+    {
+        return Inertia::render('user/webinar/register/success');
+    }
 }
