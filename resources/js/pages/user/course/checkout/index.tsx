@@ -5,8 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UserLayout from '@/layouts/user-layout';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { BadgeCheck } from 'lucide-react';
+import { useState } from 'react';
 
 interface Course {
     id: string;
@@ -38,6 +39,38 @@ function getYoutubeId(url: string) {
 
 export default function CheckoutCourse({ course }: { course: Course }) {
     const firstVideoLesson = course.modules?.flatMap((module) => module.lessons || []).find((lesson) => lesson.type === 'video' && lesson.video_url);
+    const [termsAccepted, setTermsAccepted] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    const handleCheckout = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!termsAccepted) {
+            alert('Anda harus menyetujui syarat dan ketentuan!');
+            return;
+        }
+        setLoading(true);
+        try {
+            const res = await fetch(route('invoice.store'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ course_id: course.id }),
+            });
+            const data = await res.json();
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                alert('Gagal membuat invoice.');
+            }
+        } catch {
+            alert('Terjadi kesalahan saat proses pembayaran.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <UserLayout>
@@ -118,7 +151,7 @@ export default function CheckoutCourse({ course }: { course: Course }) {
                         </TabsContent>
                     </Tabs>
 
-                    <div>
+                    <form onSubmit={handleCheckout}>
                         <h2 className="my-2 text-xl font-bold italic">Detail Pembayaran</h2>
                         <div className="space-y-4 rounded-lg border p-4">
                             <Input type="text" placeholder="Masukkan Kode Promo (Opsional)" className="w-full" />
@@ -142,14 +175,14 @@ export default function CheckoutCourse({ course }: { course: Course }) {
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
-                                <Checkbox id="terms" />
+                                <Checkbox id="terms" checked={termsAccepted} onCheckedChange={(checked) => setTermsAccepted(checked === true)} />
                                 <Label htmlFor="terms">Accept terms and conditions</Label>
                             </div>
-                            <Button className="w-full" asChild>
-                                <Link href={route('course.checkout.success')}>Bayar Sekarang</Link>
+                            <Button className="w-full" type="submit" disabled={!termsAccepted || loading}>
+                                {loading ? 'Memproses...' : 'Bayar Sekarang'}
                             </Button>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </section>
         </UserLayout>

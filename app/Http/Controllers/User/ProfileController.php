@@ -5,7 +5,9 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Course;
+use App\Models\Invoice;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class ProfileController extends Controller
@@ -17,12 +19,9 @@ class ProfileController extends Controller
 
     public function showMyCourses()
     {
-        $categories = Category::all();
-        $courses = Course::with(['category'])
-            ->where('status', 'published')
-            ->orderBy('created_at', 'desc')
-            ->get();
-        return Inertia::render('user/profile/my-courses', ['categories' => $categories, 'courses' => $courses]);
+        $userId = Auth::id();
+        $myCourses = Invoice::with('items.course.category')->where('user_id', $userId)->orderBy('created_at', 'desc')->get();
+        return Inertia::render('user/profile/my-courses', ['myCourses' => $myCourses]);
     }
 
     public function showMyBootcamps()
@@ -37,6 +36,8 @@ class ProfileController extends Controller
 
     public function showTransactions()
     {
-        return Inertia::render('user/profile/transactions');
+        $userId = Auth::id();
+        $myCourses = Invoice::with('items.course')->where('user_id', $userId)->orderBy('created_at', 'desc')->get();
+        return Inertia::render('user/profile/transactions', ['myCourses' => $myCourses]);
     }
 }

@@ -5,6 +5,7 @@ use App\Http\Controllers\AffiliateController;
 use App\Http\Controllers\BootcampController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MentorController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
@@ -27,6 +28,10 @@ Route::get('/webinar', [UserWebinarController::class, 'index'])->name('webinar.i
 Route::get('/webinar/{webinar:slug}', [UserWebinarController::class, 'detail'])->name('webinar.detail');
 
 Route::get('/course/checkout/success', [UserCourseController::class, 'showCheckoutSuccess'])->name('course.checkout.success');
+
+Route::get('/invoice', [InvoiceController::class, 'index'])->name('invoice.index');
+Route::post('/invoice', [InvoiceController::class, 'store'])->name('invoice.store');
+Route::get('/invoice/{id}', [InvoiceController::class, 'show'])->name('invoice.show');
 
 Route::redirect('profile', 'profile/dashboard');
 Route::get('/profile/dashboard', [ProfileController::class, 'index'])->name('profile.index');
