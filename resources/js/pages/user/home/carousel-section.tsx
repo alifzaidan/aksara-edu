@@ -20,8 +20,9 @@ export default function CarouselSection() {
                     <CarouselItem className="px-4">
                         <a href="#program-kami">
                             <img
-                                src="/assets/images/carousel-1.png"
+                                src="/assets/images/carousel-1.webp"
                                 alt="Slide 1"
+                                loading="lazy"
                                 className="mx-auto w-full max-w-7xl rounded-xl object-cover shadow-lg"
                             />
                         </a>
@@ -29,8 +30,9 @@ export default function CarouselSection() {
                     <CarouselItem className="px-4">
                         <Link href={route('course.index')}>
                             <img
-                                src="/assets/images/carousel-2.png"
+                                src="/assets/images/carousel-2.webp"
                                 alt="Slide 2"
+                                loading="lazy"
                                 className="mx-auto w-full max-w-7xl rounded-xl object-cover shadow-lg"
                             />
                         </Link>
@@ -38,8 +40,9 @@ export default function CarouselSection() {
                     <CarouselItem className="px-4">
                         <Link href={route('bootcamp.index')}>
                             <img
-                                src="/assets/images/carousel-3.png"
+                                src="/assets/images/carousel-3.webp"
                                 alt="Slide 3"
+                                loading="lazy"
                                 className="mx-auto w-full max-w-7xl rounded-xl object-cover shadow-lg"
                             />
                         </Link>
@@ -47,8 +50,9 @@ export default function CarouselSection() {
                     <CarouselItem className="px-4">
                         <Link href={route('webinar.index')}>
                             <img
-                                src="/assets/images/carousel-4.png"
+                                src="/assets/images/carousel-4.webp"
                                 alt="Slide 4"
+                                loading="lazy"
                                 className="mx-auto w-full max-w-7xl rounded-xl object-cover shadow-lg"
                             />
                         </Link>

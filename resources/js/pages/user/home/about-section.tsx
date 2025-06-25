@@ -39,8 +39,9 @@ export default function AboutSection() {
                     Solusi{' '}
                     <span className="bg-secondary text-background relative inline-flex items-center gap-2 rounded-full px-8 sm:px-10">
                         <img
-                            src="/assets/images/icon-pen.svg"
+                            src="/assets/images/icon-pen.webp"
                             alt="Icon Pensil"
+                            loading="lazy"
                             className="absolute -top-3 left-3/5 h-12 w-12 -translate-x-1/2 sm:h-14 sm:w-14"
                             style={{ zIndex: 1 }}
                         />
@@ -75,7 +76,7 @@ export default function AboutSection() {
                                 href="/"
                                 className="hover:border-secondary relative flex w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
                             >
-                                <img src="/assets/images/web-app-icon.svg" alt="Web Development" className="mx-auto mb-4" />
+                                <img src="/assets/images/web-app-icon.webp" loading="lazy" alt="Web Development" className="mx-auto mb-4" />
                                 <h2 className="mb-1 text-lg font-semibold">Web & App Development</h2>
                                 <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
                                     Membangun aplikasi web dan mobile yang responsif dan efisien
@@ -107,7 +108,7 @@ export default function AboutSection() {
                                 href="/"
                                 className="hover:border-secondary relative flex w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
                             >
-                                <img src="/assets/images/data-science-icon.svg" alt="Data Science" className="mx-auto mb-4" />
+                                <img src="/assets/images/data-science-icon.webp" loading="lazy" alt="Data Science" className="mx-auto mb-4" />
                                 <h2 className="mb-1 text-lg font-semibold">Data Science</h2>
                                 <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
                                     Menganalisis data untuk mendapatkan wawasan yang berharga
@@ -140,7 +141,7 @@ export default function AboutSection() {
                                 href="/"
                                 className="hover:border-secondary relative flex w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
                             >
-                                <img src="/assets/images/graphic-design-icon.svg" alt="Graphic Design" className="mx-auto mb-4" />
+                                <img src="/assets/images/graphic-design-icon.webp" loading="lazy" alt="Graphic Design" className="mx-auto mb-4" />
                                 <h2 className="mb-1 text-lg font-semibold">Graphic Design</h2>
                                 <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">Mendesain antarmuka yang menarik dan fungsional</p>
                             </Link>
@@ -170,7 +171,7 @@ export default function AboutSection() {
                                 href="/"
                                 className="hover:border-secondary relative flex w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
                             >
-                                <img src="/assets/images/accounting-tax-icon.svg" alt="Accounting" className="mx-auto mb-4" />
+                                <img src="/assets/images/accounting-tax-icon.webp" loading="lazy" alt="Accounting" className="mx-auto mb-4" />
                                 <h2 className="mb-1 text-lg font-semibold">Accounting, Finance, & Tax</h2>
                                 <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">Membantu mengelola keuangan dan laporan keuangan</p>
                             </Link>
