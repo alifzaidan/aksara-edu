@@ -76,7 +76,7 @@ export default function AboutSection() {
                                 href="/"
                                 className="hover:border-secondary relative flex w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
                             >
-                                <img src="/assets/images/web-app-icon.webp" loading="lazy" alt="Web Development" className="mx-auto mb-4" />
+                                <img src="/assets/images/web-app-icon.svg" loading="lazy" alt="Web Development" className="mx-auto mb-4" />
                                 <h2 className="mb-1 text-lg font-semibold">Web & App Development</h2>
                                 <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
                                     Membangun aplikasi web dan mobile yang responsif dan efisien
@@ -108,7 +108,7 @@ export default function AboutSection() {
                                 href="/"
                                 className="hover:border-secondary relative flex w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
                             >
-                                <img src="/assets/images/data-science-icon.webp" loading="lazy" alt="Data Science" className="mx-auto mb-4" />
+                                <img src="/assets/images/data-science-icon.svg" loading="lazy" alt="Data Science" className="mx-auto mb-4" />
                                 <h2 className="mb-1 text-lg font-semibold">Data Science</h2>
                                 <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
                                     Menganalisis data untuk mendapatkan wawasan yang berharga
@@ -141,7 +141,7 @@ export default function AboutSection() {
                                 href="/"
                                 className="hover:border-secondary relative flex w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
                             >
-                                <img src="/assets/images/graphic-design-icon.webp" loading="lazy" alt="Graphic Design" className="mx-auto mb-4" />
+                                <img src="/assets/images/graphic-design-icon.svg" loading="lazy" alt="Graphic Design" className="mx-auto mb-4" />
                                 <h2 className="mb-1 text-lg font-semibold">Graphic Design</h2>
                                 <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">Mendesain antarmuka yang menarik dan fungsional</p>
                             </Link>
@@ -171,7 +171,7 @@ export default function AboutSection() {
                                 href="/"
                                 className="hover:border-secondary relative flex w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
                             >
-                                <img src="/assets/images/accounting-tax-icon.webp" loading="lazy" alt="Accounting" className="mx-auto mb-4" />
+                                <img src="/assets/images/accounting-tax-icon.svg" loading="lazy" alt="Accounting" className="mx-auto mb-4" />
                                 <h2 className="mb-1 text-lg font-semibold">Accounting, Finance, & Tax</h2>
                                 <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">Membantu mengelola keuangan dan laporan keuangan</p>
                             </Link>

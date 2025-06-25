@@ -1,1 +1,0 @@
-import{j as s}from"./app-Dq6gQsdJ.js";function a(){return s.jsxs("div",{className:"h-full space-y-6 rounded-lg border p-4",children:[s.jsx("h2",{className:"text-lg font-medium",children:"Transaksi"}),s.jsx("p",{className:"text-muted-foreground text-sm",children:"Belum ada transaksi."})]})}export{a as default};

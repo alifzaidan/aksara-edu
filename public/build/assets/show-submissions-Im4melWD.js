@@ -1,0 +1,1 @@
+import{j as e}from"./app-Dgckegnv.js";function s(){return e.jsxs("div",{className:"h-full space-y-6 rounded-lg border p-4",children:[e.jsx("h2",{className:"text-lg font-medium",children:"Riwayat Pengerjaan Quiz"}),e.jsx("p",{className:"text-muted-foreground text-sm",children:"Belum ada riwayat pengerjaan."})]})}export{s as default};

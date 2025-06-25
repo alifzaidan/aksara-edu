@@ -37,9 +37,9 @@ export default function AppFooter() {
                     <img src="/assets/images/logo-primary-2.png" alt="Logo Aksara" className="block w-24 fill-current dark:hidden" />
                     {/* Logo untuk dark mode */}
                     <img src="/assets/images/logo-secondary-2.png" alt="Logo Aksara" className="hidden w-24 fill-current dark:block" />
-                    <p className="my-4">Keep Rising and Inspiring Everyone.</p>
+                    <p className="my-4">Empowering Minds, Rising Together 🚀</p>
                     <h5 className="font-semibold">CV. Aksara Teknologi Mandiri</h5>
-                    <p className="text-gray-800">
+                    <p className="text-gray-800 dark:text-gray-400">
                         Perumahan Permata Permadani, Blok B1. Kel. Pendem Kec. Junrejo Kota Batu Prov. Jawa Timur, 65324 <br /> +6285142505797
                     </p>
                 </div>

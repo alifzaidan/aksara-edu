@@ -1,27 +1,35 @@
 import { TransitionPanel } from '@/components/ui/transition-panel';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+const items = [
+    {
+        title: 'Belajar Fleksibel & Bersertifikat.',
+        subtitle:
+            'Kuasai dengan kurikulum up-to-date yang sesuai kebutuhan industri. Fleksibel untuk profesional yang ingin upskill tanpa mengganggu jam kerja.',
+        image: '/assets/images/feature-bootcamp-1.svg',
+    },
+    {
+        title: 'Fokus Bantu Kembangkan Skill dan Portfolio.',
+        subtitle: 'Belajar sambil praktek dengan ragam case study, worksheet, dan framework. Didasarkan pada kebutuhan industri dan profesi',
+        image: '/assets/images/feature-bootcamp-2.svg',
+    },
+    {
+        title: 'Peluang Karir Menjanjikan.',
+        subtitle: 'Membuka peluang karir yang menjanjikan di industri teknologi dan mendapat proyek-proyek menarik.',
+        image: '/assets/images/feature-bootcamp-3.svg',
+    },
+];
 
 export default function FeatureSection() {
     const [activeIndex, setActiveIndex] = useState(0);
 
-    const items = [
-        {
-            title: 'Belajar Fleksibel & Bersertifikat.',
-            subtitle:
-                'Kuasai dengan kurikulum up-to-date yang sesuai kebutuhan industri. Fleksibel untuk profesional yang ingin upskill tanpa mengganggu jam kerja.',
-            image: '/assets/images/feature-bootcamp-1.svg',
-        },
-        {
-            title: 'Fokus Bantu Kembangkan Skill dan Portfolio.',
-            subtitle: 'Belajar sambil praktek dengan ragam case study, worksheet, dan framework. Didasarkan pada kebutuhan industri dan profesi',
-            image: '/assets/images/feature-bootcamp-2.svg',
-        },
-        {
-            title: 'Peluang Karir Menjanjikan.',
-            subtitle: 'Membuka peluang karir yang menjanjikan di industri teknologi dan mendapat proyek-proyek menarik.',
-            image: '/assets/images/feature-bootcamp-3.svg',
-        },
-    ];
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setActiveIndex((prevIndex) => (prevIndex + 1) % items.length);
+        }, 3000);
+
+        return () => clearInterval(interval);
+    }, [activeIndex]);
 
     return (
         <section className="mx-auto w-full max-w-7xl px-4">
@@ -32,14 +40,14 @@ export default function FeatureSection() {
                 Solusi #1 Mengembangkan Portofolio Diri
             </h2>
             <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-2">
-                <div className="space-y-2">
+                <div className="my-12 space-y-2">
                     {items.map((item, index) => (
                         <button
                             key={index}
                             onClick={() => setActiveIndex(index)}
-                            className={`w-full rounded-xl border-2 border-gray-300 p-4 text-sm font-medium shadow transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/30 ${
+                            className={`w-full rounded-xl border-2 border-gray-300 p-4 text-sm font-medium shadow transition duration-200 ease-in hover:cursor-pointer dark:border-zinc-100/20 dark:bg-zinc-800/30 ${
                                 activeIndex === index
-                                    ? 'border-primary dark:border-primary dark:to-primary text-primary-foreground hover:cursor-pointer dark:bg-zinc-800 dark:bg-gradient-to-br dark:from-black dark:text-zinc-100'
+                                    ? 'border-primary dark:border-primary dark:to-primary text-primary-foreground dark:bg-zinc-800 dark:bg-gradient-to-br dark:from-black dark:text-zinc-100'
                                     : 'border-gray-300 dark:bg-zinc-700 dark:text-zinc-400'
                             }`}
                         >
@@ -48,10 +56,10 @@ export default function FeatureSection() {
                         </button>
                     ))}
                 </div>
-                <div className="overflow-hidden border-t border-zinc-200 dark:border-zinc-700">
+                <div className="overflow-hidden">
                     <TransitionPanel
                         activeIndex={activeIndex}
-                        transition={{ duration: 0.2, ease: 'easeInOut' }}
+                        transition={{ duration: 0.5, ease: 'easeInOut' }}
                         variants={{
                             enter: { opacity: 0, y: -50, filter: 'blur(4px)' },
                             center: { opacity: 1, y: 0, filter: 'blur(0px)' },
@@ -60,7 +68,7 @@ export default function FeatureSection() {
                     >
                         {items.map((item, index) => (
                             <div key={index} className="py-2">
-                                <img src={item.image} alt={item.title} className="mx-auto w-3/4" />
+                                <img src={item.image} alt={item.title} loading="lazy" className="mx-auto w-3/4" />
                             </div>
                         ))}
                     </TransitionPanel>
