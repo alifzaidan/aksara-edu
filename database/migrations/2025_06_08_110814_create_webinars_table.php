@@ -27,10 +27,10 @@ return new class extends Migration
             $table->string('host_description')->nullable();
             $table->bigInteger('price')->default(0);
             $table->integer('quota')->default(0);
+            $table->integer('batch')->default(0);
             $table->string('webinar_url')->nullable();
             $table->string('registration_url')->nullable();
-            $table->integer('batch')->default(0);
-            $table->text('instructions')->nullable();
+            $table->string('group_url')->nullable();
             $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->timestamps();
         });

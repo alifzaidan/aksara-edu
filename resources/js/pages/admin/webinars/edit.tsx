@@ -17,6 +17,7 @@ import { Editor } from '@tinymce/tinymce-react';
 import { BookMarked, CalendarFold, Check, ChevronDownIcon, ChevronsUpDown } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 
 interface Webinar {
@@ -36,7 +37,7 @@ interface Webinar {
     thumbnail?: string | null;
     description?: string | null;
     benefits?: string | null;
-    instructions?: string | null;
+    group_url?: string | null;
     host_name?: string | null;
     host_description?: string | null;
     created_at: string | Date;
@@ -56,7 +57,7 @@ const formSchema = z.object({
     host_description: z.string().nullable(),
     price: z.number().min(0),
     quota: z.number().min(0),
-    instructions: z.string().nullable(),
+    group_url: z.string().nullable(),
     batch: z.number().min(0),
     tools: z.array(z.string()).optional(),
 });
@@ -75,6 +76,7 @@ export default function EditWebinar({
     const [openEndCalendar, setOpenEndCalendar] = useState(false);
     const [openRegistrationCalendar, setOpenRegistrationCalendar] = useState(false);
     const [preview, setPreview] = useState<string | null>(null);
+    const [thumbnailError, setThumbnailError] = useState(false);
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -109,7 +111,7 @@ export default function EditWebinar({
             host_description: webinar.host_description ?? '',
             price: webinar.price ?? 0,
             quota: webinar.quota ?? 0,
-            instructions: webinar.instructions ?? '',
+            group_url: webinar.group_url ?? '',
             batch: webinar.batch ?? 1,
             tools: webinar.tools ? webinar.tools.map((tool) => tool.id) : [],
         },
@@ -281,8 +283,15 @@ export default function EditWebinar({
                                             type="file"
                                             name={field.name}
                                             accept="image/*"
+                                            className={thumbnailError ? 'border-red-500 focus-visible:ring-red-500' : ''}
                                             onChange={(e) => {
                                                 const file = e.target.files?.[0] ?? null;
+                                                if (file && file.size > 2 * 1024 * 1024) {
+                                                    setThumbnailError(true);
+                                                    toast('Ukuran file maksimal 2MB!');
+                                                    return;
+                                                }
+                                                setThumbnailError(false);
                                                 field.onChange(file);
                                                 if (file) {
                                                     const reader = new FileReader();
@@ -360,15 +369,15 @@ export default function EditWebinar({
                             />
                             <FormField
                                 control={form.control}
-                                name="instructions"
+                                name="group_url"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Instruksi Peserta</FormLabel>
+                                        <FormLabel>Link Group Peserta</FormLabel>
                                         <Textarea
                                             {...field}
                                             value={field.value ?? ''}
                                             className="w-full rounded border p-2"
-                                            placeholder="Masukkan instruksi setelah peserta mendaftar"
+                                            placeholder="Masukkan link grup peserta"
                                             autoComplete="off"
                                         />
                                         <FormMessage />

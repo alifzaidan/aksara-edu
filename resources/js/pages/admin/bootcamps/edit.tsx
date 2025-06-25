@@ -17,6 +17,7 @@ import { Editor } from '@tinymce/tinymce-react';
 import { BookMarked, CalendarFold, Check, ChevronDownIcon, ChevronsUpDown } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 import BootcampScheduleInput, { BootcampSchedule } from './schedule-input';
 
@@ -38,7 +39,9 @@ interface Bootcamp {
     thumbnail?: string | null;
     description?: string | null;
     benefits?: string | null;
-    instructions?: string | null;
+    requirements?: string | null;
+    curriculum?: string | null;
+    group_url?: string | null;
     host_name?: string | null;
     host_description?: string | null;
     created_at: string | Date;
@@ -50,6 +53,8 @@ const formSchema = z.object({
     category_id: z.string().nonempty('Kategori harus dipilih'),
     description: z.string().nullable(),
     benefits: z.string().nullable(),
+    requirements: z.string().nullable(),
+    curriculum: z.string().nullable(),
     thumbnail: z.any().nullable(),
     start_date: z.string(),
     end_date: z.string(),
@@ -58,7 +63,7 @@ const formSchema = z.object({
     host_description: z.string().nullable(),
     price: z.number().min(0),
     quota: z.number().min(0),
-    instructions: z.string().nullable(),
+    group_url: z.string().nullable(),
     batch: z.number().min(0),
     tools: z.array(z.string()).optional(),
 });
@@ -77,6 +82,7 @@ export default function EditBootcamp({
     const [openEndCalendar, setOpenEndCalendar] = useState(false);
     const [openRegistrationCalendar, setOpenRegistrationCalendar] = useState(false);
     const [preview, setPreview] = useState<string | null>(null);
+    const [thumbnailError, setThumbnailError] = useState(false);
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -100,6 +106,8 @@ export default function EditBootcamp({
             category_id: bootcamp.category_id ?? '',
             description: bootcamp.description ?? '',
             benefits: bootcamp.benefits ?? '',
+            requirements: bootcamp.requirements ?? '',
+            curriculum: bootcamp.curriculum ?? '',
             thumbnail: '',
             start_date: typeof bootcamp.start_date === 'string' ? bootcamp.start_date : (bootcamp.start_date?.toISOString() ?? ''),
             end_date: typeof bootcamp.end_date === 'string' ? bootcamp.end_date : (bootcamp.end_date?.toISOString() ?? ''),
@@ -111,7 +119,7 @@ export default function EditBootcamp({
             host_description: bootcamp.host_description ?? '',
             price: bootcamp.price ?? 0,
             quota: bootcamp.quota ?? 0,
-            instructions: bootcamp.instructions ?? '',
+            group_url: bootcamp.group_url ?? '',
             batch: bootcamp.batch ?? 1,
             tools: bootcamp.tools?.map((tool) => tool.id) ?? [],
         },
@@ -291,8 +299,15 @@ export default function EditBootcamp({
                                             type="file"
                                             name={field.name}
                                             accept="image/*"
+                                            className={thumbnailError ? 'border-red-500 focus-visible:ring-red-500' : ''}
                                             onChange={(e) => {
                                                 const file = e.target.files?.[0] ?? null;
+                                                if (file && file.size > 2 * 1024 * 1024) {
+                                                    setThumbnailError(true);
+                                                    toast('Ukuran file maksimal 2MB!');
+                                                    return;
+                                                }
+                                                setThumbnailError(false);
                                                 field.onChange(file);
                                                 if (file) {
                                                     const reader = new FileReader();
@@ -370,15 +385,57 @@ export default function EditBootcamp({
                             />
                             <FormField
                                 control={form.control}
-                                name="instructions"
+                                name="curriculum"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Instruksi Peserta</FormLabel>
+                                        <FormLabel>Kurikum</FormLabel>
+                                        <Editor
+                                            apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
+                                            value={field.value ?? ''}
+                                            onEditorChange={(content) => field.onChange(content)}
+                                            init={{
+                                                plugins: [
+                                                    'anchor',
+                                                    'autolink',
+                                                    'charmap',
+                                                    'codesample',
+                                                    'emoticons',
+                                                    'image',
+                                                    'link',
+                                                    'lists',
+                                                    'media',
+                                                    'searchreplace',
+                                                    'table',
+                                                    'visualblocks',
+                                                    'wordcount',
+                                                ],
+                                                onboarding: false,
+                                                toolbar:
+                                                    'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+                                                tinycomments_mode: 'embedded',
+                                                tinycomments_author: 'Author name',
+                                                mergetags_list: [
+                                                    { value: 'First.Name', title: 'First Name' },
+                                                    { value: 'Email', title: 'Email' },
+                                                ],
+                                                height: 300,
+                                            }}
+                                        />
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="group_url"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Link Group Peserta</FormLabel>
                                         <Textarea
                                             {...field}
                                             value={field.value ?? ''}
                                             className="w-full rounded border p-2"
-                                            placeholder="Masukkan instruksi setelah peserta mendaftar"
+                                            placeholder="Masukkan link grup peserta"
                                             autoComplete="off"
                                         />
                                         <FormMessage />
@@ -581,6 +638,48 @@ export default function EditBootcamp({
                                             className="w-full rounded border p-2"
                                             placeholder="Masukkan deskripsi pemateri"
                                             autoComplete="off"
+                                        />
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="requirements"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Syarat Peserta</FormLabel>
+                                        <Editor
+                                            apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
+                                            value={field.value ?? ''}
+                                            onEditorChange={(content) => field.onChange(content)}
+                                            init={{
+                                                plugins: [
+                                                    'anchor',
+                                                    'autolink',
+                                                    'charmap',
+                                                    'codesample',
+                                                    'emoticons',
+                                                    'image',
+                                                    'link',
+                                                    'lists',
+                                                    'media',
+                                                    'searchreplace',
+                                                    'table',
+                                                    'visualblocks',
+                                                    'wordcount',
+                                                ],
+                                                onboarding: false,
+                                                toolbar:
+                                                    'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+                                                tinycomments_mode: 'embedded',
+                                                tinycomments_author: 'Author name',
+                                                mergetags_list: [
+                                                    { value: 'First.Name', title: 'First Name' },
+                                                    { value: 'Email', title: 'Email' },
+                                                ],
+                                                height: 300,
+                                            }}
                                         />
                                         <FormMessage />
                                     </FormItem>

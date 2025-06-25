@@ -16,6 +16,7 @@ import { Head, router } from '@inertiajs/react';
 import { BookMarked, Check, ChevronsUpDown } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 import CourseModulesSection from './course-modules-section';
 
@@ -93,6 +94,8 @@ export default function EditCourse({ course, categories, tools }: EditCourseProp
             })),
         })) || [],
     );
+    const [thumbnailError, setThumbnailError] = useState(false);
+    const [sneakPeekError, setSneakPeekError] = useState(false);
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -165,6 +168,15 @@ export default function EditCourse({ course, categories, tools }: EditCourseProp
 
     const handleSneakPeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files ?? []).slice(0, 4);
+
+        // Cek ukuran file
+        const oversize = files.some((file) => file.size > 2 * 1024 * 1024);
+        setSneakPeekError(oversize);
+        if (oversize) {
+            toast('Ukuran setiap gambar maksimal 2MB!');
+            return;
+        }
+
         setSneakPeekImages(files);
 
         // Preview
@@ -349,15 +361,22 @@ export default function EditCourse({ course, categories, tools }: EditCourseProp
                                                 type="file"
                                                 name={field.name}
                                                 accept="image/*"
+                                                className={thumbnailError ? 'border-red-500 focus-visible:ring-red-500' : ''}
                                                 onChange={(e) => {
                                                     const file = e.target.files?.[0] ?? null;
+                                                    if (file && file.size > 2 * 1024 * 1024) {
+                                                        setThumbnailError(true);
+                                                        toast('Ukuran file maksimal 2MB!');
+                                                        return;
+                                                    }
+                                                    setThumbnailError(false);
                                                     field.onChange(file);
                                                     if (file) {
                                                         const reader = new FileReader();
                                                         reader.onload = (ev) => setPreview(ev.target?.result as string);
                                                         reader.readAsDataURL(file);
                                                     } else {
-                                                        setPreview(course.thumbnail ? `/storage/${course.thumbnail}` : null);
+                                                        setPreview(null);
                                                     }
                                                 }}
                                             />
@@ -380,7 +399,14 @@ export default function EditCourse({ course, categories, tools }: EditCourseProp
                                             ))}
                                         </div>
                                     )}
-                                    <Input type="file" accept="image/*" multiple onChange={handleSneakPeekChange} max={4} />
+                                    <Input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={handleSneakPeekChange}
+                                        max={4}
+                                        className={sneakPeekError ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                                    />
                                     <FormDescription className="ms-1">Upload hingga 4 gambar. Format: PNG/JPG, max 2MB per gambar.</FormDescription>
                                 </FormItem>
                                 <FormField

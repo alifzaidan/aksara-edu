@@ -72,9 +72,9 @@ export default function CreateCourse({ categories, tools }: { categories: { id: 
             short_description: '',
             description: '',
             key_points: `<ul>
-                            <li>Mempelajari fitur-fitur untuk bikin web modern</li>
-                            <li>Membuat dashboard, cms, dan restful api dengan filament</li>
-                            <li>Memahami cara kerja hooks pada reactjs dan nextjs</li>
+                            <li>Mempelajari fitur-fitur untuk bikin web modern (Contoh)</li>
+                            <li>Membuat dashboard, cms, dan restful api dengan filament (Contoh)</li>
+                            <li>Memahami cara kerja hooks pada reactjs dan nextjs (Contoh)</li>
                         </ul>`,
             thumbnail: '',
             price: 0,

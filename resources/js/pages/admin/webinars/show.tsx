@@ -29,7 +29,7 @@ interface Webinar {
     thumbnail?: string | null;
     description?: string | null;
     benefits?: string | null;
-    instructions?: string | null;
+    group_url?: string | null;
     host_name?: string | null;
     host_description?: string | null;
     created_at: string | Date;

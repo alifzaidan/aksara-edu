@@ -24,7 +24,7 @@ interface Webinar {
     thumbnail?: string | null;
     description?: string | null;
     benefits?: string | null;
-    instructions?: string | null;
+    group_url?: string | null;
     host_name?: string | null;
     host_description?: string | null;
     created_at: string | Date;
@@ -127,8 +127,8 @@ export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
                         <TableCell>{format(new Date(webinar.registration_deadline), 'dd MMMM yyyy HH:mm', { locale: id })}</TableCell>
                     </TableRow>
                     <TableRow>
-                        <TableCell>Instruksi Peserta</TableCell>
-                        <TableCell>{webinar.instructions ?? '-'}</TableCell>
+                        <TableCell>Link Group Peserta</TableCell>
+                        <TableCell>{webinar.group_url ?? '-'}</TableCell>
                     </TableRow>
                     <TableRow>
                         <TableCell>Pemateri</TableCell>

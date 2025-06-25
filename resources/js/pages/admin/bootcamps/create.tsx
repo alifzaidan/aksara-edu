@@ -18,6 +18,7 @@ import { addDays, setHours, setMinutes, setSeconds } from 'date-fns';
 import { BookMarked, CalendarFold, Check, ChevronDownIcon, ChevronsUpDown } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 import BootcampScheduleInput, { BootcampSchedule } from './schedule-input';
 
@@ -47,7 +48,7 @@ const formSchema = z.object({
     host_description: z.string().nullable(),
     price: z.number().min(0),
     quota: z.number().min(0),
-    instructions: z.string().nullable(),
+    group_url: z.string().nullable(),
     batch: z.number().min(0),
     tools: z.array(z.string()).optional(),
 });
@@ -58,6 +59,7 @@ export default function CreateBootcamp({ categories, tools }: { categories: { id
     const [openEndCalendar, setOpenEndCalendar] = useState(false);
     const [openRegistrationCalendar, setOpenRegistrationCalendar] = useState(false);
     const [preview, setPreview] = useState<string | null>(null);
+    const [thumbnailError, setThumbnailError] = useState(false);
     const [schedules, setSchedules] = useState<BootcampSchedule[]>([]);
 
     const now = new Date();
@@ -75,20 +77,20 @@ export default function CreateBootcamp({ categories, tools }: { categories: { id
             category_id: '',
             description: '',
             benefits: `<ul>
-                        <li>Mendapatkan materi eksklusif</li>
-                        <li>Sertifikat peserta</li>
-                        <li>Akses ke grup diskusi</li>
+                        <li>Mendapatkan materi eksklusif (Contoh)</li>
+                        <li>Sertifikat peserta (Contoh)</li>
+                        <li>Akses ke grup diskusi (Contoh)</li>
                     </ul>`,
             requirements: `<ul>
-                        <li>Memiliki laptop</li>
-                        <li>Koneksi internet stabil</li>
-                        <li>Minat belajar teknologi</li>
+                        <li>Memiliki laptop (Contoh)</li>
+                        <li>Koneksi internet stabil (Contoh)</li>
+                        <li>Minat belajar teknologi (Contoh)</li>
                     </ul>`,
             curriculum: `<ul>
-                        <li>Pengenalan Bootcamp</li>
-                        <li>Materi Utama</li>
-                        <li>Praktik Langsung</li>
-                        <li>Tanya Jawab</li>
+                        <li>Pengenalan Bootcamp (Contoh)</li>
+                        <li>Materi Utama (Contoh)</li>
+                        <li>Praktik Langsung (Contoh)</li>
+                        <li>Tanya Jawab (Contoh)</li>
                     </ul>`,
             thumbnail: '',
             start_date: defaultStart.toISOString(),
@@ -98,7 +100,7 @@ export default function CreateBootcamp({ categories, tools }: { categories: { id
             host_description: '',
             price: 0,
             quota: 0,
-            instructions: '',
+            group_url: '',
             batch: 1,
             tools: [],
         },
@@ -265,8 +267,15 @@ export default function CreateBootcamp({ categories, tools }: { categories: { id
                                             type="file"
                                             name={field.name}
                                             accept="image/*"
+                                            className={thumbnailError ? 'border-red-500 focus-visible:ring-red-500' : ''}
                                             onChange={(e) => {
                                                 const file = e.target.files?.[0] ?? null;
+                                                if (file && file.size > 2 * 1024 * 1024) {
+                                                    setThumbnailError(true);
+                                                    toast('Ukuran file maksimal 2MB!');
+                                                    return;
+                                                }
+                                                setThumbnailError(false);
                                                 field.onChange(file);
                                                 if (file) {
                                                     const reader = new FileReader();
@@ -380,6 +389,23 @@ export default function CreateBootcamp({ categories, tools }: { categories: { id
                                                 ],
                                                 height: 300,
                                             }}
+                                        />
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="group_url"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Link Group Peserta</FormLabel>
+                                        <Textarea
+                                            {...field}
+                                            value={field.value ?? ''}
+                                            className="w-full rounded border p-2"
+                                            placeholder="Masukkan link grup peserta"
+                                            autoComplete="off"
                                         />
                                         <FormMessage />
                                     </FormItem>
@@ -665,23 +691,6 @@ export default function CreateBootcamp({ categories, tools }: { categories: { id
                                                 ],
                                                 height: 300,
                                             }}
-                                        />
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="instructions"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Instruksi Peserta</FormLabel>
-                                        <Textarea
-                                            {...field}
-                                            value={field.value ?? ''}
-                                            className="w-full rounded border p-2"
-                                            placeholder="Masukkan instruksi setelah peserta mendaftar"
-                                            autoComplete="off"
                                         />
                                         <FormMessage />
                                     </FormItem>

@@ -44,7 +44,7 @@ class BootcampController extends Controller
             'price' => 'required|numeric|min:0',
             'quota' => 'required|integer|min:0',
             'batch' => 'nullable|string|max:255',
-            'instructions' => 'nullable|string',
+            'group_url' => 'nullable|string',
             'tools' => 'nullable|array',
         ]);
 
@@ -134,7 +134,7 @@ class BootcampController extends Controller
             'price' => 'required|numeric|min:0',
             'quota' => 'required|integer|min:0',
             'batch' => 'nullable|string|max:255',
-            'instructions' => 'nullable|string',
+            'group_url' => 'nullable|string',
             'tools' => 'nullable|array',
         ]);
 

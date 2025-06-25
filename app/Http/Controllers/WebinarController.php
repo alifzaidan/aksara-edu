@@ -42,7 +42,7 @@ class WebinarController extends Controller
             'host_description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'quota' => 'required|integer|min:0',
-            'instructions' => 'nullable|string',
+            'group_url' => 'nullable|string',
             'batch' => 'nullable|string|max:255',
             'tools' => 'nullable|array',
         ]);
@@ -115,7 +115,7 @@ class WebinarController extends Controller
             'host_description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'quota' => 'required|integer|min:0',
-            'instructions' => 'nullable|string',
+            'group_url' => 'nullable|string',
             'batch' => 'nullable|string|max:255',
             'tools' => 'nullable|array',
         ]);

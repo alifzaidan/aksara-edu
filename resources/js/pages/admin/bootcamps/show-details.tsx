@@ -25,7 +25,7 @@ interface Bootcamp {
     thumbnail?: string | null;
     description?: string | null;
     benefits?: string | null;
-    instructions?: string | null;
+    group_url?: string | null;
     requirements?: string | null;
     curriculum?: string | null;
     host_name?: string | null;
@@ -160,8 +160,8 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                         <TableCell>{format(new Date(bootcamp.registration_deadline), 'dd MMMM yyyy HH:mm', { locale: id })}</TableCell>
                     </TableRow>
                     <TableRow>
-                        <TableCell>Instruksi Peserta</TableCell>
-                        <TableCell>{bootcamp.instructions ?? '-'}</TableCell>
+                        <TableCell>Linkk Group Peserta</TableCell>
+                        <TableCell>{bootcamp.group_url ?? '-'}</TableCell>
                     </TableRow>
                     <TableRow>
                         <TableCell>Pemateri</TableCell>
