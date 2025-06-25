@@ -9,17 +9,17 @@ export default function FeatureSection() {
             title: 'Belajar Fleksibel & Bersertifikat.',
             subtitle:
                 'Kuasai dengan kurikulum up-to-date yang sesuai kebutuhan industri. Fleksibel untuk profesional yang ingin upskill tanpa mengganggu jam kerja.',
-            image: '/assets/images/illustration-kelas-online.svg',
+            image: '/assets/images/feature-bootcamp-1.svg',
         },
         {
             title: 'Fokus Bantu Kembangkan Skill dan Portfolio.',
             subtitle: 'Belajar sambil praktek dengan ragam case study, worksheet, dan framework. Didasarkan pada kebutuhan industri dan profesi',
-            image: '/assets/images/illustration-bootcamp.svg',
+            image: '/assets/images/feature-bootcamp-2.svg',
         },
         {
             title: 'Peluang Karir Menjanjikan.',
             subtitle: 'Membuka peluang karir yang menjanjikan di industri teknologi dan mendapat proyek-proyek menarik.',
-            image: '/assets/images/illustration-webinar.svg',
+            image: '/assets/images/feature-bootcamp-3.svg',
         },
     ];
 

@@ -9,17 +9,17 @@ export default function FeatureSection() {
             title: 'Belajar Fleksibel & Bersertifikat.',
             subtitle:
                 'Disusun bertahap dari level dasar hingga lanjutan oleh praktisi industri dari berbagai company. Dapatkan e-certificate di tiap materi.',
-            image: '/assets/images/illustration-kelas-online.svg',
+            image: '/assets/images/feature-course-1.svg',
         },
         {
             title: 'Kombinasi Strategi Praktek & Portofolio.',
             subtitle: 'Belajar sambil praktek dengan ragam case study, worksheet, dan framework. Didasarkan pada kebutuhan industri dan profesi.',
-            image: '/assets/images/illustration-bootcamp.svg',
+            image: '/assets/images/feature-course-2.svg',
         },
         {
             title: 'Gabung Komunitas Secara Lifetime.',
             subtitle: 'Bangun network profesional , saling sharing ilmu dalam praktik, sambil berbagai info loker maupun freelance.',
-            image: '/assets/images/illustration-webinar.svg',
+            image: '/assets/images/feature-course-3.svg',
         },
     ];
 

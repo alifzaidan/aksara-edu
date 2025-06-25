@@ -116,7 +116,10 @@ export default function WebinarSection({ categories, webinars }: WebinarProps) {
             </div>
             <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {visibleWebinars.length === 0 ? (
-                    <div className="col-span-full py-12 text-center text-gray-500">Belum ada webinar yang tersedia saat ini.</div>
+                    <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
+                        <img src="/assets/images/not-found.svg" alt="Webinar Belum Tersedia" className="w-48" />
+                        <div className="text-center text-gray-500">Belum ada webinar yang tersedia saat ini.</div>
+                    </div>
                 ) : (
                     visibleWebinars.map((webinar) => (
                         <Link

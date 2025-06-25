@@ -6,12 +6,12 @@ export default function ProgramSection() {
     return (
         <section className="w-full px-4 py-8" id="program-kami">
             <div className="mx-auto max-w-5xl">
-                <p className="text-primary border-primary bg-background mx-auto w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
+                <p className="text-primary border-primary bg-background mx-auto mb-8 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
                     Program Kami
                 </p>
-                <div className="space-y-8 md:space-y-0">
-                    <div className="flex w-full flex-col items-center justify-end md:flex-row">
-                        <img src="/assets/images/illustration-kelas-online.svg" alt="Kelas Online" className="w-[300px]" />
+                <div className="space-y-8 md:space-y-4">
+                    <div className="flex w-full flex-col items-center justify-end md:flex-row md:gap-14">
+                        <img src="/assets/images/illustration-course.svg" alt="Kelas Online" className="w-[250px]" />
                         <div className="space-y-2">
                             <h2 className="dark:text-primary-foreground text-center text-2xl font-bold italic sm:text-left sm:text-3xl">
                                 Kelas Online
@@ -36,7 +36,7 @@ export default function ProgramSection() {
                             </Button>
                         </div>
                     </div>
-                    <div className="flex w-full flex-col-reverse items-center justify-start md:flex-row">
+                    <div className="flex w-full flex-col-reverse items-center justify-start md:flex-row md:gap-14">
                         <div className="space-y-2">
                             <h2 className="dark:text-primary-foreground text-center text-2xl font-bold italic sm:text-left sm:text-3xl">Bootcamp</h2>
                             <p className="font-medium">Intensive Live Class bersama Experts. Praktikal & Mendalam.</p>
@@ -58,10 +58,10 @@ export default function ProgramSection() {
                                 <Link href="/bootcamp">Pelajari Sekarang</Link>
                             </Button>
                         </div>
-                        <img src="/assets/images/illustration-bootcamp.svg" alt="Bootcamp" className="w-[300px]" />
+                        <img src="/assets/images/illustration-bootcamp.svg" alt="Bootcamp" className="w-[250px]" />
                     </div>
-                    <div className="flex w-full flex-col items-center justify-end md:flex-row">
-                        <img src="/assets/images/illustration-webinar.svg" alt="Webinar" className="w-[300px]" />
+                    <div className="flex w-full flex-col items-center justify-end md:flex-row md:gap-14">
+                        <img src="/assets/images/illustration-webinar.svg" alt="Webinar" className="w-[250px]" />
                         <div className="space-y-2">
                             <h2 className="dark:text-primary-foreground text-center text-2xl font-bold italic sm:text-left sm:text-3xl">Webinar</h2>
                             <p className="font-medium">Pelajari berbagai topik terkini dari para ahli di bidangnya.</p>

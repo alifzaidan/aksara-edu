@@ -8,18 +8,18 @@ export default function FeatureSection() {
         {
             title: 'Dipandu Praktisi Profesional',
             subtitle: 'Belajar langsung dari mentor berpengalaman di bidangnya. Dapatkan insight yang aplikatif dan relevan.',
-            image: '/assets/images/illustration-kelas-online.svg',
+            image: '/assets/images/feature-webinar-1.svg',
         },
         {
             title: 'Topik yang Selalu Update',
             subtitle:
                 'Topik disesuaikan dengan kebutuhan industri dan perkembangan teknologi terbaru. Mulai dari tools freelancer, UI/UX, web development, hingga AI.',
-            image: '/assets/images/illustration-bootcamp.svg',
+            image: '/assets/images/feature-webinar-2.svg',
         },
         {
             title: 'Cocok untuk Semua Tingkatan',
             subtitle: 'Baik kamu pemula atau profesional, webinar kami didesain agar mudah dipahami dan bisa langsung dipraktikkan.',
-            image: '/assets/images/illustration-webinar.svg',
+            image: '/assets/images/feature-webinar-3.svg',
         },
     ];
 

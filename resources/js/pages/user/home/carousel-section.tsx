@@ -20,7 +20,7 @@ export default function CarouselSection() {
                     <CarouselItem className="px-4">
                         <a href="#program-kami">
                             <img
-                                src="/assets/images/carousel-1-1.png"
+                                src="/assets/images/carousel-1.png"
                                 alt="Slide 1"
                                 className="mx-auto w-full max-w-7xl rounded-xl object-cover shadow-lg"
                             />
