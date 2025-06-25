@@ -132,7 +132,10 @@ export default function Transactions({ myTransactions }: Props) {
                                     <tr key={idx} className="border-b">
                                         <td className="border px-3 py-2">{item.type === 'Course' ? 'Kelas Online' : item.type}</td>
                                         <td className="border px-3 py-2">
-                                            <Link href={`/${item.type.toLowerCase()}/${item.slug}`} className="text-primary hover:underline">
+                                            <Link
+                                                href={`/profile/my-${item.type.toLowerCase()}s/${item.slug}`}
+                                                className="text-primary hover:underline"
+                                            >
                                                 {item.title}
                                             </Link>
                                         </td>

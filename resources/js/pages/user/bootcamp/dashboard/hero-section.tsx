@@ -8,10 +8,8 @@ export default function HeroSection() {
                 <div className="bg-secondary h-[300px] w-[300px] rounded-full blur-[200px]" />
             </div>
             <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 lg:grid-cols-3">
-                <div className="relative col-span-1 hidden lg:block">
-                    <img src="https://placehold.co/600x400?text=Preview+Image" alt="Builder preview" className="rounded-xl shadow-lg" />
-
-                    <div className="absolute top-4 left-4 rounded-full bg-white px-3 py-1 text-xs font-bold text-indigo-600 shadow">Live Preview</div>
+                <div className="col-span-1 hidden lg:block">
+                    <img src="assets/images/bootcamp.gif" alt="Animasi Course" width={360} />
                 </div>
                 <div className="col-span-2">
                     <span className="text-secondary border-secondary bg-background mb-4 inline-block rounded-full border bg-gradient-to-t from-[#FED6AD] to-white px-3 py-1 text-sm font-medium shadow-xs hover:text-[#FF925B]">

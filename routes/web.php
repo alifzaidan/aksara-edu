@@ -40,8 +40,11 @@ Route::get('/invoice/{id}', [InvoiceController::class, 'show'])->name('invoice.s
 Route::redirect('profile', 'profile/dashboard');
 Route::get('/profile/dashboard', [ProfileController::class, 'index'])->name('profile.index');
 Route::get('/profile/my-courses', [ProfileController::class, 'showMyCourses'])->name('profile.courses');
+Route::get('/profile/my-courses/{course}', [ProfileController::class, 'detailMyCourse'])->name('profile.course.detail');
 Route::get('/profile/my-bootcamps', [ProfileController::class, 'showMyBootcamps'])->name('profile.bootcamps');
+Route::get('/profile/my-bootcamps/{bootcamp}', [ProfileController::class, 'detailMyBootcamp'])->name('profile.bootcamp.detail');
 Route::get('/profile/my-webinars', [ProfileController::class, 'showMyWebinars'])->name('profile.webinars');
+Route::get('/profile/my-webinars/{webinar}', [ProfileController::class, 'detailMyWebinar'])->name('profile.webinar.detail');
 Route::get('/profile/transactions', [ProfileController::class, 'showTransactions'])->name('profile.transactions');
 
 Route::middleware(['auth', 'verified'])->group(function () {

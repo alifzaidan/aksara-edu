@@ -8,8 +8,8 @@ export default function HeroSection() {
                 <div className="bg-secondary h-[300px] w-[300px] rounded-full blur-[200px]" />
             </div>
             <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 lg:grid-cols-3">
-                <div className="relative col-span-1 hidden lg:block">
-                    <video src="assets/videos/course.mp4" controls className="rounded-xl shadow-lg" width={600} height={400} />
+                <div className="col-span-1 hidden lg:block">
+                    <img src="assets/images/course.gif" alt="Animasi Course" width={360} />
                 </div>
                 <div className="col-span-2">
                     <span className="text-secondary border-secondary bg-background mb-4 inline-block rounded-full border bg-gradient-to-t from-[#FED6AD] to-white px-3 py-1 text-sm font-medium shadow-xs hover:text-[#FF925B]">
