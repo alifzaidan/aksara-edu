@@ -5,7 +5,9 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Course;
+use App\Models\Invoice;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class CourseController extends Controller
@@ -17,7 +19,21 @@ class CourseController extends Controller
             ->where('status', 'published')
             ->orderBy('created_at', 'desc')
             ->get();
-        return Inertia::render('user/course/dashboard/index', ['categories' => $categories, 'courses' => $courses]);
+
+        $myCourseIds = [];
+        if (Auth::check()) {
+            $userId = Auth::id();
+            $myCourseIds = Invoice::with('courseItems.course.category')
+                ->where('user_id', $userId)
+                ->get()
+                ->flatMap(function ($invoice) {
+                    return $invoice->courseItems->pluck('course_id');
+                })
+                ->unique()
+                ->values()
+                ->all();
+        }
+        return Inertia::render('user/course/dashboard/index', ['categories' => $categories, 'courses' => $courses, 'myCourseIds' => $myCourseIds]);
     }
 
     public function detail(Course $course)

@@ -23,16 +23,17 @@ interface Course {
 interface CourseProps {
     categories: Category[];
     courses: Course[];
+    myCourseIds: string[];
 }
 
-export default function Course({ categories, courses }: CourseProps) {
+export default function Course({ categories, courses, myCourseIds }: CourseProps) {
     return (
         <UserLayout>
             <Head title="Kelas Online" />
 
             <HeroSection />
             <FeatureSection />
-            <CoursesSection categories={categories} courses={courses} />
+            <CoursesSection categories={categories} courses={courses} myCourseIds={myCourseIds} />
         </UserLayout>
     );
 }

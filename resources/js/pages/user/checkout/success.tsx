@@ -35,15 +35,15 @@ export default function CheckoutSuccess({ invoice }: InvoiceProps) {
 
     if (courseItems.length > 0) {
         title = `Checkout Kelas "${courseItems[0].course.title}" Berhasil!`;
-        link = route('profile.courses');
+        link = `/profile/my-courses/${courseItems[0].course.slug}`;
         label = 'Akses Kelas';
     } else if (bootcampItems.length > 0) {
         title = `Checkout Bootcamp "${bootcampItems[0].bootcamp.title}" Berhasil!`;
-        link = route('profile.bootcamps');
+        link = `/profile/my-bootcamps/${bootcampItems[0].bootcamp.slug}`;
         label = 'Akses Bootcamp';
     } else if (webinarItems.length > 0) {
         title = `Checkout Webinar "${webinarItems[0].webinar.title}" Berhasil!`;
-        link = route('profile.webinars');
+        link = `/profile/my-webinars/${webinarItems[0].webinar.slug}`;
         label = 'Akses Webinar';
     } else {
         title = 'Checkout Berhasil!';

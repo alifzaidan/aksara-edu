@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import UserLayout from '@/layouts/user-layout';
-import { Head } from '@inertiajs/react';
-import { BadgeCheck } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import { ArrowLeft, BadgeCheck } from 'lucide-react';
 
 interface Category {
     id: string;
@@ -73,6 +73,11 @@ export default function DetailMyCourse({ course }: { course: CourseProps }) {
                     <div className="bg-secondary h-[300px] w-[300px] rounded-full blur-[200px]" />
                 </div>
                 <div className="relative mx-auto max-w-7xl px-4 text-center">
+                    <Button className="top-0 left-4 mb-4 rounded-full md:absolute md:mb-0" variant="secondary" asChild>
+                        <Link href="/profile/my-courses">
+                            <ArrowLeft /> Kembali Ke Kelas Saya
+                        </Link>
+                    </Button>
                     <div className="col-span-2">
                         <div className="flex justify-center gap-4">
                             <span className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">

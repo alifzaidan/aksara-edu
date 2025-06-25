@@ -24,16 +24,17 @@ interface Bootcamp {
 interface BootcampProps {
     categories: Category[];
     bootcamps: Bootcamp[];
+    myBootcampIds: string[];
 }
 
-export default function Bootcamp({ categories, bootcamps }: BootcampProps) {
+export default function Bootcamp({ categories, bootcamps, myBootcampIds }: BootcampProps) {
     return (
         <UserLayout>
             <Head title="Bootcamp" />
 
             <HeroSection />
             <FeatureSection />
-            <BootcampSection categories={categories} bootcamps={bootcamps} />
+            <BootcampSection categories={categories} bootcamps={bootcamps} myBootcampIds={myBootcampIds} />
         </UserLayout>
     );
 }

@@ -23,16 +23,17 @@ interface Webinar {
 interface WebinarProps {
     categories: Category[];
     webinars: Webinar[];
+    myWebinarIds: string[];
 }
 
-export default function Webinar({ categories, webinars }: WebinarProps) {
+export default function Webinar({ categories, webinars, myWebinarIds }: WebinarProps) {
     return (
         <UserLayout>
             <Head title="Webinar" />
 
             <HeroSection />
             <FeatureSection />
-            <WebinarSection categories={categories} webinars={webinars} />
+            <WebinarSection categories={categories} webinars={webinars} myWebinarIds={myWebinarIds} />
         </UserLayout>
     );
 }

@@ -5,7 +5,9 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\Bootcamp;
 use App\Models\Category;
+use App\Models\Invoice;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class BootcampController extends Controller
@@ -17,7 +19,21 @@ class BootcampController extends Controller
             ->where('status', 'published')
             ->orderBy('created_at', 'desc')
             ->get();
-        return Inertia::render('user/bootcamp/dashboard/index', ['categories' => $categories, 'bootcamps' => $bootcamps]);
+
+        $myBootcampIds = [];
+        if (Auth::check()) {
+            $userId = Auth::id();
+            $myBootcampIds = Invoice::with('bootcampItems.bootcamp.category')
+                ->where('user_id', $userId)
+                ->get()
+                ->flatMap(function ($invoice) {
+                    return $invoice->bootcampItems->pluck('bootcamp_id');
+                })
+                ->unique()
+                ->values()
+                ->all();
+        }
+        return Inertia::render('user/bootcamp/dashboard/index', ['categories' => $categories, 'bootcamps' => $bootcamps, 'myBootcampIds' => $myBootcampIds]);
     }
 
     public function detail(Bootcamp $bootcamp)

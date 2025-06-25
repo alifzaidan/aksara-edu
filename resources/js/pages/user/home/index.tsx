@@ -25,7 +25,13 @@ interface Course {
     level: 'beginner' | 'intermediate' | 'advanced';
 }
 
-export default function Home({ courses, tools }: { courses: Course[]; tools: Tool[] }) {
+interface HomeProps {
+    courses: Course[];
+    tools: Tool[];
+    myCourseIds: string[];
+}
+
+export default function Home({ courses, tools, myCourseIds }: HomeProps) {
     return (
         <UserLayout>
             <Head title="Beranda" />
@@ -34,7 +40,7 @@ export default function Home({ courses, tools }: { courses: Course[]; tools: Too
             <AboutSection />
             <ProgramSection />
             <ToolsSection tools={tools} />
-            <BestSellerSection courses={courses} />
+            <BestSellerSection courses={courses} myCourseIds={myCourseIds} />
             <TestimonySection />
             <FaqSection />
             <CtaSection />

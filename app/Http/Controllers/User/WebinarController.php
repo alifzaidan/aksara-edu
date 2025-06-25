@@ -4,8 +4,10 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Invoice;
 use App\Models\Webinar;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class WebinarController extends Controller
@@ -17,7 +19,21 @@ class WebinarController extends Controller
             ->where('status', 'published')
             ->orderBy('created_at', 'desc')
             ->get();
-        return Inertia::render('user/webinar/dashboard/index', ['categories' => $categories, 'webinars' => $webinars]);
+
+        $myWebinarIds = [];
+        if (Auth::check()) {
+            $userId = Auth::id();
+            $myWebinarIds = Invoice::with('webinarItems.webinar.category')
+                ->where('user_id', $userId)
+                ->get()
+                ->flatMap(function ($invoice) {
+                    return $invoice->webinarItems->pluck('webinar_id');
+                })
+                ->unique()
+                ->values()
+                ->all();
+        }
+        return Inertia::render('user/webinar/dashboard/index', ['categories' => $categories, 'webinars' => $webinars, 'myWebinarIds' => $myWebinarIds]);
     }
 
     public function detail(Webinar $webinar)

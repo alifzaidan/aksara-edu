@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import UserLayout from '@/layouts/user-layout';
-import { Head } from '@inertiajs/react';
-import { BadgeCheck } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import { ArrowLeft, BadgeCheck } from 'lucide-react';
 
 interface Category {
     id: string;
@@ -23,6 +23,7 @@ interface Bootcamp {
     curriculum: string;
     description: string | null;
     short_description: string | null;
+    group_url: string | null;
     status: string;
     schedules?: { day: string; start_time: string; end_time: string }[];
     user_id: string;
@@ -77,6 +78,11 @@ export default function DetailMyBootcamp({ bootcamp }: { bootcamp: BootcampProps
                     <div className="bg-secondary h-[300px] w-[300px] rounded-full blur-[200px]" />
                 </div>
                 <div className="relative mx-auto max-w-7xl px-4 text-center">
+                    <Button className="top-0 left-4 mb-4 rounded-full md:absolute md:mb-0" variant="secondary" asChild>
+                        <Link href="/profile/my-bootcamps">
+                            <ArrowLeft /> Kembali Ke Bootcamp Saya
+                        </Link>
+                    </Button>
                     <div className="col-span-2">
                         <div className="flex justify-center gap-4">
                             <span className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
@@ -164,7 +170,7 @@ export default function DetailMyBootcamp({ bootcamp }: { bootcamp: BootcampProps
                         <Button
                             className="mt-2 w-full"
                             disabled={bootcampInvoiceStatus !== 'paid'}
-                            onClick={() => window.open(bootcampData.bootcamp_url, '_blank')}
+                            onClick={() => window.open(bootcampData.group_url ?? undefined, '_blank')}
                         >
                             Gabung Grup WA
                         </Button>
