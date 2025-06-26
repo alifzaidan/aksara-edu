@@ -36,6 +36,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/webinar/register/success', [UserWebinarController::class, 'showRegisterSuccess'])->name('webinar.register.success');
 
     Route::post('/invoice', [InvoiceController::class, 'store'])->name('invoice.store');
+    Route::post('/enroll/free', [InvoiceController::class, 'enrollFree'])->name('enroll.free');
     Route::get('/invoice/{id}', [InvoiceController::class, 'show'])->name('invoice.show');
 
     Route::redirect('profile', 'profile/dashboard');

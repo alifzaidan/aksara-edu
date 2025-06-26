@@ -50,6 +50,6 @@ class BootcampController extends Controller
 
     public function showRegisterSuccess()
     {
-        return Inertia::render('user/bootcamp/register/success');
+        return Inertia::render('user/checkout/success');
     }
 }

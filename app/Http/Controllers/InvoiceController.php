@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bootcamp;
-use App\Models\Cart;
 use App\Models\Course;
 use App\Models\EnrollmentBootcamp;
 use App\Models\EnrollmentCourse;
@@ -13,6 +12,7 @@ use App\Models\Webinar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Haruncpi\LaravelIdGenerator\IdGenerator;
 
@@ -115,6 +115,73 @@ class InvoiceController extends Controller
 
             return response()->json([
                 'url' => $xendit_invoice['invoice_url'],
+            ], 200);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json([
+                'message' => $th->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function enrollFree(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $userId = Auth::id();
+            $type = $request->input('type', 'course');
+            $itemId = $request->input('id');
+
+            $item = null;
+            $enrollmentTable = null;
+            $enrollmentField = null;
+
+            if ($type === 'course') {
+                $item = Course::findOrFail($itemId);
+                $enrollmentTable = EnrollmentCourse::class;
+                $enrollmentField = 'course_id';
+            } elseif ($type === 'bootcamp') {
+                $item = Bootcamp::findOrFail($itemId);
+                $enrollmentTable = EnrollmentBootcamp::class;
+                $enrollmentField = 'bootcamp_id';
+            } elseif ($type === 'webinar') {
+                $item = Webinar::findOrFail($itemId);
+                $enrollmentTable = EnrollmentWebinar::class;
+                $enrollmentField = 'webinar_id';
+            } else {
+                throw new \Exception('Tipe pendaftaran tidak valid');
+            }
+
+            $invoice_code = IdGenerator::generate([
+                'table' => 'invoices',
+                'field' => 'invoice_code',
+                'length' => 11,
+                'reset_on_prefix_change'  => true,
+                'prefix' => 'INV-' . date('y')
+            ]);
+
+            $invoice = Invoice::create([
+                'user_id' => $userId,
+                'invoice_code' => $invoice_code,
+                'amount' => 0,
+                'status' => 'paid',
+                'paid_at' => now(),
+                'payment_method' => 'FREE',
+            ]);
+
+            $enrollmentTable::create([
+                'invoice_id' => $invoice->id,
+                $enrollmentField => $item->id,
+                'price' => 0,
+                'completed_at' => null,
+                'progress' => 0,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Pendaftaran berhasil!',
+                'redirect_url' => route('invoice.show', ['id' => $invoice->id]),
             ], 200);
         } catch (\Throwable $th) {
             DB::rollBack();

@@ -50,7 +50,7 @@ class CourseController extends Controller
 
     public function showCheckoutSuccess()
     {
-        return Inertia::render('user/course/checkout/success');
+        return Inertia::render('user/checkout/success');
     }
 
     // public function showCheckoutFailed()

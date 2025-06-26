@@ -36,14 +36,40 @@ export default function RegisterBootcamp({ bootcamp }: { bootcamp: Bootcamp }) {
     const requirementList = parseList(bootcamp.requirements);
     const benefitList = parseList(bootcamp.benefits);
     const curriculumList = parseList(bootcamp.curriculum);
+    const isFree = bootcamp.price === 0;
 
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!termsAccepted) {
+        if (!termsAccepted && !isFree) {
             alert('Anda harus menyetujui syarat dan ketentuan!');
             return;
         }
         setLoading(true);
+
+        if (isFree) {
+            try {
+                const res = await fetch(route('enroll.free'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                    },
+                    body: JSON.stringify({ type: 'bootcamp', id: bootcamp.id }),
+                });
+                const data = await res.json();
+                if (res.ok && data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                } else {
+                    alert(data.message || 'Gagal mendaftar kelas gratis.');
+                }
+            } catch {
+                alert('Terjadi kesalahan saat proses pendaftaran.');
+            } finally {
+                setLoading(false);
+            }
+            return;
+        }
+
         try {
             const res = await fetch(route('invoice.store'), {
                 method: 'POST',
@@ -93,7 +119,7 @@ export default function RegisterBootcamp({ bootcamp }: { bootcamp: Bootcamp }) {
                                     {benefitList.map((benefit, idx) => (
                                         <li key={idx} className="flex items-center gap-2">
                                             <BadgeCheck size="18" className="text-green-600" />
-                                            <p>{benefit}</p>
+                                            <p className="text-sm md:text-base">{benefit}</p>
                                         </li>
                                     ))}
                                 </ul>
@@ -105,7 +131,7 @@ export default function RegisterBootcamp({ bootcamp }: { bootcamp: Bootcamp }) {
                                     {requirementList.map((requirement, idx) => (
                                         <li key={idx} className="flex items-center gap-2">
                                             <BadgeCheck size="18" className="text-green-600" />
-                                            <p>{requirement}</p>
+                                            <p className="text-sm md:text-base">{requirement}</p>
                                         </li>
                                     ))}
                                 </ul>
@@ -121,7 +147,7 @@ export default function RegisterBootcamp({ bootcamp }: { bootcamp: Bootcamp }) {
                                     {curriculumList.map((curriculum, idx) => (
                                         <li key={idx} className="flex items-center gap-2">
                                             <p className="font-semibold">{idx + 1}.</p>
-                                            <p>{curriculum}</p>
+                                            <p className="text-sm md:text-base">{curriculum}</p>
                                         </li>
                                     ))}
                                 </ul>
@@ -132,32 +158,39 @@ export default function RegisterBootcamp({ bootcamp }: { bootcamp: Bootcamp }) {
                     <form onSubmit={handleCheckout}>
                         <h2 className="my-2 text-xl font-bold italic">Detail Pembayaran</h2>
                         <div className="space-y-4 rounded-lg border p-4">
-                            <Input type="text" placeholder="Masukkan Kode Promo (Opsional)" className="w-full" />
-                            <div className="space-y-2 rounded-lg border p-4">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-gray-600">Harga Normal</span>
-                                    <span className="font-semibold text-gray-500">Rp 999.000</span>
+                            {isFree ? (
+                                <div className="flex items-center justify-between p-4 text-center">
+                                    <span className="w-full text-2xl font-bold text-green-600">BOOTCAMP GRATIS</span>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-gray-600">Harga Bootcamp</span>
-                                    <span className="font-semibold text-gray-500">Rp {bootcamp.price.toLocaleString()}</span>
+                            ) : (
+                                <>
+                                    <Input type="text" placeholder="Masukkan Kode Promo (Opsional)" className="w-full" />
+                                    <div className="space-y-2 rounded-lg border p-4">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-600">Harga Kelas</span>
+                                            <span className="font-semibold text-gray-500">Rp {bootcamp.price.toLocaleString('id-ID')}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-600">Pajak</span>
+                                            <span className="font-semibold text-gray-500">Rp 0</span>
+                                        </div>
+                                        <Separator className="my-2" />
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-600">Harga Total</span>
+                                            <span className="text-xl font-bold">Rp {bootcamp.price.toLocaleString('id-ID')}</span>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {!isFree && (
+                                <div className="flex items-center gap-3">
+                                    <Checkbox id="terms" checked={termsAccepted} onCheckedChange={(checked) => setTermsAccepted(checked === true)} />
+                                    <Label htmlFor="terms">Saya menyetujui syarat dan ketentuan</Label>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-gray-600">Pajak</span>
-                                    <span className="font-semibold text-gray-500">Rp 11.000</span>
-                                </div>
-                                <Separator className="my-2" />
-                                <div className="flex items-center justify-between">
-                                    <span className="text-gray-600">Harga Total</span>
-                                    <span className="text-xl font-bold">Rp {bootcamp.price.toLocaleString()}</span>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <Checkbox id="terms" checked={termsAccepted} onCheckedChange={(checked) => setTermsAccepted(checked === true)} />
-                                <Label htmlFor="terms">Accept terms and conditions</Label>
-                            </div>
-                            <Button className="w-full" type="submit" disabled={!termsAccepted || loading}>
-                                {loading ? 'Memproses...' : 'Bayar Sekarang'}
+                            )}
+                            <Button className="w-full" type="submit" disabled={(isFree ? false : !termsAccepted) || loading}>
+                                {loading ? 'Memproses...' : isFree ? 'Dapatkan Akses Gratis Sekarang' : 'Bayar Sekarang'}
                             </Button>
                         </div>
                     </form>

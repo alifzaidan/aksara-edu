@@ -51,6 +51,6 @@ class WebinarController extends Controller
 
     public function showRegisterSuccess()
     {
-        return Inertia::render('user/webinar/register/success');
+        return Inertia::render('user/checkout/success');
     }
 }

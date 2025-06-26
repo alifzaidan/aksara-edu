@@ -31,14 +31,40 @@ export default function RegisterWebinar({ webinar }: { webinar: Webinar }) {
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
     const benefitList = parseList(webinar.benefits);
+    const isFree = webinar.price === 0;
 
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!termsAccepted) {
+        if (!termsAccepted && !isFree) {
             alert('Anda harus menyetujui syarat dan ketentuan!');
             return;
         }
         setLoading(true);
+
+        if (isFree) {
+            try {
+                const res = await fetch(route('enroll.free'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                    },
+                    body: JSON.stringify({ type: 'webinar', id: webinar.id }),
+                });
+                const data = await res.json();
+                if (res.ok && data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                } else {
+                    alert(data.message || 'Gagal mendaftar kelas gratis.');
+                }
+            } catch {
+                alert('Terjadi kesalahan saat proses pendaftaran.');
+            } finally {
+                setLoading(false);
+            }
+            return;
+        }
+
         try {
             const res = await fetch(route('invoice.store'), {
                 method: 'POST',
@@ -64,7 +90,7 @@ export default function RegisterWebinar({ webinar }: { webinar: Webinar }) {
 
     return (
         <UserLayout>
-            <Head title="Daftar Bootcamp" />
+            <Head title="Daftar Webinar" />
             <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
                 <div className="mx-auto my-12 w-full max-w-7xl px-4">
                     <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
@@ -98,32 +124,39 @@ export default function RegisterWebinar({ webinar }: { webinar: Webinar }) {
                     <form onSubmit={handleCheckout}>
                         <h2 className="my-2 text-xl font-bold italic">Detail Pembayaran</h2>
                         <div className="space-y-4 rounded-lg border p-4">
-                            <Input type="text" placeholder="Masukkan Kode Promo (Opsional)" className="w-full" />
-                            <div className="space-y-2 rounded-lg border p-4">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-gray-600">Harga Normal</span>
-                                    <span className="font-semibold text-gray-500">Rp 999.000</span>
+                            {isFree ? (
+                                <div className="flex items-center justify-between p-4 text-center">
+                                    <span className="w-full text-2xl font-bold text-green-600">KELAS GRATIS</span>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-gray-600">Harga Webinar</span>
-                                    <span className="font-semibold text-gray-500">Rp {webinar.price.toLocaleString()}</span>
+                            ) : (
+                                <>
+                                    <Input type="text" placeholder="Masukkan Kode Promo (Opsional)" className="w-full" />
+                                    <div className="space-y-2 rounded-lg border p-4">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-600">Harga Kelas</span>
+                                            <span className="font-semibold text-gray-500">Rp {webinar.price.toLocaleString('id-ID')}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-600">Pajak</span>
+                                            <span className="font-semibold text-gray-500">Rp 0</span>
+                                        </div>
+                                        <Separator className="my-2" />
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-600">Harga Total</span>
+                                            <span className="text-xl font-bold">Rp {webinar.price.toLocaleString('id-ID')}</span>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {!isFree && (
+                                <div className="flex items-center gap-3">
+                                    <Checkbox id="terms" checked={termsAccepted} onCheckedChange={(checked) => setTermsAccepted(checked === true)} />
+                                    <Label htmlFor="terms">Saya menyetujui syarat dan ketentuan</Label>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-gray-600">Pajak</span>
-                                    <span className="font-semibold text-gray-500">Rp 11.000</span>
-                                </div>
-                                <Separator className="my-2" />
-                                <div className="flex items-center justify-between">
-                                    <span className="text-gray-600">Harga Total</span>
-                                    <span className="text-xl font-bold">Rp {webinar.price.toLocaleString()}</span>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <Checkbox id="terms" checked={termsAccepted} onCheckedChange={(checked) => setTermsAccepted(checked === true)} />
-                                <Label htmlFor="terms">Accept terms and conditions</Label>
-                            </div>
-                            <Button className="w-full" type="submit" disabled={!termsAccepted || loading}>
-                                {loading ? 'Memproses...' : 'Bayar Sekarang'}
+                            )}
+                            <Button className="w-full" type="submit" disabled={(isFree ? false : !termsAccepted) || loading}>
+                                {loading ? 'Memproses...' : isFree ? 'Dapatkan Akses Gratis Sekarang' : 'Bayar Sekarang'}
                             </Button>
                         </div>
                     </form>
