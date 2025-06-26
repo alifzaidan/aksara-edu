@@ -10,6 +10,7 @@ import { Editor } from '@tinymce/tinymce-react';
 import { FormEventHandler, useEffect, useRef, useState } from 'react';
 
 interface Lesson {
+    id?: string | number; // Add ID field for existing lessons
     title: string;
     type: 'text' | 'video' | 'file' | 'quiz';
     description?: string;
@@ -18,6 +19,7 @@ interface Lesson {
     video_url?: string;
     attachment?: File | null;
     quizzes?: {
+        id?: string | number;
         instructions: string;
         time_limit: number;
         passing_score: number;
