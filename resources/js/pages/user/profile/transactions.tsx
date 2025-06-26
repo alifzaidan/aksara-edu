@@ -1,4 +1,5 @@
 import Heading from '@/components/heading';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ProfileLayout from '@/layouts/profile/layout';
 import UserLayout from '@/layouts/user-layout';
@@ -40,6 +41,7 @@ interface EnrollmentWebinar {
 interface Invoice {
     id: string;
     invoice_code: string;
+    invoice_url: string;
     amount: number;
     status: 'paid' | 'pending' | 'expired' | 'failed' | 'completed';
     paid_at: string | null;
@@ -68,6 +70,7 @@ export default function Transactions({ myTransactions }: Props) {
             invoice_id: invoice.id,
             invoice_status: invoice.status,
             invoice_code: invoice.invoice_code,
+            invoice_url: invoice.invoice_url,
             paid_at: invoice.paid_at,
             payment_channel: invoice.payment_channel,
             payment_method: invoice.payment_method,
@@ -81,6 +84,7 @@ export default function Transactions({ myTransactions }: Props) {
             invoice_id: invoice.id,
             invoice_status: invoice.status,
             invoice_code: invoice.invoice_code,
+            invoice_url: invoice.invoice_url,
             paid_at: invoice.paid_at,
             payment_channel: invoice.payment_channel,
             payment_method: invoice.payment_method,
@@ -94,6 +98,7 @@ export default function Transactions({ myTransactions }: Props) {
             invoice_id: invoice.id,
             invoice_status: invoice.status,
             invoice_code: invoice.invoice_code,
+            invoice_url: invoice.invoice_url,
             paid_at: invoice.paid_at,
             payment_channel: invoice.payment_channel,
             payment_method: invoice.payment_method,
@@ -165,7 +170,19 @@ export default function Transactions({ myTransactions }: Props) {
                                                 {item.invoice_code}
                                             </Link>
                                         </td>
-                                        <td className="p-2">{item.paid_at ? new Date(item.paid_at).toLocaleString('id-ID') : '-'}</td>
+                                        <td className="p-2 text-center">
+                                            {item.invoice_status === 'pending' && item.invoice_url ? (
+                                                <Button asChild size="sm" variant="outline">
+                                                    <a href={item.invoice_url} target="_blank">
+                                                        Lanjutkan Pembayaran
+                                                    </a>
+                                                </Button>
+                                            ) : item.paid_at ? (
+                                                new Date(item.paid_at).toLocaleString('id-ID')
+                                            ) : (
+                                                '-'
+                                            )}
+                                        </td>
                                     </tr>
                                 ))
                             )}

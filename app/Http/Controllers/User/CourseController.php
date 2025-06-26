@@ -45,7 +45,30 @@ class CourseController extends Controller
     public function showCheckout(Course $course)
     {
         $course->load(['modules.lessons']);
-        return Inertia::render('user/course/checkout/index', ['course' => $course]);
+        $hasAccess = false;
+        if (Auth::check()) {
+            $userId = Auth::id();
+            $hasAccess = Invoice::where('user_id', $userId)
+                ->whereIn('status', ['paid', 'completed'])
+                ->whereHas('courseItems', function ($query) use ($course) {
+                    $query->where('course_id', $course->id);
+                })
+                ->exists();
+            if (!$hasAccess) {
+                $pendingInvoice = Invoice::where('user_id', $userId)
+                    ->where('status', 'pending')
+                    ->whereHas('courseItems', function ($query) use ($course) {
+                        $query->where('course_id', $course->id);
+                    })
+                    ->latest()
+                    ->first();
+
+                if ($pendingInvoice && $pendingInvoice->invoice_url) {
+                    $pendingInvoiceUrl = $pendingInvoice->invoice_url;
+                }
+            }
+        }
+        return Inertia::render('user/course/checkout/index', ['course' => $course, 'hasAccess' => $hasAccess, 'pendingInvoiceUrl' => $pendingInvoiceUrl ?? null]);
     }
 
     public function showCheckoutSuccess()

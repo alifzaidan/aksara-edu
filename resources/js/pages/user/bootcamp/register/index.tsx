@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
-import { BadgeCheck } from 'lucide-react';
+import { BadgeCheck, Hourglass } from 'lucide-react';
 import { useState } from 'react';
 
 interface Bootcamp {
@@ -21,6 +21,7 @@ interface Bootcamp {
     benefits?: string | null;
     requirements?: string | null;
     curriculum?: string | null;
+    group_url?: string | null;
 }
 
 function parseList(items?: string | null): string[] {
@@ -30,7 +31,15 @@ function parseList(items?: string | null): string[] {
     return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
 }
 
-export default function RegisterBootcamp({ bootcamp }: { bootcamp: Bootcamp }) {
+export default function RegisterBootcamp({
+    bootcamp,
+    hasAccess,
+    pendingInvoiceUrl,
+}: {
+    bootcamp: Bootcamp;
+    hasAccess: boolean;
+    pendingInvoiceUrl?: string | null;
+}) {
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
     const requirementList = parseList(bootcamp.requirements);
@@ -155,45 +164,73 @@ export default function RegisterBootcamp({ bootcamp }: { bootcamp: Bootcamp }) {
                         </TabsContent>
                     </Tabs>
 
-                    <form onSubmit={handleCheckout}>
-                        <h2 className="my-2 text-xl font-bold italic">Detail Pembayaran</h2>
-                        <div className="space-y-4 rounded-lg border p-4">
-                            {isFree ? (
-                                <div className="flex items-center justify-between p-4 text-center">
-                                    <span className="w-full text-2xl font-bold text-green-600">BOOTCAMP GRATIS</span>
-                                </div>
-                            ) : (
-                                <>
-                                    <Input type="text" placeholder="Masukkan Kode Promo (Opsional)" className="w-full" />
-                                    <div className="space-y-2 rounded-lg border p-4">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-gray-600">Harga Kelas</span>
-                                            <span className="font-semibold text-gray-500">Rp {bootcamp.price.toLocaleString('id-ID')}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-gray-600">Pajak</span>
-                                            <span className="font-semibold text-gray-500">Rp 0</span>
-                                        </div>
-                                        <Separator className="my-2" />
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-gray-600">Harga Total</span>
-                                            <span className="text-xl font-bold">Rp {bootcamp.price.toLocaleString('id-ID')}</span>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-
-                            {!isFree && (
-                                <div className="flex items-center gap-3">
-                                    <Checkbox id="terms" checked={termsAccepted} onCheckedChange={(checked) => setTermsAccepted(checked === true)} />
-                                    <Label htmlFor="terms">Saya menyetujui syarat dan ketentuan</Label>
-                                </div>
-                            )}
-                            <Button className="w-full" type="submit" disabled={(isFree ? false : !termsAccepted) || loading}>
-                                {loading ? 'Memproses...' : isFree ? 'Dapatkan Akses Gratis Sekarang' : 'Bayar Sekarang'}
+                    {hasAccess ? (
+                        <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
+                            <BadgeCheck size={64} className="text-green-500" />
+                            <h2 className="text-xl font-bold">Anda Sudah Memiliki Akses</h2>
+                            <p className="text-sm text-gray-500">Anda sudah terdaftar di bootcamp ini. Silakan masuk ke dalam grup.</p>
+                            <Button asChild className="w-full">
+                                <a href={bootcamp.group_url ?? ''} target="_blank" rel="noopener noreferrer">
+                                    Masuk Group Bootcamp
+                                </a>
                             </Button>
                         </div>
-                    </form>
+                    ) : pendingInvoiceUrl ? (
+                        <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
+                            <Hourglass size={64} className="text-yellow-500" />
+                            <h2 className="text-xl font-bold">Pembayaran Tertunda</h2>
+                            <p className="text-sm text-gray-500">
+                                Anda memiliki pembayaran yang belum selesai untuk kelas ini. Silakan lanjutkan untuk membayar.
+                            </p>
+                            <Button asChild className="w-full">
+                                <a href={pendingInvoiceUrl}>Lanjutkan Pembayaran</a>
+                            </Button>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleCheckout}>
+                            <h2 className="my-2 text-xl font-bold italic">Detail Pembayaran</h2>
+                            <div className="space-y-4 rounded-lg border p-4">
+                                {isFree ? (
+                                    <div className="flex items-center justify-between p-4 text-center">
+                                        <span className="w-full text-2xl font-bold text-green-600">BOOTCAMP GRATIS</span>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <Input type="text" placeholder="Masukkan Kode Promo (Opsional)" className="w-full" />
+                                        <div className="space-y-2 rounded-lg border p-4">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-600">Harga Kelas</span>
+                                                <span className="font-semibold text-gray-500">Rp {bootcamp.price.toLocaleString('id-ID')}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-600">Pajak</span>
+                                                <span className="font-semibold text-gray-500">Rp 0</span>
+                                            </div>
+                                            <Separator className="my-2" />
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-600">Harga Total</span>
+                                                <span className="text-xl font-bold">Rp {bootcamp.price.toLocaleString('id-ID')}</span>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {!isFree && (
+                                    <div className="flex items-center gap-3">
+                                        <Checkbox
+                                            id="terms"
+                                            checked={termsAccepted}
+                                            onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                                        />
+                                        <Label htmlFor="terms">Saya menyetujui syarat dan ketentuan</Label>
+                                    </div>
+                                )}
+                                <Button className="w-full" type="submit" disabled={(isFree ? false : !termsAccepted) || loading}>
+                                    {loading ? 'Memproses...' : isFree ? 'Dapatkan Akses Gratis Sekarang' : 'Bayar Sekarang'}
+                                </Button>
+                            </div>
+                        </form>
+                    )}
                 </div>
             </section>
         </UserLayout>

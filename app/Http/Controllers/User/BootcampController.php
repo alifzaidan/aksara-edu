@@ -45,7 +45,30 @@ class BootcampController extends Controller
     public function showRegister(Bootcamp $bootcamp)
     {
         $bootcamp->load(['schedules']);
-        return Inertia::render('user/bootcamp/register/index', ['bootcamp' => $bootcamp]);
+        $hasAccess = false;
+        if (Auth::check()) {
+            $userId = Auth::id();
+            $hasAccess = Invoice::where('user_id', $userId)
+                ->whereIn('status', ['paid', 'completed'])
+                ->whereHas('bootcampItems', function ($query) use ($bootcamp) {
+                    $query->where('bootcamp_id', $bootcamp->id);
+                })
+                ->exists();
+            if (!$hasAccess) {
+                $pendingInvoice = Invoice::where('user_id', $userId)
+                    ->where('status', 'pending')
+                    ->whereHas('bootcampItems', function ($query) use ($bootcamp) {
+                        $query->where('bootcamp_id', $bootcamp->id);
+                    })
+                    ->latest()
+                    ->first();
+
+                if ($pendingInvoice && $pendingInvoice->invoice_url) {
+                    $pendingInvoiceUrl = $pendingInvoice->invoice_url;
+                }
+            }
+        }
+        return Inertia::render('user/bootcamp/register/index', ['bootcamp' => $bootcamp, 'hasAccess' => $hasAccess, 'pendingInvoiceUrl' => $pendingInvoiceUrl ?? null]);
     }
 
     public function showRegisterSuccess()
