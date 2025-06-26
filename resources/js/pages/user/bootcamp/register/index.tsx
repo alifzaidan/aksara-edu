@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
-import { BadgeCheck } from 'lucide-react';
+import { BadgeCheck, Hourglass } from 'lucide-react';
 import { useState } from 'react';
 
 interface Bootcamp {
@@ -21,6 +21,7 @@ interface Bootcamp {
     benefits?: string | null;
     requirements?: string | null;
     curriculum?: string | null;
+    group_url?: string | null;
 }
 
 function parseList(items?: string | null): string[] {
@@ -30,20 +31,54 @@ function parseList(items?: string | null): string[] {
     return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
 }
 
-export default function RegisterBootcamp({ bootcamp }: { bootcamp: Bootcamp }) {
+export default function RegisterBootcamp({
+    bootcamp,
+    hasAccess,
+    pendingInvoiceUrl,
+}: {
+    bootcamp: Bootcamp;
+    hasAccess: boolean;
+    pendingInvoiceUrl?: string | null;
+}) {
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
     const requirementList = parseList(bootcamp.requirements);
     const benefitList = parseList(bootcamp.benefits);
     const curriculumList = parseList(bootcamp.curriculum);
+    const isFree = bootcamp.price === 0;
 
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!termsAccepted) {
+        if (!termsAccepted && !isFree) {
             alert('Anda harus menyetujui syarat dan ketentuan!');
             return;
         }
         setLoading(true);
+
+        if (isFree) {
+            try {
+                const res = await fetch(route('enroll.free'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                    },
+                    body: JSON.stringify({ type: 'bootcamp', id: bootcamp.id }),
+                });
+                const data = await res.json();
+                if (res.ok && data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                } else {
+                    alert(data.message || 'Gagal mendaftar kelas gratis.');
+                }
+            } catch {
+                alert('Terjadi kesalahan saat proses pendaftaran.');
+            } finally {
+                setLoading(false);
+            }
+            return;
+        }
+
         try {
             const res = await fetch(route('invoice.store'), {
                 method: 'POST',
@@ -93,7 +128,7 @@ export default function RegisterBootcamp({ bootcamp }: { bootcamp: Bootcamp }) {
                                     {benefitList.map((benefit, idx) => (
                                         <li key={idx} className="flex items-center gap-2">
                                             <BadgeCheck size="18" className="text-green-600" />
-                                            <p>{benefit}</p>
+                                            <p className="text-sm md:text-base">{benefit}</p>
                                         </li>
                                     ))}
                                 </ul>
@@ -105,7 +140,7 @@ export default function RegisterBootcamp({ bootcamp }: { bootcamp: Bootcamp }) {
                                     {requirementList.map((requirement, idx) => (
                                         <li key={idx} className="flex items-center gap-2">
                                             <BadgeCheck size="18" className="text-green-600" />
-                                            <p>{requirement}</p>
+                                            <p className="text-sm md:text-base">{requirement}</p>
                                         </li>
                                     ))}
                                 </ul>
@@ -121,7 +156,7 @@ export default function RegisterBootcamp({ bootcamp }: { bootcamp: Bootcamp }) {
                                     {curriculumList.map((curriculum, idx) => (
                                         <li key={idx} className="flex items-center gap-2">
                                             <p className="font-semibold">{idx + 1}.</p>
-                                            <p>{curriculum}</p>
+                                            <p className="text-sm md:text-base">{curriculum}</p>
                                         </li>
                                     ))}
                                 </ul>
@@ -129,38 +164,73 @@ export default function RegisterBootcamp({ bootcamp }: { bootcamp: Bootcamp }) {
                         </TabsContent>
                     </Tabs>
 
-                    <form onSubmit={handleCheckout}>
-                        <h2 className="my-2 text-xl font-bold italic">Detail Pembayaran</h2>
-                        <div className="space-y-4 rounded-lg border p-4">
-                            <Input type="text" placeholder="Masukkan Kode Promo (Opsional)" className="w-full" />
-                            <div className="space-y-2 rounded-lg border p-4">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-gray-600">Harga Normal</span>
-                                    <span className="font-semibold text-gray-500">Rp 999.000</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-gray-600">Harga Bootcamp</span>
-                                    <span className="font-semibold text-gray-500">Rp {bootcamp.price.toLocaleString()}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-gray-600">Pajak</span>
-                                    <span className="font-semibold text-gray-500">Rp 11.000</span>
-                                </div>
-                                <Separator className="my-2" />
-                                <div className="flex items-center justify-between">
-                                    <span className="text-gray-600">Harga Total</span>
-                                    <span className="text-xl font-bold">Rp {bootcamp.price.toLocaleString()}</span>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <Checkbox id="terms" checked={termsAccepted} onCheckedChange={(checked) => setTermsAccepted(checked === true)} />
-                                <Label htmlFor="terms">Accept terms and conditions</Label>
-                            </div>
-                            <Button className="w-full" type="submit" disabled={!termsAccepted || loading}>
-                                {loading ? 'Memproses...' : 'Bayar Sekarang'}
+                    {hasAccess ? (
+                        <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
+                            <BadgeCheck size={64} className="text-green-500" />
+                            <h2 className="text-xl font-bold">Anda Sudah Memiliki Akses</h2>
+                            <p className="text-sm text-gray-500">Anda sudah terdaftar di bootcamp ini. Silakan masuk ke dalam grup.</p>
+                            <Button asChild className="w-full">
+                                <a href={bootcamp.group_url ?? ''} target="_blank" rel="noopener noreferrer">
+                                    Masuk Group Bootcamp
+                                </a>
                             </Button>
                         </div>
-                    </form>
+                    ) : pendingInvoiceUrl ? (
+                        <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
+                            <Hourglass size={64} className="text-yellow-500" />
+                            <h2 className="text-xl font-bold">Pembayaran Tertunda</h2>
+                            <p className="text-sm text-gray-500">
+                                Anda memiliki pembayaran yang belum selesai untuk kelas ini. Silakan lanjutkan untuk membayar.
+                            </p>
+                            <Button asChild className="w-full">
+                                <a href={pendingInvoiceUrl}>Lanjutkan Pembayaran</a>
+                            </Button>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleCheckout}>
+                            <h2 className="my-2 text-xl font-bold italic">Detail Pembayaran</h2>
+                            <div className="space-y-4 rounded-lg border p-4">
+                                {isFree ? (
+                                    <div className="flex items-center justify-between p-4 text-center">
+                                        <span className="w-full text-2xl font-bold text-green-600">BOOTCAMP GRATIS</span>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <Input type="text" placeholder="Masukkan Kode Promo (Opsional)" className="w-full" />
+                                        <div className="space-y-2 rounded-lg border p-4">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-600">Harga Kelas</span>
+                                                <span className="font-semibold text-gray-500">Rp {bootcamp.price.toLocaleString('id-ID')}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-600">Pajak</span>
+                                                <span className="font-semibold text-gray-500">Rp 0</span>
+                                            </div>
+                                            <Separator className="my-2" />
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-600">Harga Total</span>
+                                                <span className="text-xl font-bold">Rp {bootcamp.price.toLocaleString('id-ID')}</span>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {!isFree && (
+                                    <div className="flex items-center gap-3">
+                                        <Checkbox
+                                            id="terms"
+                                            checked={termsAccepted}
+                                            onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                                        />
+                                        <Label htmlFor="terms">Saya menyetujui syarat dan ketentuan</Label>
+                                    </div>
+                                )}
+                                <Button className="w-full" type="submit" disabled={(isFree ? false : !termsAccepted) || loading}>
+                                    {loading ? 'Memproses...' : isFree ? 'Dapatkan Akses Gratis Sekarang' : 'Bayar Sekarang'}
+                                </Button>
+                            </div>
+                        </form>
+                    )}
                 </div>
             </section>
         </UserLayout>

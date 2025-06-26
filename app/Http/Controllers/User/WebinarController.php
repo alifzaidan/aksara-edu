@@ -46,11 +46,34 @@ class WebinarController extends Controller
     public function showRegister(Webinar $webinar)
     {
         $webinar->load(['tools']);
-        return Inertia::render('user/webinar/register/index', ['webinar' => $webinar]);
+        $hasAccess = false;
+        if (Auth::check()) {
+            $userId = Auth::id();
+            $hasAccess = Invoice::where('user_id', $userId)
+                ->whereIn('status', ['paid', 'completed'])
+                ->whereHas('webinarItems', function ($query) use ($webinar) {
+                    $query->where('webinar_id', $webinar->id);
+                })
+                ->exists();
+            if (!$hasAccess) {
+                $pendingInvoice = Invoice::where('user_id', $userId)
+                    ->where('status', 'pending')
+                    ->whereHas('webinarItems', function ($query) use ($webinar) {
+                        $query->where('webinar_id', $webinar->id);
+                    })
+                    ->latest()
+                    ->first();
+
+                if ($pendingInvoice && $pendingInvoice->invoice_url) {
+                    $pendingInvoiceUrl = $pendingInvoice->invoice_url;
+                }
+            }
+        }
+        return Inertia::render('user/webinar/register/index', ['webinar' => $webinar, 'hasAccess' => $hasAccess, 'pendingInvoiceUrl' => $pendingInvoiceUrl ?? null]);
     }
 
     public function showRegisterSuccess()
     {
-        return Inertia::render('user/webinar/register/success');
+        return Inertia::render('user/checkout/success');
     }
 }
