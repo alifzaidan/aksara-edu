@@ -21,31 +21,33 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/course', [UserCourseController::class, 'index'])->name('course.index');
 Route::get('/course/{course:slug}', [UserCourseController::class, 'detail'])->name('course.detail');
-Route::get('/course/{course:slug}/checkout', [UserCourseController::class, 'showCheckout'])->name('course.checkout');
 Route::get('/bootcamp', [UserBootcampController::class, 'index'])->name('bootcamp.index');
 Route::get('/bootcamp/{bootcamp:slug}', [UserBootcampController::class, 'detail'])->name('bootcamp.detail');
-Route::get('/bootcamp/{bootcamp:slug}/register', [UserBootcampController::class, 'showRegister'])->name('bootcamp.register');
 Route::get('/webinar', [UserWebinarController::class, 'index'])->name('webinar.index');
 Route::get('/webinar/{webinar:slug}', [UserWebinarController::class, 'detail'])->name('webinar.detail');
-Route::get('/webinar/{webinar:slug}/register', [UserWebinarController::class, 'showRegister'])->name('webinar.register');
 
-Route::get('/course/checkout/success', [UserCourseController::class, 'showCheckoutSuccess'])->name('course.checkout.success');
-Route::get('/bootcamp/register/success', [UserBootcampController::class, 'showRegisterSuccess'])->name('bootcamp.register.success');
-Route::get('/webinar/register/success', [UserWebinarController::class, 'showRegisterSuccess'])->name('webinar.register.success');
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/course/{course:slug}/checkout', [UserCourseController::class, 'showCheckout'])->name('course.checkout');
+    Route::get('/bootcamp/{bootcamp:slug}/register', [UserBootcampController::class, 'showRegister'])->name('bootcamp.register');
+    Route::get('/webinar/{webinar:slug}/register', [UserWebinarController::class, 'showRegister'])->name('webinar.register');
 
-Route::get('/invoice', [InvoiceController::class, 'index'])->name('invoice.index');
-Route::post('/invoice', [InvoiceController::class, 'store'])->name('invoice.store');
-Route::get('/invoice/{id}', [InvoiceController::class, 'show'])->name('invoice.show');
+    Route::get('/course/checkout/success', [UserCourseController::class, 'showCheckoutSuccess'])->name('course.checkout.success');
+    Route::get('/bootcamp/register/success', [UserBootcampController::class, 'showRegisterSuccess'])->name('bootcamp.register.success');
+    Route::get('/webinar/register/success', [UserWebinarController::class, 'showRegisterSuccess'])->name('webinar.register.success');
 
-Route::redirect('profile', 'profile/dashboard');
-Route::get('/profile/dashboard', [ProfileController::class, 'index'])->name('profile.index');
-Route::get('/profile/my-courses', [ProfileController::class, 'showMyCourses'])->name('profile.courses');
-Route::get('/profile/my-courses/{course}', [ProfileController::class, 'detailMyCourse'])->name('profile.course.detail');
-Route::get('/profile/my-bootcamps', [ProfileController::class, 'showMyBootcamps'])->name('profile.bootcamps');
-Route::get('/profile/my-bootcamps/{bootcamp}', [ProfileController::class, 'detailMyBootcamp'])->name('profile.bootcamp.detail');
-Route::get('/profile/my-webinars', [ProfileController::class, 'showMyWebinars'])->name('profile.webinars');
-Route::get('/profile/my-webinars/{webinar}', [ProfileController::class, 'detailMyWebinar'])->name('profile.webinar.detail');
-Route::get('/profile/transactions', [ProfileController::class, 'showTransactions'])->name('profile.transactions');
+    Route::post('/invoice', [InvoiceController::class, 'store'])->name('invoice.store');
+    Route::get('/invoice/{id}', [InvoiceController::class, 'show'])->name('invoice.show');
+
+    Route::redirect('profile', 'profile/dashboard');
+    Route::get('/profile/dashboard', [ProfileController::class, 'index'])->name('profile.index');
+    Route::get('/profile/my-courses', [ProfileController::class, 'showMyCourses'])->name('profile.courses');
+    Route::get('/profile/my-courses/{course}', [ProfileController::class, 'detailMyCourse'])->name('profile.course.detail');
+    Route::get('/profile/my-bootcamps', [ProfileController::class, 'showMyBootcamps'])->name('profile.bootcamps');
+    Route::get('/profile/my-bootcamps/{bootcamp}', [ProfileController::class, 'detailMyBootcamp'])->name('profile.bootcamp.detail');
+    Route::get('/profile/my-webinars', [ProfileController::class, 'showMyWebinars'])->name('profile.webinars');
+    Route::get('/profile/my-webinars/{webinar}', [ProfileController::class, 'detailMyWebinar'])->name('profile.webinar.detail');
+    Route::get('/profile/transactions', [ProfileController::class, 'showTransactions'])->name('profile.transactions');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['role:admin'])->group(function () {

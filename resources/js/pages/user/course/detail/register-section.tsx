@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { SharedData } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { BadgeCheck, InfinityIcon, Presentation, Smartphone, TvMinimalPlay } from 'lucide-react';
 
 interface Course {
@@ -22,10 +21,6 @@ interface Course {
 }
 
 export default function RegisterSection({ course }: { course: Course }) {
-    const page = usePage<SharedData>();
-    const { auth } = page.props;
-    const user = auth.user;
-
     const totalLessons = course.modules?.reduce((total, module) => total + (module.lessons?.length || 0), 0) || 0;
 
     return (
@@ -83,9 +78,7 @@ export default function RegisterSection({ course }: { course: Course }) {
                         </li>
                     </ul>
                     <Button className="mt-auto w-full" asChild>
-                        <Link href={user ? course.registration_url : `/login?redirect=${encodeURIComponent(course.registration_url)}`}>
-                            Gabung Sekarang
-                        </Link>
+                        <Link href={course.registration_url}>Gabung Sekarang</Link>
                     </Button>
                 </div>
             </div>

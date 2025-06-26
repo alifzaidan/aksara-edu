@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { SharedData } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { BadgeCheck, CalendarDays, ChartArea, Clock, Hourglass, MapPin, Users } from 'lucide-react';
 
 interface Bootcamp {
@@ -23,10 +22,6 @@ export default function RegisterSection({ bootcamp }: { bootcamp: Bootcamp }) {
     const diffMs = end.getTime() - start.getTime();
     const diffDays = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
     const totalWeeks = Math.ceil(diffDays / 7);
-
-    const page = usePage<SharedData>();
-    const { auth } = page.props;
-    const user = auth.user;
 
     return (
         <section className="mx-auto my-8 w-full max-w-5xl px-4" id="register">
@@ -125,9 +120,7 @@ export default function RegisterSection({ bootcamp }: { bootcamp: Bootcamp }) {
                             })}
                         </p>
                         <Button className="mt-auto w-full" asChild>
-                            <Link href={user ? bootcamp.registration_url : `/login?redirect=${encodeURIComponent(bootcamp.registration_url)}`}>
-                                Daftar Sekarang
-                            </Link>
+                            <Link href={bootcamp.registration_url}>Daftar Sekarang</Link>
                         </Button>
                     </div>
                 </div>

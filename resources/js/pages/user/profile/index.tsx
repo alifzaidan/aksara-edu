@@ -6,7 +6,7 @@ import { Head } from '@inertiajs/react';
 export default function Profile() {
     return (
         <UserLayout>
-            <Head title="Pengaturan Profil" />
+            <Head title="Profil" />
             <ProfileLayout>
                 <Heading title="Dashboard" description="Pantau aktivitas dan progres Anda" />
                 <div className="grid grid-cols-2 gap-4">
