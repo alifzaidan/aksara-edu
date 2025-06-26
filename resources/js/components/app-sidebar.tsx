@@ -1,54 +1,67 @@
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
+import { SharedData, type NavItem } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 import { BookText, LayoutGrid, List, MonitorPlay, Presentation, SquareMousePointer, UserCheck, Users } from 'lucide-react';
 
-const mainNavItems: NavItem[] = [
+const allNavItems: (NavItem & { roles: string[] })[] = [
     {
         title: 'Dashboard',
         href: '/admin/dashboard',
         icon: LayoutGrid,
+        roles: ['admin', 'mentor', 'affiliate'],
     },
     {
         title: 'Afiliasi',
         href: '/admin/affiliates',
         icon: UserCheck,
+        roles: ['admin'],
     },
     {
         title: 'Mentor',
         href: '/admin/mentors',
         icon: Users,
+        roles: ['admin'],
     },
     {
         title: 'Kategori',
         href: '/admin/categories',
         icon: List,
+        roles: ['admin', 'mentor'],
     },
     {
         title: 'Tools',
         href: '/admin/tools',
         icon: SquareMousePointer,
+        roles: ['admin', 'mentor'],
     },
     {
         title: 'Kelas Online',
         href: '/admin/courses',
         icon: BookText,
+        roles: ['admin', 'mentor'],
     },
     {
         title: 'Bootcamp',
         href: '/admin/bootcamps',
         icon: Presentation,
+        roles: ['admin', 'mentor'],
     },
     {
         title: 'Webinar',
         href: '/admin/webinars',
         icon: MonitorPlay,
+        roles: ['admin', 'mentor'],
     },
 ];
 
 export function AppSidebar() {
+    const { auth } = usePage<SharedData>().props;
+    const role = auth.role[0];
+
+    const mainNavItems = allNavItems.filter((item) => item.roles.includes(role));
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>

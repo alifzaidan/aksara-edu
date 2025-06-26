@@ -49,32 +49,39 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile/transactions', [ProfileController::class, 'showTransactions'])->name('profile.transactions');
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('admin')->group(function () {
+    Route::redirect('/', 'admin/dashboard');
+    Route::get('dashboard', [AdminController::class, 'index'])->name('dashboard');
+
+    Route::middleware(['role:admin|mentor'])->group(function () {
+        Route::resource('categories', CategoryController::class);
+        Route::resource('tools', ToolController::class);
+        Route::post('/tools/{id}', [ToolController::class, 'update'])->name('tools.update');
+
+        Route::resource('courses', CourseController::class);
+        Route::post('/courses/{course}/publish', [CourseController::class, 'publish'])->name('courses.publish');
+        Route::post('/courses/{course}/archive', [CourseController::class, 'archive'])->name('courses.archive');
+        Route::post('/courses/{course}/duplicate', [CourseController::class, 'duplicate'])->name('courses.duplicate');
+        Route::get('/courses/{course}/{quiz}', [QuizController::class, 'show'])->name('quizzes.show');
+        Route::post('/questions', [QuestionController::class, 'store'])->name('questions.store');
+        Route::put('/questions/{question}', [QuestionController::class, 'update'])->name('questions.update');
+        Route::delete('/questions/{question}', [QuestionController::class, 'destroy'])->name('questions.destroy');
+
+        Route::resource('bootcamps', BootcampController::class);
+        Route::post('/bootcamps/{bootcamp}/publish', [BootcampController::class, 'publish'])->name('bootcamps.publish');
+        Route::post('/bootcamps/{bootcamp}/archive', [BootcampController::class, 'archive'])->name('bootcamps.archive');
+        Route::post('/bootcamps/{bootcamp}/duplicate', [BootcampController::class, 'duplicate'])->name('bootcamps.duplicate');
+
+        Route::resource('webinars', WebinarController::class);
+        Route::post('/webinars/{webinar}/publish', [WebinarController::class, 'publish'])->name('webinars.publish');
+        Route::post('/webinars/{webinar}/archive', [WebinarController::class, 'archive'])->name('webinars.archive');
+        Route::post('/webinars/{webinar}/duplicate', [WebinarController::class, 'duplicate'])->name('webinars.duplicate');
+    });
+
     Route::middleware(['role:admin'])->group(function () {
-        Route::redirect('admin', 'admin/dashboard');
-        Route::get('admin/dashboard', [AdminController::class, 'index'])->name('dashboard');
-        Route::resource('admin/categories', CategoryController::class);
-        Route::resource('admin/mentors', MentorController::class);
-        Route::resource('admin/affiliates', AffiliateController::class);
-        Route::post('admin/affiliates/{affiliate}/toggle-status', [AffiliateController::class, 'toggleStatus'])->name('affiliates.toggleStatus');
-        Route::resource('admin/tools', ToolController::class);
-        Route::post('/admin/tools/{id}', [ToolController::class, 'update'])->name('tools.update');
-        Route::resource('admin/courses', CourseController::class);
-        Route::post('/admin/courses/{course}/publish', [CourseController::class, 'publish'])->name('courses.publish');
-        Route::post('/admin/courses/{course}/archive', [CourseController::class, 'archive'])->name('courses.archive');
-        Route::post('/admin/courses/{course}/duplicate', [CourseController::class, 'duplicate'])->name('courses.duplicate');
-        Route::get('/admin/courses/{course}/{quiz}', [QuizController::class, 'show'])->name('quizzes.show');
-        Route::post('/admin/questions', [QuestionController::class, 'store'])->name('questions.store');
-        Route::put('/admin/questions/{question}', [QuestionController::class, 'update'])->name('questions.update');
-        Route::delete('/admin/questions/{question}', [QuestionController::class, 'destroy'])->name('questions.destroy');
-        Route::resource('admin/webinars', WebinarController::class);
-        Route::post('/admin/webinars/{webinar}/publish', [WebinarController::class, 'publish'])->name('webinars.publish');
-        Route::post('/admin/webinars/{webinar}/archive', [WebinarController::class, 'archive'])->name('webinars.archive');
-        Route::post('/admin/webinars/{webinar}/duplicate', [WebinarController::class, 'duplicate'])->name('webinars.duplicate');
-        Route::resource('admin/bootcamps', BootcampController::class);
-        Route::post('/admin/bootcamps/{bootcamp}/publish', [BootcampController::class, 'publish'])->name('bootcamps.publish');
-        Route::post('/admin/bootcamps/{bootcamp}/archive', [BootcampController::class, 'archive'])->name('bootcamps.archive');
-        Route::post('/admin/bootcamps/{bootcamp}/duplicate', [BootcampController::class, 'duplicate'])->name('bootcamps.duplicate');
+        Route::resource('mentors', MentorController::class);
+        Route::resource('affiliates', AffiliateController::class);
+        Route::post('affiliates/{affiliate}/toggle-status', [AffiliateController::class, 'toggleStatus'])->name('affiliates.toggleStatus');
     });
 });
 
