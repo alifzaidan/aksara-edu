@@ -82,6 +82,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
     Route::middleware(['role:admin'])->group(function () {
         Route::resource('mentors', MentorController::class);
         Route::resource('affiliates', AffiliateController::class);
+        Route::get('transactions', [InvoiceController::class, 'index'])->name('transactions.index');
         Route::post('affiliates/{affiliate}/toggle-status', [AffiliateController::class, 'toggleStatus'])->name('affiliates.toggleStatus');
     });
 });

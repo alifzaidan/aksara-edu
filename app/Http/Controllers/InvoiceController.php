@@ -29,9 +29,15 @@ class InvoiceController extends Controller
 
     public function index()
     {
-        $userId = Auth::id();
-        $invoices = Invoice::with('items', 'items.course')->where('user_id', $userId)->orderBy('created_at', 'desc')->get();
-        return Inertia::render('invoice', compact('invoices'));
+        $invoices = Invoice::with([
+            'user',
+            'courseItems.course',
+            'bootcampItems.bootcamp',
+            'webinarItems.webinar'
+        ])
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return Inertia::render('admin/transactions/index', ['invoices' => $invoices]);
     }
 
     public function store(Request $request)
