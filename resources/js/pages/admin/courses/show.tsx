@@ -9,9 +9,10 @@ import { id } from 'date-fns/locale';
 import { CircleX, Copy, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { Invoice } from './columns-transactions';
 import CourseDetail from './show-details';
 import ShowModules from './show-modules';
-import CourseTransaksi from './show-transactions';
+import CourseTransaction from './show-transactions';
 
 interface Course {
     id: string;
@@ -45,13 +46,14 @@ interface Course {
 
 interface CourseProps {
     course: Course;
+    transactions: Invoice[];
     flash?: {
         success?: string;
         error?: string;
     };
 }
 
-export default function ShowCourse({ course, flash }: CourseProps) {
+export default function ShowCourse({ course, transactions, flash }: CourseProps) {
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Kelas Online',
@@ -88,7 +90,7 @@ export default function ShowCourse({ course, flash }: CourseProps) {
                             <ShowModules modules={course.modules} courseId={course.id} />
                         </TabsContent>
                         <TabsContent value="transaksi">
-                            <CourseTransaksi />
+                            <CourseTransaction transactions={transactions} />
                         </TabsContent>
                     </Tabs>
 

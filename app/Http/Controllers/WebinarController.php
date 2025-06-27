@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Invoice;
 use App\Models\Tool;
 use App\Models\Webinar;
 use Carbon\Carbon;
@@ -89,7 +90,14 @@ class WebinarController extends Controller
     public function show(string $id)
     {
         $webinar = Webinar::with(['category', 'user', 'tools'])->findOrFail($id);
-        return Inertia::render('admin/webinars/show', ['webinar' => $webinar]);
+        $transactions = Invoice::with(['user.referrer'])
+            ->whereHas('webinarItems', function ($query) use ($id) {
+                $query->where('webinar_id', $id);
+            })
+            ->latest()
+            ->get();
+
+        return Inertia::render('admin/webinars/show', ['webinar' => $webinar, 'transactions' => $transactions]);
     }
 
     public function edit(string $id)

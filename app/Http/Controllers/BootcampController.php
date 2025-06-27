@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Bootcamp;
 use App\Models\Category;
+use App\Models\Invoice;
 use App\Models\Tool;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -105,7 +106,14 @@ class BootcampController extends Controller
     public function show(string $id)
     {
         $bootcamp = Bootcamp::with(['category', 'user', 'schedules', 'tools'])->findOrFail($id);
-        return Inertia::render('admin/bootcamps/show', ['bootcamp' => $bootcamp]);
+        $transactions = Invoice::with(['user.referrer'])
+            ->whereHas('bootcampItems', function ($query) use ($id) {
+                $query->where('bootcamp_id', $id);
+            })
+            ->latest()
+            ->get();
+
+        return Inertia::render('admin/bootcamps/show', ['bootcamp' => $bootcamp, 'transactions' => $transactions]);
     }
 
     public function edit(string $id)

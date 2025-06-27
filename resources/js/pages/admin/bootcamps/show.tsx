@@ -9,8 +9,9 @@ import { id } from 'date-fns/locale';
 import { CircleX, Copy, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { Invoice } from './columns-transactions';
 import BootcampDetail from './show-details';
-import BootcampTransaksi from './show-transactions';
+import BootcampTransaction from './show-transactions';
 
 interface Bootcamp {
     id: string;
@@ -40,13 +41,14 @@ interface Bootcamp {
 
 interface BootcampProps {
     bootcamp: Bootcamp;
+    transactions: Invoice[];
     flash?: {
         success?: string;
         error?: string;
     };
 }
 
-export default function ShowBootcamp({ bootcamp, flash }: BootcampProps) {
+export default function ShowBootcamp({ bootcamp, transactions, flash }: BootcampProps) {
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Bootcamp',
@@ -82,7 +84,7 @@ export default function ShowBootcamp({ bootcamp, flash }: BootcampProps) {
                             <BootcampDetail bootcamp={bootcamp} />
                         </TabsContent>
                         <TabsContent value="transaksi">
-                            <BootcampTransaksi />
+                            <BootcampTransaction transactions={transactions} />
                         </TabsContent>
                     </Tabs>
 

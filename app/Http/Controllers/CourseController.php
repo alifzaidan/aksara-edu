@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Course;
+use App\Models\Invoice;
 use App\Models\Tool;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -127,7 +128,14 @@ class CourseController extends Controller
     public function show(string $id)
     {
         $course = Course::with(['category', 'user', 'tools', 'images', 'modules.lessons.quizzes.questions'])->findOrFail($id);
-        return Inertia::render('admin/courses/show', ['course' => $course]);
+        $transactions = Invoice::with(['user.referrer'])
+            ->whereHas('courseItems', function ($query) use ($id) {
+                $query->where('course_id', $id);
+            })
+            ->latest()
+            ->get();
+
+        return Inertia::render('admin/courses/show', ['course' => $course, 'transactions' => $transactions]);
     }
 
     public function edit(string $id)

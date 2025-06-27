@@ -9,8 +9,9 @@ import { id } from 'date-fns/locale';
 import { CircleX, Copy, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { Invoice } from './columns-transactions';
 import WebinarDetail from './show-details';
-import WebinarTransaksi from './show-transactions';
+import WebinarTransaction from './show-transactions';
 
 interface Webinar {
     id: string;
@@ -37,13 +38,14 @@ interface Webinar {
 
 interface WebinarProps {
     webinar: Webinar;
+    transactions: Invoice[];
     flash?: {
         success?: string;
         error?: string;
     };
 }
 
-export default function ShowWebinar({ webinar, flash }: WebinarProps) {
+export default function ShowWebinar({ webinar, transactions, flash }: WebinarProps) {
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Webinar',
@@ -79,7 +81,7 @@ export default function ShowWebinar({ webinar, flash }: WebinarProps) {
                             <WebinarDetail webinar={webinar} />
                         </TabsContent>
                         <TabsContent value="transaksi">
-                            <WebinarTransaksi />
+                            <WebinarTransaction transactions={transactions} />
                         </TabsContent>
                     </Tabs>
 
