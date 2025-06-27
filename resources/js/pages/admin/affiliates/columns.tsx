@@ -4,19 +4,14 @@ import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { CirclePower, Edit, Trash } from 'lucide-react';
-import { useState } from 'react';
-import EditAffiliate from './edit';
+import { CirclePower, Folder, Trash } from 'lucide-react';
 
 export default function AffiliateActions({ affiliate }: { affiliate: Affiliate }) {
-    const [open, setOpen] = useState(false);
-
     return (
         <div className="flex items-center justify-center gap-2">
             <Tooltip>
@@ -39,18 +34,15 @@ export default function AffiliateActions({ affiliate }: { affiliate: Affiliate }
             </Tooltip>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <Dialog open={open} onOpenChange={setOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="link" size="icon" className="size-8" onClick={() => setOpen(true)}>
-                                <Edit />
-                                <span className="sr-only">Edit Afiliasi</span>
-                            </Button>
-                        </DialogTrigger>
-                        <EditAffiliate affiliate={affiliate} setOpen={setOpen} />
-                    </Dialog>
+                    <Button variant="link" size="icon" className="size-8" asChild>
+                        <Link href={route('affiliates.show', affiliate.id)}>
+                            <Folder />
+                            <span className="sr-only">Detail Afiliasi</span>
+                        </Link>
+                    </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                    <p>Edit Afiliasi</p>
+                    <p>Lihat Afiliasi</p>
                 </TooltipContent>
             </Tooltip>
             <Tooltip>

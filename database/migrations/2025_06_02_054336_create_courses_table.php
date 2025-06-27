@@ -21,6 +21,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->text('key_points')->nullable();
             $table->string('thumbnail')->nullable();
+            $table->bigInteger('strikethrough_price')->default(0);
             $table->bigInteger('price')->default(0);
             $table->string('course_url')->nullable();
             $table->string('registration_url')->nullable();

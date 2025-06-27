@@ -18,9 +18,11 @@ class RegisteredUserController extends Controller
     /**
      * Show the registration page.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('auth/register');
+        return Inertia::render('auth/register', [
+            'affiliate_code' => $request->query('ref'),
+        ]);
     }
 
     /**
@@ -34,15 +36,25 @@ class RegisteredUserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'affiliate_code' => 'nullable|string|exists:users,affiliate_code',
         ]);
+
+        $referred_by_user_id = null;
+        if ($request->filled('affiliate_code')) {
+            $affiliateUser = User::where('affiliate_code', $request->affiliate_code)->first();
+            if ($affiliateUser) {
+                $referred_by_user_id = $affiliateUser->id;
+            }
+        }
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'referred_by_user_id' => $referred_by_user_id,
         ]);
 
-        $user->assignRole('student');
+        $user->assignRole('user');
 
         event(new Registered($user));
 

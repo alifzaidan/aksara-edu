@@ -21,6 +21,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'referred_by_user_id',
         'name',
         'email',
         'phone_number',
@@ -58,5 +59,10 @@ class User extends Authenticatable
     public function getUserPermissions()
     {
         return $this->getAllPermissions()->mapWithKeys(fn($permission) => [$permission['name'] => true]);
+    }
+
+    public function referrer()
+    {
+        return $this->belongsTo(User::class, 'referred_by_user_id');
     }
 }

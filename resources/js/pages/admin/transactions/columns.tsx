@@ -10,11 +10,16 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Eye } from 'lucide-react';
 
-// --- Type Definitions ---
+interface Referrer {
+    id: string;
+    name: string;
+}
+
 interface User {
     id: string;
     name: string;
     phone_number: string | null;
+    referrer: Referrer | null;
 }
 
 interface Course {
@@ -43,7 +48,6 @@ interface EnrollmentWebinar {
 export interface Invoice {
     id: string;
     user: User;
-    affiliate: string | null;
     invoice_code: string;
     invoice_url: string | null;
     amount: number;
@@ -55,7 +59,6 @@ export interface Invoice {
     created_at: string;
 }
 
-// --- Kolom Tabel ---
 export const columns: ColumnDef<Invoice>[] = [
     {
         id: 'select',
@@ -95,7 +98,7 @@ export const columns: ColumnDef<Invoice>[] = [
             return (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <div className="w-48 truncate">{fullTitleString}</div>
+                        <div className="w-40 truncate">{fullTitleString}</div>
                     </TooltipTrigger>
                     <TooltipContent>
                         <p>{fullTitleString}</p>
@@ -117,9 +120,9 @@ export const columns: ColumnDef<Invoice>[] = [
         },
     },
     {
-        accessorKey: 'affiliate',
+        accessorKey: 'user.referrer.name',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Afiliasi" />,
-        cell: ({ row }) => <p>{row.original.affiliate || '-'}</p>,
+        cell: ({ row }) => <p>{row.original.user.referrer?.name || '-'}</p>,
     },
     {
         accessorKey: 'status',
@@ -140,12 +143,12 @@ export const columns: ColumnDef<Invoice>[] = [
     {
         accessorKey: 'created_at',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Tgl. Pembelian" />,
-        cell: ({ row }) => <p>{format(new Date(row.original.created_at), 'dd MMM yyyy HH:mm', { locale: id })}</p>,
+        cell: ({ row }) => <p>{format(new Date(row.original.created_at), 'dd MMM yyyy, HH:mm', { locale: id })}</p>,
     },
     {
         accessorKey: 'paid_at',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Tgl. Pembayaran" />,
-        cell: ({ row }) => <p>{row.original.paid_at ? format(new Date(row.original.paid_at), 'dd MMM yyyy HH:mm', { locale: id }) : '-'}</p>,
+        cell: ({ row }) => <p>{row.original.paid_at ? format(new Date(row.original.paid_at), 'dd MMM yyyy, HH:mm', { locale: id }) : '-'}</p>,
     },
     {
         id: 'actions',

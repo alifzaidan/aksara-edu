@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AffiliateEarning;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -48,6 +49,29 @@ class AffiliateController extends Controller
         return redirect()->route('affiliates.index')->with('success', 'Affiliate berhasil ditambahkan.');
     }
 
+    public function show(string $id)
+    {
+        $affiliate = User::findOrFail($id);
+        $earnings = AffiliateEarning::with([
+            'invoice.user',
+            'invoice.courseItems.course',
+            'invoice.bootcampItems.bootcamp',
+            'invoice.webinarItems.webinar',
+        ])
+            ->where('affiliate_user_id', $affiliate->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $stats = [
+            'total_products' => $earnings->count(),
+            'total_commission' => $earnings->sum('amount'),
+            'paid_commission' => $earnings->where('status', 'paid')->sum('amount'),
+            'available_commission' => $earnings->where('status', 'approved')->sum('amount'),
+        ];
+
+        return Inertia::render('admin/affiliates/show', ['affiliate' => $affiliate, 'earnings' => $earnings, 'stats' => $stats]);
+    }
+
     public function edit(string $id)
     {
         $affiliate = User::findOrFail($id);
@@ -66,7 +90,7 @@ class AffiliateController extends Controller
         $affiliate = User::findOrFail($id);
         $affiliate->update($request->all());
 
-        return redirect()->route('affiliates.index')->with('success', 'Affiliate berhasil diperbarui.');
+        return redirect()->route('affiliates.show', $affiliate->id)->with('success', 'Affiliate berhasil diperbarui.');
     }
 
     public function destroy(string $id)

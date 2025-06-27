@@ -14,14 +14,16 @@ type RegisterForm = {
     email: string;
     password: string;
     password_confirmation: string;
+    affiliate_code?: string;
 };
 
-export default function Register() {
+export default function Register({ affiliate_code }: { affiliate_code?: string }) {
     const { data, setData, post, processing, errors, reset } = useForm<Required<RegisterForm>>({
         name: '',
         email: '',
         password: '',
         password_confirmation: '',
+        affiliate_code: affiliate_code || 'ATM2025',
     });
 
     const submit: FormEventHandler = (e) => {

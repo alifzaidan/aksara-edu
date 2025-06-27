@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AffiliateController;
+use App\Http\Controllers\AffiliateEarningController;
 use App\Http\Controllers\BootcampController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CourseController;
@@ -86,6 +87,12 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::resource('affiliates', AffiliateController::class);
         Route::get('transactions', [InvoiceController::class, 'index'])->name('transactions.index');
         Route::post('affiliates/{affiliate}/toggle-status', [AffiliateController::class, 'toggleStatus'])->name('affiliates.toggleStatus');
+        Route::post('affiliate-earnings/{earning}/approve', [AffiliateEarningController::class, 'approveEarning'])->name('earnings.approve');
+        Route::post('affiliate-earnings/{earning}/reject', [AffiliateEarningController::class, 'rejectEarning'])->name('earnings.reject');
+    });
+
+    Route::middleware(['role:affiliate'])->group(function () {
+        Route::get('affiliate-earnings', [AffiliateEarningController::class, 'index'])->name('earnings.index');
     });
 });
 

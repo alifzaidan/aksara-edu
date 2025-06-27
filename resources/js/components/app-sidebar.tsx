@@ -66,6 +66,12 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         icon: DollarSign,
         roles: ['admin'],
     },
+    {
+        title: 'Pendapatan',
+        href: '/admin/affiliate-earnings',
+        icon: DollarSign,
+        roles: ['affiliate'],
+    },
 ];
 
 export function AppSidebar() {

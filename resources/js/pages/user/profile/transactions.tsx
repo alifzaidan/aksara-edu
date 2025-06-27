@@ -170,7 +170,7 @@ export default function Transactions({ myTransactions }: Props) {
                                                 {item.invoice_code}
                                             </Link>
                                         </td>
-                                        <td className="p-2 text-center">
+                                        <td className="p-2">
                                             {item.invoice_status === 'pending' && item.invoice_url ? (
                                                 <Button asChild size="sm" variant="outline">
                                                     <a href={item.invoice_url} target="_blank">

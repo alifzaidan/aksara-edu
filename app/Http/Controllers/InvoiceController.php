@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AffiliateEarning;
 use App\Models\Bootcamp;
 use App\Models\Course;
 use App\Models\EnrollmentBootcamp;
 use App\Models\EnrollmentCourse;
 use App\Models\EnrollmentWebinar;
 use App\Models\Invoice;
+use App\Models\User;
 use App\Models\Webinar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,7 +32,7 @@ class InvoiceController extends Controller
     public function index()
     {
         $invoices = Invoice::with([
-            'user',
+            'user.referrer',
             'courseItems.course',
             'bootcampItems.bootcamp',
             'webinarItems.webinar'
@@ -79,7 +81,7 @@ class InvoiceController extends Controller
                 'field' => 'invoice_code',
                 'length' => 11,
                 'reset_on_prefix_change'  => true,
-                'prefix' => 'INV-' . date('y')
+                'prefix' => 'AKS-' . date('y')
             ]);
 
             $invoice = Invoice::create([
@@ -163,7 +165,7 @@ class InvoiceController extends Controller
                 'field' => 'invoice_code',
                 'length' => 11,
                 'reset_on_prefix_change'  => true,
-                'prefix' => 'INV-' . date('y')
+                'prefix' => 'AKS-' . date('y')
             ]);
 
             $invoice = Invoice::create([
@@ -212,20 +214,64 @@ class InvoiceController extends Controller
             return response()->json(['message' => 'unauthorized'], 401);
         }
 
-        //cek eksternal id darri xendit dengan external id di database
-        $invoice = Invoice::where('invoice_code', $request->external_id)->first();
+        $invoice = Invoice::with('user')->where('invoice_code', $request->external_id)->first();
         if (!$invoice) {
             return response()->json(['message' => 'Invoice Not Found'], 404);
         }
-        $date = date_create($request->paid_at);
-        $paid_at = date_format($date, "Y-m-d H:i:s");
-        $invoice->update([
-            'paid_at' => $paid_at,
-            'status' => ($request->status == 'PAID' || $request->status == 'SETTLED') ? 'paid' : 'failed',
-            'payment_method' => $request->payment_method,
-            'payment_channel' => $request->payment_channel
-        ]);
+
+        // Hanya proses jika status invoice masih pending untuk menghindari duplikasi
+        if ($invoice->status !== 'pending') {
+            return response()->json(['message' => 'Invoice already processed'], 200);
+        }
+
+        $isSuccess = ($request->status == 'PAID' || $request->status == 'SETTLED');
+
+        if ($isSuccess) {
+            $date = date_create($request->paid_at);
+            $paid_at = date_format($date, "Y-m-d H:i:s");
+
+            $invoice->update([
+                'paid_at' => $paid_at,
+                'status' => 'paid',
+                'payment_method' => $request->payment_method,
+                'payment_channel' => $request->payment_channel
+            ]);
+
+            // LOGIKA PENCATATAN KOMISI AFILIASI
+            $this->recordAffiliateCommission($invoice);
+        } else {
+            $invoice->update(['status' => 'failed']);
+        }
 
         return response()->json(['message' => 'Success'], 200);
+    }
+
+    /**
+     * Mencatat komisi untuk afiliasi jika ada.
+     *
+     * @param Invoice $invoice
+     * @return void
+     */
+    private function recordAffiliateCommission(Invoice $invoice)
+    {
+        $buyer = $invoice->user;
+
+        // Cek apakah pembeli ini direferensikan oleh seseorang
+        if ($buyer && $buyer->referred_by_user_id) {
+            $affiliate = User::find($buyer->referred_by_user_id);
+
+            // Memastikan afiliasi ada, aktif, dan memiliki rate komisi
+            if ($affiliate && $affiliate->affiliate_status === 'Active' && $affiliate->commission > 0) {
+                $commissionAmount = $invoice->amount * ($affiliate->commission / 100);
+
+                AffiliateEarning::create([
+                    'affiliate_user_id' => $affiliate->id,
+                    'invoice_id' => $invoice->id,
+                    'amount' => $commissionAmount,
+                    'rate' => $affiliate->commission,
+                    'status' => 'pending',
+                ]);
+            }
+        }
     }
 }
