@@ -13,9 +13,16 @@ use Inertia\Inertia;
 
 class CourseController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $courses = Course::with(['category', 'user'])->latest()->get();
+        $user = $request->user();
+        $query = Course::with(['category', 'user'])->latest();
+
+        if ($user->hasRole('mentor')) {
+            $query->where('user_id', $user->id);
+        }
+
+        $courses = $query->get();
         return Inertia::render('admin/courses/index', ['courses' => $courses]);
     }
 
