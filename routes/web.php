@@ -69,6 +69,11 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/questions', [QuestionController::class, 'store'])->name('questions.store');
         Route::put('/questions/{question}', [QuestionController::class, 'update'])->name('questions.update');
         Route::delete('/questions/{question}', [QuestionController::class, 'destroy'])->name('questions.destroy');
+    });
+
+    Route::middleware(['role:admin'])->group(function () {
+        Route::resource('mentors', MentorController::class);
+        Route::resource('users', UserController::class);
 
         Route::resource('bootcamps', BootcampController::class);
         Route::post('/bootcamps/{bootcamp}/publish', [BootcampController::class, 'publish'])->name('bootcamps.publish');
@@ -79,11 +84,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/webinars/{webinar}/publish', [WebinarController::class, 'publish'])->name('webinars.publish');
         Route::post('/webinars/{webinar}/archive', [WebinarController::class, 'archive'])->name('webinars.archive');
         Route::post('/webinars/{webinar}/duplicate', [WebinarController::class, 'duplicate'])->name('webinars.duplicate');
-    });
 
-    Route::middleware(['role:admin'])->group(function () {
-        Route::resource('mentors', MentorController::class);
-        Route::resource('users', UserController::class);
         Route::resource('affiliates', AffiliateController::class);
         Route::get('transactions', [InvoiceController::class, 'index'])->name('transactions.index');
         Route::post('affiliates/{affiliate}/toggle-status', [AffiliateController::class, 'toggleStatus'])->name('affiliates.toggleStatus');

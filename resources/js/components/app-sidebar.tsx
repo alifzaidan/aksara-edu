@@ -52,13 +52,13 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         title: 'Bootcamp',
         href: '/admin/bootcamps',
         icon: Presentation,
-        roles: ['admin', 'mentor'],
+        roles: ['admin'],
     },
     {
         title: 'Webinar',
         href: '/admin/webinars',
         icon: MonitorPlay,
-        roles: ['admin', 'mentor'],
+        roles: ['admin'],
     },
     {
         title: 'Transaksi',
