@@ -15,6 +15,7 @@ use App\Http\Controllers\User\BootcampController as UserBootcampController;
 use App\Http\Controllers\User\WebinarController as UserWebinarController;
 use App\Http\Controllers\User\HomeController;
 use App\Http\Controllers\User\ProfileController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\WebinarController;
 use Illuminate\Support\Facades\Route;
 
@@ -81,6 +82,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
 
     Route::middleware(['role:admin'])->group(function () {
         Route::resource('mentors', MentorController::class);
+        Route::resource('users', UserController::class);
         Route::resource('affiliates', AffiliateController::class);
         Route::get('transactions', [InvoiceController::class, 'index'])->name('transactions.index');
         Route::post('affiliates/{affiliate}/toggle-status', [AffiliateController::class, 'toggleStatus'])->name('affiliates.toggleStatus');
