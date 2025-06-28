@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +33,18 @@ Route::middleware('guest')->group(function () {
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
+
+    Route::get('auth/google/redirect', [SocialiteController::class, 'redirectToGoogle'])
+        ->name('auth.google.redirect');
+
+    Route::get('auth/google/callback', [SocialiteController::class, 'handleGoogleCallback'])
+        ->name('auth.google.callback');
+
+    Route::get('auth/github/redirect', [SocialiteController::class, 'redirectToGitHub'])
+        ->name('auth.github.redirect');
+
+    Route::get('auth/github/callback', [SocialiteController::class, 'handleGitHubCallback'])
+        ->name('auth.github.callback');
 });
 
 Route::middleware('auth')->group(function () {

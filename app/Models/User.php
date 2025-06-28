@@ -22,6 +22,8 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var list<string>
      */
     protected $fillable = [
+        'google_id',
+        'github_id',
         'referred_by_user_id',
         'name',
         'email',

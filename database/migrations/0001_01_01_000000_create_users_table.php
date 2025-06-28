@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->string('google_id')->nullable()->unique();
+            $table->string('github_id')->nullable()->unique();
             $table->foreignUuid('referred_by_user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->string('name');
             $table->string('email')->unique();
