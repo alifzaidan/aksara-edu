@@ -17,6 +17,7 @@ interface Webinar {
     description: string;
     thumbnail: string;
     slug: string;
+    strikethrough_price: number;
     price: number;
     start_time: string;
     category: Category;
@@ -133,21 +134,34 @@ export default function WebinarSection({ categories, webinars, myWebinarIds }: W
                             >
                                 <Spotlight className="bg-primary blur-2xl" size={284} />
                                 <div
-                                    className={`relative flex w-full flex-col items-center justify-center rounded-lg transition-colors ${
+                                    className={`relative flex h-full w-full flex-col items-center justify-between rounded-lg transition-colors ${
                                         hasAccess ? 'bg-zinc-100 dark:bg-zinc-900' : 'bg-sidebar dark:bg-zinc-800'
                                     }`}
                                 >
-                                    <img
-                                        src={webinar.thumbnail ? `/storage/${webinar.thumbnail}` : '/assets/images/placeholder.png'}
-                                        alt={webinar.title}
-                                        className="h-48 w-full rounded-t-lg object-cover"
-                                    />
+                                    <div className="w-full overflow-hidden rounded-t-lg">
+                                        <img
+                                            src={webinar.thumbnail ? `/storage/${webinar.thumbnail}` : '/assets/images/placeholder.png'}
+                                            alt={webinar.title}
+                                            className="h-48 w-full rounded-t-lg object-cover"
+                                        />
+                                        <h2 className="mx-4 mt-2 text-lg font-semibold">{webinar.title}</h2>
+                                    </div>
                                     <div className="w-full p-4 text-left">
-                                        <h2 className="mb-2 text-lg font-semibold">{webinar.title}</h2>
                                         {hasAccess ? (
                                             <p className="text-primary text-sm font-medium">Anda sudah memiliki akses</p>
+                                        ) : webinar.price === 0 ? (
+                                            <p className="text-lg font-semibold text-green-600 dark:text-green-400">Gratis</p>
                                         ) : (
-                                            <p className="text-sm text-gray-600 dark:text-gray-400">Rp. {webinar.price.toLocaleString('id-ID')}</p>
+                                            <div className="">
+                                                {webinar.strikethrough_price > 0 && (
+                                                    <p className="text-sm text-red-500 line-through">
+                                                        Rp {webinar.strikethrough_price.toLocaleString('id-ID')}
+                                                    </p>
+                                                )}
+                                                <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                                                    Rp {webinar.price.toLocaleString('id-ID')}
+                                                </p>
+                                            </div>
                                         )}
                                         <div className="mt-2 flex justify-between">
                                             <div className="flex items-center gap-2">

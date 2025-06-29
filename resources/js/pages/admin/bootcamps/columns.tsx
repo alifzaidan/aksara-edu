@@ -158,10 +158,10 @@ export const columns: ColumnDef<Bootcamp>[] = [
             const strikethroughPrice = row.original.strikethrough_price;
             const price = row.original.price;
             if (price === 0) {
-                return <div>Gratis</div>;
+                return <div className="text-base font-semibold">Gratis</div>;
             }
             return (
-                <div className="">
+                <div>
                     {strikethroughPrice > 0 && <div className="text-xs text-gray-500 line-through">{rupiahFormatter.format(strikethroughPrice)}</div>}
                     <div className="text-base font-semibold">{rupiahFormatter.format(price)}</div>
                 </div>

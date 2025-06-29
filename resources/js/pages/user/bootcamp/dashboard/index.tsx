@@ -15,6 +15,7 @@ interface Bootcamp {
     description: string;
     thumbnail: string;
     slug: string;
+    strikethrough_price: number;
     price: number;
     start_date: string;
     end_date: string;

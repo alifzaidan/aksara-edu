@@ -15,6 +15,7 @@ interface Course {
     description: string;
     thumbnail: string;
     slug: string;
+    strikethrough_price: number;
     price: number;
     level: 'beginner' | 'intermediate' | 'advanced';
     category: Category;

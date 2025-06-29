@@ -6,6 +6,7 @@ import { BadgeCheck, InfinityIcon, Presentation, Smartphone, TvMinimalPlay } fro
 interface Course {
     title: string;
     thumbnail?: string | null;
+    strikethrough_price: number;
     price: number;
     registration_url: string;
     modules?: {
@@ -54,10 +55,17 @@ export default function RegisterSection({ course }: { course: Course }) {
                 <div className="flex flex-col rounded-lg border border-gray-200 bg-white p-4 shadow-md dark:border-zinc-700 dark:bg-zinc-800">
                     <h5 className="mb-4 text-sm">Miliki kelas Premium secara permanen dan bangun sebuah projek nyata</h5>
 
-                    <span className="text-right text-sm text-red-600 line-through dark:text-gray-400">Rp 999.000</span>
-                    <span className="text-right text-3xl font-bold text-gray-900 italic dark:text-gray-100">
-                        Rp {course.price.toLocaleString('id-ID')}
-                    </span>
+                    {course.strikethrough_price > 0 && (
+                        <span className="text-right text-sm text-red-500 line-through">Rp {course.strikethrough_price.toLocaleString('id-ID')}</span>
+                    )}
+                    {course.price > 0 ? (
+                        <span className="text-right text-3xl font-bold text-gray-900 italic dark:text-gray-100">
+                            Rp {course.price.toLocaleString('id-ID')}
+                        </span>
+                    ) : (
+                        <span className="text-left text-3xl font-bold text-gray-900 italic dark:text-gray-100">GRATIS</span>
+                    )}
+
                     <Separator className="my-4" />
                     <ul className="space-y-2">
                         <li className="flex items-center gap-2 text-sm">

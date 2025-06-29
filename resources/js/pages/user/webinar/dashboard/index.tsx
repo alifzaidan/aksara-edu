@@ -15,6 +15,7 @@ interface Webinar {
     description: string;
     thumbnail: string;
     slug: string;
+    strikethrough_price: number;
     price: number;
     start_time: string;
     category: Category;

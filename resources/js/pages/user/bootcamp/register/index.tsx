@@ -15,6 +15,7 @@ interface Bootcamp {
     schedules?: { day: string; start_time: string; end_time: string }[];
     start_date: string;
     end_date: string;
+    strikethrough_price: number;
     price: number;
     thumbnail?: string | null;
     description?: string | null;
@@ -198,13 +199,29 @@ export default function RegisterBootcamp({
                                     <>
                                         <Input type="text" placeholder="Masukkan Kode Promo (Opsional)" className="w-full" />
                                         <div className="space-y-2 rounded-lg border p-4">
+                                            {bootcamp.strikethrough_price > 0 && (
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-600">Harga Asli</span>
+                                                    <span className="font-semibold text-gray-500">
+                                                        Rp {bootcamp.strikethrough_price.toLocaleString('id-ID')}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {bootcamp.strikethrough_price > 0 && (
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-600">Diskon</span>
+                                                    <span className="font-semibold text-red-500">
+                                                        -Rp {(bootcamp.strikethrough_price - bootcamp.price).toLocaleString('id-ID')}
+                                                    </span>
+                                                </div>
+                                            )}
                                             <div className="flex items-center justify-between">
                                                 <span className="text-gray-600">Harga Kelas</span>
                                                 <span className="font-semibold text-gray-500">Rp {bootcamp.price.toLocaleString('id-ID')}</span>
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-gray-600">Pajak</span>
-                                                <span className="font-semibold text-gray-500">Rp 0</span>
+                                                <span className="font-semibold text-gray-500">+Rp 0</span>
                                             </div>
                                             <Separator className="my-2" />
                                             <div className="flex items-center justify-between">

@@ -15,6 +15,7 @@ interface Course {
     description: string;
     thumbnail: string;
     slug: string;
+    strikethrough_price: number;
     price: number;
     key_points?: string | null;
     level: 'beginner' | 'intermediate' | 'advanced';
@@ -208,13 +209,29 @@ export default function CheckoutCourse({
                                     <>
                                         <Input type="text" placeholder="Masukkan Kode Promo (Opsional)" className="w-full" />
                                         <div className="space-y-2 rounded-lg border p-4">
+                                            {course.strikethrough_price > 0 && (
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-600">Harga Asli</span>
+                                                    <span className="font-semibold text-gray-500">
+                                                        Rp {course.strikethrough_price.toLocaleString('id-ID')}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {course.strikethrough_price > 0 && (
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-600">Diskon</span>
+                                                    <span className="font-semibold text-red-500">
+                                                        -Rp {(course.strikethrough_price - course.price).toLocaleString('id-ID')}
+                                                    </span>
+                                                </div>
+                                            )}
                                             <div className="flex items-center justify-between">
                                                 <span className="text-gray-600">Harga Kelas</span>
                                                 <span className="font-semibold text-gray-500">Rp {course.price.toLocaleString('id-ID')}</span>
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-gray-600">Pajak</span>
-                                                <span className="font-semibold text-gray-500">Rp 0</span>
+                                                <span className="font-semibold text-gray-500">+Rp 0</span>
                                             </div>
                                             <Separator className="my-2" />
                                             <div className="flex items-center justify-between">
