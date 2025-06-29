@@ -29,9 +29,12 @@ interface StatsProps {
     stats: {
         total_revenue: number;
         total_participants: number;
+        total_users: number;
         new_users_last_week: number;
         total_mentors: number;
+        new_mentors_last_week: number;
         total_affiliates: number;
+        new_affiliates_last_week: number;
         total_courses: number;
         total_bootcamps: number;
         total_webinars: number;
@@ -60,20 +63,27 @@ export default function AdminDashboard({ stats }: StatsProps) {
     const statsCards = [
         { title: 'Total Pendapatan', value: formatCurrency(stats.total_revenue), icon: <DollarSign className="text-muted-foreground size-5" /> },
         {
-            title: 'Total Pendaftar Program',
-            value: stats.total_participants.toLocaleString('id-ID'),
-            icon: <Users className="text-muted-foreground size-5" />,
+            title: 'Total Pengguna',
+            value: stats.total_users.toLocaleString('id-ID'),
+            icon: <UserPlus className="text-muted-foreground size-5" />,
+            subValue: `+${stats.new_users_last_week.toLocaleString('id-ID')} dalam 7 hari`,
         },
         {
-            title: 'Pengguna Baru (7d)',
-            value: `+${stats.new_users_last_week.toLocaleString('id-ID')}`,
-            icon: <UserPlus className="text-muted-foreground size-5" />,
+            title: 'Total Mentor',
+            value: stats.total_mentors.toLocaleString('id-ID'),
+            icon: <UserCheck className="text-muted-foreground size-5" />,
+            subValue: `+${stats.new_mentors_last_week.toLocaleString('id-ID')} dalam 7 hari`,
         },
-        { title: 'Total Mentor', value: stats.total_mentors.toLocaleString('id-ID'), icon: <UserCheck className="text-muted-foreground size-5" /> },
         {
             title: 'Total Afiliasi',
             value: stats.total_affiliates.toLocaleString('id-ID'),
             icon: <Network className="text-muted-foreground size-5" />,
+            subValue: `+${stats.new_affiliates_last_week.toLocaleString('id-ID')} dalam 7 hari`,
+        },
+        {
+            title: 'Total Pendaftar Program',
+            value: stats.total_participants.toLocaleString('id-ID'),
+            icon: <Users className="text-muted-foreground size-5" />,
         },
         {
             title: 'Total Kelas Online',
@@ -95,6 +105,7 @@ export default function AdminDashboard({ stats }: StatsProps) {
                         </div>
                         <div>
                             <div className="text-2xl font-bold">{card.value}</div>
+                            {card.subValue && <p className="text-muted-foreground text-xs">{card.subValue}</p>}
                         </div>
                     </div>
                 ))}

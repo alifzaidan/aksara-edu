@@ -46,9 +46,12 @@ class AdminController extends Controller
         return [
             'total_revenue' => Invoice::where('status', 'paid')->sum('amount'),
             'total_participants' => EnrollmentCourse::count() + EnrollmentBootcamp::count() + EnrollmentWebinar::count(),
-            'new_users_last_week' => User::where('created_at', '>=', now()->subWeek())->count(),
+            'total_users' => User::role('user')->count(),
+            'new_users_last_week' => User::role('user')->where('created_at', '>=', now()->subWeek())->count(),
             'total_mentors' => User::role('mentor')->count(),
+            'new_mentors_last_week' => User::role('mentor')->where('created_at', '>=', now()->subWeek())->count(),
             'total_affiliates' => User::role('affiliate')->count(),
+            'new_affiliates_last_week' => User::role('affiliate')->where('created_at', '>=', now()->subWeek())->count(),
             'total_courses' => Course::count(),
             'total_bootcamps' => Bootcamp::count(),
             'total_webinars' => Webinar::count(),
