@@ -6,6 +6,7 @@ use App\Http\Controllers\AffiliateEarningController;
 use App\Http\Controllers\BootcampController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CourseDetailController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MentorController;
 use App\Http\Controllers\QuestionController;
@@ -50,6 +51,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile/my-webinars', [ProfileController::class, 'showMyWebinars'])->name('profile.webinars');
     Route::get('/profile/my-webinars/{webinar}', [ProfileController::class, 'detailMyWebinar'])->name('profile.webinar.detail');
     Route::get('/profile/transactions', [ProfileController::class, 'showTransactions'])->name('profile.transactions');
+
+    Route::redirect('learn', 'profile/my-courses');
+    Route::redirect('learn/course', 'profile/my-courses');
+    Route::get('/learn/course/{course:slug}', [CourseDetailController::class, 'index'])
+        ->middleware('enrollment.check')
+        ->name('learn.course.detail');
 });
 
 Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('admin')->group(function () {

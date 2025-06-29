@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import UserLayout from '@/layouts/user-layout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, BadgeCheck } from 'lucide-react';
 
 interface Category {
@@ -63,6 +63,22 @@ export default function DetailMyCourse({ course }: { course: CourseProps }) {
     const courseData = courseItem?.course;
     const courseInvoiceStatus = course.status;
     const keyPointList = parseList(courseData.key_points);
+
+    if (!courseData) {
+        return (
+            <UserLayout>
+                <Head title="Kelas Tidak Ditemukan" />
+                <div className="flex h-screen items-center justify-center">
+                    <p>Detail kelas tidak dapat ditemukan.</p>
+                    <Button className="mt-4 rounded-full" variant="secondary" asChild>
+                        <Link href="/profile/my-courses">
+                            <ArrowLeft /> Kembali Ke Kelas Saya
+                        </Link>
+                    </Button>
+                </div>
+            </UserLayout>
+        );
+    }
 
     return (
         <UserLayout>
@@ -138,7 +154,7 @@ export default function DetailMyCourse({ course }: { course: CourseProps }) {
                         <Button
                             className="mt-2 w-full"
                             disabled={courseInvoiceStatus !== 'paid'}
-                            onClick={() => window.open(courseData.course_url, '_blank')}
+                            onClick={() => router.get(route('learn.course.detail', { course: courseData.slug }))}
                         >
                             Lanjutkan Belajar
                         </Button>
