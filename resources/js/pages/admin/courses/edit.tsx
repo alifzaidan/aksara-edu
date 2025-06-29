@@ -63,6 +63,7 @@ interface Module {
 }
 
 interface Lesson {
+    id?: string | number; // Add ID field for existing lessons
     title: string;
     type: 'text' | 'video' | 'file' | 'quiz';
     description?: string;
@@ -70,6 +71,13 @@ interface Lesson {
     content?: string;
     video?: File | null;
     attachment?: File | null;
+    video_url?: string; // Add video_url field
+    quizzes?: {
+        id?: string | number;
+        instructions: string;
+        time_limit: number;
+        passing_score: number;
+    }[];
 }
 
 interface EditCourseProps {
@@ -79,6 +87,16 @@ interface EditCourseProps {
 }
 
 export default function EditCourse({ course, categories, tools }: EditCourseProps) {
+    // Debug: Log course data to see if lesson IDs exist
+    console.log('Course data received:', course);
+    console.log('Course modules:', course.modules);
+    course.modules?.forEach((mod, modIdx) => {
+        console.log(`Backend Module ${modIdx}:`, mod.title, 'ID:', mod.id);
+        mod.lessons?.forEach((lesson, lessonIdx) => {
+            console.log(`  Backend Lesson ${lessonIdx}:`, lesson.title, 'ID:', lesson.id);
+        });
+    });
+
     const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
     const [preview, setPreview] = useState<string | null>(course.thumbnail ? `/storage/${course.thumbnail}` : null);
     const [sneakPeekImages, setSneakPeekImages] = useState<File[]>([]);
@@ -86,13 +104,22 @@ export default function EditCourse({ course, categories, tools }: EditCourseProp
         course.images?.map((img: { image_url: string }) => `/storage/${img.image_url}`) || [],
     );
     const [modules, setModules] = useState<Module[]>(
-        course.modules?.map((mod: Module) => ({
-            ...mod,
-            lessons: mod.lessons?.map((lesson: Lesson) => ({
-                ...lesson,
-                is_free: lesson.is_free,
-            })),
-        })) || [],
+        course.modules?.map((mod: Module) => {
+            const mappedModule = {
+                ...mod, // This should include the ID
+                lessons: mod.lessons?.map((lesson: Lesson) => {
+                    const mappedLesson = {
+                        ...lesson, // This should include the ID and all other fields
+                        // Explicitly ensure is_free is set correctly
+                        is_free: lesson.is_free ?? false,
+                    };
+                    console.log('Mapped lesson:', mappedLesson.title, 'ID:', mappedLesson.id);
+                    return mappedLesson;
+                }),
+            };
+            console.log('Mapped module:', mappedModule.title, 'ID:', mappedModule.id, 'Lessons count:', mappedModule.lessons?.length);
+            return mappedModule;
+        }) || [],
     );
     const [thumbnailError, setThumbnailError] = useState(false);
     const [sneakPeekError, setSneakPeekError] = useState(false);
@@ -128,6 +155,17 @@ export default function EditCourse({ course, categories, tools }: EditCourseProp
 
     function onSubmit(values: z.infer<typeof formSchema>) {
         const formData = new FormData();
+
+        // Debug: Log modules to check if lesson IDs are preserved
+        console.log('Modules being sent:', modules);
+        
+        // Debug: Check each lesson for ID
+        modules.forEach((mod, modIdx) => {
+            console.log(`Module ${modIdx}:`, mod.title, 'ID:', mod.id);
+            mod.lessons?.forEach((lesson, lessonIdx) => {
+                console.log(`  Lesson ${lessonIdx}:`, lesson.title, 'ID:', lesson.id);
+            });
+        });
 
         Object.entries(values).forEach(([key, value]) => {
             if (key === 'thumbnail' && value) {

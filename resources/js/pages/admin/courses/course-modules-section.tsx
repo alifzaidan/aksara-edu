@@ -11,6 +11,7 @@ import EditLesson from './edit-lesson';
 import EditModule from './edit-module';
 
 interface Lesson {
+    id?: string | number; 
     title: string;
     type: 'text' | 'video' | 'file' | 'quiz';
     description?: string;
@@ -18,6 +19,13 @@ interface Lesson {
     content?: string;
     video?: File | null;
     attachment?: File | null;
+    video_url?: string; // Add video_url field
+    quizzes?: {
+        id?: string | number;
+        instructions: string;
+        time_limit: number;
+        passing_score: number;
+    }[];
 }
 
 interface Module {
@@ -72,9 +80,17 @@ export default function CourseModulesSection({ modules, setModules }: CourseModu
     };
 
     const handleEditLesson = (modIdx: number, lessonIdx: number, lesson: Lesson) => {
+        console.log('Editing lesson - Before:', lesson.title, 'ID:', lesson.id);
         const updated = [...modules];
         if (updated[modIdx].lessons) {
-            updated[modIdx].lessons![lessonIdx] = lesson;
+            // Preserve the original lesson ID if it exists
+            const originalLesson = updated[modIdx].lessons![lessonIdx];
+            const updatedLesson = {
+                ...lesson,
+                id: lesson.id || originalLesson.id, // Preserve ID from original lesson if new lesson doesn't have one
+            };
+            console.log('Editing lesson - After:', updatedLesson.title, 'ID:', updatedLesson.id);
+            updated[modIdx].lessons![lessonIdx] = updatedLesson;
             setModules(updated);
         }
         setEditLessonOpen(null);

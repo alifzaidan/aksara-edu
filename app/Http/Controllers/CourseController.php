@@ -148,6 +148,7 @@ class CourseController extends Controller
     public function edit(string $id)
     {
         $course = Course::with(['tools', 'images', 'modules.lessons.quizzes'])->findOrFail($id);
+        
         $categories = Category::all();
         $tools = Tool::all();
         return Inertia::render('admin/courses/edit', ['course' => $course, 'categories' => $categories, 'tools' => $tools]);
@@ -223,7 +224,6 @@ class CourseController extends Controller
             }
         }
 
-        // Update modules & lessons
         if ($request->has('modules')) {
             $modules = json_decode($request->input('modules'), true);
 
@@ -249,14 +249,12 @@ class CourseController extends Controller
                         ]);
                     }
 
-                    // Lessons
                     if (isset($mod['lessons']) && is_array($mod['lessons'])) {
                         foreach ($mod['lessons'] as $lessonIdx => $lesson) {
-                            $lessonModel = null;
-                            if (isset($lesson['id'])) {
+                            
+                            if (isset($lesson['id']) && !empty($lesson['id'])) {
                                 $lessonModel = $module->lessons()->where('id', $lesson['id'])->first();
                                 if ($lessonModel) {
-                                    // Handle attachment update
                                     $attachmentPath = $lessonModel->attachment;
                                     $fileKey = "modules.{$modIdx}.lessons.{$lessonIdx}.attachment";
                                     if ($lesson['type'] === 'file' && $request->hasFile($fileKey)) {
@@ -275,10 +273,12 @@ class CourseController extends Controller
                                         'is_free' => $lesson['is_free'] ?? false,
                                         'order' => $lessonIdx,
                                     ]);
+                                } else {
+                                    // ID provided but lesson not found - this shouldn't happen
+                                    throw new \Exception("Lesson with ID {$lesson['id']} not found for update");
                                 }
-                            }
-                            if (!$lessonModel) {
-                                // New lesson
+                            } else {
+                                // CREATE new lesson (no ID provided)
                                 $attachmentPath = null;
                                 $fileKey = "modules.{$modIdx}.lessons.{$lessonIdx}.attachment";
                                 if ($lesson['type'] === 'file' && $request->hasFile($fileKey)) {
