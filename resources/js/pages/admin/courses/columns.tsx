@@ -58,6 +58,7 @@ export type Course = {
     short_description: string | null;
     description: string | null;
     thumbnail: string | null;
+    strikethrough_price: number;
     price: number;
     status: 'draft' | 'published' | 'archived';
     level: 'beginner' | 'intermediate' | 'advanced';
@@ -130,11 +131,17 @@ export const columns: ColumnDef<Course>[] = [
         accessorKey: 'price',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
         cell: ({ row }) => {
-            const amount = row.getValue<number>('price');
-            if (amount === 0) {
+            const strikethroughPrice = row.original.strikethrough_price;
+            const price = row.original.price;
+            if (price === 0) {
                 return <div>Gratis</div>;
             }
-            return <div>{rupiahFormatter.format(amount)}</div>;
+            return (
+                <div className="">
+                    {strikethroughPrice > 0 && <div className="text-xs text-gray-500 line-through">{rupiahFormatter.format(strikethroughPrice)}</div>}
+                    <div className="text-base font-semibold">{rupiahFormatter.format(price)}</div>
+                </div>
+            );
         },
     },
     {

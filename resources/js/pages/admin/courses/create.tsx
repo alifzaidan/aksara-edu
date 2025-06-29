@@ -5,8 +5,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/layouts/admin-layout';
 import { cn, parseRupiah, rupiahFormatter } from '@/lib/utils';
@@ -42,20 +44,35 @@ interface Lesson {
     attachment?: File | null;
 }
 
-const formSchema = z.object({
-    title: z.string().nonempty('Judul harus diisi'),
-    category_id: z.string().nonempty('Kategori harus dipilih'),
-    short_description: z.string().max(200).nullable(),
-    description: z.string().max(1000).nullable(),
-    key_points: z.string().max(1000).nullable(),
-    thumbnail: z.any().nullable(),
-    price: z.number().min(0),
-    level: z.enum(['beginner', 'intermediate', 'advanced']),
-    tools: z.array(z.string()).optional(),
-});
+const formSchema = z
+    .object({
+        title: z.string().nonempty('Judul harus diisi'),
+        category_id: z.string().nonempty('Kategori harus dipilih'),
+        short_description: z.string().max(200).nullable(),
+        description: z.string().max(1000).nullable(),
+        key_points: z.string().max(1000).nullable(),
+        thumbnail: z.any().nullable(),
+        strikethrough_price: z.number().min(0),
+        price: z.number().min(0),
+        level: z.enum(['beginner', 'intermediate', 'advanced']),
+        tools: z.array(z.string()).optional(),
+    })
+    .refine(
+        (data) => {
+            if (data.strikethrough_price > 0) {
+                return data.strikethrough_price > data.price;
+            }
+            return true;
+        },
+        {
+            message: 'Harga coret harus lebih besar dari harga normal.',
+            path: ['strikethrough_price'],
+        },
+    );
 
 export default function CreateCourse({ categories, tools }: { categories: { id: string; name: string }[]; tools: { id: string; name: string }[] }) {
     const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
+    const [showStrikethroughPrice, setShowStrikethroughPrice] = useState(false);
     const [preview, setPreview] = useState<string | null>(null);
     const [sneakPeekImages, setSneakPeekImages] = useState<File[]>([]);
     const [sneakPeekPreviews, setSneakPeekPreviews] = useState<string[]>([]);
@@ -77,6 +94,7 @@ export default function CreateCourse({ categories, tools }: { categories: { id: 
                             <li>Memahami cara kerja hooks pada reactjs dan nextjs (Contoh)</li>
                         </ul>`,
             thumbnail: '',
+            strikethrough_price: 0,
             price: 0,
             level: 'beginner',
             tools: [],
@@ -406,6 +424,43 @@ export default function CreateCourse({ categories, tools }: { categories: { id: 
                                     />
                                     <FormDescription className="ms-1">Upload hingga 4 gambar. Format: PNG/JPG, max 2MB per gambar.</FormDescription>
                                 </FormItem>
+                                <div className="space-y-4 rounded-md border p-4">
+                                    <div className="flex items-center space-x-2">
+                                        <Switch
+                                            id="show-strikethrough"
+                                            checked={showStrikethroughPrice}
+                                            onCheckedChange={(checked) => {
+                                                setShowStrikethroughPrice(checked);
+                                                if (!checked) {
+                                                    form.setValue('strikethrough_price', 0);
+                                                }
+                                            }}
+                                        />
+                                        <Label htmlFor="show-strikethrough">Aktifkan Harga Coret (Opsional)</Label>
+                                    </div>
+
+                                    {showStrikethroughPrice && (
+                                        <FormField
+                                            control={form.control}
+                                            name="strikethrough_price"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Harga Coret</FormLabel>
+                                                    <Input
+                                                        {...field}
+                                                        type="text"
+                                                        placeholder="Rp 0"
+                                                        value={rupiahFormatter.format(field.value || 0)}
+                                                        onChange={(e) => field.onChange(parseRupiah(e.target.value))}
+                                                        autoComplete="off"
+                                                    />
+                                                    <FormDescription>Harga asli yang akan ditampilkan tercoret.</FormDescription>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    )}
+                                </div>
                                 <FormField
                                     control={form.control}
                                     name="price"

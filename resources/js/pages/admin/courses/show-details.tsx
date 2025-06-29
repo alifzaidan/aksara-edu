@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { rupiahFormatter } from '@/lib/utils';
 import { LinkIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -14,6 +15,7 @@ interface Course {
     short_description?: string | null;
     description?: string | null;
     key_points?: string | null;
+    strikethrough_price: number;
     price: number;
     thumbnail?: string | null;
     course_url: string;
@@ -97,7 +99,20 @@ export default function CourseDetail({ course }: { course: Course }) {
                     </TableRow>
                     <TableRow>
                         <TableCell>Harga</TableCell>
-                        <TableCell>{course.price === 0 ? 'Gratis' : `Rp ${course.price.toLocaleString('id-ID')}`}</TableCell>
+                        <TableCell>
+                            {course.price === 0 ? (
+                                <span>Gratis</span>
+                            ) : (
+                                <span>
+                                    {course.strikethrough_price > 0 && (
+                                        <span className="text-xs text-gray-500 line-through">
+                                            {rupiahFormatter.format(course.strikethrough_price)}{' '}
+                                        </span>
+                                    )}
+                                    <span className="text-base font-semibold">{rupiahFormatter.format(course.price)}</span>
+                                </span>
+                            )}
+                        </TableCell>
                     </TableRow>
                     <TableRow>
                         <TableCell>Deskripsi Singkat</TableCell>

@@ -42,6 +42,7 @@ class CourseController extends Controller
             'description' => 'nullable|string',
             'key_points' => 'nullable|string',
             'thumbnail' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'strikethrough_price' => 'required|numeric|min:0',
             'price' => 'required|numeric|min:0',
             'level' => 'required|string|in:beginner,intermediate,advanced',
             'sneak_peek_images' => 'nullable|array|max:4',
@@ -148,7 +149,7 @@ class CourseController extends Controller
     public function edit(string $id)
     {
         $course = Course::with(['tools', 'images', 'modules.lessons.quizzes'])->findOrFail($id);
-        
+
         $categories = Category::all();
         $tools = Tool::all();
         return Inertia::render('admin/courses/edit', ['course' => $course, 'categories' => $categories, 'tools' => $tools]);
@@ -163,6 +164,7 @@ class CourseController extends Controller
             'description' => 'nullable|string',
             'key_points' => 'nullable|string',
             'thumbnail' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'strikethrough_price' => 'required|numeric|min:0',
             'price' => 'required|numeric|min:0',
             'level' => 'required|string|in:beginner,intermediate,advanced',
             'sneak_peek_images' => 'nullable|array|max:4',
@@ -251,7 +253,7 @@ class CourseController extends Controller
 
                     if (isset($mod['lessons']) && is_array($mod['lessons'])) {
                         foreach ($mod['lessons'] as $lessonIdx => $lesson) {
-                            
+
                             if (isset($lesson['id']) && !empty($lesson['id'])) {
                                 $lessonModel = $module->lessons()->where('id', $lesson['id'])->first();
                                 if ($lessonModel) {

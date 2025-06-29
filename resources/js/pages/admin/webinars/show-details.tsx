@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { rupiahFormatter } from '@/lib/utils';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { LinkIcon } from 'lucide-react';
@@ -13,6 +14,7 @@ interface Webinar {
     category?: { name: string };
     tools?: { name: string; description?: string | null; icon: string | null }[];
     batch?: string | null;
+    strikethrough_price: number;
     price: number;
     quota: number;
     start_time: string | Date;
@@ -91,7 +93,20 @@ export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
                     </TableRow>
                     <TableRow>
                         <TableCell>Harga</TableCell>
-                        <TableCell>{webinar.price === 0 ? 'Gratis' : `Rp ${webinar.price.toLocaleString('id-ID')}`}</TableCell>
+                        <TableCell>
+                            {webinar.price === 0 ? (
+                                <span>Gratis</span>
+                            ) : (
+                                <span>
+                                    {webinar.strikethrough_price > 0 && (
+                                        <span className="text-xs text-gray-500 line-through">
+                                            {rupiahFormatter.format(webinar.strikethrough_price)}{' '}
+                                        </span>
+                                    )}
+                                    <span className="text-base font-semibold">{rupiahFormatter.format(webinar.price)}</span>
+                                </span>
+                            )}
+                        </TableCell>
                     </TableRow>
                     <TableRow>
                         <TableCell>Deskripsi</TableCell>

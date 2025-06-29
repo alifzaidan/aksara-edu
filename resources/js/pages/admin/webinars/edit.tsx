@@ -6,7 +6,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/layouts/admin-layout';
 import { cn, parseRupiah, rupiahFormatter } from '@/lib/utils';
@@ -26,6 +28,7 @@ interface Webinar {
     category?: { name: string };
     category_id: string;
     batch?: number | null;
+    strikethrough_price: number;
     price: number;
     quota: number;
     start_time: string | Date;
@@ -44,23 +47,37 @@ interface Webinar {
     tools?: { id: string; name: string; description?: string | null }[];
 }
 
-const formSchema = z.object({
-    title: z.string().nonempty('Judul harus diisi'),
-    category_id: z.string().nonempty('Kategori harus dipilih'),
-    description: z.string().nullable(),
-    benefits: z.string().nullable(),
-    thumbnail: z.any().nullable(),
-    start_time: z.string(),
-    end_time: z.string(),
-    registration_deadline: z.string(),
-    host_name: z.string().nullable(),
-    host_description: z.string().nullable(),
-    price: z.number().min(0),
-    quota: z.number().min(0),
-    group_url: z.string().nullable(),
-    batch: z.number().min(0),
-    tools: z.array(z.string()).optional(),
-});
+const formSchema = z
+    .object({
+        title: z.string().nonempty('Judul harus diisi'),
+        category_id: z.string().nonempty('Kategori harus dipilih'),
+        description: z.string().nullable(),
+        benefits: z.string().nullable(),
+        thumbnail: z.any().nullable(),
+        start_time: z.string(),
+        end_time: z.string(),
+        registration_deadline: z.string(),
+        host_name: z.string().nullable(),
+        host_description: z.string().nullable(),
+        strikethrough_price: z.number().min(0),
+        price: z.number().min(0),
+        quota: z.number().min(0),
+        group_url: z.string().nullable(),
+        batch: z.number().min(0),
+        tools: z.array(z.string()).optional(),
+    })
+    .refine(
+        (data) => {
+            if (data.strikethrough_price > 0) {
+                return data.strikethrough_price > data.price;
+            }
+            return true;
+        },
+        {
+            message: 'Harga coret harus lebih besar dari harga normal.',
+            path: ['strikethrough_price'],
+        },
+    );
 
 export default function EditWebinar({
     webinar,
@@ -75,6 +92,7 @@ export default function EditWebinar({
     const [openStartCalendar, setOpenStartCalendar] = useState(false);
     const [openEndCalendar, setOpenEndCalendar] = useState(false);
     const [openRegistrationCalendar, setOpenRegistrationCalendar] = useState(false);
+    const [showStrikethroughPrice, setShowStrikethroughPrice] = useState(webinar.strikethrough_price > 0);
     const [preview, setPreview] = useState<string | null>(null);
     const [thumbnailError, setThumbnailError] = useState(false);
 
@@ -109,6 +127,7 @@ export default function EditWebinar({
                     : (webinar.registration_deadline?.toISOString() ?? ''),
             host_name: webinar.host_name ?? '',
             host_description: webinar.host_description ?? '',
+            strikethrough_price: webinar.strikethrough_price ?? 0,
             price: webinar.price ?? 0,
             quota: webinar.quota ?? 0,
             group_url: webinar.group_url ?? '',
@@ -307,6 +326,43 @@ export default function EditWebinar({
                                     </FormItem>
                                 )}
                             />
+                            <div className="space-y-4 rounded-md border p-4">
+                                <div className="flex items-center space-x-2">
+                                    <Switch
+                                        id="show-strikethrough"
+                                        checked={showStrikethroughPrice}
+                                        onCheckedChange={(checked) => {
+                                            setShowStrikethroughPrice(checked);
+                                            if (!checked) {
+                                                form.setValue('strikethrough_price', 0);
+                                            }
+                                        }}
+                                    />
+                                    <Label htmlFor="show-strikethrough">Aktifkan Harga Coret (Opsional)</Label>
+                                </div>
+
+                                {showStrikethroughPrice && (
+                                    <FormField
+                                        control={form.control}
+                                        name="strikethrough_price"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Harga Coret</FormLabel>
+                                                <Input
+                                                    {...field}
+                                                    type="text"
+                                                    placeholder="Rp 0"
+                                                    value={rupiahFormatter.format(field.value || 0)}
+                                                    onChange={(e) => field.onChange(parseRupiah(e.target.value))}
+                                                    autoComplete="off"
+                                                />
+                                                <FormDescription>Harga asli yang akan ditampilkan tercoret.</FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
+                            </div>
                             <FormField
                                 control={form.control}
                                 name="price"
