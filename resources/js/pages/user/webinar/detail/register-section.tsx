@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Link } from '@inertiajs/react';
+import { SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 import { BadgeCheck, CalendarDays, Clock, Hourglass, MapPin, Users } from 'lucide-react';
 
 interface Webinar {
@@ -17,6 +18,12 @@ interface Webinar {
 }
 
 export default function RegisterSection({ webinar }: { webinar: Webinar }) {
+    const { auth } = usePage<SharedData>().props;
+
+    const isProfileComplete = auth.user && auth.user.phone_number;
+    const registrationUrl = isProfileComplete ? webinar.registration_url : route('profile.edit', { redirect: window.location.href });
+    const buttonText = isProfileComplete ? 'Daftar Sekarang' : 'Lengkapi Profil untuk Mendaftar';
+
     return (
         <section className="mx-auto my-8 w-full max-w-5xl px-4" id="register">
             <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
@@ -110,8 +117,9 @@ export default function RegisterSection({ webinar }: { webinar: Webinar }) {
                                 year: 'numeric',
                             })}
                         </p>
-                        <Button className="mt-auto w-full" asChild>
-                            <Link href={webinar.registration_url}>Daftar Sekarang</Link>
+                        {!isProfileComplete && <p className="mb-2 text-sm text-red-500">Profil Anda belum lengkap!</p>}
+                        <Button className="w-full" asChild>
+                            <Link href={registrationUrl}>{buttonText}</Link>
                         </Button>
                     </div>
                 </div>

@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Link } from '@inertiajs/react';
+import { SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 import { BadgeCheck, CalendarDays, ChartArea, Clock, Hourglass, MapPin, Users } from 'lucide-react';
 
 interface Bootcamp {
@@ -18,11 +19,16 @@ interface Bootcamp {
 }
 
 export default function RegisterSection({ bootcamp }: { bootcamp: Bootcamp }) {
+    const { auth } = usePage<SharedData>().props;
     const start = new Date(bootcamp.start_date);
     const end = new Date(bootcamp.end_date);
     const diffMs = end.getTime() - start.getTime();
     const diffDays = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
     const totalWeeks = Math.ceil(diffDays / 7);
+
+    const isProfileComplete = auth.user && auth.user.phone_number;
+    const registrationUrl = isProfileComplete ? bootcamp.registration_url : route('profile.edit', { redirect: window.location.href });
+    const buttonText = isProfileComplete ? 'Daftar Sekarang' : 'Lengkapi Profil untuk Mendaftar';
 
     return (
         <section className="mx-auto my-8 w-full max-w-5xl px-4" id="register">
@@ -129,8 +135,9 @@ export default function RegisterSection({ bootcamp }: { bootcamp: Bootcamp }) {
                                 year: 'numeric',
                             })}
                         </p>
-                        <Button className="mt-auto w-full" asChild>
-                            <Link href={bootcamp.registration_url}>Daftar Sekarang</Link>
+                        {!isProfileComplete && <p className="mb-2 text-sm text-red-500">Profil Anda belum lengkap!</p>}
+                        <Button className="w-full" asChild>
+                            <Link href={registrationUrl}>{buttonText}</Link>
                         </Button>
                     </div>
                 </div>

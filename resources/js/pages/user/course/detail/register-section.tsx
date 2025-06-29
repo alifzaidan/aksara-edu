@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Link } from '@inertiajs/react';
+import { SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 import { BadgeCheck, InfinityIcon, Presentation, Smartphone, TvMinimalPlay } from 'lucide-react';
 
 interface Course {
@@ -22,7 +23,12 @@ interface Course {
 }
 
 export default function RegisterSection({ course }: { course: Course }) {
+    const { auth } = usePage<SharedData>().props;
     const totalLessons = course.modules?.reduce((total, module) => total + (module.lessons?.length || 0), 0) || 0;
+
+    const isProfileComplete = auth.user && auth.user.phone_number;
+    const registrationUrl = isProfileComplete ? course.registration_url : route('profile.edit', { redirect: window.location.href });
+    const buttonText = isProfileComplete ? 'Gabung Sekarang' : 'Lengkapi Profil untuk Mendaftar';
 
     return (
         <section className="mx-auto mt-8 w-full max-w-5xl px-4" id="register">
@@ -85,9 +91,12 @@ export default function RegisterSection({ course }: { course: Course }) {
                             <p>Materi On Demand</p>
                         </li>
                     </ul>
-                    <Button className="mt-auto w-full" asChild>
-                        <Link href={course.registration_url}>Gabung Sekarang</Link>
-                    </Button>
+                    <div className="mt-auto">
+                        {!isProfileComplete && <p className="mb-2 text-center text-sm text-red-500">Profil Anda belum lengkap!</p>}
+                        <Button className="w-full" asChild>
+                            <Link href={registrationUrl}>{buttonText}</Link>
+                        </Button>
+                    </div>
                 </div>
             </div>
         </section>

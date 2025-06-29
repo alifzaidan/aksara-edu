@@ -10,6 +10,7 @@ interface Course {
     title: string;
     thumbnail: string;
     slug: string;
+    strikethrough_price: number;
     price: number;
     level: 'beginner' | 'intermediate' | 'advanced';
 }
@@ -58,15 +59,30 @@ export default function BestSellerSection({ courses, myCourseIds }: BestSellerPr
                                 className="relative overflow-hidden rounded-xl bg-zinc-300/30 p-[2px] dark:bg-zinc-700/30"
                             >
                                 <Spotlight className="bg-primary blur-2xl" size={284} />
-                                <div className="bg-sidebar relative flex w-full flex-col items-center justify-center rounded-lg dark:bg-zinc-800">
-                                    <img
-                                        src={course.thumbnail ? `/storage/${course.thumbnail}` : '/assets/images/placeholder.png'}
-                                        alt={course.title}
-                                        className="h-48 w-full rounded-t-lg object-cover"
-                                    />
+                                <div className="bg-sidebar relative flex h-full w-full flex-col items-center justify-between rounded-lg dark:bg-zinc-800">
+                                    <div className="w-full overflow-hidden rounded-t-lg">
+                                        <img
+                                            src={course.thumbnail ? `/storage/${course.thumbnail}` : '/assets/images/placeholder.png'}
+                                            alt={course.title}
+                                            className="h-48 w-full rounded-t-lg object-cover"
+                                        />
+                                        <h2 className="mx-4 mt-2 text-left text-lg font-semibold">{course.title}</h2>
+                                    </div>
                                     <div className="w-full p-4 text-left">
-                                        <h2 className="mb-1 text-lg font-semibold">{course.title}</h2>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">Rp. {course.price.toLocaleString('id-ID')}</p>
+                                        {course.price === 0 ? (
+                                            <p className="text-lg font-semibold text-green-600 dark:text-green-400">Gratis</p>
+                                        ) : (
+                                            <div className="">
+                                                {course.strikethrough_price > 0 && (
+                                                    <p className="text-sm text-red-500 line-through">
+                                                        Rp {course.strikethrough_price.toLocaleString('id-ID')}
+                                                    </p>
+                                                )}
+                                                <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                                                    Rp {course.price.toLocaleString('id-ID')}
+                                                </p>
+                                            </div>
+                                        )}
                                         <div className="mt-4 flex justify-between">
                                             <div className="flex items-center gap-2">
                                                 <Star size={18} className="text-yellow-500" fill="currentColor" />

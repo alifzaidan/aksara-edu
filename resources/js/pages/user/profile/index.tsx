@@ -21,13 +21,50 @@ interface ProfileProps {
 }
 
 export default function Profile({ stats, recentTransactions }: ProfileProps) {
+    const getInvoiceItemName = (invoice: Invoice): string => {
+        if (invoice.course_items && invoice.course_items.length > 0) {
+            let name = invoice.course_items[0].course.title;
+            if (invoice.course_items.length > 1) {
+                name += ` (+${invoice.course_items.length - 1} lainnya)`;
+            }
+            return name;
+        }
+        if (invoice.bootcamp_items && invoice.bootcamp_items.length > 0) {
+            let name = invoice.bootcamp_items[0].bootcamp.title;
+            if (invoice.bootcamp_items.length > 1) {
+                name += ` (+${invoice.bootcamp_items.length - 1} lainnya)`;
+            }
+            return name;
+        }
+        if (invoice.webinar_items && invoice.webinar_items.length > 0) {
+            let name = invoice.webinar_items[0].webinar.title;
+            if (invoice.webinar_items.length > 1) {
+                name += ` (+${invoice.webinar_items.length - 1} lainnya)`;
+            }
+            return name;
+        }
+        return 'Pembelian Produk';
+    };
+
+    const getInvoiceItemType = (invoice: Invoice): string => {
+        if (invoice.course_items && invoice.course_items.length > 0) {
+            return 'Kelas Online';
+        }
+        if (invoice.bootcamp_items && invoice.bootcamp_items.length > 0) {
+            return 'Bootcamp';
+        }
+        if (invoice.webinar_items && invoice.webinar_items.length > 0) {
+            return 'Webinar';
+        }
+        return 'Produk';
+    };
+
     return (
         <UserLayout>
             <Head title="Profil" />
             <ProfileLayout>
                 <Heading title="Dashboard" description="Pantau aktivitas dan progres belajar Anda di sini." />
 
-                {/* Bagian Statistik */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -71,13 +108,14 @@ export default function Profile({ stats, recentTransactions }: ProfileProps) {
                     </Card>
                 </div>
 
-                {/* Bagian Aktivitas Terakhir */}
                 <div className="mt-8">
-                    <Heading title="Aktivitas Terakhir" description="Daftar pembelian kelas terakhir Anda." />
-                    <Card className="mt-4">
+                    <Heading title="Aktivitas Terakhir" description="Daftar pembelian terakhir Anda." />
+                    <Card className="p-4">
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead>Judul</TableHead>
+                                    <TableHead>Tipe</TableHead>
                                     <TableHead>Invoice</TableHead>
                                     <TableHead>Tanggal</TableHead>
                                     <TableHead>Status</TableHead>
@@ -89,10 +127,14 @@ export default function Profile({ stats, recentTransactions }: ProfileProps) {
                                     recentTransactions.map((invoice) => (
                                         <TableRow key={invoice.id}>
                                             <TableCell className="font-medium">
-                                                <Link href={route('user.profile.transactions')} className="hover:text-primary">
-                                                    {invoice.invoice_code}
-                                                </Link>
+                                                <div>
+                                                    <Link href={route('invoice.show', { id: invoice.id })} className="hover:text-primary">
+                                                        {getInvoiceItemName(invoice)}
+                                                    </Link>
+                                                </div>
                                             </TableCell>
+                                            <TableCell>{getInvoiceItemType(invoice)}</TableCell>
+                                            <TableCell>{invoice.invoice_code}</TableCell>
                                             <TableCell>{format(new Date(invoice.created_at), 'dd MMM yyyy, HH:mm', { locale: id })}</TableCell>
                                             <TableCell>
                                                 <Badge

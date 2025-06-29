@@ -23,14 +23,19 @@ const breadcrumbs: BreadcrumbItem[] = [
 type ProfileForm = {
     name: string;
     email: string;
+    phone_number: string | null;
+    redirect?: string;
 };
 
 export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
     const { auth } = usePage<SharedData>().props;
+    const redirectUrl = new URLSearchParams(window.location.search).get('redirect');
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm<Required<ProfileForm>>({
         name: auth.user.name,
         email: auth.user.email,
+        phone_number: (auth.user.phone_number ?? '') as string,
+        redirect: redirectUrl || '',
     });
 
     const submit: FormEventHandler = (e) => {
@@ -53,6 +58,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                     <HeadingSmall title="Informasi Profil" description="Perbarui nama dan alamat email Anda" />
 
                     <form onSubmit={submit} className="space-y-6">
+                        <input type="hidden" name="redirect" value={data.redirect} />
                         <div className="grid gap-2">
                             <Label htmlFor="name">Nama</Label>
 
@@ -63,7 +69,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 onChange={(e) => setData('name', e.target.value)}
                                 required
                                 autoComplete="name"
-                                placeholder="Nama lengkap"
+                                placeholder="Masukkan nama lengkap Anda"
                             />
 
                             <InputError className="mt-2" message={errors.name} />
@@ -80,7 +86,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 onChange={(e) => setData('email', e.target.value)}
                                 required
                                 autoComplete="username"
-                                placeholder="Email"
+                                placeholder="Masukkan alamat email Anda"
                             />
 
                             <InputError className="mt-2" message={errors.email} />
@@ -105,6 +111,29 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                         Tautan verifikasi baru telah dikirim ke alamat email Anda.
                                     </div>
                                 )}
+                            </div>
+                        )}
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="phone_number">Nomor Telepon</Label>
+
+                            <Input
+                                id="phone_number"
+                                type="text"
+                                className="mt-1 block w-full"
+                                value={data.phone_number ?? ''}
+                                onChange={(e) => setData('phone_number', e.target.value)}
+                                required
+                                autoComplete="phone_number"
+                                placeholder="Masukkan nomor telepon Anda"
+                            />
+
+                            <InputError className="mt-2" message={errors.phone_number} />
+                        </div>
+
+                        {!auth.user.phone_number && (
+                            <div>
+                                <p className="text-muted-foreground -mt-4 text-sm">Profil Anda belum lengkap. Silakan lengkapi nomor telepon Anda.</p>
                             </div>
                         )}
 
