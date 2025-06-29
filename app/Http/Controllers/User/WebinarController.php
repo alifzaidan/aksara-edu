@@ -17,7 +17,8 @@ class WebinarController extends Controller
         $categories = Category::all();
         $webinars = Webinar::with(['category'])
             ->where('status', 'published')
-            ->orderBy('created_at', 'desc')
+            ->where('registration_deadline', '>=', now())
+            ->orderBy('start_time', 'asc')
             ->get();
 
         $myWebinarIds = [];

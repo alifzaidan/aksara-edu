@@ -19,6 +19,7 @@ interface Webinar {
     end_time: string;
     webinar_url: string;
     registration_url: string;
+    recording_url: string | null;
     benefits: string;
     description: string | null;
     short_description: string | null;
@@ -60,11 +61,32 @@ function parseList(items?: string | null): string[] {
     return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
 }
 
+function getYoutubeEmbedUrl(url: string): string | null {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    const videoId = match && match[2].length === 11 ? match[2] : null;
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+}
+
 export default function DetailMyWebinar({ webinar }: { webinar: WebinarProps }) {
     const webinarItem = webinar.webinar_items?.[0];
     const webinarData = webinarItem?.webinar;
     const webinarInvoiceStatus = webinar.status;
     const benefitList = parseList(webinarData.benefits);
+
+    if (!webinarData || !webinarItem) {
+        return (
+            <UserLayout>
+                <Head title="Webinar Tidak Ditemukan" />
+                <div className="flex h-screen items-center justify-center">
+                    <p>Detail webinar tidak dapat ditemukan.</p>
+                </div>
+            </UserLayout>
+        );
+    }
+
+    const isWebinarFinished = new Date() > new Date(webinarData.start_time);
 
     return (
         <UserLayout>
@@ -105,56 +127,108 @@ export default function DetailMyWebinar({ webinar }: { webinar: WebinarProps }) 
             </section>
             <section className="mx-auto mb-12 w-full max-w-7xl px-4">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <div className="col-span-2 flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
-                        <h1 className="text-lg font-semibold">Jadwal Bootcamp</h1>
-                        <ul className="mt-2 mb-8 space-y-2">
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                                {new Date(webinarData.start_time).toLocaleDateString('id-ID', {
-                                    weekday: 'long',
-                                    day: 'numeric',
-                                    month: 'long',
-                                    year: 'numeric',
-                                })}
-                            </p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                                {new Date(webinarData.start_time).toLocaleTimeString('id-ID', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                })}
-                                -
-                                {new Date(webinarData.end_time).toLocaleTimeString('id-ID', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                })}
-                            </p>
-                        </ul>
-                        <h1 className="text-lg font-semibold">Fasilitas yang Tersedia</h1>
-                        <ul className="mt-4 mb-8 space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                            {benefitList.map((benefit, idx) => (
-                                <li key={idx} className="flex items-center gap-2">
-                                    <BadgeCheck size="18" className="text-green-600" />
-                                    <p>{benefit}</p>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                    <div className="col-span-1 flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
-                        <h2 className="mb-4 text-center font-semibold">{webinarData.title}</h2>
-                        <img
-                            src={webinarData.thumbnail ? `/storage/${webinarData.thumbnail}` : '/assets/images/placeholder.png'}
-                            alt={webinarData.title}
-                            className="aspect-video rounded-xl object-cover shadow-lg"
-                        />
-                        <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">{webinarData.short_description}</p>
+                    {isWebinarFinished ? (
+                        <>
+                            <div className="col-span-2 flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
+                                <h1 className="text-lg font-semibold">Terima Kasih Telah Berpartisipasi!</h1>
+                                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                    Semoga ilmu yang didapat bermanfaat. Silakan akses kembali rekaman webinar di bawah ini.
+                                </p>
 
-                        <Button
-                            className="mt-2 w-full"
-                            disabled={webinarInvoiceStatus !== 'paid'}
-                            onClick={() => window.open(webinarData.group_url ?? undefined, '_blank')}
-                        >
-                            Gabung Grup WA
-                        </Button>
-                    </div>
+                                {webinarData.recording_url && getYoutubeEmbedUrl(webinarData.recording_url) ? (
+                                    <div className="mt-4">
+                                        <div className="aspect-video w-full">
+                                            <iframe
+                                                className="h-full w-full rounded-lg border"
+                                                src={getYoutubeEmbedUrl(webinarData.recording_url)!}
+                                                title="Rekaman Webinar"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                allowFullScreen
+                                            />
+                                        </div>
+                                        <a
+                                            href={webinarData.recording_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="mt-2 inline-block text-sm text-blue-600 hover:underline dark:text-blue-400"
+                                        >
+                                            Buka di YouTube
+                                        </a>
+                                    </div>
+                                ) : (
+                                    <p className="mt-12 text-center text-lg font-semibold text-gray-500 dark:text-gray-400">
+                                        Rekaman akan segera tersedia. Mohon untuk menunggu beberapa saat.
+                                    </p>
+                                )}
+                            </div>
+                            <div className="col-span-1 flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
+                                <h2 className="mb-4 text-center font-semibold">Sertifikat Partisipasi</h2>
+                                <img
+                                    src={'/assets/images/placeholder.png'}
+                                    alt="Sertifikat"
+                                    className="aspect-video rounded-xl border object-cover shadow-lg dark:border-zinc-700"
+                                />
+                                <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+                                    Unduh sertifikat Anda sebagai bukti keikutsertaan dalam webinar ini.
+                                </p>
+                                <Button className="mt-2 w-full" disabled>
+                                    Unduh Sertifikat (Segera)
+                                </Button>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="col-span-2 flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
+                                <h1 className="text-lg font-semibold">Jadwal Webinar</h1>
+                                <ul className="mt-2 mb-8 space-y-2">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        {new Date(webinarData.start_time).toLocaleDateString('id-ID', {
+                                            weekday: 'long',
+                                            day: 'numeric',
+                                            month: 'long',
+                                            year: 'numeric',
+                                        })}
+                                    </p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        {new Date(webinarData.start_time).toLocaleTimeString('id-ID', {
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        })}
+                                        -
+                                        {new Date(webinarData.end_time).toLocaleTimeString('id-ID', {
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        })}
+                                    </p>
+                                </ul>
+                                <h1 className="text-lg font-semibold">Fasilitas yang Tersedia</h1>
+                                <ul className="mt-4 mb-8 space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                                    {benefitList.map((benefit, idx) => (
+                                        <li key={idx} className="flex items-center gap-2">
+                                            <BadgeCheck size="18" className="text-green-600" />
+                                            <p>{benefit}</p>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <div className="col-span-1 flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
+                                <h2 className="mb-4 text-center font-semibold">{webinarData.title}</h2>
+                                <img
+                                    src={webinarData.thumbnail ? `/storage/${webinarData.thumbnail}` : '/assets/images/placeholder.png'}
+                                    alt={webinarData.title}
+                                    className="aspect-video rounded-xl object-cover shadow-lg"
+                                />
+                                <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">{webinarData.short_description}</p>
+                                <Button
+                                    className="mt-2 w-full"
+                                    disabled={webinarInvoiceStatus !== 'paid'}
+                                    onClick={() => window.open(webinarData.group_url ?? undefined, '_blank')}
+                                >
+                                    Gabung Grup WA
+                                </Button>
+                            </div>
+                        </>
+                    )}
                 </div>
             </section>
         </UserLayout>

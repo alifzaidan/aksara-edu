@@ -17,7 +17,8 @@ class BootcampController extends Controller
         $categories = Category::all();
         $bootcamps = Bootcamp::with(['category'])
             ->where('status', 'published')
-            ->orderBy('created_at', 'desc')
+            ->where('registration_deadline', '>=', now())
+            ->orderBy('start_date', 'asc')
             ->get();
 
         $myBootcampIds = [];

@@ -10,6 +10,7 @@ import { CircleX, Copy, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { Invoice } from './columns-transactions';
+import AddRecordingDialog from './create-recording-url';
 import WebinarDetail from './show-details';
 import WebinarTransaction from './show-transactions';
 
@@ -28,6 +29,7 @@ interface Webinar {
     status: string;
     webinar_url: string;
     registration_url: string;
+    recording_url?: string | null;
     thumbnail?: string | null;
     description?: string | null;
     benefits?: string | null;
@@ -128,6 +130,8 @@ export default function ShowWebinar({ webinar, transactions, flash }: WebinarPro
                                     </Link>
                                 </Button>
                             </div>
+                            <Separator />
+                            <AddRecordingDialog webinarId={webinar.id} currentRecordingUrl={webinar.recording_url} />
                         </div>
                     </div>
                 </div>

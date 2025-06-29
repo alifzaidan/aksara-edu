@@ -25,13 +25,4 @@ class Webinar extends Model
     {
         return $this->belongsToMany(Tool::class, 'webinar_tool');
     }
-
-    protected function casts(): array
-    {
-        return [
-            'start_time' => 'datetime',
-            'end_time' => 'datetime',
-            'registration_deadline' => 'datetime',
-        ];
-    }
 }

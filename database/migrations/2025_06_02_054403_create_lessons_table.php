@@ -23,6 +23,7 @@ return new class extends Migration
             $table->integer('duration')->default(0);
             $table->integer('order')->default(0);
             $table->boolean('is_free')->default(false);
+            $table->boolean('is_completed')->default(false);
             $table->timestamps();
         });
     }

@@ -32,6 +32,7 @@ return new class extends Migration
             $table->string('webinar_url')->nullable();
             $table->string('registration_url')->nullable();
             $table->string('group_url')->nullable();
+            $table->string('recording_url')->nullable();
             $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->timestamps();
         });

@@ -236,4 +236,17 @@ class WebinarController extends Controller
 
         return back()->with('success', 'Webinar berhasil ditutup.');
     }
+
+    public function addRecording(Request $request, string $id)
+    {
+        $request->validate([
+            'recording_url' => 'required|url|max:255',
+        ]);
+
+        $webinar = Webinar::findOrFail($id);
+        $webinar->recording_url = $request->recording_url;
+        $webinar->save();
+
+        return back()->with('success', 'Link rekaman berhasil diperbarui.');
+    }
 }

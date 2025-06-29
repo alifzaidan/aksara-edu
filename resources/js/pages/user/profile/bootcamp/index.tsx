@@ -86,7 +86,7 @@ export default function MyBootcamps({ myBootcamps }: BootcampProps) {
                         visibleItems.map((item) => (
                             <Link
                                 key={item.id}
-                                href={`/bootcamp/${item.bootcamp.slug}`}
+                                href={`/profile/my-bootcamps/${item.bootcamp.slug}`}
                                 className="relative overflow-hidden rounded-xl bg-zinc-300/30 p-[2px] dark:bg-zinc-700/30"
                             >
                                 <Spotlight className="bg-primary blur-2xl" size={284} />

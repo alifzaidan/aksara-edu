@@ -23,6 +23,7 @@ interface Webinar {
     status: string;
     webinar_url: string;
     registration_url: string;
+    recording_url?: string | null;
     thumbnail?: string | null;
     description?: string | null;
     benefits?: string | null;
@@ -150,6 +151,20 @@ export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
                         <TableCell>
                             <div>{webinar.host_name ?? '-'}</div>
                             <div className="text-muted-foreground text-xs">{webinar.host_description ?? ''}</div>
+                        </TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell>Link Rekaman</TableCell>
+                        <TableCell>
+                            <div>
+                                {webinar.recording_url ? (
+                                    <a href={webinar.recording_url} target="_blank" rel="noopener noreferrer">
+                                        <span className="text-blue-600 hover:underline">{webinar.recording_url}</span>
+                                    </a>
+                                ) : (
+                                    '-'
+                                )}
+                            </div>
                         </TableCell>
                     </TableRow>
                 </TableBody>

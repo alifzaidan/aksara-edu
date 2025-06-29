@@ -50,7 +50,6 @@ interface WebinarProps {
 }
 
 export default function MyWebinars({ myWebinars }: WebinarProps) {
-    console.log(myWebinars);
     const [search, setSearch] = useState('');
     const [visibleCount, setVisibleCount] = useState(6);
 
@@ -87,7 +86,7 @@ export default function MyWebinars({ myWebinars }: WebinarProps) {
                         visibleItems.map((item) => (
                             <Link
                                 key={item.id}
-                                href={`/webinar/${item.webinar.slug}`}
+                                href={`/profile/my-webinars/${item.webinar.slug}`}
                                 className="relative overflow-hidden rounded-xl bg-zinc-300/30 p-[2px] dark:bg-zinc-700/30"
                             >
                                 <Spotlight className="bg-primary blur-2xl" size={284} />

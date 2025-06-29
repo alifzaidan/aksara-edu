@@ -24,6 +24,9 @@ export default function RegisterSection({ webinar }: { webinar: Webinar }) {
     const registrationUrl = isProfileComplete ? webinar.registration_url : route('profile.edit', { redirect: window.location.href });
     const buttonText = isProfileComplete ? 'Daftar Sekarang' : 'Lengkapi Profil untuk Mendaftar';
 
+    const deadline = new Date(webinar.registration_deadline);
+    const isRegistrationOpen = new Date() < deadline;
+
     return (
         <section className="mx-auto my-8 w-full max-w-5xl px-4" id="register">
             <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
@@ -117,10 +120,18 @@ export default function RegisterSection({ webinar }: { webinar: Webinar }) {
                                 year: 'numeric',
                             })}
                         </p>
-                        {!isProfileComplete && <p className="mb-2 text-sm text-red-500">Profil Anda belum lengkap!</p>}
-                        <Button className="w-full" asChild>
-                            <Link href={registrationUrl}>{buttonText}</Link>
-                        </Button>
+                        {isRegistrationOpen ? (
+                            <>
+                                {!isProfileComplete && <p className="mb-2 text-center text-sm text-red-500">Profil Anda belum lengkap!</p>}
+                                <Button className="w-full" asChild>
+                                    <Link href={registrationUrl}>{buttonText}</Link>
+                                </Button>
+                            </>
+                        ) : (
+                            <Button className="w-full" disabled>
+                                Pendaftaran Ditutup
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>

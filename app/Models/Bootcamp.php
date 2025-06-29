@@ -30,13 +30,4 @@ class Bootcamp extends Model
     {
         return $this->belongsToMany(Tool::class, 'bootcamp_tool');
     }
-
-    protected function casts(): array
-    {
-        return [
-            'start_time' => 'datetime',
-            'end_time' => 'datetime',
-            'registration_deadline' => 'datetime',
-        ];
-    }
 }
