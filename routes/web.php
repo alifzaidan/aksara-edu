@@ -11,6 +11,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MentorController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\QuizSubmissionController;
 use App\Http\Controllers\ToolController;
 use App\Http\Controllers\User\CourseController as UserCourseController;
 use App\Http\Controllers\User\BootcampController as UserBootcampController;
@@ -57,6 +58,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/learn/course/{course:slug}', [CourseDetailController::class, 'index'])
         ->middleware('enrollment.check')
         ->name('learn.course.detail');
+    
+    // Quiz routes
+    Route::post('/quiz/submit', [QuizSubmissionController::class, 'submit'])->name('quiz.submit');
+    Route::get('/quiz/{quiz}/attempt', [QuizSubmissionController::class, 'getAttempt'])->name('quiz.attempt');
 });
 
 Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('admin')->group(function () {
