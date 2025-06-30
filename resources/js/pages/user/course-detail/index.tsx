@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import CourseLayout from '@/layouts/course-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { FileDown } from 'lucide-react';
+import { FileDown, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 
 interface Lesson {
@@ -28,57 +28,59 @@ interface Course {
     modules: Module[];
 }
 
-// Contoh data modul dan pelajaran (sementara)
-const mockModules: Module[] = [
-    {
-        id: 'mod1',
-        title: 'Modul 1: Pengenalan Dasar',
-        lessons: [
-            {
-                id: 'les1',
-                title: 'Selamat Datang di Kelas!',
-                type: 'video',
-                video_url: 'https://www.youtube.com/embed/xdYyMJ2VRKE?si=d7s6rsTACVRdcerJ',
-                isCompleted: true,
-            },
-            {
-                id: 'les2',
-                title: 'Instalasi & Setup',
-                type: 'text',
-                content: 'Ini adalah panduan instalasi dalam bentuk teks...',
-                isCompleted: false,
-            },
-            { id: 'les3', title: 'Studi Kasus (PDF)', type: 'file', attachment: '#', isCompleted: false },
-        ],
-    },
-    {
-        id: 'mod2',
-        title: 'Modul 2: Konsep Inti',
-        lessons: [
-            {
-                id: 'les4',
-                title: 'Memahami Komponen',
-                type: 'video',
-                video_url: 'https://www.youtube.com/embed/xdYyMJ2VRKE?si=d7s6rsTACVRdcerJ',
-                isCompleted: false,
-            },
-            { id: 'les5', title: 'State & Props', type: 'text', content: 'Penjelasan mendalam tentang state dan props...', isCompleted: false },
-        ],
-    },
-    {
-        id: 'mod3',
-        title: 'Modul 3: Proyek Akhir',
-        lessons: [
-            {
-                id: 'les6',
-                title: 'Membangun Aplikasi',
-                type: 'video',
-                video_url: 'https://www.youtube.com/embed/xdYyMJ2VRKE?si=d7s6rsTACVRdcerJ',
-                isCompleted: false,
-            },
-        ],
-    },
-];
+function getYouTubeEmbedUrl(url: string): string {
+    if (!url) return '';
+    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(youtubeRegex);
+    
+    if (match && match[1]) {
+        return `https://www.youtube-nocookie.com/embed/${match[1]}?rel=0&modestbranding=1&showinfo=0&controls=1&disablekb=1`;
+    }
+    
+    if (url.includes('youtube.com/embed/')) {
+        const baseUrl = url.replace('youtube.com', 'youtube-nocookie.com');
+        const separator = baseUrl.includes('?') ? '&' : '?';
+        return `${baseUrl}${separator}rel=0&modestbranding=1&showinfo=0&controls=1&disablekb=1`;
+    }
+    return url;
+}
+
+function VideoPlayer({ lesson }: { lesson: Lesson }) {
+    const [hasError, setHasError] = useState(false);
+    const embedUrl = getYouTubeEmbedUrl(lesson.video_url || '');
+    
+    if (hasError || !embedUrl || embedUrl === lesson.video_url) {
+        return (
+            <div className="bg-muted/40 flex h-full flex-col items-center justify-center rounded-lg p-8 text-center">
+                <ExternalLink className="text-muted-foreground mb-4 h-16 w-16" />
+                <h3 className="text-lg font-semibold mb-2">Video External</h3>
+                <p className="text-muted-foreground mb-4 text-sm">Video tidak dapat ditampilkan langsung di halaman ini</p>
+                <Button asChild>
+                    <a href={lesson.video_url} target="_blank" rel="noopener noreferrer">
+                        Tonton Video <ExternalLink className="ml-2 h-4 w-4" />
+                    </a>
+                </Button>
+            </div>
+        );
+    }
+    
+    return (
+        <iframe
+            src={embedUrl}
+            title={lesson.title}
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            className="h-full w-full rounded-lg"
+            loading="lazy"
+            onError={() => setHasError(true)}
+            style={{
+                border: 'none',
+                outline: 'none'
+            }}
+        />
+    );
+}
 
 function LessonContent({ lesson }: { lesson: Lesson | null }) {
     if (!lesson) {
@@ -93,29 +95,33 @@ function LessonContent({ lesson }: { lesson: Lesson | null }) {
         case 'video':
             return (
                 <div className="aspect-video w-full">
-                    <iframe
-                        src={lesson.video_url}
-                        title={lesson.title}
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        className="h-full w-full rounded-lg"
-                    ></iframe>
+                    <VideoPlayer lesson={lesson} />
                 </div>
             );
         case 'text':
             return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: lesson.content || '' }} />;
         case 'file':
+            if (!lesson.attachment) {
+                return (
+                    <div className="bg-muted/40 flex h-full flex-col items-center justify-center rounded-lg p-8 text-center">
+                        <FileDown className="text-muted-foreground mb-4 h-16 w-16" />
+                        <h3 className="text-lg font-semibold">File Tidak Tersedia</h3>
+                        <p className="text-muted-foreground text-sm">File materi tidak ditemukan.</p>
+                    </div>
+                );
+            }
+            
             return (
-                <div className="bg-muted/40 flex h-full flex-col items-center justify-center rounded-lg p-8 text-center">
-                    <FileDown className="text-muted-foreground mb-4 h-16 w-16" />
-                    <h3 className="text-lg font-semibold">Materi Siap Diunduh</h3>
-                    <p className="text-muted-foreground mb-6 text-sm">Klik tombol di bawah untuk mengunduh file materi.</p>
-                    <Button asChild>
-                        <a href={lesson.attachment} download>
-                            Unduh {lesson.title}
-                        </a>
-                    </Button>
+                <div className="w-full h-[600px]">
+                    <iframe
+                        src={`/storage/${lesson.attachment}#toolbar=0&navpanes=0&scrollbar=0`}
+                        title={lesson.title}
+                        className="w-full h-full rounded-lg border"
+                        style={{
+                            border: 'none',
+                            outline: 'none'
+                        }}
+                    />
                 </div>
             );
         default:
@@ -124,7 +130,7 @@ function LessonContent({ lesson }: { lesson: Lesson | null }) {
 }
 
 export default function CourseDetail({ course }: { course: Course }) {
-    const modules = course.modules && course.modules.length > 0 ? course.modules : mockModules;
+    const modules = course.modules && course.modules.length > 0 ? course.modules : [];
     const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(modules[0]?.lessons[0] || null);
 
     const breadcrumbs: BreadcrumbItem[] = [
