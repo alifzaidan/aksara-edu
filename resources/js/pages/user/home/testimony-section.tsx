@@ -22,100 +22,119 @@ export default function TestimonySection() {
                     <InfiniteSlider direction="vertical" speedOnHover={20} gap={24} className="p-4">
                         <div className="max-w-sm space-y-2 rounded-lg bg-white p-4 shadow-md">
                             <div className="flex items-center gap-2">
-                                <div className="rounded-full bg-gray-200 p-2">
-                                    <User className="h-4 w-4 text-gray-500" />
+                                <div className="rounded-full bg-blue-100 p-2">
+                                    <User className="h-4 w-4 text-blue-600" />
                                 </div>
-                                <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
+                                <div>
+                                    <h3 className="font-semibold text-gray-900">Sarah Wijaya</h3>
+                                    <p className="text-xs text-gray-500">UI/UX Designer</p>
+                                </div>
                             </div>
                             <p className="text-sm text-gray-500">
-                                Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk
-                                kita lebih cepat paham.
+                                "Materi bootcamp UI/UX di Aksademy sangat komprehensif. Sekarang saya sudah bekerja di startup unicorn. Terima kasih
+                                Aksademy!"
                             </p>
                         </div>
                         <div className="max-w-sm space-y-2 rounded-lg bg-white p-4 shadow-md">
                             <div className="flex items-center gap-2">
-                                <div className="rounded-full bg-gray-200 p-2">
-                                    <User className="h-4 w-4 text-gray-500" />
+                                <div className="rounded-full bg-green-100 p-2">
+                                    <User className="h-4 w-4 text-green-600" />
                                 </div>
-                                <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
+                                <div>
+                                    <h3 className="font-semibold text-gray-900">Budi Santoso</h3>
+                                    <p className="text-xs text-gray-500">Full Stack Developer</p>
+                                </div>
                             </div>
                             <p className="text-sm text-gray-500">
-                                Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk
-                                kita lebih cepat paham.
+                                "Dari nol sampai bisa bikin aplikasi web kompleks. Mentor di Aksademy sangat sabar dan supportif. Worth it banget!"
                             </p>
                         </div>
                         <div className="max-w-sm space-y-2 rounded-lg bg-white p-4 shadow-md">
                             <div className="flex items-center gap-2">
-                                <div className="rounded-full bg-gray-200 p-2">
-                                    <User className="h-4 w-4 text-gray-500" />
+                                <div className="rounded-full bg-purple-100 p-2">
+                                    <User className="h-4 w-4 text-purple-600" />
                                 </div>
-                                <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
+                                <div>
+                                    <h3 className="font-semibold text-gray-900">Rina Kartika</h3>
+                                    <p className="text-xs text-gray-500">Digital Marketer</p>
+                                </div>
                             </div>
                             <p className="text-sm text-gray-500">
-                                Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk
-                                kita lebih cepat paham.
+                                "Kelas digital marketing-nya game changer! Bisnis online saya sekarang omzetnya naik 300% dalam 6 bulan."
                             </p>
                         </div>
                         <div className="max-w-sm space-y-2 rounded-lg bg-white p-4 shadow-md">
                             <div className="flex items-center gap-2">
-                                <div className="rounded-full bg-gray-200 p-2">
-                                    <User className="h-4 w-4 text-gray-500" />
+                                <div className="rounded-full bg-orange-100 p-2">
+                                    <User className="h-4 w-4 text-orange-600" />
                                 </div>
-                                <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
+                                <div>
+                                    <h3 className="font-semibold text-gray-900">Ahmad Rizky</h3>
+                                    <p className="text-xs text-gray-500">Data Analyst</p>
+                                </div>
                             </div>
                             <p className="text-sm text-gray-500">
-                                Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk
-                                kita lebih cepat paham.
+                                "Transisi karir dari accounting ke data analyst jadi lebih mudah berkat bootcamp di Aksademy. Materinya sangat
+                                aplikatif!"
                             </p>
                         </div>
                     </InfiniteSlider>
                     <InfiniteSlider direction="vertical" speedOnHover={20} gap={24} className="p-4" reverse>
                         <div className="max-w-sm space-y-2 rounded-lg bg-white p-4 shadow-md">
                             <div className="flex items-center gap-2">
-                                <div className="rounded-full bg-gray-200 p-2">
-                                    <User className="h-4 w-4 text-gray-500" />
+                                <div className="rounded-full bg-pink-100 p-2">
+                                    <User className="h-4 w-4 text-pink-600" />
                                 </div>
-                                <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
+                                <div>
+                                    <h3 className="font-semibold text-gray-900">Maya Sari</h3>
+                                    <p className="text-xs text-gray-500">Product Manager</p>
+                                </div>
                             </div>
                             <p className="text-sm text-gray-500">
-                                Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk
-                                kita lebih cepat paham.
+                                "Webinar product management-nya eye opening banget! Sekarang saya lebih percaya diri memimpin tim produk di
+                                perusahaan."
                             </p>
                         </div>
                         <div className="max-w-sm space-y-2 rounded-lg bg-white p-4 shadow-md">
                             <div className="flex items-center gap-2">
-                                <div className="rounded-full bg-gray-200 p-2">
-                                    <User className="h-4 w-4 text-gray-500" />
+                                <div className="rounded-full bg-cyan-100 p-2">
+                                    <User className="h-4 w-4 text-cyan-600" />
                                 </div>
-                                <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
+                                <div>
+                                    <h3 className="font-semibold text-gray-900">Denny Pratama</h3>
+                                    <p className="text-xs text-gray-500">DevOps Engineer</p>
+                                </div>
                             </div>
                             <p className="text-sm text-gray-500">
-                                Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk
-                                kita lebih cepat paham.
+                                "Kelas DevOps-nya sangat detail dan praktis. Dari basic Docker sampai Kubernetes semua dijelaskan dengan baik."
                             </p>
                         </div>
                         <div className="max-w-sm space-y-2 rounded-lg bg-white p-4 shadow-md">
                             <div className="flex items-center gap-2">
-                                <div className="rounded-full bg-gray-200 p-2">
-                                    <User className="h-4 w-4 text-gray-500" />
+                                <div className="rounded-full bg-indigo-100 p-2">
+                                    <User className="h-4 w-4 text-indigo-600" />
                                 </div>
-                                <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
+                                <div>
+                                    <h3 className="font-semibold text-gray-900">Lisa Anggraini</h3>
+                                    <p className="text-xs text-gray-500">Content Creator</p>
+                                </div>
                             </div>
                             <p className="text-sm text-gray-500">
-                                Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk
-                                kita lebih cepat paham.
+                                "Belajar video editing dan content strategy di Aksademy bikin channel YouTube saya tembus 100k subscriber!"
                             </p>
                         </div>
                         <div className="max-w-sm space-y-2 rounded-lg bg-white p-4 shadow-md">
                             <div className="flex items-center gap-2">
-                                <div className="rounded-full bg-gray-200 p-2">
-                                    <User className="h-4 w-4 text-gray-500" />
+                                <div className="rounded-full bg-yellow-100 p-2">
+                                    <User className="h-4 w-4 text-yellow-600" />
                                 </div>
-                                <h3 className="font-semibold text-gray-900">Ramadhani Pasuleri</h3>
+                                <div>
+                                    <h3 className="font-semibold text-gray-900">Fajar Ramadhan</h3>
+                                    <p className="text-xs text-gray-500">Mobile Developer</p>
+                                </div>
                             </div>
                             <p className="text-sm text-gray-500">
-                                Aksademy tempat belajarnya nyaman, materi yang disampaikan cukup jelas, mudah dipahami, banyak case² latihan untuk
-                                kita lebih cepat paham.
+                                "Bootcamp Flutter-nya recommended banget! Sekarang saya bisa develop aplikasi mobile untuk iOS dan Android."
                             </p>
                         </div>
                     </InfiniteSlider>
