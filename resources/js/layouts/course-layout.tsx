@@ -9,8 +9,9 @@ import { Dispatch, SetStateAction, type ReactNode } from 'react';
 interface Lesson {
     id: string;
     title: string;
-    type: 'video' | 'text' | 'file';
+    type: 'video' | 'text' | 'file' | 'quiz';
     isCompleted: boolean;
+    quizzes?: any[];
 }
 interface Module {
     id: string;

@@ -2,15 +2,16 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { FileDown, FileText, LogOut, PlayCircle } from 'lucide-react';
+import { FileDown, FileText, LogOut, PlayCircle, HelpCircle } from 'lucide-react';
 import { NavFooter } from './nav-footer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 
 interface Lesson {
     id: string;
     title: string;
-    type: 'video' | 'text' | 'file';
+    type: 'video' | 'text' | 'file' | 'quiz';
     isCompleted: boolean;
+    quizzes?: any[];
 }
 interface Module {
     id: string;
@@ -38,6 +39,7 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
         video: <PlayCircle className="text-muted-foreground h-4 w-4" />,
         text: <FileText className="text-muted-foreground h-4 w-4" />,
         file: <FileDown className="text-muted-foreground h-4 w-4" />,
+        quiz: <HelpCircle className="text-muted-foreground h-4 w-4" />,
     };
 
     return (
