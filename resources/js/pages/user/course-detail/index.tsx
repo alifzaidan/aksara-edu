@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import CourseLayout from '@/layouts/course-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { FileDown, ExternalLink, HelpCircle, ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { FileDown, ExternalLink, HelpCircle, ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface Lesson {
@@ -117,14 +118,25 @@ function QuizInterface({ lesson }: { lesson: Lesson }) {
     const [quizResult, setQuizResult] = useState<any>(null);
     const [timeLeft, setTimeLeft] = useState<number>(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
     const quiz = lesson.quizzes?.[currentQuiz];
 
     useEffect(() => {
         if (quiz && quiz.attempts && quiz.attempts.length > 0) {
-            // User has already taken this quiz, show results
-            setQuizResult(quiz.attempts[0]);
-            setShowResults(true);
+            // Check if user has a PASSED attempt
+            const passedAttempt = quiz.attempts.find(attempt => attempt.is_passed);
+            if (passedAttempt) {
+                // User has passed, show results
+                setQuizResult(passedAttempt);
+                setShowResults(true);
+            } else {
+                // User has attempts but hasn't passed yet, show latest attempt
+                // But allow retaking the quiz
+                const latestAttempt = quiz.attempts[0]; // Already sorted by created_at desc
+                setQuizResult(latestAttempt);
+                setShowResults(true);
+            }
         } else if (quiz?.time_limit) {
             setTimeLeft(quiz.time_limit * 60); // Convert minutes to seconds
         }
@@ -136,7 +148,7 @@ function QuizInterface({ lesson }: { lesson: Lesson }) {
                 setTimeLeft(prev => {
                     if (prev <= 1) {
                         // Auto-submit when time runs out
-                        handleSubmitQuiz();
+                        handleConfirmSubmit();
                         return 0;
                     }
                     return prev - 1;
@@ -153,9 +165,15 @@ function QuizInterface({ lesson }: { lesson: Lesson }) {
         }));
     };
 
-    const handleSubmitQuiz = async () => {
+    const handleSubmitQuiz = () => {
+        // Show confirmation dialog
+        setShowConfirmDialog(true);
+    };
+
+    const handleConfirmSubmit = async () => {
         if (isSubmitting) return;
         setIsSubmitting(true);
+        setShowConfirmDialog(false);
 
         try {
             const response = await fetch('/quiz/submit', {
@@ -182,6 +200,15 @@ function QuizInterface({ lesson }: { lesson: Lesson }) {
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const handleRetakeQuiz = () => {
+        // Reset all quiz states
+        setCurrentQuestion(0);
+        setAnswers({});
+        setShowResults(false);
+        setQuizResult(null);
+        setTimeLeft(quiz?.time_limit ? quiz.time_limit * 60 : 0);
     };
 
     const formatTime = (seconds: number) => {
@@ -212,11 +239,41 @@ function QuizInterface({ lesson }: { lesson: Lesson }) {
                     <h2 className="text-2xl font-bold mb-2">
                         {quizResult.is_passed ? 'Selamat! Anda Lulus' : 'Belum Lulus'}
                     </h2>
+                    {quiz && quiz.attempts && quiz.attempts.length > 1 && (
+                        <p className="text-sm text-muted-foreground mb-2">
+                            Percobaan ke-{quiz.attempts.length}
+                        </p>
+                    )}
                     <div className="flex justify-center gap-6 text-sm text-muted-foreground">
                         <span>Skor: {quizResult.score}%</span>
                         <span>Benar: {quizResult.correct_answers}/{quizResult.total_questions}</span>
                         <span>Waktu: {Math.floor(quizResult.time_taken / 60)}:{(quizResult.time_taken % 60).toString().padStart(2, '0')}</span>
                     </div>
+                    
+                    {/* Tombol Ulangi Ujian jika belum lulus */}
+                    {!quizResult.is_passed && (
+                        <div className="mt-6 text-center">
+                            <p className="text-muted-foreground mb-4">
+                                Jangan menyerah! Pelajari kembali materi dan coba lagi.
+                                <br />
+                                Passing score: <strong>{quiz.passing_score}%</strong>
+                            </p>
+                            <Button 
+                                onClick={handleRetakeQuiz}
+                            >
+                                🔄 Ulangi Ujian
+                            </Button>
+                        </div>
+                    )}
+                    
+                    {/* Pesan untuk user yang sudah lulus */}
+                    {quizResult.is_passed && (
+                        <div className="mt-6 text-center">
+                            <p className="text-green-600 font-medium">
+                                🎉 Selamat! Anda telah menyelesaikan quiz ini dengan baik.
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 <div className="space-y-6">
@@ -285,7 +342,7 @@ function QuizInterface({ lesson }: { lesson: Lesson }) {
                 {/* Progress Bar */}
                 <div className="bg-gray-200 rounded-full h-2 mb-2">
                     <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                        className="bg-blue-900 h-2 rounded-full transition-all duration-300" 
                         style={{ width: `${((currentQuestion + 1) / totalQuestions) * 100}%` }}
                     ></div>
                 </div>
@@ -362,7 +419,7 @@ function QuizInterface({ lesson }: { lesson: Lesson }) {
                                     onClick={() => setCurrentQuestion(index)}
                                     className={`w-8 h-8 rounded text-sm font-medium transition-colors ${
                                         index === currentQuestion
-                                            ? 'bg-blue-600 text-white'
+                                            ? 'bg-blue-900 text-white'
                                             : answers[quiz.questions[index].id]
                                             ? 'bg-green-100 text-green-700 border border-green-300'
                                             : 'bg-gray-100 hover:bg-gray-200'
@@ -376,7 +433,7 @@ function QuizInterface({ lesson }: { lesson: Lesson }) {
                         <div className="mt-4 pt-4 border-t">
                             <div className="text-sm space-y-1">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 bg-blue-600 rounded"></div>
+                                    <div className="w-3 h-3 bg-blue-900 rounded"></div>
                                     <span>Soal saat ini</span>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -392,6 +449,37 @@ function QuizInterface({ lesson }: { lesson: Lesson }) {
                     </div>
                 </div>
             </div>
+            
+            {/* Confirmation Dialog */}
+            <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-amber-500" />
+                            Konfirmasi Pengiriman
+                        </DialogTitle>
+                        <DialogDescription>
+                            Setelah dikirim, Anda tidak dapat mengubah jawaban lagi.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setShowConfirmDialog(false)}
+                            disabled={isSubmitting}
+                        >
+                            Batal
+                        </Button>
+                        <Button 
+                            onClick={handleConfirmSubmit}
+                            disabled={isSubmitting}
+                            className="bg-green-600 hover:bg-green-700"
+                        >
+                            {isSubmitting ? 'Mengirim...' : 'Ya, Kirim Jawaban'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

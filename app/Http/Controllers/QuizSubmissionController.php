@@ -25,14 +25,14 @@ class QuizSubmissionController extends Controller
         $quiz = Quiz::with('questions.options')->findOrFail($request->quiz_id);
         $userId = Auth::id();
 
-        // Check if user already has an attempt for this quiz
-        $existingAttempt = QuizAttempt::where('user_id', $userId)
+        $existingPassedAttempt = QuizAttempt::where('user_id', $userId)
             ->where('quiz_id', $quiz->id)
+            ->where('is_passed', true)
             ->first();
 
-        if ($existingAttempt) {
+        if ($existingPassedAttempt) {
             return response()->json([
-                'error' => 'You have already taken this quiz'
+                'error' => 'You have already passed this quiz'
             ], 400);
         }
 
