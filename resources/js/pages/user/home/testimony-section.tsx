@@ -19,7 +19,7 @@ export default function TestimonySection() {
                     </Button>
                 </div>
                 <div className="flex h-[500px]">
-                    <InfiniteSlider direction="vertical" speedOnHover={20} gap={24} className="p-4">
+                    <InfiniteSlider direction="vertical" speed={50} speedOnHover={20} gap={24} className="p-4">
                         <div className="max-w-sm space-y-2 rounded-lg bg-white p-4 shadow-md">
                             <div className="flex items-center gap-2">
                                 <div className="rounded-full bg-blue-100 p-2">
@@ -79,7 +79,7 @@ export default function TestimonySection() {
                             </p>
                         </div>
                     </InfiniteSlider>
-                    <InfiniteSlider direction="vertical" speedOnHover={20} gap={24} className="p-4" reverse>
+                    <InfiniteSlider direction="vertical" speed={50} speedOnHover={20} gap={24} className="p-4" reverse>
                         <div className="max-w-sm space-y-2 rounded-lg bg-white p-4 shadow-md">
                             <div className="flex items-center gap-2">
                                 <div className="rounded-full bg-pink-100 p-2">

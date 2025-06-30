@@ -1,10 +1,10 @@
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
 import AboutSection from './about-section';
-import BestSellerSection from './best-seller-section';
 import CarouselSection from './carousel-section';
 import CtaSection from './cta-section';
 import FaqSection from './faq-section';
+import LatestProductsSection from './latest-products-section';
 import ProgramSection from './program-section';
 import TestimonySection from './testimony-section';
 import ToolsSection from './tools-section';
@@ -16,23 +16,40 @@ interface Tool {
     icon: string;
 }
 
-interface Course {
+interface Category {
+    id: string;
+    name: string;
+}
+
+interface Product {
     id: string;
     title: string;
     thumbnail: string;
     slug: string;
     strikethrough_price: number;
     price: number;
-    level: 'beginner' | 'intermediate' | 'advanced';
+    level?: 'beginner' | 'intermediate' | 'advanced';
+    start_date?: string;
+    end_date?: string;
+    start_time?: string;
+    category: Category;
+    type: 'course' | 'bootcamp' | 'webinar';
+    created_at: string;
+}
+
+interface MyProductIds {
+    courses: string[];
+    bootcamps: string[];
+    webinars: string[];
 }
 
 interface HomeProps {
-    courses: Course[];
     tools: Tool[];
-    myCourseIds: string[];
+    latestProducts: Product[];
+    myProductIds: MyProductIds;
 }
 
-export default function Home({ courses, tools, myCourseIds }: HomeProps) {
+export default function Home({ tools, latestProducts, myProductIds }: HomeProps) {
     return (
         <UserLayout>
             <Head title="Beranda" />
@@ -41,7 +58,7 @@ export default function Home({ courses, tools, myCourseIds }: HomeProps) {
             <AboutSection />
             <ProgramSection />
             <ToolsSection tools={tools} />
-            <BestSellerSection courses={courses} myCourseIds={myCourseIds} />
+            <LatestProductsSection latestProducts={latestProducts} myProductIds={myProductIds} />
             <TestimonySection />
             <FaqSection />
             <CtaSection />
