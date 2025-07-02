@@ -1,10 +1,11 @@
+import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminLayout from '@/layouts/admin-layout';
 import { BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { CirclePower, Edit, Trash } from 'lucide-react';
@@ -56,6 +57,10 @@ export default function ShowAffiliate({ affiliate, earnings, stats, flash }: Aff
         }
     }, [flash]);
 
+    const handleDelete = () => {
+        router.delete(route('affiliates.destroy', affiliate.id));
+    };
+
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title={`Detail Afiliasi - ${affiliate.name}`} />
@@ -95,11 +100,16 @@ export default function ShowAffiliate({ affiliate, earnings, stats, flash }: Aff
                                     </DialogTrigger>
                                     <EditAffiliate affiliate={affiliate} setOpen={setOpen} />
                                 </Dialog>
-                                <Button asChild className="w-full" variant="destructive">
-                                    <Link method="delete" href={route('affiliates.destroy', affiliate.id)}>
-                                        <Trash /> Hapus
-                                    </Link>
-                                </Button>
+                                <DeleteConfirmDialog
+                                    trigger={
+                                        <Button variant="destructive" className="w-full">
+                                            <Trash /> Hapus
+                                        </Button>
+                                    }
+                                    title="Apakah Anda yakin ingin menghapus afiliasi ini?"
+                                    itemName={affiliate.name}
+                                    onConfirm={handleDelete}
+                                />
                             </div>
                         </div>
                     </div>

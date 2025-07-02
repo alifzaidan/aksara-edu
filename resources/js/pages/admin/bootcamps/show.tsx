@@ -1,9 +1,10 @@
+import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminLayout from '@/layouts/admin-layout';
 import { BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { CircleX, Copy, Send, SquarePen, Trash } from 'lucide-react';
@@ -70,6 +71,10 @@ export default function ShowBootcamp({ bootcamp, transactions, flash }: Bootcamp
         }
     }, [flash]);
 
+    const handleDelete = () => {
+        router.delete(route('bootcamps.destroy', bootcamp.id));
+    };
+
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title={`Detail Bootcamp - ${bootcamp.title}`} />
@@ -125,11 +130,16 @@ export default function ShowBootcamp({ bootcamp, transactions, flash }: Bootcamp
                                         <CircleX /> Tutup
                                     </Link>
                                 </Button>
-                                <Button asChild className="w-full" variant="destructive">
-                                    <Link method="delete" href={route('bootcamps.destroy', bootcamp.id)}>
-                                        <Trash /> Hapus
-                                    </Link>
-                                </Button>
+                                <DeleteConfirmDialog
+                                    trigger={
+                                        <Button variant="destructive" className="w-full">
+                                            <Trash /> Hapus
+                                        </Button>
+                                    }
+                                    title="Apakah Anda yakin ingin menghapus bootcamp ini?"
+                                    itemName={bootcamp.title}
+                                    onConfirm={handleDelete}
+                                />
                             </div>
                         </div>
                     </div>

@@ -1,10 +1,12 @@
 'use client';
 
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogTrigger } from '@/components/ui/dialog';
-import { Link } from '@inertiajs/react';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -14,23 +16,49 @@ import EditMentor from './edit';
 
 export default function MentorActions({ mentor }: { mentor: Mentor }) {
     const [open, setOpen] = useState(false);
+    const handleDelete = () => {
+        router.delete(route('mentors.destroy', mentor.id));
+    };
 
     return (
         <div className="flex items-center justify-center gap-2">
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogTrigger asChild>
-                    <Button variant={'link'} className="hover:cursor-pointer">
-                        <Edit />
-                        Edit
-                    </Button>
-                </DialogTrigger>
-                <EditMentor mentor={mentor} setOpen={setOpen} />
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <Edit className="size-4" />
+                            </Button>
+                        </DialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Edit Mentor</p>
+                    </TooltipContent>
+                </Tooltip>
+                <DialogContent>
+                    <EditMentor mentor={mentor} setOpen={setOpen} />
+                </DialogContent>
             </Dialog>
-            <Button variant="link" asChild className="text-red-500 hover:cursor-pointer">
-                <Link method="delete" href={route('mentors.destroy', mentor.id)}>
-                    <Trash /> Hapus
-                </Link>
-            </Button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <div>
+                        <DeleteConfirmDialog
+                            trigger={
+                                <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
+                                    <Trash />
+                                    <span className="sr-only">Hapus Mentor</span>
+                                </Button>
+                            }
+                            title="Apakah Anda yakin ingin menghapus mentor ini?"
+                            itemName={mentor.name}
+                            onConfirm={handleDelete}
+                        />
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Hapus Mentor</p>
+                </TooltipContent>
+            </Tooltip>
         </div>
     );
 }
