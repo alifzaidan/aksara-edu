@@ -1,18 +1,23 @@
 'use client';
 
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { rupiahFormatter } from '@/lib/utils';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Folder, Trash } from 'lucide-react';
 
 export default function CourseActions({ course }: { course: Course }) {
+    const handleDelete = () => {
+        router.delete(route('courses.destroy', course.id));
+    };
+
     return (
         <div className="flex items-center justify-center gap-2">
             <Tooltip>
@@ -30,12 +35,19 @@ export default function CourseActions({ course }: { course: Course }) {
             </Tooltip>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer" asChild>
-                        <Link method="delete" href={route('courses.destroy', course.id)}>
-                            <Trash />
-                            <span className="sr-only">Hapus Kelas</span>
-                        </Link>
-                    </Button>
+                    <div>
+                        <DeleteConfirmDialog
+                            trigger={
+                                <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
+                                    <Trash />
+                                    <span className="sr-only">Hapus Kelas</span>
+                                </Button>
+                            }
+                            title="Apakah Anda yakin ingin menghapus kelas ini?"
+                            itemName={course.title}
+                            onConfirm={handleDelete}
+                        />
+                    </div>
                 </TooltipTrigger>
                 <TooltipContent>
                     <p>Hapus Kelas</p>

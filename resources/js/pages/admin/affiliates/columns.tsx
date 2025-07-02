@@ -1,17 +1,22 @@
 'use client';
 
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { CirclePower, Folder, Trash } from 'lucide-react';
 
 export default function AffiliateActions({ affiliate }: { affiliate: Affiliate }) {
+    const handleDelete = () => {
+        router.delete(route('affiliates.destroy', affiliate.id));
+    };
+
     return (
         <div className="flex items-center justify-center gap-2">
             <Tooltip>
@@ -47,12 +52,19 @@ export default function AffiliateActions({ affiliate }: { affiliate: Affiliate }
             </Tooltip>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer" asChild>
-                        <Link method="delete" href={route('affiliates.destroy', affiliate.id)}>
-                            <Trash />
-                            <span className="sr-only">Hapus Afiliasi</span>
-                        </Link>
-                    </Button>
+                    <div>
+                        <DeleteConfirmDialog
+                            trigger={
+                                <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
+                                    <Trash />
+                                    <span className="sr-only">Hapus Afiliasi</span>
+                                </Button>
+                            }
+                            title="Apakah Anda yakin ingin menghapus afiliasi ini?"
+                            itemName={affiliate.name}
+                            onConfirm={handleDelete}
+                        />
+                    </div>
                 </TooltipTrigger>
                 <TooltipContent>
                     <p>Hapus Afiliasi</p>

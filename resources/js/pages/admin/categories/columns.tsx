@@ -1,11 +1,13 @@
 'use client';
 
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogTrigger } from '@/components/ui/dialog';
-import { Link } from '@inertiajs/react';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { Edit, Trash } from 'lucide-react';
 import { useState } from 'react';
@@ -13,23 +15,49 @@ import EditCategory from './edit';
 
 export default function CategoryActions({ category }: { category: Category }) {
     const [open, setOpen] = useState(false);
+    const handleDelete = () => {
+        router.delete(route('categories.destroy', category.id));
+    };
 
     return (
         <div className="flex items-center justify-center gap-2">
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogTrigger asChild>
-                    <Button variant={'link'} className="hover:cursor-pointer">
-                        <Edit />
-                        Edit
-                    </Button>
-                </DialogTrigger>
-                <EditCategory category={category} setOpen={setOpen} />
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <Edit className="size-4" />
+                            </Button>
+                        </DialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Edit Kategori</p>
+                    </TooltipContent>
+                </Tooltip>
+                <DialogContent>
+                    <EditCategory category={category} setOpen={setOpen} />
+                </DialogContent>
             </Dialog>
-            <Button variant="link" asChild className="text-red-500 hover:cursor-pointer">
-                <Link method="delete" href={route('categories.destroy', category.id)}>
-                    <Trash /> Hapus
-                </Link>
-            </Button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <div>
+                        <DeleteConfirmDialog
+                            trigger={
+                                <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
+                                    <Trash />
+                                    <span className="sr-only">Hapus Kategori</span>
+                                </Button>
+                            }
+                            title="Apakah Anda yakin ingin menghapus kategori ini?"
+                            itemName={category.name}
+                            onConfirm={handleDelete}
+                        />
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Hapus Kategori</p>
+                </TooltipContent>
+            </Tooltip>
         </div>
     );
 }

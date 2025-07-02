@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, BadgeCheck } from 'lucide-react';
+import { ArrowLeft, Award, BadgeCheck, Calendar, CheckCircle, Clock, Download, Users } from 'lucide-react';
 
 interface Category {
     id: string;
@@ -82,7 +82,7 @@ export default function DetailMyBootcamp({ bootcamp }: { bootcamp: BootcampProps
 
     const bootcampEndDate = new Date(bootcampData.end_date);
     bootcampEndDate.setHours(23, 59, 59, 999);
-    const isBootcampFinished = new Date() > bootcampEndDate;
+    const isCompleted = bootcampEndDate < new Date();
 
     return (
         <UserLayout>
@@ -101,12 +101,18 @@ export default function DetailMyBootcamp({ bootcamp }: { bootcamp: BootcampProps
                     <div className="col-span-2">
                         <div className="flex justify-center gap-4">
                             <span className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                                📌 Enrollled in{' '}
+                                📌 Enrolled in{' '}
                                 {new Date(bootcampItem.created_at).toLocaleDateString('id-ID', {
                                     month: 'long',
                                     year: 'numeric',
                                 })}
                             </span>
+                            {isCompleted && (
+                                <span className="mb-4 flex w-fit items-center gap-2 rounded-full bg-green-100 px-4 py-1 text-sm font-medium text-green-800 shadow-xs">
+                                    <Award size={16} />
+                                    Sertifikat Tersedia
+                                </span>
+                            )}
                         </div>
 
                         <h1 className="mx-auto mb-4 max-w-2xl text-4xl leading-tight font-bold italic sm:text-5xl">{bootcampData.title}</h1>
@@ -122,105 +128,215 @@ export default function DetailMyBootcamp({ bootcamp }: { bootcamp: BootcampProps
                 </div>
             </section>
             <section className="mx-auto mb-12 w-full max-w-7xl px-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    {isBootcampFinished ? (
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    {isCompleted ? (
                         <>
-                            <div className="col-span-2 flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
-                                <h1 className="text-lg font-semibold">Selamat, Anda Telah Menyelesaikan Bootcamp!</h1>
-                                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                    Terima kasih atas dedikasi dan kerja keras Anda selama program berlangsung. Kami harap ilmu yang Anda peroleh
-                                    menjadi bekal berharga untuk karir Anda di masa depan.
-                                </p>
-                                <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-                                    Silakan unduh sertifikat kelulusan Anda sebagai bukti pencapaian ini.
-                                </p>
-                            </div>
-                            <div className="col-span-1 flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
-                                <h2 className="mb-4 text-center font-semibold">Sertifikat Kelulusan</h2>
-                                <img
-                                    src={'/assets/images/placeholder.png'}
-                                    alt="Sertifikat"
-                                    className="aspect-video rounded-xl border object-cover shadow-lg dark:border-zinc-700"
-                                />
-                                <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-                                    Unduh sertifikat Anda sebagai bukti kelulusan dari bootcamp ini.
-                                </p>
-                                <Button className="mt-2 w-full" disabled>
-                                    Unduh Sertifikat (Segera)
-                                </Button>
+                            <div className="col-span-2 space-y-6">
+                                <div className="rounded-xl border border-green-200 bg-gradient-to-r from-green-50 to-blue-50 p-6 dark:border-green-800 dark:from-green-900/20 dark:to-blue-900/20">
+                                    <div className="mb-4 flex items-center gap-3">
+                                        <Award className="text-green-600" size={24} />
+                                        <h2 className="text-xl font-bold text-green-800 dark:text-green-200">Selamat! Bootcamp Telah Selesai</h2>
+                                    </div>
+                                    <p className="mb-4 text-green-700 dark:text-green-300">
+                                        Terima kasih atas dedikasi dan kerja keras Anda selama program berlangsung. Kami harap ilmu yang Anda peroleh
+                                        menjadi bekal berharga untuk karir Anda di masa depan.
+                                    </p>
+                                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                                        <CheckCircle size={16} />
+                                        <span>
+                                            Selesai pada:{' '}
+                                            {new Date(bootcampData.end_date!).toLocaleDateString('id-ID', {
+                                                day: 'numeric',
+                                                month: 'long',
+                                                year: 'numeric',
+                                            })}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+                                    <div className="mb-4 flex items-center gap-3">
+                                        <Calendar className="text-blue-600" size={20} />
+                                        <h3 className="text-lg font-semibold">Periode Bootcamp</h3>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-zinc-700">
+                                            <div className="text-blue-600">
+                                                <Calendar size={16} />
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-gray-900 dark:text-white">
+                                                    {new Date(bootcampData.start_date).toLocaleDateString('id-ID', {
+                                                        day: 'numeric',
+                                                        month: 'long',
+                                                        year: 'numeric',
+                                                    })}{' '}
+                                                    -{' '}
+                                                    {new Date(bootcampData.end_date).toLocaleDateString('id-ID', {
+                                                        day: 'numeric',
+                                                        month: 'long',
+                                                        year: 'numeric',
+                                                    })}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {bootcampData.schedules && bootcampData.schedules.length > 0 && (
+                                            <div className="space-y-2">
+                                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Jadwal Sesi:</p>
+                                                {bootcampData.schedules.map((schedule, idx) => (
+                                                    <div key={idx} className="flex items-center gap-3 rounded bg-gray-50 p-2 dark:bg-zinc-700">
+                                                        <Clock size={14} className="text-gray-500" />
+                                                        <span className="text-sm text-gray-600 capitalize dark:text-gray-400">
+                                                            {schedule.day} | {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)} WIB
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </>
                     ) : (
                         <>
-                            <div className="col-span-2 flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
-                                <h1 className="text-lg font-semibold">Jadwal Bootcamp</h1>
-                                <ul className="mt-2 mb-8 space-y-2">
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                                        {new Date(bootcampData.start_date).toLocaleDateString('id-ID', {
-                                            day: 'numeric',
-                                            month: 'long',
-                                            year: 'numeric',
-                                        })}{' '}
-                                        -{' '}
-                                        {new Date(bootcampData.end_date).toLocaleDateString('id-ID', {
-                                            day: 'numeric',
-                                            month: 'long',
-                                            year: 'numeric',
-                                        })}
-                                    </p>
-
-                                    {bootcampData.schedules && bootcampData.schedules.length > 0 ? (
-                                        bootcampData.schedules.map((schedule, idx) => (
-                                            <li key={idx} className="flex items-center gap-2 text-sm">
-                                                <p className="capitalize">
-                                                    {schedule.day} | {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)} WIB
+                            <div className="col-span-2 space-y-6">
+                                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+                                    <div className="mb-4 flex items-center gap-3">
+                                        <Calendar className="text-blue-600" size={20} />
+                                        <h3 className="text-lg font-semibold">Jadwal Bootcamp</h3>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+                                            <div className="text-blue-600">
+                                                <Calendar size={16} />
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-blue-900 dark:text-blue-100">
+                                                    {new Date(bootcampData.start_date).toLocaleDateString('id-ID', {
+                                                        day: 'numeric',
+                                                        month: 'long',
+                                                        year: 'numeric',
+                                                    })}{' '}
+                                                    -{' '}
+                                                    {new Date(bootcampData.end_date).toLocaleDateString('id-ID', {
+                                                        day: 'numeric',
+                                                        month: 'long',
+                                                        year: 'numeric',
+                                                    })}
                                                 </p>
-                                            </li>
-                                        ))
-                                    ) : (
-                                        <li className="flex items-center gap-2 text-sm">
-                                            <p className="text-sm text-gray-600 dark:text-gray-400">Jadwal belum tersedia</p>
-                                        </li>
-                                    )}
-                                </ul>
-                                <h1 className="text-lg font-semibold">Fasilitas yang Tersedia</h1>
-                                <ul className="mt-4 mb-8 space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                                    {benefitList.map((benefit, idx) => (
-                                        <li key={idx} className="flex items-center gap-2">
-                                            <BadgeCheck size="18" className="text-green-600" />
-                                            <p>{benefit}</p>
-                                        </li>
-                                    ))}
-                                </ul>
-                                <h1 className="text-lg font-semibold">Kurikulum</h1>
-                                <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                                    {curriculumList.map((item, idx) => (
-                                        <li key={idx} className="flex items-center gap-2">
-                                            <BadgeCheck size="18" className="text-green-600" />
-                                            <p>{item}</p>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                            <div className="col-span-1 flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
-                                <h2 className="mb-4 text-center font-semibold">{bootcampData.title}</h2>
-                                <img
-                                    src={bootcampData.thumbnail ? `/storage/${bootcampData.thumbnail}` : '/assets/images/placeholder.png'}
-                                    alt={bootcampData.title}
-                                    className="aspect-video rounded-xl object-cover shadow-lg"
-                                />
-                                <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">{bootcampData.short_description}</p>
+                                                <p className="text-sm text-blue-700 dark:text-blue-300">Durasi Program</p>
+                                            </div>
+                                        </div>
 
-                                <Button
-                                    className="mt-2 w-full"
-                                    disabled={bootcampInvoiceStatus !== 'paid'}
-                                    onClick={() => window.open(bootcampData.group_url ?? undefined, '_blank')}
-                                >
-                                    Gabung Grup WA
-                                </Button>
+                                        {bootcampData.schedules && bootcampData.schedules.length > 0 ? (
+                                            <div className="space-y-2">
+                                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Jadwal Sesi:</p>
+                                                {bootcampData.schedules.map((schedule, idx) => (
+                                                    <div key={idx} className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-zinc-700">
+                                                        <Clock size={16} className="text-green-600" />
+                                                        <span className="font-medium text-gray-900 capitalize dark:text-white">{schedule.day}</span>
+                                                        <span className="text-gray-600 dark:text-gray-400">
+                                                            {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)} WIB
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
+                                                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                                                    Jadwal detail akan diinformasikan melalui grup WhatsApp
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+                                    <div className="mb-4 flex items-center gap-3">
+                                        <BadgeCheck className="text-green-600" size={20} />
+                                        <h3 className="text-lg font-semibold">Fasilitas yang Tersedia</h3>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {benefitList.map((benefit, idx) => (
+                                            <div key={idx} className="flex items-start gap-3 rounded-lg bg-green-50 p-3 dark:bg-green-900/20">
+                                                <BadgeCheck size={18} className="mt-0.5 flex-shrink-0 text-green-600" />
+                                                <p className="text-gray-700 dark:text-gray-300">{benefit}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+                                    <div className="mb-4 flex items-center gap-3">
+                                        <Users className="text-purple-600" size={20} />
+                                        <h3 className="text-lg font-semibold">Kurikulum</h3>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {curriculumList.map((item, idx) => (
+                                            <div key={idx} className="flex items-start gap-3 rounded-lg bg-purple-50 p-3 dark:bg-purple-900/20">
+                                                <div className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-purple-100 text-sm font-semibold text-purple-600 dark:bg-purple-800 dark:text-purple-300">
+                                                    {idx + 1}
+                                                </div>
+                                                <p className="text-gray-700 dark:text-gray-300">{item}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         </>
                     )}
+
+                    <div className="col-span-1">
+                        {isCompleted ? (
+                            <div className="sticky top-6 space-y-4">
+                                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+                                    <div className="mb-4 flex items-center gap-2">
+                                        <Award className="text-yellow-500" size={20} />
+                                        <h3 className="font-semibold">Sertifikat Kelulusan</h3>
+                                    </div>
+                                    <div className="group relative">
+                                        <img
+                                            src={'/assets/images/placeholder.png'}
+                                            alt="Sertifikat"
+                                            className="aspect-video rounded-lg border object-cover shadow-lg transition-transform group-hover:scale-105 dark:border-zinc-700"
+                                        />
+                                        <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                                    </div>
+                                    <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+                                        Unduh sertifikat sebagai bukti kelulusan dari bootcamp ini.
+                                    </p>
+                                    <Button className="mt-3 w-full" disabled>
+                                        <Download size={16} className="mr-2" />
+                                        Unduh Sertifikat (Segera)
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="sticky top-6">
+                                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+                                    <h3 className="mb-4 text-center font-semibold">{bootcampData.title}</h3>
+                                    <div className="group relative">
+                                        <img
+                                            src={bootcampData.thumbnail ? `/storage/${bootcampData.thumbnail}` : '/assets/images/placeholder.png'}
+                                            alt={bootcampData.title}
+                                            className="aspect-video rounded-lg object-cover shadow-lg transition-transform group-hover:scale-105"
+                                        />
+                                        <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                                    </div>
+                                    <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">{bootcampData.short_description}</p>
+                                    <Button
+                                        className="mt-4 w-full"
+                                        disabled={bootcampInvoiceStatus !== 'paid'}
+                                        onClick={() => window.open(bootcampData.group_url ?? undefined, '_blank')}
+                                    >
+                                        <Users size={16} className="mr-2" />
+                                        Gabung Grup WA
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </section>
         </UserLayout>
