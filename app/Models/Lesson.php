@@ -20,4 +20,13 @@ class Lesson extends Model
     {
         return $this->hasMany(Quiz::class);
     }
+    public function completions()
+    {
+        return $this->hasMany(LessonCompletion::class);
+    }
+
+    public function isCompletedByUser($userId)
+    {
+        return $this->completions()->where('user_id', $userId)->exists();
+    }
 }

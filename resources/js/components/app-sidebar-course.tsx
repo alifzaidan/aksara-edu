@@ -2,9 +2,12 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { FileDown, FileText, LogOut, PlayCircle, HelpCircle } from 'lucide-react';
+import { FileDown, FileText, LogOut, PlayCircle, HelpCircle, CheckCircle, Circle } from 'lucide-react';
 import { NavFooter } from './nav-footer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import { Button } from './ui/button';
+import { Progress } from './ui/progress';
+import { useMemo } from 'react';
 
 interface Lesson {
     id: string;
@@ -24,9 +27,10 @@ interface AppSidebarCourseProps {
     modules: Module[];
     selectedLesson: Lesson | null;
     setSelectedLesson: (lesson: Lesson) => void;
+    onLessonComplete?: (lessonId: string) => void;
 }
 
-export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelectedLesson }: AppSidebarCourseProps) {
+export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelectedLesson, onLessonComplete }: AppSidebarCourseProps) {
     const footerNavItems: NavItem[] = [
         {
             title: 'Keluar Kelas',
@@ -41,6 +45,21 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
         file: <FileDown className="text-muted-foreground h-4 w-4" />,
         quiz: <HelpCircle className="text-muted-foreground h-4 w-4" />,
     };
+
+    // Calculate progress
+    const progressData = useMemo(() => {
+        const totalLessons = modules.reduce((total, module) => total + module.lessons.length, 0);
+        const completedLessons = modules.reduce((total, module) => 
+            total + module.lessons.filter(lesson => lesson.isCompleted).length, 0
+        );
+        const progressPercentage = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
+        
+        return {
+            totalLessons,
+            completedLessons,
+            progressPercentage
+        };
+    }, [modules]);
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -60,27 +79,67 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
             </SidebarHeader>
 
             <SidebarContent>
+                {/* Progress Bar Section */}
+                <div className="px-4 py-3 border-b">
+                    <div className="mb-2">
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium">Progress Pembelajaran</span>
+                            <span className="text-muted-foreground">
+                                {progressData.completedLessons}/{progressData.totalLessons}
+                            </span>
+                        </div>
+                        <div className="mt-2">
+                            <Progress value={progressData.progressPercentage} className="h-2" />
+                        </div>
+                        <div className="mt-1 text-right">
+                            <span className="text-xs text-muted-foreground">
+                                {Math.round(progressData.progressPercentage)}% selesai
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
                 <Accordion className="w-full">
                     {modules.map((module) => (
                         <AccordionItem key={module.id} value={module.id}>
                             <AccordionTrigger className="px-2 text-left text-sm font-semibold hover:no-underline">{module.title}</AccordionTrigger>
-                            <AccordionContent className="pb-0">
-                                <ul className="space-y-1">
-                                    {module.lessons.map((lesson) => (
-                                        <li key={lesson.id}>
-                                            <button
-                                                onClick={() => setSelectedLesson(lesson)}
-                                                className={`flex w-full items-center gap-3 rounded-md p-2 text-left text-sm transition-colors ${
-                                                    selectedLesson?.id === lesson.id ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50'
-                                                }`}
-                                            >
-                                                {lessonIcons[lesson.type]}
-                                                <span>{lesson.title}</span>
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </AccordionContent>
+                            <AccordionContent>
+                                        <ul className="space-y-1">
+                                            {module.lessons.map((lesson) => (
+                                                <li key={lesson.id} className="group">
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => setSelectedLesson(lesson)}
+                                                            className={`flex-1 flex items-center gap-2 rounded-md p-2 text-left text-sm transition-colors hover:bg-accent ${
+                                                                selectedLesson?.id === lesson.id
+                                                                    ? 'bg-accent text-accent-foreground'
+                                                                    : 'text-muted-foreground hover:text-foreground'
+                                                            }`}
+                                                        >
+                                                            {lesson.isCompleted ? (
+                                                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                                            ) : (
+                                                                <Circle className="h-4 w-4" />
+                                                            )}
+                                                            <span className="flex-1">{lesson.title}</span>
+                                                            {lessonIcons[lesson.type]}
+                                                        </button>
+                                                        
+                                                        {!lesson.isCompleted && onLessonComplete && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                onClick={() => onLessonComplete(lesson.id)}
+                                                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            >
+                                                                <CheckCircle className="h-3 w-3" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </AccordionContent>
                         </AccordionItem>
                     ))}
                 </Accordion>

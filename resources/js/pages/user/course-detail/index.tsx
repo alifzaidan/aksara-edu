@@ -536,7 +536,44 @@ function LessonContent({ lesson }: { lesson: Lesson | null }) {
 export default function CourseDetail({ course }: { course: Course }) {
     const modules = course.modules && course.modules.length > 0 ? course.modules : [];
     const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(modules[0]?.lessons[0] || null);
+    
+    // Initialize completion state from database
+    const [moduleData, setModuleData] = useState<Module[]>(() => {
+        return modules.map(module => ({
+            ...module,
+            lessons: module.lessons.map(lesson => ({
+                ...lesson,
+                isCompleted: lesson.isCompleted || false
+            }))
+        }));
+    });
 
+    const handleLessonComplete = async (lessonId: string) => {
+        try {
+            const response = await fetch(`/lesson/${lessonId}/complete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                }
+            });
+
+            if (response.ok) {
+                setModuleData(prevModules => 
+                    prevModules.map(module => ({
+                        ...module,
+                        lessons: module.lessons.map(lesson => 
+                            lesson.id === lessonId 
+                                ? { ...lesson, isCompleted: true }
+                                : lesson
+                        )
+                    }))
+                );
+            }
+        } catch (error) {
+            console.error('Error completing lesson:', error);
+        }
+    };
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: course.title,
@@ -548,9 +585,10 @@ export default function CourseDetail({ course }: { course: Course }) {
         <CourseLayout
             breadcrumbs={breadcrumbs}
             courseSlug={course.slug}
-            modules={modules}
+            modules={moduleData}
             selectedLesson={selectedLesson}
             setSelectedLesson={setSelectedLesson}
+            onLessonComplete={handleLessonComplete}
         >
             <Head title={selectedLesson?.title || course.title} />
 
@@ -558,9 +596,28 @@ export default function CourseDetail({ course }: { course: Course }) {
                 <div className="mb-4">
                     <h1 className="text-2xl font-bold">{selectedLesson?.title}</h1>
                 </div>
-                <div className="bg-card rounded-lg border p-4">
+                
+                <div className="bg-card rounded-lg border p-4 mb-4">
                     <LessonContent lesson={selectedLesson} />
                 </div>
+                {selectedLesson && (
+                    <div className="flex justify-end">
+                        {!moduleData.find(m => m.lessons.find(l => l.id === selectedLesson.id))?.lessons.find(l => l.id === selectedLesson.id)?.isCompleted ? (
+                            <Button
+                                onClick={() => handleLessonComplete(selectedLesson.id)}
+                                size="lg"
+                            >
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                Selesaikan Materi
+                            </Button>
+                        ) : (
+                            <div className="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-2 rounded-lg">
+                                <CheckCircle className="h-5 w-5" />
+                                <span className="font-medium">Materi Sudah Selesai</span>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </CourseLayout>
     );

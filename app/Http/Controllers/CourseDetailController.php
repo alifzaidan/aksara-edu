@@ -24,8 +24,17 @@ class CourseDetailController extends Controller
                 $query->where('user_id', $userId)
                       ->with(['answers.selectedOption', 'answers.question.options'])
                       ->orderBy('created_at', 'desc');
+            },
+            'modules.lessons.completions' => function($query) use ($userId) {
+                $query->where('user_id', $userId);
             }
         ]);
+
+        foreach ($course->modules as $module) {
+            foreach ($module->lessons as $lesson) {
+                $lesson->isCompleted = $lesson->completions->isNotEmpty();
+            }
+        }
 
         return Inertia::render('user/course-detail/index', [
             'course' => $course
