@@ -5,6 +5,7 @@ import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { FileDown, ExternalLink, HelpCircle, ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import ErrorBoundary from '@/components/error-boundary';
 
 interface Lesson {
     id: string;
@@ -110,7 +111,7 @@ function VideoPlayer({ lesson }: { lesson: Lesson }) {
     );
 }
 
-function QuizInterface({ lesson }: { lesson: Lesson }) {
+function QuizInterface({ lesson, onQuizComplete }: { lesson: Lesson; onQuizComplete?: (lessonId: string) => void }) {
     const [currentQuiz, setCurrentQuiz] = useState(0);
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -121,40 +122,56 @@ function QuizInterface({ lesson }: { lesson: Lesson }) {
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
     const quiz = lesson.quizzes?.[currentQuiz];
+    
+    // Debug: Log quiz data structure
+    console.log('QuizInterface - lesson:', lesson);
+    console.log('QuizInterface - quiz:', quiz);
+    if (quiz) {
+        console.log('QuizInterface - quiz.questions:', quiz.questions);
+        console.log('QuizInterface - quiz.attempts:', quiz.attempts);
+    }
 
     useEffect(() => {
-        if (quiz && quiz.attempts && quiz.attempts.length > 0) {
-            // Check if user has a PASSED attempt
-            const passedAttempt = quiz.attempts.find(attempt => attempt.is_passed);
-            if (passedAttempt) {
-                // User has passed, show results
-                setQuizResult(passedAttempt);
-                setShowResults(true);
-            } else {
-                // User has attempts but hasn't passed yet, show latest attempt
-                // But allow retaking the quiz
-                const latestAttempt = quiz.attempts[0]; // Already sorted by created_at desc
-                setQuizResult(latestAttempt);
-                setShowResults(true);
+        try {
+            if (quiz && quiz.attempts && quiz.attempts.length > 0) {
+                // Check if user has a PASSED attempt
+                const passedAttempt = quiz.attempts.find(attempt => attempt.is_passed);
+                if (passedAttempt) {
+                    // User has passed, show results
+                    setQuizResult(passedAttempt);
+                    setShowResults(true);
+                } else {
+                    // User has attempts but hasn't passed yet, show latest attempt
+                    // But allow retaking the quiz
+                    const latestAttempt = quiz.attempts[0]; // Already sorted by created_at desc
+                    setQuizResult(latestAttempt);
+                    setShowResults(true);
+                }
+            } else if (quiz?.time_limit) {
+                setTimeLeft(quiz.time_limit * 60); // Convert minutes to seconds
             }
-        } else if (quiz?.time_limit) {
-            setTimeLeft(quiz.time_limit * 60); // Convert minutes to seconds
+        } catch (error) {
+            console.error('Error in QuizInterface useEffect:', error);
         }
     }, [quiz]);
 
     useEffect(() => {
-        if (timeLeft > 0 && !showResults) {
-            const timer = setInterval(() => {
-                setTimeLeft(prev => {
-                    if (prev <= 1) {
-                        // Auto-submit when time runs out
-                        handleConfirmSubmit();
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-            return () => clearInterval(timer);
+        try {
+            if (timeLeft > 0 && !showResults) {
+                const timer = setInterval(() => {
+                    setTimeLeft(prev => {
+                        if (prev <= 1) {
+                            // Auto-submit when time runs out
+                            handleConfirmSubmit();
+                            return 0;
+                        }
+                        return prev - 1;
+                    });
+                }, 1000);
+                return () => clearInterval(timer);
+            }
+        } catch (error) {
+            console.error('Error in timer useEffect:', error);
         }
     }, [timeLeft, showResults]);
 
@@ -192,6 +209,11 @@ function QuizInterface({ lesson }: { lesson: Lesson }) {
                 const result = await response.json();
                 setQuizResult(result);
                 setShowResults(true);
+                
+                // Auto-complete lesson if quiz is passed
+                if (result.is_passed && onQuizComplete) {
+                    onQuizComplete(lesson.id);
+                }
             } else {
                 console.error('Failed to submit quiz');
             }
@@ -223,6 +245,17 @@ function QuizInterface({ lesson }: { lesson: Lesson }) {
                 <HelpCircle className="text-muted-foreground mb-4 h-16 w-16" />
                 <h3 className="text-lg font-semibold mb-2">Quiz Belum Tersedia</h3>
                 <p className="text-muted-foreground text-sm">Quiz untuk materi ini belum tersedia.</p>
+            </div>
+        );
+    }
+
+    // Check if quiz has questions
+    if (!quiz.questions || quiz.questions.length === 0) {
+        return (
+            <div className="bg-muted/40 flex h-full flex-col items-center justify-center rounded-lg p-8 text-center">
+                <HelpCircle className="text-muted-foreground mb-4 h-16 w-16" />
+                <h3 className="text-lg font-semibold mb-2">Soal Quiz Belum Tersedia</h3>
+                <p className="text-muted-foreground text-sm">Belum ada soal untuk quiz ini. Silakan hubungi mentor.</p>
             </div>
         );
     }
@@ -319,6 +352,17 @@ function QuizInterface({ lesson }: { lesson: Lesson }) {
     const totalQuestions = quiz.questions.length;
     const answeredCount = Object.keys(answers).length;
 
+    // Safety check for currentQuestionData
+    if (!currentQuestionData) {
+        return (
+            <div className="bg-muted/40 flex h-full flex-col items-center justify-center rounded-lg p-8 text-center">
+                <HelpCircle className="text-muted-foreground mb-4 h-16 w-16" />
+                <h3 className="text-lg font-semibold mb-2">Error Loading Question</h3>
+                <p className="text-muted-foreground text-sm">Terjadi kesalahan saat memuat soal. Silakan refresh halaman.</p>
+            </div>
+        );
+    }
+
     return (
         <div className="max-w-4xl mx-auto p-6">
             {/* Quiz Header */}
@@ -361,19 +405,25 @@ function QuizInterface({ lesson }: { lesson: Lesson }) {
                         </h3>
                         
                         <div className="space-y-3">
-                            {currentQuestionData.options.map((option) => (
-                                <label key={option.id} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                                    <input
-                                        type="radio"
-                                        name={`question-${currentQuestionData.id}`}
-                                        value={option.id}
-                                        checked={answers[currentQuestionData.id] === option.id}
-                                        onChange={() => handleAnswerChange(currentQuestionData.id, option.id)}
-                                        className="w-4 h-4"
-                                    />
-                                    <span>{option.option_text}</span>
-                                </label>
-                            ))}
+                            {currentQuestionData.options && currentQuestionData.options.length > 0 ? (
+                                currentQuestionData.options.map((option) => (
+                                    <label key={option.id} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                                        <input
+                                            type="radio"
+                                            name={`question-${currentQuestionData.id}`}
+                                            value={option.id}
+                                            checked={answers[currentQuestionData.id] === option.id}
+                                            onChange={() => handleAnswerChange(currentQuestionData.id, option.id)}
+                                            className="w-4 h-4"
+                                        />
+                                        <span>{option.option_text}</span>
+                                    </label>
+                                ))
+                            ) : (
+                                <div className="text-center p-4 text-muted-foreground">
+                                    <p>Pilihan jawaban belum tersedia untuk soal ini.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -413,21 +463,27 @@ function QuizInterface({ lesson }: { lesson: Lesson }) {
                     <div className="bg-card border rounded-lg p-4">
                         <h4 className="font-semibold mb-3">Navigasi Soal</h4>
                         <div className="grid grid-cols-5 gap-2">
-                            {quiz.questions.map((_, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => setCurrentQuestion(index)}
-                                    className={`w-8 h-8 rounded text-sm font-medium transition-colors ${
-                                        index === currentQuestion
-                                            ? 'bg-blue-900 text-white'
-                                            : answers[quiz.questions[index].id]
-                                            ? 'bg-green-100 text-green-700 border border-green-300'
-                                            : 'bg-gray-100 hover:bg-gray-200'
-                                    }`}
-                                >
-                                    {index + 1}
-                                </button>
-                            ))}
+                            {quiz.questions && quiz.questions.length > 0 ? (
+                                quiz.questions.map((_, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => setCurrentQuestion(index)}
+                                        className={`w-8 h-8 rounded text-sm font-medium transition-colors ${
+                                            index === currentQuestion
+                                                ? 'bg-blue-900 text-white'
+                                                : answers[quiz.questions[index]?.id]
+                                                ? 'bg-green-100 text-green-700 border border-green-300'
+                                                : 'bg-gray-100 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {index + 1}
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="col-span-5 text-center text-muted-foreground text-sm">
+                                    Tidak ada soal tersedia
+                                </div>
+                            )}
                         </div>
                         
                         <div className="mt-4 pt-4 border-t">
@@ -484,7 +540,7 @@ function QuizInterface({ lesson }: { lesson: Lesson }) {
     );
 }
 
-function LessonContent({ lesson }: { lesson: Lesson | null }) {
+function LessonContent({ lesson, onQuizComplete }: { lesson: Lesson | null; onQuizComplete?: (lessonId: string) => void }) {
     if (!lesson) {
         return (
             <div className="bg-muted/40 flex h-full items-center justify-center rounded-lg">
@@ -527,7 +583,11 @@ function LessonContent({ lesson }: { lesson: Lesson | null }) {
                 </div>
             );
         case 'quiz':
-            return <QuizInterface lesson={lesson} />;
+            return (
+                <ErrorBoundary>
+                    <QuizInterface lesson={lesson} onQuizComplete={onQuizComplete} />
+                </ErrorBoundary>
+            );
         default:
             return <div>Tipe materi tidak dikenal.</div>;
     }
@@ -541,10 +601,23 @@ export default function CourseDetail({ course }: { course: Course }) {
     const [moduleData, setModuleData] = useState<Module[]>(() => {
         return modules.map(module => ({
             ...module,
-            lessons: module.lessons.map(lesson => ({
-                ...lesson,
-                isCompleted: lesson.isCompleted || false
-            }))
+            lessons: module.lessons.map(lesson => {
+                // Check if lesson is completed
+                let isCompleted = lesson.isCompleted || false;
+                
+                // For quiz lessons, check if user has passed attempt
+                if (lesson.type === 'quiz' && lesson.quizzes && lesson.quizzes.length > 0) {
+                    const hasPassedAttempt = lesson.quizzes.some(quiz => 
+                        quiz.attempts && quiz.attempts.some(attempt => attempt.is_passed)
+                    );
+                    isCompleted = hasPassedAttempt;
+                }
+                
+                return {
+                    ...lesson,
+                    isCompleted
+                };
+            })
         }));
     });
 
@@ -598,9 +671,9 @@ export default function CourseDetail({ course }: { course: Course }) {
                 </div>
                 
                 <div className="bg-card rounded-lg border p-4 mb-4">
-                    <LessonContent lesson={selectedLesson} />
+                    <LessonContent lesson={selectedLesson} onQuizComplete={handleLessonComplete} />
                 </div>
-                {selectedLesson && (
+                {selectedLesson && selectedLesson.type !== 'quiz' && (
                     <div className="flex justify-end">
                         {!moduleData.find(m => m.lessons.find(l => l.id === selectedLesson.id))?.lessons.find(l => l.id === selectedLesson.id)?.isCompleted ? (
                             <Button
@@ -614,6 +687,23 @@ export default function CourseDetail({ course }: { course: Course }) {
                             <div className="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-2 rounded-lg">
                                 <CheckCircle className="h-5 w-5" />
                                 <span className="font-medium">Materi Sudah Selesai</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+                
+                {/* Status untuk quiz */}
+                {selectedLesson && selectedLesson.type === 'quiz' && (
+                    <div className="flex justify-end">
+                        {moduleData.find(m => m.lessons.find(l => l.id === selectedLesson.id))?.lessons.find(l => l.id === selectedLesson.id)?.isCompleted ? (
+                            <div className="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-2 rounded-lg">
+                                <CheckCircle className="h-5 w-5" />
+                                <span className="font-medium">Quiz Sudah Lulus</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-4 py-2 rounded-lg">
+                                <HelpCircle className="h-5 w-5" />
+                                <span className="font-medium">Selesaikan Quiz untuk Melanjutkan</span>
                             </div>
                         )}
                     </div>

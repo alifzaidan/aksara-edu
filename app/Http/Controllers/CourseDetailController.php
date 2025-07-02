@@ -30,9 +30,29 @@ class CourseDetailController extends Controller
             }
         ]);
 
+        // Debug: Check if questions and options are loaded
         foreach ($course->modules as $module) {
             foreach ($module->lessons as $lesson) {
                 $lesson->isCompleted = $lesson->completions->isNotEmpty();
+                
+                // For quiz lessons, check if user has passed attempt
+                if ($lesson->type === 'quiz' && $lesson->quizzes && $lesson->quizzes->count() > 0) {
+                    foreach ($lesson->quizzes as $quiz) {
+                        // Ensure questions and options are loaded
+                        if (!$quiz->relationLoaded('questions')) {
+                            $quiz->load('questions.options');
+                        }
+                        
+                        // Check if user has passed this quiz
+                        $hasPassedAttempt = $quiz->attempts && $quiz->attempts->some(function($attempt) {
+                            return $attempt->is_passed;
+                        });
+                        
+                        if ($hasPassedAttempt) {
+                            $lesson->isCompleted = true;
+                        }
+                    }
+                }
             }
         }
 
