@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\Lesson;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -58,6 +59,44 @@ class CourseDetailController extends Controller
 
         return Inertia::render('user/course-detail/index', [
             'course' => $course
+        ]);
+    }
+
+    public function showQuiz(Course $course, Lesson $lesson)
+    {
+        $userId = Auth::id();
+        
+        // Jika user tidak login, redirect ke login
+        if (!$userId) {
+            return redirect()->route('login');
+        }
+        
+        // Pastikan lesson adalah tipe quiz
+        if ($lesson->type !== 'quiz') {
+            return redirect()->route('learn.course.detail', $course->slug);
+        }
+        
+        // Load quiz dengan relasi yang diperlukan
+        $lesson->load([
+            'quizzes.questions.options',
+            'quizzes.attempts' => function ($query) use ($userId) {
+                $query->where('user_id', $userId)
+                      ->with(['answers.selectedOption', 'answers.question.options'])
+                      ->orderBy('created_at', 'desc');
+            }
+        ]);
+
+        // Debug: Check if questions and options are loaded
+        foreach ($lesson->quizzes as $quiz) {
+            // Ensure questions and options are loaded
+            if (!$quiz->relationLoaded('questions')) {
+                $quiz->load('questions.options');
+            }
+        }
+
+        return Inertia::render('user/quiz/index', [
+            'lesson' => $lesson,
+            'courseSlug' => $course->slug
         ]);
     }
 }

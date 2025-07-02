@@ -7,7 +7,7 @@ import { NavFooter } from './nav-footer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 interface Lesson {
     id: string;
@@ -31,6 +31,15 @@ interface AppSidebarCourseProps {
 }
 
 export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelectedLesson, onLessonComplete }: AppSidebarCourseProps) {
+    const [expandedModule, setExpandedModule] = useState<React.Key | null>(null);
+
+    // Set module pertama terbuka secara default
+    useEffect(() => {
+        if (modules.length > 0 && expandedModule === null) {
+            setExpandedModule(modules[0].id);
+        }
+    }, [modules, expandedModule]);
+
     const footerNavItems: NavItem[] = [
         {
             title: 'Keluar Kelas',
@@ -61,6 +70,11 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
         };
     }, [modules]);
 
+    // Check if all lessons in a module are completed
+    const isModuleCompleted = (module: Module) => {
+        return module.lessons.length > 0 && module.lessons.every(lesson => lesson.isCompleted);
+    };
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -89,7 +103,7 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
                             </span>
                         </div>
                         <div className="mt-2">
-                            <Progress value={progressData.progressPercentage} className="h-2" />
+                            <Progress value={progressData.progressPercentage} className="h-2 bg-white border border-gray-200" />
                         </div>
                         <div className="mt-1 text-right">
                             <span className="text-xs text-muted-foreground">
@@ -99,10 +113,21 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
                     </div>
                 </div>
 
-                <Accordion className="w-full">
+                <Accordion 
+                    className="w-full" 
+                    expandedValue={expandedModule}
+                    onValueChange={setExpandedModule}
+                >
                     {modules.map((module) => (
                         <AccordionItem key={module.id} value={module.id}>
-                            <AccordionTrigger className="px-2 text-left text-sm font-semibold hover:no-underline">{module.title}</AccordionTrigger>
+                            <AccordionTrigger className="px-2 text-left text-sm font-semibold hover:no-underline">
+                                <div className="flex items-center gap-2 w-full">
+                                    <span className="flex-1">{module.title}</span>
+                                    {isModuleCompleted(module) && (
+                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                    )}
+                                </div>
+                            </AccordionTrigger>
                             <AccordionContent>
                                         <ul className="space-y-1">
                                             {module.lessons.map((lesson) => (
