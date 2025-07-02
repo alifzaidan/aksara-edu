@@ -384,6 +384,11 @@ export default function CourseDetail({ course }: { course: Course }) {
         }));
     });
 
+    const handleProgressUpdate = (progress: number) => {
+        console.log(`Course progress updated to ${progress}%`);
+        // You can add additional logic here if needed
+    };
+
     useEffect(() => {
         const hash = window.location.hash;
         if (hash && hash.startsWith('#quiz-')) {
@@ -422,6 +427,19 @@ export default function CourseDetail({ course }: { course: Course }) {
                         )
                     }))
                 );
+
+                // Update enrollment progress after lesson completion
+                try {
+                    await fetch(`/enrollment/progress/${course.slug}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                        }
+                    });
+                } catch (progressError) {
+                    console.error('Error updating enrollment progress:', progressError);
+                }
             }
         } catch (error) {
             console.error('Error completing lesson:', error);
@@ -468,6 +486,7 @@ export default function CourseDetail({ course }: { course: Course }) {
             selectedLesson={selectedLesson}
             setSelectedLesson={setSelectedLesson}
             onLessonComplete={handleLessonComplete}
+            onProgressUpdate={handleProgressUpdate}
         >
             <Head title={selectedLesson?.title || course.title} />
 

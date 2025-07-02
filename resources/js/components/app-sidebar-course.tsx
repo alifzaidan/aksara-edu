@@ -28,9 +28,10 @@ interface AppSidebarCourseProps {
     selectedLesson: Lesson | null;
     setSelectedLesson: (lesson: Lesson) => void;
     onLessonComplete?: (lessonId: string) => void;
+    onProgressUpdate?: (progress: number) => void;
 }
 
-export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelectedLesson, onLessonComplete }: AppSidebarCourseProps) {
+export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelectedLesson, onLessonComplete, onProgressUpdate }: AppSidebarCourseProps) {
     const [expandedModule, setExpandedModule] = useState<React.Key | null>(null);
 
     // Set module pertama terbuka secara default
@@ -70,6 +71,34 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
         };
     }, [modules]);
 
+    // Update enrollment progress when progress changes
+    useEffect(() => {
+        const updateEnrollmentProgress = async () => {
+            try {
+                const response = await fetch(`/enrollment/progress/${courseSlug}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    body: JSON.stringify({
+                        progress: Math.round(progressData.progressPercentage)
+                    })
+                });
+
+                if (response.ok && onProgressUpdate) {
+                    onProgressUpdate(Math.round(progressData.progressPercentage));
+                }
+            } catch (error) {
+                console.error('Error updating enrollment progress:', error);
+            }
+        };
+
+        if (progressData.progressPercentage > 0) {
+            updateEnrollmentProgress();
+        }
+    }, [progressData.progressPercentage, courseSlug, onProgressUpdate]);
+
     // Check if all lessons in a module are completed
     const isModuleCompleted = (module: Module) => {
         return module.lessons.length > 0 && module.lessons.every(lesson => lesson.isCompleted);
@@ -82,7 +111,6 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link href="/admin/dashboard" prefetch>
-                                {/* Logo untuk light mode */}
                                 <img src="/assets/images/logo-primary.png" alt="Aksademy" className="block w-32 fill-current dark:hidden" />
                                 {/* Logo untuk dark mode */}
                                 <img src="/assets/images/logo-secondary.png" alt="Aksademy" className="hidden w-32 fill-current dark:block" />
