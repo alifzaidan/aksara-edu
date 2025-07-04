@@ -326,7 +326,8 @@ function LessonContent({ lesson, onQuizComplete, courseSlug }: { lesson: Lesson 
                     </div>
                 );
             }
-            
+            // Cek isPreview (true: hanya preview, false: bisa download)
+            const isPreview = (lesson as any).is_preview !== false;
             return (
                 <div className="w-full h-[600px]">
                     <iframe
@@ -338,6 +339,19 @@ function LessonContent({ lesson, onQuizComplete, courseSlug }: { lesson: Lesson 
                             outline: 'none'
                         }}
                     />
+                    {isPreview && (
+                        <div className="flex justify-end mt-2">
+                            <Button
+                                asChild
+                                variant="outline"
+                                className="flex items-center gap-2"
+                            >   
+                                <a href={`/storage/${lesson.attachment}`} download target="_blank" rel="noopener noreferrer">
+                                    <FileDown className="h-4 w-4" /> Download File
+                                </a>
+                            </Button>
+                        </div>
+                    )}
                 </div>
             );
         case 'quiz':

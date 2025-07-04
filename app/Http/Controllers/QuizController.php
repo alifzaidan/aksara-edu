@@ -13,6 +13,23 @@ class QuizController extends Controller
     {
         $course = Course::with(['modules.lessons.quizzes'])->findOrFail($courseId);
         $quiz = Quiz::with(['questions.options'])->findOrFail($quizId);
-        return Inertia::render('admin/quizzes/show', ['course' => $course, 'quiz' => $quiz]);
+        $submissions = $quiz->attempts()->with('user')->orderByDesc('score')->orderByDesc('submitted_at')->get()
+            ->unique('user_id')
+            ->values()
+            ->map(function ($attempt) {
+                return [
+                    'id' => $attempt->id,
+                    'user_name' => $attempt->user?->name ?? '-',
+                    'user_email' => $attempt->user?->email ?? '-',
+                    'score' => $attempt->score,
+                    'is_passed' => $attempt->is_passed,
+                    'submitted_at' => $attempt->submitted_at?->toIso8601String(),
+                ];
+            });
+        return Inertia::render('admin/quizzes/show', [
+            'course' => $course,
+            'quiz' => $quiz,
+            'submissions' => $submissions,
+        ]);
     }
 }

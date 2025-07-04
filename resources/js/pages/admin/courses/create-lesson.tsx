@@ -22,6 +22,7 @@ interface Lesson {
         time_limit?: number;
         passing_score?: number;
     }[];
+    is_preview?: boolean;
 }
 
 interface CreateLessonProps {
@@ -47,6 +48,7 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
     const [quizInstructions, setQuizInstructions] = useState('');
     const [quizTimeLimit, setQuizTimeLimit] = useState(0);
     const [quizPassingScore, setQuizPassingScore] = useState(0);
+    const [isPreview, setIsPreview] = useState(true);
     const titleInput = useRef<HTMLInputElement>(null);
 
     const handleSubmit: FormEventHandler = (e) => {
@@ -74,6 +76,7 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                           },
                       ]
                     : undefined,
+            is_preview: type === 'file' ? isPreview : true,
         });
         setTitle('');
         setDescription('');
@@ -82,6 +85,7 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
         setVideoUrl('');
         setAttachment(null);
         setIsFree(false);
+        setIsPreview(true);
         setError('');
     };
 
@@ -220,6 +224,13 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                                 accept="application/pdf"
                                 onChange={(e) => setAttachment(e.target.files?.[0] ?? null)}
                             />
+                            {/* Switch for file download permission */}
+                            <div className="mt-2 flex items-center space-x-2">
+                                <Switch id="is-preview" checked={!isPreview} onCheckedChange={(val) => setIsPreview(!val)} />
+                                <Label htmlFor="is-preview">
+                                    {isPreview ? 'File hanya bisa dilihat (preview)' : 'File bisa di-download'}
+                                </Label>
+                            </div>
                             {/* Preview PDF */}
                             {attachment && (
                                 <div className="mt-2 rounded border p-2">
