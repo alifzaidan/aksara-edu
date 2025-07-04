@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\AffiliateEarning;
 use App\Models\Bootcamp;
+use App\Models\Certificate;
+use App\Models\CertificateParticipant;
 use App\Models\Course;
 use App\Models\EnrollmentBootcamp;
 use App\Models\EnrollmentCourse;
@@ -119,6 +121,8 @@ class InvoiceController extends Controller
                 'progress' => 0,
             ]);
 
+            $this->addToCertificateParticipants($type, $item->id, $userId);
+
             DB::commit();
 
             return response()->json([
@@ -185,6 +189,8 @@ class InvoiceController extends Controller
                 'progress' => 0,
             ]);
 
+            $this->addToCertificateParticipants($type, $item->id, $userId);
+
             DB::commit();
 
             return response()->json([
@@ -237,8 +243,9 @@ class InvoiceController extends Controller
                 'payment_channel' => $request->payment_channel
             ]);
 
-            // LOGIKA PENCATATAN KOMISI AFILIASI
             $this->recordAffiliateCommission($invoice);
+
+            $this->addEnrollmentToCertificateParticipants($invoice);
         } else {
             $invoice->update(['status' => 'failed']);
         }
@@ -272,6 +279,68 @@ class InvoiceController extends Controller
                     'status' => 'pending',
                 ]);
             }
+        }
+    }
+
+    /**
+     * Menambahkan peserta ke certificate participants berdasarkan tipe program
+     *
+     * @param string $type
+     * @param string $itemId
+     * @param string $userId
+     * @return void
+     */
+    private function addToCertificateParticipants($type, $itemId, $userId)
+    {
+        $certificate = null;
+
+        // Cari sertifikat berdasarkan tipe program
+        switch ($type) {
+            case 'course':
+                $certificate = Certificate::where('course_id', $itemId)->first();
+                break;
+            case 'bootcamp':
+                $certificate = Certificate::where('bootcamp_id', $itemId)->first();
+                break;
+            case 'webinar':
+                $certificate = Certificate::where('webinar_id', $itemId)->first();
+                break;
+        }
+
+        if ($certificate) {
+            $existingParticipant = CertificateParticipant::where('certificate_id', $certificate->id)
+                ->where('user_id', $userId)
+                ->first();
+
+            if (!$existingParticipant) {
+                CertificateParticipant::create([
+                    'certificate_id' => $certificate->id,
+                    'user_id' => $userId,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Menambahkan enrollment ke certificate participants dari invoice yang dibayar
+     *
+     * @param Invoice $invoice
+     * @return void
+     */
+    private function addEnrollmentToCertificateParticipants(Invoice $invoice)
+    {
+        $invoice->load(['courseItems', 'bootcampItems', 'webinarItems']);
+
+        foreach ($invoice->courseItems as $courseItem) {
+            $this->addToCertificateParticipants('course', $courseItem->course_id, $invoice->user_id);
+        }
+
+        foreach ($invoice->bootcampItems as $bootcampItem) {
+            $this->addToCertificateParticipants('bootcamp', $bootcampItem->bootcamp_id, $invoice->user_id);
+        }
+
+        foreach ($invoice->webinarItems as $webinarItem) {
+            $this->addToCertificateParticipants('webinar', $webinarItem->webinar_id, $invoice->user_id);
         }
     }
 }

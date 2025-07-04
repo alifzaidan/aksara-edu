@@ -30,4 +30,9 @@ class Bootcamp extends Model
     {
         return $this->belongsToMany(Tool::class, 'bootcamp_tool');
     }
+
+    public function certificates()
+    {
+        return $this->hasMany(Certificate::class);
+    }
 }
