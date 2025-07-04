@@ -106,44 +106,6 @@ class QuizSubmissionController extends Controller
 
             DB::commit();
 
-            // Update enrollment progress after quiz completion if passed
-            if ($isPassed) {
-                try {
-                    $lesson = $quiz->lesson; // Assuming quiz belongs to lesson
-                    if ($lesson && $lesson->module && $lesson->module->course) {
-                        $course = $lesson->module->course;
-                        $enrollment = \App\Models\EnrollmentCourse::whereHas('invoice', function($query) use ($userId) {
-                            $query->where('user_id', $userId);
-                        })->where('course_id', $course->id)->first();
-
-                        if ($enrollment) {
-                            // Calculate progress
-                            $totalLessons = $course->modules()
-                                ->withCount('lessons')
-                                ->get()
-                                ->sum('lessons_count');
-
-                            $completedLessons = \App\Models\LessonCompletion::where('user_id', $userId)
-                                ->whereHas('lesson.module', function($query) use ($course) {
-                                    $query->where('course_id', $course->id);
-                                })
-                                ->count();
-
-                            // Add this quiz as completed if passed
-                            $completedLessons += 1;
-
-                            $progressPercentage = $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0;
-
-                            $enrollment->update([
-                                'progress' => $progressPercentage,
-                                'completed_at' => $progressPercentage >= 100 ? now() : null
-                            ]);
-                        }
-                    }
-                } catch (\Exception $progressError) {
-                    }
-            }
-
             return response()->json([
                 'id' => $attempt->id,
                 'score' => $score,

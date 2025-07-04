@@ -78,16 +78,4 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsTo(User::class, 'referred_by_user_id');
     }
-
-    public function enrollmentCourses()
-    {
-        return $this->hasManyThrough(
-            EnrollmentCourse::class,
-            Invoice::class,
-            'user_id', // Foreign key on invoices table
-            'invoice_id', // Foreign key on enrollment_courses table
-            'id', // Local key on users table
-            'id' // Local key on invoices table
-        );
-    }
 }

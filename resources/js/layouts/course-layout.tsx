@@ -27,7 +27,6 @@ interface CourseLayoutProps {
     selectedLesson: Lesson | null;
     setSelectedLesson: Dispatch<SetStateAction<Lesson | null>>;
     onLessonComplete?: (lessonId: string) => void;
-    onProgressUpdate?: (progress: number) => void;
 }
 
 export default ({ 
@@ -38,7 +37,6 @@ export default ({
     selectedLesson, 
     setSelectedLesson,
     onLessonComplete,
-    onProgressUpdate,
     ...props 
 }: CourseLayoutProps) => {
     const handleLessonComplete = async (lessonId: string) => {
@@ -67,7 +65,6 @@ export default ({
                 selectedLesson={selectedLesson} 
                 setSelectedLesson={setSelectedLesson}
                 onLessonComplete={handleLessonComplete}
-                onProgressUpdate={onProgressUpdate}
             />
             <AppContent variant="sidebar">
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />

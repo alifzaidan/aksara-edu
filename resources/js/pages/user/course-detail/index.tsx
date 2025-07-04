@@ -384,11 +384,6 @@ export default function CourseDetail({ course }: { course: Course }) {
         }));
     });
 
-    const handleProgressUpdate = (progress: number) => {
-        console.log(`Course progress updated to ${progress}%`);
-        // You can add additional logic here if needed
-    };
-
     useEffect(() => {
         const hash = window.location.hash;
         if (hash && hash.startsWith('#quiz-')) {
@@ -486,7 +481,6 @@ export default function CourseDetail({ course }: { course: Course }) {
             selectedLesson={selectedLesson}
             setSelectedLesson={setSelectedLesson}
             onLessonComplete={handleLessonComplete}
-            onProgressUpdate={handleProgressUpdate}
         >
             <Head title={selectedLesson?.title || course.title} />
 
