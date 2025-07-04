@@ -1,9 +1,10 @@
+import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminLayout from '@/layouts/admin-layout';
 import { BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { CircleX, Copy, Send, SquarePen, Trash } from 'lucide-react';
@@ -69,6 +70,10 @@ export default function ShowWebinar({ webinar, transactions, flash }: WebinarPro
         }
     }, [flash]);
 
+    const handleDelete = () => {
+        router.delete(route('webinars.destroy', webinar.id));
+    };
+
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title={`Detail Webinar - ${webinar.title}`} />
@@ -124,11 +129,16 @@ export default function ShowWebinar({ webinar, transactions, flash }: WebinarPro
                                         <CircleX /> Tutup
                                     </Link>
                                 </Button>
-                                <Button asChild className="w-full" variant="destructive">
-                                    <Link method="delete" href={route('webinars.destroy', webinar.id)}>
-                                        <Trash /> Hapus
-                                    </Link>
-                                </Button>
+                                <DeleteConfirmDialog
+                                    trigger={
+                                        <Button variant="destructive" className="w-full">
+                                            <Trash /> Hapus
+                                        </Button>
+                                    }
+                                    title="Apakah Anda yakin ingin menghapus webinar ini?"
+                                    itemName={webinar.title}
+                                    onConfirm={handleDelete}
+                                />
                             </div>
                             <Separator />
                             <AddRecordingDialog webinarId={webinar.id} currentRecordingUrl={webinar.recording_url} />

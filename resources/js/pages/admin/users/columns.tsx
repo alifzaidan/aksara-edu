@@ -1,11 +1,12 @@
 'use client';
 
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Link } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -81,6 +82,9 @@ export const columns: ColumnDef<User>[] = [
                 }
                 whatsappUrl = `https://wa.me/${phoneNumber}`;
             }
+            const handleDelete = () => {
+                router.delete(route('users.destroy', user.id));
+            };
 
             return (
                 <div className="flex items-center justify-center gap-1">
@@ -120,16 +124,19 @@ export const columns: ColumnDef<User>[] = [
 
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" asChild className="text-red-500 hover:text-red-600">
-                                <Link
-                                    href={route('users.destroy', user.id)}
-                                    method="delete"
-                                    as="button"
-                                    onBefore={() => confirm('Apakah Anda yakin ingin menghapus pengguna ini?')}
-                                >
-                                    <Trash className="size-4" />
-                                </Link>
-                            </Button>
+                            <div>
+                                <DeleteConfirmDialog
+                                    trigger={
+                                        <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
+                                            <Trash />
+                                            <span className="sr-only">Hapus Pengguna</span>
+                                        </Button>
+                                    }
+                                    title="Apakah Anda yakin ingin menghapus pengguna ini?"
+                                    itemName={user.name}
+                                    onConfirm={handleDelete}
+                                />
+                            </div>
                         </TooltipTrigger>
                         <TooltipContent>
                             <p>Hapus Pengguna</p>

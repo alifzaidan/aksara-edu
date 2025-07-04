@@ -1,9 +1,10 @@
+import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Link } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { Check, Edit, Trash, X } from 'lucide-react';
 import { useState } from 'react';
 import EditQuestion from './edit';
@@ -27,6 +28,10 @@ interface QuizQuestionProps {
 
 export default function QuizQuestion({ questions }: QuizQuestionProps) {
     const [editQuestion, setEditQuestion] = useState<Question | null>(null);
+
+    const handleDelete = (questionId: string) => {
+        router.delete(route('questions.destroy', questionId));
+    };
 
     return (
         <div className="min-h-full space-y-6 rounded-lg border p-4">
@@ -124,12 +129,19 @@ export default function QuizQuestion({ questions }: QuizQuestionProps) {
                                         </Dialog>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer" asChild>
-                                                    <Link method="delete" href={route('questions.destroy', q.id)}>
-                                                        <Trash />
-                                                        <span className="sr-only">Hapus Pertanyaan</span>
-                                                    </Link>
-                                                </Button>
+                                                <div>
+                                                    <DeleteConfirmDialog
+                                                        trigger={
+                                                            <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
+                                                                <Trash />
+                                                                <span className="sr-only">Hapus Pertanyaan</span>
+                                                            </Button>
+                                                        }
+                                                        title="Apakah Anda yakin ingin menghapus pertanyaan ini?"
+                                                        itemName={q.question_text}
+                                                        onConfirm={() => handleDelete(q.id)}
+                                                    />
+                                                </div>
                                             </TooltipTrigger>
                                             <TooltipContent>
                                                 <p>Hapus Pertanyaan</p>

@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, BadgeCheck } from 'lucide-react';
+import { ArrowLeft, Award, BadgeCheck, CheckCircle, Download } from 'lucide-react';
 
 interface Category {
     id: string;
@@ -123,15 +123,86 @@ export default function DetailMyCourse({ course }: { course: CourseProps }) {
             <section className="mx-auto mb-12 w-full max-w-7xl px-4">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div className="col-span-2 flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
+                        {courseItem.progress === 100 && (
+                            <div className="mb-6 rounded-lg border border-yellow-200 bg-gradient-to-r from-yellow-50 to-yellow-100 p-4 dark:border-yellow-700 dark:from-yellow-900/20 dark:to-yellow-800/20">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 to-yellow-600">
+                                            <Award className="h-5 w-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                                                🎉 Selamat! Anda telah menyelesaikan kelas ini
+                                            </h3>
+                                            <p className="text-sm text-gray-600 dark:text-gray-400">Sertifikat kelulusan tersedia untuk diunduh</p>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        className="border-none bg-gradient-to-r from-yellow-400 to-yellow-600 text-white shadow-lg hover:from-yellow-500 hover:to-yellow-700"
+                                        onClick={() => {
+                                            window.open('https://drive.google.com/uc?export=download&id=1EmPRuGJ01PceQNtjbwqW0tkbgGrv4W5U', '_blank');
+                                        }}
+                                    >
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Unduh Sertifikat
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
                         <h1 className="text-lg font-semibold">Progres Kamu</h1>
-                        <div className="mt-4 flex items-center justify-between">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">Progres:</span>
-                            <span className="text-sm font-semibold">{courseItem.progress}%</span>
+
+                        <div className="mt-4 mb-6">
+                            <div className="mb-2 flex items-center justify-between">
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Progres Pembelajaran</span>
+                                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{courseItem.progress}%</span>
+                            </div>
+                            <div className="h-3 w-full rounded-full bg-gray-200 shadow-inner dark:bg-gray-700">
+                                <div
+                                    className={`relative h-3 rounded-full transition-all duration-500 ease-out ${
+                                        courseItem.progress === 100
+                                            ? 'bg-gradient-to-r from-green-400 via-green-500 to-green-600 shadow-lg'
+                                            : 'bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600'
+                                    }`}
+                                    style={{ width: `${courseItem.progress}%` }}
+                                >
+                                    {courseItem.progress > 10 && <div className="absolute inset-0 animate-pulse rounded-full bg-white/20"></div>}
+                                </div>
+                            </div>
                         </div>
-                        <div className="mt-2 mb-8 flex items-center justify-between">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">Selesai:</span>
-                            <span className="text-sm font-semibold">{courseItem.completed_at ? 'Ya' : 'Belum'}</span>
+
+                        <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Status Penyelesaian:</span>
+                                <div className="flex items-center gap-2">
+                                    {courseItem.completed_at ? (
+                                        <>
+                                            <CheckCircle className="h-5 w-5 text-green-500" />
+                                            <span className="text-sm font-semibold text-green-700 dark:text-green-400">Selesai</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="h-5 w-5 rounded-full border-2 border-gray-300 dark:border-gray-600"></div>
+                                            <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Sedang Berlangsung</span>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                            {courseItem.completed_at && (
+                                <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                                    Diselesaikan pada:{' '}
+                                    {new Date(courseItem.completed_at).toLocaleDateString('id-ID', {
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                    })}
+                                </div>
+                            )}
                         </div>
+
                         <h1 className="text-lg font-semibold">Poin Utama</h1>
                         <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
                             {keyPointList.map((keyPoint, idx) => (
