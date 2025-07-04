@@ -11,6 +11,14 @@ class EnrollmentCourse extends Model
 
     protected $guarded = ['created_at', 'updated_at'];
 
+    protected $fillable = [
+        'invoice_id',
+        'course_id', 
+        'price',
+        'progress',
+        'completed_at'
+    ];
+
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);
@@ -19,5 +27,10 @@ class EnrollmentCourse extends Model
     public function course()
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

@@ -7,7 +7,7 @@ import { NavFooter } from './nav-footer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 interface Lesson {
     id: string;
@@ -28,9 +28,19 @@ interface AppSidebarCourseProps {
     selectedLesson: Lesson | null;
     setSelectedLesson: (lesson: Lesson) => void;
     onLessonComplete?: (lessonId: string) => void;
+    onProgressUpdate?: (progress: number) => void;
 }
 
-export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelectedLesson, onLessonComplete }: AppSidebarCourseProps) {
+export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelectedLesson, onLessonComplete, onProgressUpdate }: AppSidebarCourseProps) {
+    const [expandedModule, setExpandedModule] = useState<React.Key | null>(null);
+
+    // Set module pertama terbuka secara default
+    useEffect(() => {
+        if (modules.length > 0 && expandedModule === null) {
+            setExpandedModule(modules[0].id);
+        }
+    }, [modules, expandedModule]);
+
     const footerNavItems: NavItem[] = [
         {
             title: 'Keluar Kelas',
@@ -61,6 +71,39 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
         };
     }, [modules]);
 
+    // Update enrollment progress when progress changes
+    useEffect(() => {
+        const updateEnrollmentProgress = async () => {
+            try {
+                const response = await fetch(`/enrollment/progress/${courseSlug}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    body: JSON.stringify({
+                        progress: Math.round(progressData.progressPercentage)
+                    })
+                });
+
+                if (response.ok && onProgressUpdate) {
+                    onProgressUpdate(Math.round(progressData.progressPercentage));
+                }
+            } catch (error) {
+                console.error('Error updating enrollment progress:', error);
+            }
+        };
+
+        if (progressData.progressPercentage > 0) {
+            updateEnrollmentProgress();
+        }
+    }, [progressData.progressPercentage, courseSlug, onProgressUpdate]);
+
+    // Check if all lessons in a module are completed
+    const isModuleCompleted = (module: Module) => {
+        return module.lessons.length > 0 && module.lessons.every(lesson => lesson.isCompleted);
+    };
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -68,7 +111,6 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link href="/admin/dashboard" prefetch>
-                                {/* Logo untuk light mode */}
                                 <img src="/assets/images/logo-primary.png" alt="Aksademy" className="block w-32 fill-current dark:hidden" />
                                 {/* Logo untuk dark mode */}
                                 <img src="/assets/images/logo-secondary.png" alt="Aksademy" className="hidden w-32 fill-current dark:block" />
@@ -89,7 +131,7 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
                             </span>
                         </div>
                         <div className="mt-2">
-                            <Progress value={progressData.progressPercentage} className="h-2" />
+                            <Progress value={progressData.progressPercentage} className="h-2 bg-white border border-gray-200" />
                         </div>
                         <div className="mt-1 text-right">
                             <span className="text-xs text-muted-foreground">
@@ -99,10 +141,21 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
                     </div>
                 </div>
 
-                <Accordion className="w-full">
+                <Accordion 
+                    className="w-full" 
+                    expandedValue={expandedModule}
+                    onValueChange={setExpandedModule}
+                >
                     {modules.map((module) => (
                         <AccordionItem key={module.id} value={module.id}>
-                            <AccordionTrigger className="px-2 text-left text-sm font-semibold hover:no-underline">{module.title}</AccordionTrigger>
+                            <AccordionTrigger className="px-2 text-left text-sm font-semibold hover:no-underline">
+                                <div className="flex items-center gap-2 w-full">
+                                    <span className="flex-1">{module.title}</span>
+                                    {isModuleCompleted(module) && (
+                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                    )}
+                                </div>
+                            </AccordionTrigger>
                             <AccordionContent>
                                         <ul className="space-y-1">
                                             {module.lessons.map((lesson) => (

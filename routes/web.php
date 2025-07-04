@@ -7,6 +7,7 @@ use App\Http\Controllers\BootcampController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseDetailController;
+use App\Http\Controllers\EnrollmentProgressController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LessonController;
 use App\Http\Controllers\MentorController;
@@ -61,9 +62,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('learn.course.detail');
     
     // Quiz routes
+    Route::get('/learn/course/{course:slug}/quiz/{lesson}', [CourseDetailController::class, 'showQuiz'])
+        ->middleware('enrollment.check')
+        ->name('learn.course.quiz');
     Route::post('/quiz/submit', [QuizSubmissionController::class, 'submit'])->name('quiz.submit');
     Route::get('/quiz/{quiz}/attempt', [QuizSubmissionController::class, 'getAttempt'])->name('quiz.attempt');
     Route::post('/lesson/{lesson}/complete', [App\Http\Controllers\LessonController::class, 'markComplete'])->name('lesson.complete');
+    
+    // Enrollment progress routes
+    Route::post('/enrollment/progress/{courseSlug}', [EnrollmentProgressController::class, 'updateProgress'])->name('enrollment.progress.update');
+    Route::get('/enrollment/progress/{courseSlug}', [EnrollmentProgressController::class, 'getProgress'])->name('enrollment.progress.get');
 });
 
 Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('admin')->group(function () {
