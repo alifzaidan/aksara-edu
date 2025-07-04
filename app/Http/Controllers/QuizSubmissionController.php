@@ -7,6 +7,7 @@ use App\Models\QuizAttempt;
 use App\Models\QuizAnswer;
 use App\Models\Question;
 use App\Models\QuestionOption;
+use App\Models\LessonCompletion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +24,7 @@ class QuizSubmissionController extends Controller
             'answers.*' => 'required|string' // We'll validate option existence in the processing loop
         ]);
 
-        $quiz = Quiz::with('questions.options')->findOrFail($request->quiz_id);
+        $quiz = Quiz::with(['questions.options', 'lesson'])->findOrFail($request->quiz_id);
         $userId = Auth::id();
 
         // Allow unlimited quiz attempts - removed the restriction for passed attempts
@@ -103,6 +104,19 @@ class QuizSubmissionController extends Controller
                 'is_passed' => $isPassed,
                 'answers_summary' => $answersSummary
             ]);
+
+            // If the quiz is passed, record it as a lesson completion
+            if ($isPassed && $quiz->lesson) {
+                LessonCompletion::updateOrCreate(
+                    [
+                        'user_id' => $userId,
+                        'lesson_id' => $quiz->lesson->id
+                    ],
+                    [
+                        'completed_at' => now()
+                    ]
+                );
+            }
 
             DB::commit();
 

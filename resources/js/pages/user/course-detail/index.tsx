@@ -423,6 +423,25 @@ export default function CourseDetail({ course }: { course: Course }) {
                     }))
                 );
 
+                // Find and move to the next lesson
+                let found = false;
+                for (let m = 0; m < moduleData.length; m++) {
+                    for (let l = 0; l < moduleData[m].lessons.length; l++) {
+                        if (moduleData[m].lessons[l].id === lessonId) {
+                            found = true;
+                            // Next lesson in current module
+                            if (l + 1 < moduleData[m].lessons.length) {
+                                setSelectedLesson(moduleData[m].lessons[l + 1]);
+                            } else if (m + 1 < moduleData.length && moduleData[m + 1].lessons.length > 0) {
+                                // First lesson in next module
+                                setSelectedLesson(moduleData[m + 1].lessons[0]);
+                            }
+                            break;
+                        }
+                    }
+                    if (found) break;
+                }
+
                 // Update enrollment progress after lesson completion
                 try {
                     await fetch(`/enrollment/progress/${course.slug}`, {
@@ -473,6 +492,17 @@ export default function CourseDetail({ course }: { course: Course }) {
         );
     }
 
+    // Helper: check if all lessons are completed (100% progress)
+    const isAllLessonsCompleted = moduleData.every(module => module.lessons.every(lesson => lesson.isCompleted));
+    // Helper: check if selected lesson is the last lesson
+    const isLastLesson = (() => {
+        if (!selectedLesson) return false;
+        if (moduleData.length === 0) return false;
+        const lastModule = moduleData[moduleData.length - 1];
+        if (lastModule.lessons.length === 0) return false;
+        return selectedLesson.id === lastModule.lessons[lastModule.lessons.length - 1].id;
+    })();
+
     return (
         <CourseLayout
             breadcrumbs={breadcrumbs}
@@ -500,7 +530,7 @@ export default function CourseDetail({ course }: { course: Course }) {
                     {currentLessonContent}
                 </div>
                 {selectedLesson && selectedLesson.type !== 'quiz' && (
-                    <div className="flex justify-end">
+                    <div className="flex flex-col items-end gap-2">
                         {!moduleData.find(m => m.lessons.find(l => l.id === selectedLesson.id))?.lessons.find(l => l.id === selectedLesson.id)?.isCompleted ? (
                             <Button
                                 onClick={() => handleLessonComplete(selectedLesson.id)}
@@ -532,6 +562,21 @@ export default function CourseDetail({ course }: { course: Course }) {
                                 <span className="font-medium">Selesaikan Quiz untuk Melanjutkan</span>
                             </div>
                         )}
+                    </div>
+                )}
+                {isAllLessonsCompleted && isLastLesson && (
+                    <div className="flex flex-row items-center justify-center gap-4 mt-4">
+                        <div className="text-green-700 bg-green-100 px-4 py-2 rounded-lg font-medium text-center">
+                            Anda sudah menyelesaikan kelas silahkan kembali ke halaman awal untuk mendownload sertifikat
+                        </div>
+                        <Button
+                            asChild
+                            size="lg"
+                        >
+                            <a href={`/profile/my-courses/${course.slug}`}>
+                                Kembali ke Halaman Kelas &amp; Download Sertifikat
+                            </a>
+                        </Button>
                     </div>
                 )}
             </div>

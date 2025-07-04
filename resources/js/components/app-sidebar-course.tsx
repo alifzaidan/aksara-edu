@@ -8,6 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { useMemo, useState, useEffect } from 'react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 interface Lesson {
     id: string;
@@ -104,6 +105,19 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
         return module.lessons.length > 0 && module.lessons.every(lesson => lesson.isCompleted);
     };
 
+    // Helper: check if a lesson is accessible (all previous lessons are completed)
+    const isLessonAccessible = (moduleIdx: number, lessonIdx: number) => {
+        // All previous lessons in previous modules
+        for (let m = 0; m < moduleIdx; m++) {
+            if (modules[m].lessons.some(l => !l.isCompleted)) return false;
+        }
+        // All previous lessons in this module
+        for (let l = 0; l < lessonIdx; l++) {
+            if (!modules[moduleIdx].lessons[l].isCompleted) return false;
+        }
+        return true;
+    };
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -146,7 +160,7 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
                     expandedValue={expandedModule}
                     onValueChange={setExpandedModule}
                 >
-                    {modules.map((module) => (
+                    {modules.map((module, moduleIdx) => (
                         <AccordionItem key={module.id} value={module.id}>
                             <AccordionTrigger className="px-2 text-left text-sm font-semibold hover:no-underline">
                                 <div className="flex items-center gap-2 w-full">
@@ -157,42 +171,49 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
-                                        <ul className="space-y-1">
-                                            {module.lessons.map((lesson) => (
-                                                <li key={lesson.id} className="group">
-                                                    <div className="flex items-center gap-2">
-                                                        <button
-                                                            onClick={() => setSelectedLesson(lesson)}
-                                                            className={`flex-1 flex items-center gap-2 rounded-md p-2 text-left text-sm transition-colors hover:bg-accent ${
-                                                                selectedLesson?.id === lesson.id
-                                                                    ? 'bg-accent text-accent-foreground'
-                                                                    : 'text-muted-foreground hover:text-foreground'
-                                                            }`}
-                                                        >
-                                                            {lesson.isCompleted ? (
-                                                                <CheckCircle className="h-4 w-4 text-green-600" />
-                                                            ) : (
-                                                                <Circle className="h-4 w-4" />
+                                <ul className="space-y-1">
+                                    {module.lessons.map((lesson, lessonIdx) => {
+                                        const accessible = isLessonAccessible(moduleIdx, lessonIdx);
+                                        return (
+                                            <li key={lesson.id} className="group">
+                                                <div className="flex items-center gap-2">
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <button
+                                                                    onClick={() => accessible && setSelectedLesson(lesson)}
+                                                                    className={`flex-1 flex items-center gap-2 rounded-md p-2 text-left text-sm transition-colors ${
+                                                                        selectedLesson?.id === lesson.id
+                                                                            ? 'bg-accent text-accent-foreground'
+                                                                            : accessible
+                                                                                ? 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                                                                                : 'text-gray-400 cursor-not-allowed opacity-60'
+                                                                    }`}
+                                                                    disabled={!accessible}
+                                                                    tabIndex={accessible ? 0 : -1}
+                                                                >
+                                                                    {lesson.isCompleted ? (
+                                                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                                                    ) : (
+                                                                        <Circle className="h-4 w-4" />
+                                                                    )}
+                                                                    <span className="flex-1">{lesson.title}</span>
+                                                                    {lessonIcons[lesson.type]}
+                                                                </button>
+                                                            </TooltipTrigger>
+                                                            {!accessible && (
+                                                                <TooltipContent side="right">
+                                                                    Silahkan selesaikan materi sebelumnya terlebih dahulu
+                                                                </TooltipContent>
                                                             )}
-                                                            <span className="flex-1">{lesson.title}</span>
-                                                            {lessonIcons[lesson.type]}
-                                                        </button>
-                                                        
-                                                        {!lesson.isCompleted && onLessonComplete && (
-                                                            <Button
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                onClick={() => onLessonComplete(lesson.id)}
-                                                                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                                            >
-                                                                <CheckCircle className="h-3 w-3" />
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </AccordionContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                </div>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </AccordionContent>
                         </AccordionItem>
                     ))}
                 </Accordion>
