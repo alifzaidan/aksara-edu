@@ -7,6 +7,7 @@ use App\Http\Controllers\BootcampController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseDetailController;
+use App\Http\Controllers\CourseRatingController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MentorController;
 use App\Http\Controllers\QuestionController;
@@ -46,7 +47,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('profile', 'profile/dashboard');
     Route::get('/profile/dashboard', [ProfileController::class, 'index'])->name('profile.index');
     Route::get('/profile/my-courses', [ProfileController::class, 'showMyCourses'])->name('profile.courses');
-    Route::get('/profile/my-courses/{course}', [ProfileController::class, 'detailMyCourse'])->name('profile.course.detail');
+    Route::get('/profile/my-courses/{course}', [ProfileController::class, 'detailMyCourse'])->name('profile.courses.detail');
     Route::get('/profile/my-bootcamps', [ProfileController::class, 'showMyBootcamps'])->name('profile.bootcamps');
     Route::get('/profile/my-bootcamps/{bootcamp}', [ProfileController::class, 'detailMyBootcamp'])->name('profile.bootcamp.detail');
     Route::get('/profile/my-webinars', [ProfileController::class, 'showMyWebinars'])->name('profile.webinars');
@@ -58,10 +59,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/learn/course/{course:slug}', [CourseDetailController::class, 'index'])
         ->middleware('enrollment.check')
         ->name('learn.course.detail');
-    
-    // Quiz routes
+
     Route::post('/quiz/submit', [QuizSubmissionController::class, 'submit'])->name('quiz.submit');
     Route::get('/quiz/{quiz}/attempt', [QuizSubmissionController::class, 'getAttempt'])->name('quiz.attempt');
+
+    Route::post('/course/{course}/rating', [CourseRatingController::class, 'store'])->name('course.rating.store');
 });
 
 Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('admin')->group(function () {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Course;
+use App\Models\CourseRating;
 use App\Models\EnrollmentBootcamp;
 use App\Models\EnrollmentCourse;
 use App\Models\EnrollmentWebinar;
@@ -69,7 +70,18 @@ class ProfileController extends Controller
             })
             ->first();
 
-        return Inertia::render('user/profile/course/detail', ['course' => $course]);
+        $courseRating = null;
+        if ($course && $course->courseItems->isNotEmpty()) {
+            $courseId = $course->courseItems->first()->course_id;
+            $courseRating = CourseRating::where('user_id', $userId)
+                ->where('course_id', $courseId)
+                ->first();
+        }
+
+        return Inertia::render('user/profile/course/detail', [
+            'course' => $course,
+            'courseRating' => $courseRating
+        ]);
     }
 
     public function showMyBootcamps()
