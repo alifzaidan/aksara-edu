@@ -65,14 +65,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/learn/course/{course:slug}', [CourseDetailController::class, 'index'])
         ->middleware('enrollment.check')
         ->name('learn.course.detail');
-    
+
     Route::get('/learn/course/{course:slug}/quiz/{lesson}', [CourseDetailController::class, 'showQuiz'])
         ->middleware('enrollment.check')
         ->name('learn.course.quiz');
     Route::post('/quiz/submit', [QuizSubmissionController::class, 'submit'])->name('quiz.submit');
     Route::get('/quiz/{quiz}/attempt', [QuizSubmissionController::class, 'getAttempt'])->name('quiz.attempt');
     Route::post('/lesson/{lesson}/complete', [App\Http\Controllers\LessonController::class, 'markComplete'])->name('lesson.complete');
-    
+
     Route::post('/enrollment/progress/{courseSlug}', [EnrollmentProgressController::class, 'updateProgress'])->name('enrollment.progress.update');
     Route::get('/enrollment/progress/{courseSlug}', [EnrollmentProgressController::class, 'getProgress'])->name('enrollment.progress.get');
 
@@ -102,6 +102,9 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::resource('mentors', MentorController::class);
         Route::resource('users', UserController::class);
         Route::resource('certificates', CertificateController::class);
+        Route::get('/{certificate}/preview', [CertificateController::class, 'preview'])->name('certificates.preview');
+        Route::get('/{certificate}/download-all', [CertificateController::class, 'downloadAll'])->name('certificates.download.all');
+        Route::get('/participant/{participant}/download', [CertificateController::class, 'downloadParticipant'])->name('certificates.participant.download');
         Route::resource('certificate-designs', CertificateDesignController::class);
         Route::resource('certificate-signs', CertificateSignController::class);
 

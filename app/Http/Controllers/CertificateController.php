@@ -5,14 +5,23 @@ namespace App\Http\Controllers;
 use App\Models\Bootcamp;
 use App\Models\Certificate;
 use App\Models\CertificateDesign;
+use App\Models\CertificateParticipant;
 use App\Models\CertificateSign;
 use App\Models\Course;
 use App\Models\Webinar;
+use App\Services\CertificatePdfService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class CertificateController extends Controller
 {
+    protected $pdfService;
+
+    public function __construct(CertificatePdfService $pdfService)
+    {
+        $this->pdfService = $pdfService;
+    }
+
     public function index()
     {
         $certificates = Certificate::with(['design', 'sign', 'course', 'bootcamp', 'webinar'])->latest()->get();
@@ -55,7 +64,6 @@ class CertificateController extends Controller
             ->select(['id', 'title'])
             ->get();
 
-        // Pre-fill data jika ada parameter dari URL
         $prefilledData = [];
 
         if ($request->has('program_type')) {
@@ -233,7 +241,7 @@ class CertificateController extends Controller
 
         $certificate->update($data);
 
-        return redirect()->route('certificates.index')
+        return redirect()->route('certificates.show', $certificate->id)
             ->with('success', 'Sertifikat berhasil diperbarui');
     }
 
@@ -243,5 +251,79 @@ class CertificateController extends Controller
 
         return redirect()->route('certificates.index')
             ->with('success', 'Sertifikat berhasil dihapus');
+    }
+
+    /**
+     * Preview sertifikat dalam bentuk PDF
+     */
+    public function preview(Certificate $certificate)
+    {
+        try {
+            $certificate->load(['design', 'sign', 'course', 'bootcamp', 'webinar']);
+
+            $pdf = $this->pdfService->generatePreview($certificate);
+
+            return response($pdf)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="preview-' . $certificate->certificate_number . '.pdf"');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal membuat preview sertifikat: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download sertifikat participant
+     */
+    public function downloadParticipant(CertificateParticipant $participant)
+    {
+        try {
+            $pdf = $this->pdfService->generateParticipantCertificate($participant);
+
+            $filename = 'sertifikat-' . $participant->certificate_code . '.pdf';
+
+            return response($pdf)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal mengunduh sertifikat: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download semua sertifikat dalam ZIP
+     */
+    public function downloadAll(Certificate $certificate)
+    {
+        try {
+            $participants = $certificate->participants;
+
+            if ($participants->isEmpty()) {
+                return back()->with('error', 'Tidak ada peserta untuk sertifikat ini.');
+            }
+
+            $zip = new \ZipArchive();
+            $zipFileName = 'sertifikat-' . $certificate->certificate_number . '-all.zip';
+            $zipPath = storage_path('app/temp/' . $zipFileName);
+
+            // Pastikan directory temp ada
+            if (!file_exists(storage_path('app/temp'))) {
+                mkdir(storage_path('app/temp'), 0755, true);
+            }
+
+            if ($zip->open($zipPath, \ZipArchive::CREATE) === TRUE) {
+                foreach ($participants as $participant) {
+                    $pdf = $this->pdfService->generateParticipantCertificate($participant);
+                    $filename = 'sertifikat-' . $participant->certificate_code . '.pdf';
+                    $zip->addFromString($filename, $pdf);
+                }
+                $zip->close();
+
+                return response()->download($zipPath)->deleteFileAfterSend(true);
+            } else {
+                throw new \Exception('Tidak dapat membuat file ZIP.');
+            }
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal mengunduh semua sertifikat: ' . $e->getMessage());
+        }
     }
 }

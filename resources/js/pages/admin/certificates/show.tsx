@@ -104,7 +104,7 @@ export default function ShowCertificate({ certificate, flash }: CertificateProps
                         <h2 className="my-2 text-lg font-medium">Aksi & Kelola</h2>
                         <div className="space-y-4 rounded-lg border p-4">
                             <Button asChild className="w-full" variant="default">
-                                <Link href="#">
+                                <Link href={route('certificates.download.all', { certificate: certificate.id })} target="_blank">
                                     <Download className="h-4 w-4" />
                                     Unduh Semua Sertifikat
                                 </Link>
@@ -136,21 +136,25 @@ export default function ShowCertificate({ certificate, flash }: CertificateProps
 
                         <div className="mt-4 space-y-4 rounded-lg border p-4">
                             <h2 className="text-lg font-medium">Preview Sertifikat</h2>
-                            <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-gray-300 py-12">
+                            <div className="space-y-3">
+                                <Button asChild className="w-full" variant="outline">
+                                    <a href={route('certificates.preview', { certificate: certificate.id })} target="_blank">
+                                        <Download className="h-4 w-4" />
+                                        Lihat Preview PDF
+                                    </a>
+                                </Button>
+
                                 <div className="text-center">
-                                    <div className="mb-2 text-gray-400">
-                                        <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={1}
-                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                            />
-                                        </svg>
-                                    </div>
-                                    <h3 className="text-sm font-medium text-gray-900">Preview Sertifikat</h3>
-                                    <p className="text-sm text-gray-500">Preview sertifikat akan ditampilkan di sini setelah template dibuat</p>
+                                    <iframe
+                                        src={route('certificates.preview', { certificate: certificate.id })}
+                                        className="h-64 w-full rounded-lg border"
+                                        title="Preview Sertifikat"
+                                    />
                                 </div>
+
+                                <p className="text-center text-xs text-gray-500">
+                                    Preview menggunakan data dummy untuk tampilan. Data sebenarnya akan digunakan saat mengunduh sertifikat peserta.
+                                </p>
                             </div>
                         </div>
                     </div>
