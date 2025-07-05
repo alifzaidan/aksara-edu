@@ -11,7 +11,7 @@ export default function ProgramSection() {
                 </p>
                 <div className="space-y-8 md:space-y-4">
                     <div className="flex w-full flex-col items-center justify-end md:flex-row md:gap-14">
-                        <img src="/assets/images/illustration-course.svg" alt="Kelas Online" className="w-[250px]" />
+                        <img src="/assets/images/illustration-course.webp" alt="Kelas Online" className="w-[250px]" />
                         <div className="space-y-2">
                             <h2 className="dark:text-primary-foreground text-center text-2xl font-bold italic sm:text-left sm:text-3xl">
                                 Kelas Online
@@ -58,10 +58,10 @@ export default function ProgramSection() {
                                 <Link href="/bootcamp">Pelajari Sekarang</Link>
                             </Button>
                         </div>
-                        <img src="/assets/images/illustration-bootcamp.svg" alt="Bootcamp" className="w-[250px]" />
+                        <img src="/assets/images/illustration-bootcamp.webp" alt="Bootcamp" className="w-[250px]" />
                     </div>
                     <div className="flex w-full flex-col items-center justify-end md:flex-row md:gap-14">
-                        <img src="/assets/images/illustration-webinar.svg" alt="Webinar" className="w-[250px]" />
+                        <img src="/assets/images/illustration-webinar.webp" alt="Webinar" className="w-[250px]" />
                         <div className="space-y-2">
                             <h2 className="dark:text-primary-foreground text-center text-2xl font-bold italic sm:text-left sm:text-3xl">Webinar</h2>
                             <p className="font-medium">Pelajari berbagai topik terkini dari para ahli di bidangnya.</p>
