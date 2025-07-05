@@ -3,8 +3,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import CourseLayout from '@/layouts/course-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { FileDown, ExternalLink, HelpCircle, ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import ErrorBoundary from '@/components/error-boundary';
 
 interface Lesson {
     id: string;
@@ -110,113 +112,9 @@ function VideoPlayer({ lesson }: { lesson: Lesson }) {
     );
 }
 
-function QuizInterface({ lesson }: { lesson: Lesson }) {
-    const [currentQuiz, setCurrentQuiz] = useState(0);
-    const [currentQuestion, setCurrentQuestion] = useState(0);
-    const [answers, setAnswers] = useState<Record<string, string>>({});
-    const [showResults, setShowResults] = useState(false);
-    const [quizResult, setQuizResult] = useState<any>(null);
-    const [timeLeft, setTimeLeft] = useState<number>(0);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-
-    const quiz = lesson.quizzes?.[currentQuiz];
-
-    useEffect(() => {
-        if (quiz && quiz.attempts && quiz.attempts.length > 0) {
-            // Check if user has a PASSED attempt
-            const passedAttempt = quiz.attempts.find(attempt => attempt.is_passed);
-            if (passedAttempt) {
-                // User has passed, show results
-                setQuizResult(passedAttempt);
-                setShowResults(true);
-            } else {
-                // User has attempts but hasn't passed yet, show latest attempt
-                // But allow retaking the quiz
-                const latestAttempt = quiz.attempts[0]; // Already sorted by created_at desc
-                setQuizResult(latestAttempt);
-                setShowResults(true);
-            }
-        } else if (quiz?.time_limit) {
-            setTimeLeft(quiz.time_limit * 60); // Convert minutes to seconds
-        }
-    }, [quiz]);
-
-    useEffect(() => {
-        if (timeLeft > 0 && !showResults) {
-            const timer = setInterval(() => {
-                setTimeLeft(prev => {
-                    if (prev <= 1) {
-                        // Auto-submit when time runs out
-                        handleConfirmSubmit();
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-            return () => clearInterval(timer);
-        }
-    }, [timeLeft, showResults]);
-
-    const handleAnswerChange = (questionId: string, answerId: string) => {
-        setAnswers(prev => ({
-            ...prev,
-            [questionId]: answerId
-        }));
-    };
-
-    const handleSubmitQuiz = () => {
-        // Show confirmation dialog
-        setShowConfirmDialog(true);
-    };
-
-    const handleConfirmSubmit = async () => {
-        if (isSubmitting) return;
-        setIsSubmitting(true);
-        setShowConfirmDialog(false);
-
-        try {
-            const response = await fetch('/quiz/submit', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                },
-                body: JSON.stringify({
-                    quiz_id: quiz?.id,
-                    answers: answers
-                })
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                setQuizResult(result);
-                setShowResults(true);
-            } else {
-                console.error('Failed to submit quiz');
-            }
-        } catch (error) {
-            console.error('Error submitting quiz:', error);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleRetakeQuiz = () => {
-        // Reset all quiz states
-        setCurrentQuestion(0);
-        setAnswers({});
-        setShowResults(false);
-        setQuizResult(null);
-        setTimeLeft(quiz?.time_limit ? quiz.time_limit * 60 : 0);
-    };
-
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    };
-
+function QuizDashboard({ lesson, onStartQuiz }: { lesson: Lesson; onStartQuiz: () => void }) {
+    const quiz = lesson.quizzes?.[0];
+    
     if (!quiz) {
         return (
             <div className="bg-muted/40 flex h-full flex-col items-center justify-center rounded-lg p-8 text-center">
@@ -227,264 +125,164 @@ function QuizInterface({ lesson }: { lesson: Lesson }) {
         );
     }
 
-    if (showResults && quizResult) {
-        return (
-            <div className="max-w-4xl mx-auto p-6">
-                <div className="text-center mb-8">
-                    <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${
-                        quizResult.is_passed ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-                    }`}>
-                        {quizResult.is_passed ? <CheckCircle className="w-8 h-8" /> : <XCircle className="w-8 h-8" />}
-                    </div>
-                    <h2 className="text-2xl font-bold mb-2">
-                        {quizResult.is_passed ? 'Selamat! Anda Lulus' : 'Belum Lulus'}
-                    </h2>
-                    {quiz && quiz.attempts && quiz.attempts.length > 1 && (
-                        <p className="text-sm text-muted-foreground mb-2">
-                            Percobaan ke-{quiz.attempts.length}
-                        </p>
-                    )}
-                    <div className="flex justify-center gap-6 text-sm text-muted-foreground">
-                        <span>Skor: {quizResult.score}%</span>
-                        <span>Benar: {quizResult.correct_answers}/{quizResult.total_questions}</span>
-                        <span>Waktu: {Math.floor(quizResult.time_taken / 60)}:{(quizResult.time_taken % 60).toString().padStart(2, '0')}</span>
-                    </div>
-                    
-                    {/* Tombol Ulangi Ujian jika belum lulus */}
-                    {!quizResult.is_passed && (
-                        <div className="mt-6 text-center">
-                            <p className="text-muted-foreground mb-4">
-                                Jangan menyerah! Pelajari kembali materi dan coba lagi.
-                                <br />
-                                Passing score: <strong>{quiz.passing_score}%</strong>
-                            </p>
-                            <Button 
-                                onClick={handleRetakeQuiz}
-                            >
-                                🔄 Ulangi Ujian
-                            </Button>
-                        </div>
-                    )}
-                    
-                    {/* Pesan untuk user yang sudah lulus */}
-                    {quizResult.is_passed && (
-                        <div className="mt-6 text-center">
-                            <p className="text-green-600 font-medium">
-                                🎉 Selamat! Anda telah menyelesaikan quiz ini dengan baik.
-                            </p>
-                        </div>
-                    )}
-                </div>
-
-                <div className="space-y-6">
-                    <h3 className="text-lg font-semibold">Review Jawaban</h3>
-                    {quizResult.answers_summary?.map((answer: any, index: number) => (
-                        <div key={answer.question_id} className="border rounded-lg p-4">
-                            <div className={`inline-flex items-center gap-2 text-sm font-medium mb-2 ${
-                                answer.is_correct ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                                {answer.is_correct ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                                Soal {index + 1} - {answer.is_correct ? 'Benar' : 'Salah'}
-                            </div>
-                            <p className="font-medium mb-3">{answer.question}</p>
-                            <div className="space-y-2">
-                                {answer.options?.map((option: any) => (
-                                    <div key={option.id} className={`p-2 rounded border ${
-                                        option.is_correct ? 'bg-green-50 border-green-200' :
-                                        option.id === answer.selected_option_id ? 'bg-red-50 border-red-200' :
-                                        'bg-gray-50 border-gray-200'
-                                    }`}>
-                                        <div className="flex items-center gap-2">
-                                            <span className={`w-2 h-2 rounded-full ${
-                                                option.is_correct ? 'bg-green-500' :
-                                                option.id === answer.selected_option_id ? 'bg-red-500' :
-                                                'bg-gray-300'
-                                            }`}></span>
-                                            <span>{option.option_text}</span>
-                                            {option.is_correct && <span className="text-green-600 text-sm">(Jawaban Benar)</span>}
-                                            {option.id === answer.selected_option_id && !option.is_correct && 
-                                                <span className="text-red-600 text-sm">(Jawaban Anda)</span>}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
-    }
-
-    const currentQuestionData = quiz.questions[currentQuestion];
-    const totalQuestions = quiz.questions.length;
-    const answeredCount = Object.keys(answers).length;
+    const attempts = quiz.attempts || [];
+    const hasPassedAttempt = attempts.find(attempt => attempt.is_passed);
 
     return (
         <div className="max-w-4xl mx-auto p-6">
-            {/* Quiz Header */}
-            <div className="mb-6">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-bold">{quiz.title}</h2>
-                    {quiz.time_limit && timeLeft > 0 && (
-                        <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-                            timeLeft <= 60 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
-                        }`}>
-                            <Clock className="w-4 h-4" />
-                            <span className="font-medium">{formatTime(timeLeft)}</span>
-                        </div>
-                    )}
+            <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mb-4">
+                    <HelpCircle className="w-8 h-8" />
                 </div>
-                
+                <h2 className="text-2xl font-bold mb-2">{quiz.title}</h2>
                 {quiz.instructions && (
                     <p className="text-muted-foreground mb-4">{quiz.instructions}</p>
                 )}
-
-                {/* Progress Bar */}
-                <div className="bg-gray-200 rounded-full h-2 mb-2">
-                    <div 
-                        className="bg-blue-900 h-2 rounded-full transition-all duration-300" 
-                        style={{ width: `${((currentQuestion + 1) / totalQuestions) * 100}%` }}
-                    ></div>
-                </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Soal {currentQuestion + 1} dari {totalQuestions}</span>
-                    <span>{answeredCount} jawaban tersimpan</span>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-card border rounded-lg p-4">
+                        <div className="text-2xl font-bold text-blue-600">{quiz.questions?.length || 0}</div>
+                        <div className="text-sm text-muted-foreground">Total Soal</div>
+                    </div>
+                    <div className="bg-card border rounded-lg p-4">
+                        <div className="text-2xl font-bold text-green-600">{quiz.time_limit || 0}</div>
+                        <div className="text-sm text-muted-foreground">Menit</div>
+                    </div>
+                    <div className="bg-card border rounded-lg p-4">
+                        <div className="text-2xl font-bold text-amber-600">{quiz.passing_score}</div>
+                        <div className="text-sm text-muted-foreground">Nilai Lulus</div>
+                    </div>
                 </div>
             </div>
 
-            <div className="flex gap-6">
-                {/* Question Content */}
-                <div className="flex-1">
-                    <div className="bg-card border rounded-lg p-6 mb-6">
-                        <h3 className="text-lg font-semibold mb-4">
-                            {currentQuestion + 1}. {currentQuestionData.question_text}
-                        </h3>
-                        
-                        <div className="space-y-3">
-                            {currentQuestionData.options.map((option) => (
-                                <label key={option.id} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                                    <input
-                                        type="radio"
-                                        name={`question-${currentQuestionData.id}`}
-                                        value={option.id}
-                                        checked={answers[currentQuestionData.id] === option.id}
-                                        onChange={() => handleAnswerChange(currentQuestionData.id, option.id)}
-                                        className="w-4 h-4"
-                                    />
-                                    <span>{option.option_text}</span>
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Navigation Buttons */}
-                    <div className="flex justify-between">
-                        <Button
-                            variant="outline"
-                            onClick={() => setCurrentQuestion(prev => Math.max(0, prev - 1))}
-                            disabled={currentQuestion === 0}
-                        >
-                            <ChevronLeft className="w-4 h-4 mr-2" />
-                            Sebelumnya
-                        </Button>
-
-                        {currentQuestion === totalQuestions - 1 ? (
-                            <Button
-                                onClick={handleSubmitQuiz}
-                                disabled={isSubmitting || answeredCount === 0}
-                                className="bg-green-600 hover:bg-green-700"
-                            >
-                                {isSubmitting ? 'Mengirim...' : 'Selesai Quiz'}
-                            </Button>
-                        ) : (
-                            <Button
-                                onClick={() => setCurrentQuestion(prev => Math.min(totalQuestions - 1, prev + 1))}
-                                disabled={currentQuestion === totalQuestions - 1}
-                            >
-                                Selanjutnya
-                                <ChevronRight className="w-4 h-4 ml-2" />
-                            </Button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Sidebar with Question Numbers */}
-                <div className="w-64">
-                    <div className="bg-card border rounded-lg p-4">
-                        <h4 className="font-semibold mb-3">Navigasi Soal</h4>
-                        <div className="grid grid-cols-5 gap-2">
-                            {quiz.questions.map((_, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => setCurrentQuestion(index)}
-                                    className={`w-8 h-8 rounded text-sm font-medium transition-colors ${
-                                        index === currentQuestion
-                                            ? 'bg-blue-900 text-white'
-                                            : answers[quiz.questions[index].id]
-                                            ? 'bg-green-100 text-green-700 border border-green-300'
-                                            : 'bg-gray-100 hover:bg-gray-200'
-                                    }`}
-                                >
-                                    {index + 1}
-                                </button>
-                            ))}
-                        </div>
-                        
-                        <div className="mt-4 pt-4 border-t">
-                            <div className="text-sm space-y-1">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 bg-blue-900 rounded"></div>
-                                    <span>Soal saat ini</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
-                                    <span>Sudah dijawab</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 bg-gray-100 rounded"></div>
-                                    <span>Belum dijawab</span>
+            {/* History Nilai */}
+            {attempts.length > 0 && (
+                <div className="mb-8">
+                    <h3 className="text-lg font-semibold mb-4">Riwayat Nilai</h3>
+                    <div className="space-y-3">
+                        {attempts.map((attempt, index) => (
+                            <div key={attempt.id} className={`border rounded-lg p-4 ${
+                                attempt.is_passed ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                            }`}>
+                                <div className="flex justify-between items-center">
+                                    <div className="flex items-center gap-3">
+                                        {attempt.is_passed ? (
+                                            <CheckCircle className="w-5 h-5 text-green-600" />
+                                        ) : (
+                                            <XCircle className="w-5 h-5 text-red-600" />
+                                        )}
+                                        <div>
+                                            <div className="font-medium">
+                                                Percobaan {attempts.length - index}
+                                                {attempt.is_passed && (
+                                                    <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                                                        LULUS
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="text-sm text-muted-foreground">
+                                                {new Date(attempt.submitted_at).toLocaleDateString('id-ID', {
+                                                    day: 'numeric',
+                                                    month: 'long',
+                                                    year: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className={`text-2xl font-bold ${
+                                            attempt.is_passed ? 'text-green-600' : 'text-red-600'
+                                        }`}>
+                                            {attempt.score}
+                                        </div>
+                                        <div className="text-sm text-muted-foreground">
+                                            {attempt.correct_answers}/{attempt.total_questions} benar
+                                        </div>
+                                        <div className="text-sm text-muted-foreground">
+                                            Waktu: {Math.floor(attempt.time_taken / 60)}:{(attempt.time_taken % 60).toString().padStart(2, '0')}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        ))}
                     </div>
                 </div>
+            )}
+
+            {/* Status dan Tombol Mulai */}
+            <div className="text-center">
+                {hasPassedAttempt ? (
+                    <div className="mb-6">
+                        <div className="inline-flex items-center gap-2 text-green-600 bg-green-100 px-4 py-2 rounded-lg mb-4">
+                            <CheckCircle className="h-5 w-5" />
+                            <span className="font-medium">Anda sudah lulus quiz ini!</span>
+                        </div>
+                        <p className="text-muted-foreground mb-4">
+                            Selamat! Anda bisa mengulang quiz ini kapan saja untuk meningkatkan pemahaman.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="mb-6">
+                        {attempts.length > 0 ? (
+                            <div>
+                                <div className="inline-flex items-center gap-2 text-amber-600 bg-amber-100 px-4 py-2 rounded-lg mb-4">
+                                    <AlertTriangle className="h-5 w-5" />
+                                    <span className="font-medium">Belum lulus, jangan menyerah!</span>
+                                </div>
+                                <p className="text-muted-foreground mb-4">
+                                    Pelajari kembali materi dan coba lagi. Anda bisa mengulang quiz ini tanpa batas.
+                                </p>
+                            </div>
+                        ) : (
+                            <p className="text-muted-foreground mb-4">
+                                Siap untuk mengerjakan quiz? Anda bisa mengulang quiz ini tanpa batas waktu.
+                            </p>
+                        )}
+                    </div>
+                )}
+
+                <Button
+                    onClick={onStartQuiz}
+                    size="lg"
+                >
+                    {attempts.length > 0 ? '🔄 Ulangi Quiz' : '🚀 Mulai Quiz'}
+                </Button>
             </div>
-            
-            {/* Confirmation Dialog */}
-            <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <AlertTriangle className="h-5 w-5 text-amber-500" />
-                            Konfirmasi Pengiriman
-                        </DialogTitle>
-                        <DialogDescription>
-                            Setelah dikirim, Anda tidak dapat mengubah jawaban lagi.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button 
-                            variant="outline" 
-                            onClick={() => setShowConfirmDialog(false)}
-                            disabled={isSubmitting}
-                        >
-                            Batal
-                        </Button>
-                        <Button 
-                            onClick={handleConfirmSubmit}
-                            disabled={isSubmitting}
-                            className="bg-green-600 hover:bg-green-700"
-                        >
-                            {isSubmitting ? 'Mengirim...' : 'Ya, Kirim Jawaban'}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </div>
     );
 }
 
-function LessonContent({ lesson }: { lesson: Lesson | null }) {
+function QuizInterface({ lesson, onQuizComplete, onBackToDashboard }: { 
+    lesson: Lesson; 
+    onQuizComplete?: (lessonId: string) => void;
+    onBackToDashboard?: () => void;
+}) {
+    // This component is kept for backward compatibility but redirects to the dedicated quiz page
+    const quiz = lesson.quizzes?.[0];
+
+    useEffect(() => {
+        // Redirect to dedicated quiz page using Inertia router
+        const courseSlug = window.location.pathname.split('/')[3]; // Extract course slug from URL
+        if (courseSlug) {
+            router.get(`/learn/course/${courseSlug}/quiz/${lesson.id}`);
+        }
+    }, [lesson.id]);
+
+    return (
+        <div className="bg-muted/40 flex h-full flex-col items-center justify-center rounded-lg p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+            <p className="text-muted-foreground">Mengalihkan ke halaman quiz...</p>
+        </div>
+    );
+}
+
+
+function LessonContent({ lesson, onQuizComplete, courseSlug }: { lesson: Lesson | null; onQuizComplete?: (lessonId: string) => void; courseSlug?: string }) {
+    const [showQuizDashboard, setShowQuizDashboard] = useState(true);
+    const [showQuizInterface, setShowQuizInterface] = useState(false);
+
     if (!lesson) {
         return (
             <div className="bg-muted/40 flex h-full items-center justify-center rounded-lg">
@@ -492,6 +290,22 @@ function LessonContent({ lesson }: { lesson: Lesson | null }) {
             </div>
         );
     }
+
+    const handleStartQuiz = () => {
+        // Navigate to dedicated quiz page using Inertia router
+        if (courseSlug) {
+            router.get(`/learn/course/${courseSlug}/quiz/${lesson.id}`);
+        } else {
+            // Fallback to in-page quiz
+            setShowQuizDashboard(false);
+            setShowQuizInterface(true);
+        }
+    };
+
+    const handleBackToDashboard = () => {
+        setShowQuizInterface(false);
+        setShowQuizDashboard(true);
+    };
 
     switch (lesson.type) {
         case 'video':
@@ -512,7 +326,8 @@ function LessonContent({ lesson }: { lesson: Lesson | null }) {
                     </div>
                 );
             }
-            
+            // Cek isPreview (true: hanya preview, false: bisa download)
+            const isPreview = (lesson as any).is_preview !== false;
             return (
                 <div className="w-full h-[600px]">
                     <iframe
@@ -524,10 +339,31 @@ function LessonContent({ lesson }: { lesson: Lesson | null }) {
                             outline: 'none'
                         }}
                     />
+                    {isPreview && (
+                        <div className="flex justify-end mt-2">
+                            <Button
+                                asChild
+                                variant="outline"
+                                className="flex items-center gap-2"
+                            >   
+                                <a href={`/storage/${lesson.attachment}`} download target="_blank" rel="noopener noreferrer">
+                                    <FileDown className="h-4 w-4" /> Download File
+                                </a>
+                            </Button>
+                        </div>
+                    )}
                 </div>
             );
         case 'quiz':
-            return <QuizInterface lesson={lesson} />;
+            // Only show quiz dashboard, actual quiz will be in separate page
+            return (
+                <ErrorBoundary>
+                    <QuizDashboard 
+                        lesson={lesson} 
+                        onStartQuiz={handleStartQuiz}
+                    />
+                </ErrorBoundary>
+            );
         default:
             return <div>Tipe materi tidak dikenal.</div>;
     }
@@ -536,7 +372,108 @@ function LessonContent({ lesson }: { lesson: Lesson | null }) {
 export default function CourseDetail({ course }: { course: Course }) {
     const modules = course.modules && course.modules.length > 0 ? course.modules : [];
     const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(modules[0]?.lessons[0] || null);
+    const [isQuizFullscreen, setIsQuizFullscreen] = useState(false);
+    
+    // Initialize completion state from database
+    const [moduleData, setModuleData] = useState<Module[]>(() => {
+        return modules.map(module => ({
+            ...module,
+            lessons: module.lessons.map(lesson => {
+                // Check if lesson is completed
+                let isCompleted = lesson.isCompleted || false;
+                
+                // For quiz lessons, check if user has passed attempt
+                if (lesson.type === 'quiz' && lesson.quizzes && lesson.quizzes.length > 0) {
+                    const hasPassedAttempt = lesson.quizzes.some(quiz => 
+                        quiz.attempts && quiz.attempts.some(attempt => attempt.is_passed)
+                    );
+                    isCompleted = hasPassedAttempt;
+                }
+                
+                return {
+                    ...lesson,
+                    isCompleted
+                };
+            })
+        }));
+    });
 
+    useEffect(() => {
+        const hash = window.location.hash;
+        if (hash && hash.startsWith('#quiz-')) {
+            const lessonId = hash.replace('#quiz-', '');
+
+            const foundLesson = moduleData
+                .flatMap(module => module.lessons)
+                .find(lesson => lesson.id === lessonId);
+            
+            if (foundLesson) {
+                setSelectedLesson(foundLesson);
+                window.history.replaceState(null, '', window.location.pathname);
+                console.log('Kembali ke dashboard quiz:', foundLesson.title);
+            }
+        }
+    }, [moduleData]);
+
+    const handleLessonComplete = async (lessonId: string) => {
+        try {
+            const response = await fetch(`/lesson/${lessonId}/complete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                }
+            });
+
+            if (response.ok) {
+                setModuleData(prevModules => 
+                    prevModules.map(module => ({
+                        ...module,
+                        lessons: module.lessons.map(lesson => 
+                            lesson.id === lessonId 
+                                ? { ...lesson, isCompleted: true }
+                                : lesson
+                        )
+                    }))
+                );
+
+                // Find and move to the next lesson
+                let found = false;
+                for (let m = 0; m < moduleData.length; m++) {
+                    for (let l = 0; l < moduleData[m].lessons.length; l++) {
+                        if (moduleData[m].lessons[l].id === lessonId) {
+                            found = true;
+                            // Next lesson in current module
+                            if (l + 1 < moduleData[m].lessons.length) {
+                                setSelectedLesson(moduleData[m].lessons[l + 1]);
+                            } else if (m + 1 < moduleData.length && moduleData[m + 1].lessons.length > 0) {
+                                // First lesson in next module
+                                setSelectedLesson(moduleData[m + 1].lessons[0]);
+                            }
+                            break;
+                        }
+                    }
+                    if (found) break;
+                }
+
+                // Update enrollment progress after lesson completion
+                try {
+                    await fetch(`/enrollment/progress/${course.slug}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                        }
+                    });
+                } catch (progressError) {
+                    console.error('Error updating enrollment progress:', progressError);
+                }
+            }
+        } catch (error) {
+            console.error('Error completing lesson:', error);
+        }
+    };
+    
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: course.title,
@@ -544,23 +481,118 @@ export default function CourseDetail({ course }: { course: Course }) {
         },
     ];
 
+    // Function to get module name for selected lesson
+    const getModuleName = (lessonId: string): string => {
+        for (const module of moduleData) {
+            if (module.lessons.some(lesson => lesson.id === lessonId)) {
+                return module.title;
+            }
+        }
+        return '';
+    };
+
+    // Check if current lesson is quiz and in fullscreen mode
+    const currentLessonContent = selectedLesson ? (
+        <LessonContent lesson={selectedLesson} onQuizComplete={handleLessonComplete} courseSlug={course.slug} />
+    ) : null;
+
+    // If quiz is in fullscreen mode, render without course layout
+    if (selectedLesson?.type === 'quiz' && isQuizFullscreen) {
+        return (
+            <>
+                <Head title={selectedLesson?.title || course.title} />
+                {currentLessonContent}
+            </>
+        );
+    }
+
+    // Helper: check if all lessons are completed (100% progress)
+    const isAllLessonsCompleted = moduleData.every(module => module.lessons.every(lesson => lesson.isCompleted));
+    // Helper: check if selected lesson is the last lesson
+    const isLastLesson = (() => {
+        if (!selectedLesson) return false;
+        if (moduleData.length === 0) return false;
+        const lastModule = moduleData[moduleData.length - 1];
+        if (lastModule.lessons.length === 0) return false;
+        return selectedLesson.id === lastModule.lessons[lastModule.lessons.length - 1].id;
+    })();
+
     return (
         <CourseLayout
             breadcrumbs={breadcrumbs}
             courseSlug={course.slug}
-            modules={modules}
+            modules={moduleData}
             selectedLesson={selectedLesson}
             setSelectedLesson={setSelectedLesson}
+            onLessonComplete={handleLessonComplete}
         >
             <Head title={selectedLesson?.title || course.title} />
 
             <div className="m-4 h-full">
                 <div className="mb-4">
+                    {selectedLesson && (
+                        <div className="mb-2">
+                            <span className="text-sm text-muted-foreground font-medium">
+                                {getModuleName(selectedLesson.id)}
+                            </span>
+                        </div>
+                    )}
                     <h1 className="text-2xl font-bold">{selectedLesson?.title}</h1>
                 </div>
-                <div className="bg-card rounded-lg border p-4">
-                    <LessonContent lesson={selectedLesson} />
+                
+                <div className="bg-card rounded-lg border p-4 mb-4">
+                    {currentLessonContent}
                 </div>
+                {selectedLesson && selectedLesson.type !== 'quiz' && (
+                    <div className="flex flex-col items-end gap-2">
+                        {!moduleData.find(m => m.lessons.find(l => l.id === selectedLesson.id))?.lessons.find(l => l.id === selectedLesson.id)?.isCompleted ? (
+                            <Button
+                                onClick={() => handleLessonComplete(selectedLesson.id)}
+                                size="lg"
+                            >
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                Selesaikan Materi
+                            </Button>
+                        ) : (
+                            <div className="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-2 rounded-lg">
+                                <CheckCircle className="h-5 w-5" />
+                                <span className="font-medium">Materi Sudah Selesai</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+                
+                {/* Status untuk quiz */}
+                {selectedLesson && selectedLesson.type === 'quiz' && (
+                    <div className="flex justify-end">
+                        {moduleData.find(m => m.lessons.find(l => l.id === selectedLesson.id))?.lessons.find(l => l.id === selectedLesson.id)?.isCompleted ? (
+                            <div className="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-2 rounded-lg">
+                                <CheckCircle className="h-5 w-5" />
+                                <span className="font-medium">Quiz Sudah Lulus</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-4 py-2 rounded-lg">
+                                <HelpCircle className="h-5 w-5" />
+                                <span className="font-medium">Selesaikan Quiz untuk Melanjutkan</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+                {isAllLessonsCompleted && isLastLesson && (
+                    <div className="flex flex-row items-center justify-center gap-4 mt-4">
+                        <div className="text-green-700 bg-green-100 px-4 py-2 rounded-lg font-medium text-center">
+                            Anda sudah menyelesaikan kelas silahkan kembali ke halaman awal untuk mendownload sertifikat
+                        </div>
+                        <Button
+                            asChild
+                            size="lg"
+                        >
+                            <a href={`/profile/my-courses/${course.slug}`}>
+                                Kembali ke Halaman Kelas &amp; Download Sertifikat
+                            </a>
+                        </Button>
+                    </div>
+                )}
             </div>
         </CourseLayout>
     );

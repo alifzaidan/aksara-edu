@@ -13,6 +13,15 @@ import CreateQuestion from './create';
 import QuizQuestion from './show-questions';
 import QuizSubmission from './show-submissions';
 
+interface Submission {
+    id: string;
+    user_name: string;
+    user_email: string;
+    score: number;
+    is_passed: boolean;
+    submitted_at: string;
+}
+
 interface QuizzesProps {
     course: {
         id: string;
@@ -36,13 +45,14 @@ interface QuizzesProps {
             }>;
         }>;
     };
+    submissions?: Submission[];
     flash?: {
         success?: string;
         error?: string;
     };
 }
 
-export default function Quizzes({ course, quiz, flash }: QuizzesProps) {
+export default function Quizzes({ course, quiz, submissions = [], flash }: QuizzesProps) {
     const [open, setOpen] = useState(false);
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -84,7 +94,7 @@ export default function Quizzes({ course, quiz, flash }: QuizzesProps) {
                             <QuizQuestion questions={quiz.questions} />
                         </TabsContent>
                         <TabsContent value="submission">
-                            <QuizSubmission />
+                            <QuizSubmission submissions={submissions} />
                         </TabsContent>
                     </Tabs>
                     <div className="order-first lg:order-last">

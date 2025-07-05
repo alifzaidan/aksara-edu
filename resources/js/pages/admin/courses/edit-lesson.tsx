@@ -75,6 +75,7 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
             return;
         }
         onEdit({
+            id: lesson.id, // Preserve the lesson ID
             title,
             type,
             description,
@@ -86,6 +87,7 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
                 type === 'quiz'
                     ? [
                           {
+                              id: lesson.quizzes?.[0]?.id, // Preserve quiz ID if exists
                               instructions: quizInstructions,
                               time_limit: quizTimeLimit,
                               passing_score: quizPassingScore,

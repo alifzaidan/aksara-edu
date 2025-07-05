@@ -11,8 +11,10 @@ use App\Http\Controllers\CertificateParticipantController;
 use App\Http\Controllers\CertificateSignController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseDetailController;
+use App\Http\Controllers\EnrollmentProgressController;
 use App\Http\Controllers\CourseRatingController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\LessonController;
 use App\Http\Controllers\MentorController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
@@ -63,9 +65,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/learn/course/{course:slug}', [CourseDetailController::class, 'index'])
         ->middleware('enrollment.check')
         ->name('learn.course.detail');
-
+    
+    Route::get('/learn/course/{course:slug}/quiz/{lesson}', [CourseDetailController::class, 'showQuiz'])
+        ->middleware('enrollment.check')
+        ->name('learn.course.quiz');
     Route::post('/quiz/submit', [QuizSubmissionController::class, 'submit'])->name('quiz.submit');
     Route::get('/quiz/{quiz}/attempt', [QuizSubmissionController::class, 'getAttempt'])->name('quiz.attempt');
+    Route::post('/lesson/{lesson}/complete', [App\Http\Controllers\LessonController::class, 'markComplete'])->name('lesson.complete');
+    
+    Route::post('/enrollment/progress/{courseSlug}', [EnrollmentProgressController::class, 'updateProgress'])->name('enrollment.progress.update');
+    Route::get('/enrollment/progress/{courseSlug}', [EnrollmentProgressController::class, 'getProgress'])->name('enrollment.progress.get');
 
     Route::post('/course/{course}/rating', [CourseRatingController::class, 'store'])->name('course.rating.store');
 });

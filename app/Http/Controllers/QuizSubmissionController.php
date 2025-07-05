@@ -7,6 +7,7 @@ use App\Models\QuizAttempt;
 use App\Models\QuizAnswer;
 use App\Models\Question;
 use App\Models\QuestionOption;
+use App\Models\LessonCompletion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,25 +17,17 @@ class QuizSubmissionController extends Controller
 {
     public function submit(Request $request)
     {
+
         $request->validate([
             'quiz_id' => 'required|exists:quizzes,id',
             'answers' => 'required|array',
-            'answers.*' => 'required|exists:question_options,id'
+            'answers.*' => 'required|string' // We'll validate option existence in the processing loop
         ]);
 
-        $quiz = Quiz::with('questions.options')->findOrFail($request->quiz_id);
+        $quiz = Quiz::with(['questions.options', 'lesson'])->findOrFail($request->quiz_id);
         $userId = Auth::id();
 
-        $existingPassedAttempt = QuizAttempt::where('user_id', $userId)
-            ->where('quiz_id', $quiz->id)
-            ->where('is_passed', true)
-            ->first();
-
-        if ($existingPassedAttempt) {
-            return response()->json([
-                'error' => 'You have already passed this quiz'
-            ], 400);
-        }
+        // Allow unlimited quiz attempts - removed the restriction for passed attempts
 
         $startTime = now();
         $totalQuestions = $quiz->questions->count();
@@ -62,10 +55,14 @@ class QuizSubmissionController extends Controller
             // Process each answer
             foreach ($request->answers as $questionId => $selectedOptionId) {
                 $question = $quiz->questions->find($questionId);
-                if (!$question) continue;
+                if (!$question) {
+                    continue;
+                }
 
                 $selectedOption = $question->options->find($selectedOptionId);
-                if (!$selectedOption) continue;
+                if (!$selectedOption) {
+                    continue;
+                }
 
                 $isCorrect = $selectedOption->is_correct;
                 if ($isCorrect) {
@@ -108,6 +105,19 @@ class QuizSubmissionController extends Controller
                 'answers_summary' => $answersSummary
             ]);
 
+            // If the quiz is passed, record it as a lesson completion
+            if ($isPassed && $quiz->lesson) {
+                LessonCompletion::updateOrCreate(
+                    [
+                        'user_id' => $userId,
+                        'lesson_id' => $quiz->lesson->id
+                    ],
+                    [
+                        'completed_at' => now()
+                    ]
+                );
+            }
+
             DB::commit();
 
             return response()->json([
@@ -123,8 +133,10 @@ class QuizSubmissionController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            
             return response()->json([
-                'error' => 'Failed to submit quiz: ' . $e->getMessage()
+                'error' => 'Failed to submit quiz',
+                'message' => $e->getMessage()
             ], 500);
         }
     }

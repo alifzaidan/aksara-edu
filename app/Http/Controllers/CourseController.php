@@ -237,6 +237,48 @@ class CourseController extends Controller
             $modules = json_decode($request->input('modules'), true);
 
             if (is_array($modules)) {
+                // Get all existing module and lesson IDs from frontend data
+                $frontendModuleIds = [];
+                $frontendLessonIds = [];
+                
+                foreach ($modules as $mod) {
+                    if (isset($mod['id']) && !empty($mod['id'])) {
+                        $frontendModuleIds[] = $mod['id'];
+                    }
+                    if (isset($mod['lessons']) && is_array($mod['lessons'])) {
+                        foreach ($mod['lessons'] as $lesson) {
+                            if (isset($lesson['id']) && !empty($lesson['id'])) {
+                                $frontendLessonIds[] = $lesson['id'];
+                            }
+                        }
+                    }
+                }
+
+                // Delete modules that exist in database but not in frontend data
+                $course->modules()->with('lessons')->get()->each(function ($module) use ($frontendModuleIds, $frontendLessonIds) {
+                    if (!in_array($module->id, $frontendModuleIds)) {
+                        // Delete all lessons in this module and their files
+                        $module->lessons->each(function ($lesson) {
+                            if ($lesson->attachment) {
+                                Storage::disk('public')->delete($lesson->attachment);
+                            }
+                            $lesson->delete();
+                        });
+                        $module->delete();
+                    } else {
+                        // Delete lessons that exist in database but not in frontend data
+                        $module->lessons->each(function ($lesson) use ($frontendLessonIds) {
+                            if (!in_array($lesson->id, $frontendLessonIds)) {
+                                // Delete lesson's files if they exist
+                                if ($lesson->attachment) {
+                                    Storage::disk('public')->delete($lesson->attachment);
+                                }
+                                $lesson->delete();
+                            }
+                        });
+                    }
+                });
+
                 foreach ($modules as $modIdx => $mod) {
                     // Update or create module
                     $module = null;
