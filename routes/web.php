@@ -5,6 +5,10 @@ use App\Http\Controllers\AffiliateController;
 use App\Http\Controllers\AffiliateEarningController;
 use App\Http\Controllers\BootcampController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CertificateController;
+use App\Http\Controllers\CertificateDesignController;
+use App\Http\Controllers\CertificateParticipantController;
+use App\Http\Controllers\CertificateSignController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseDetailController;
 use App\Http\Controllers\EnrollmentProgressController;
@@ -97,6 +101,9 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
     Route::middleware(['role:admin'])->group(function () {
         Route::resource('mentors', MentorController::class);
         Route::resource('users', UserController::class);
+        Route::resource('certificates', CertificateController::class);
+        Route::resource('certificate-designs', CertificateDesignController::class);
+        Route::resource('certificate-signs', CertificateSignController::class);
 
         Route::resource('bootcamps', BootcampController::class);
         Route::post('/bootcamps/{bootcamp}/publish', [BootcampController::class, 'publish'])->name('bootcamps.publish');

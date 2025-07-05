@@ -3,11 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminLayout from '@/layouts/admin-layout';
-import { BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
+import { BreadcrumbItem, SharedData } from '@/types';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { CircleX, Copy, Send, SquarePen, Trash } from 'lucide-react';
+import { Award, CircleX, Copy, Plus, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { Invoice } from './columns-transactions';
@@ -46,16 +46,33 @@ interface Course {
     }[];
 }
 
+interface Certificate {
+    id: string;
+    certificate_number: string;
+    title: string;
+    course_id?: string;
+    bootcamp_id?: string;
+    webinar_id?: string;
+    created_at: string;
+    updated_at: string;
+}
+
 interface CourseProps {
     course: Course;
     transactions: Invoice[];
+    certificate?: Certificate | null;
     flash?: {
         success?: string;
         error?: string;
     };
 }
 
-export default function ShowCourse({ course, transactions, flash }: CourseProps) {
+export default function ShowCourse({ course, transactions, certificate, flash }: CourseProps) {
+    const { auth } = usePage<SharedData>().props;
+    const role = auth.role[0];
+    const isAdmin = role === 'admin';
+    const isMentor = role === 'mentor';
+
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Kelas Online',
@@ -78,6 +95,32 @@ export default function ShowCourse({ course, transactions, flash }: CourseProps)
 
     const handleDelete = () => {
         router.delete(route('courses.destroy', course.id));
+    };
+
+    const canPublish = () => {
+        if (isAdmin) {
+            return !!certificate;
+        }
+        return course.status !== 'draft';
+    };
+
+    const renderPublishMessage = () => {
+        if (course.status === 'draft') {
+            if (isMentor) {
+                return (
+                    <div className="mb-4 rounded-lg bg-blue-50 p-3 text-center text-sm text-blue-700">
+                        Silakan tunggu admin untuk mempublikasikan kelas Anda.
+                    </div>
+                );
+            } else if (isAdmin && !certificate) {
+                return (
+                    <div className="mb-4 rounded-lg bg-red-50 p-3 text-center text-sm text-red-700">
+                        Sertifikat belum dibuat. Silakan buat sertifikat terlebih dahulu sebelum menerbitkan kelas.
+                    </div>
+                );
+            }
+        }
+        return null;
     };
 
     return (
@@ -104,12 +147,15 @@ export default function ShowCourse({ course, transactions, flash }: CourseProps)
                         <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
                         <div className="space-y-4 rounded-lg border p-4">
                             {(course.status === 'draft' || course.status === 'archived') && (
-                                <Button asChild className="w-full">
-                                    <Link method="post" href={route('courses.publish', { course: course.id })}>
-                                        <Send />
-                                        Terbitkan
-                                    </Link>
-                                </Button>
+                                <>
+                                    {renderPublishMessage()}
+                                    <Button asChild className="w-full" disabled={!canPublish()}>
+                                        <Link method="post" href={route('courses.publish', { course: course.id })}>
+                                            <Send />
+                                            {course.status === 'draft' ? 'Terbitkan' : 'Aktifkan Kembali'}
+                                        </Link>
+                                    </Button>
+                                </>
                             )}
                             {course.status === 'published' && (
                                 <Button asChild className="w-full">
@@ -147,7 +193,69 @@ export default function ShowCourse({ course, transactions, flash }: CourseProps)
                                     onConfirm={handleDelete}
                                 />
                             </div>
+                            {isAdmin && (
+                                <>
+                                    <Separator />
+                                    {certificate ? (
+                                        <Button asChild className="w-full" variant="outline">
+                                            <Link href={route('certificates.show', { certificate: certificate.id })}>
+                                                <Award />
+                                                Lihat Data Sertifikat
+                                            </Link>
+                                        </Button>
+                                    ) : (
+                                        <Button asChild className="w-full" variant="outline">
+                                            <Link
+                                                href={route('certificates.create', {
+                                                    program_type: 'course',
+                                                    course_id: course.id,
+                                                })}
+                                            >
+                                                <Plus />
+                                                Buat Sertifikat
+                                            </Link>
+                                        </Button>
+                                    )}
+                                </>
+                            )}
                         </div>
+
+                        {isAdmin && (
+                            <div className="mt-4 space-y-4 rounded-lg border p-4">
+                                <h3 className="text-sm font-medium">Informasi Sertifikat</h3>
+                                {certificate ? (
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground">Status:</span>
+                                            <span className="flex items-center gap-1 text-green-600">
+                                                <Award className="h-3 w-3" />
+                                                Tersedia
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground">Judul:</span>
+                                            <span className="font-medium">{certificate.title}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground">Nomor:</span>
+                                            <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">{certificate.certificate_number}</code>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground">Dibuat:</span>
+                                            <span className="text-xs">{format(new Date(certificate.created_at), 'dd MMM yyyy', { locale: id })}</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-muted-foreground text-center text-sm">
+                                        <Award className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                                        <p>Belum ada sertifikat untuk kelas ini.</p>
+                                        <p className="mt-1 text-xs">
+                                            Buat sertifikat untuk memberikan penghargaan kepada peserta yang menyelesaikan kelas.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
                 <div className="mt-4 rounded-lg border p-4">

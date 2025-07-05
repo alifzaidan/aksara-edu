@@ -7,11 +7,101 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { rupiahFormatter } from '@/lib/utils';
-import { Link, router } from '@inertiajs/react';
+import { SharedData } from '@/types';
+import { Link, router, usePage } from '@inertiajs/react';
+import type { Row } from '@tanstack/react-table';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Folder, Trash } from 'lucide-react';
+import { Award, Folder, Trash } from 'lucide-react';
+
+function CertificateCell({ row }: { row: Row<Course> }) {
+    const { auth } = usePage<SharedData>().props;
+    const role = auth.role[0];
+    const isAdmin = role === 'admin';
+    const isMentor = role === 'mentor';
+
+    const certificate = row.original.certificate;
+
+    if (isMentor) {
+        if (certificate) {
+            return (
+                <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+                    <Award className="mr-1 h-3 w-3" />
+                    Tersedia
+                </Badge>
+            );
+        }
+
+        return (
+            <Badge variant="outline" className="border-gray-200 bg-gray-50 text-gray-600">
+                <Award className="mr-1 h-3 w-3" />
+                Belum Ada
+            </Badge>
+        );
+    }
+
+    if (isAdmin) {
+        if (certificate) {
+            return (
+                <div className="flex items-center gap-2">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" asChild>
+                                <Link href={route('certificates.show', { certificate: certificate.id })}>
+                                    <Award className="h-4 w-4 text-green-600" />
+                                    <Badge variant="outline" className="ml-1 border-green-200 bg-green-50 text-green-700">
+                                        Tersedia
+                                    </Badge>
+                                </Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <div className="text-xs">
+                                <p className="font-medium">{certificate.title}</p>
+                                <p className="text-muted-foreground">
+                                    Dibuat: {format(new Date(certificate.created_at), 'dd MMM yyyy', { locale: id })}
+                                </p>
+                                <p className="mt-1 text-blue-600">Klik untuk lihat detail</p>
+                            </div>
+                        </TooltipContent>
+                    </Tooltip>
+                </div>
+            );
+        }
+
+        return (
+            <div className="flex items-center gap-2">
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="sm" asChild>
+                            <Link
+                                href={route('certificates.create', {
+                                    program_type: 'course',
+                                    course_id: row.original.id,
+                                })}
+                            >
+                                <Award className="h-4 w-4 text-gray-400" />
+                                <Badge variant="outline" className="ml-1 border-gray-200 bg-gray-50 text-gray-600">
+                                    Belum Ada
+                                </Badge>
+                            </Link>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p className="text-xs">Klik untuk membuat sertifikat</p>
+                    </TooltipContent>
+                </Tooltip>
+            </div>
+        );
+    }
+
+    return (
+        <Badge variant="outline" className="border-gray-200 bg-gray-50 text-gray-600">
+            <Award className="mr-1 h-3 w-3" />-
+        </Badge>
+    );
+}
 
 export default function CourseActions({ course }: { course: Course }) {
     const handleDelete = () => {
@@ -75,6 +165,12 @@ export type Course = {
     status: 'draft' | 'published' | 'archived';
     level: 'beginner' | 'intermediate' | 'advanced';
     created_at: string;
+    certificate?: {
+        id: string;
+        title: string;
+        certificate_number: string;
+        created_at: string;
+    } | null;
 };
 
 export const columns: ColumnDef<Course>[] = [
@@ -172,6 +268,12 @@ export const columns: ColumnDef<Course>[] = [
             if (status === 'archived') color = 'bg-zinc-300 text-zinc-700';
             return <Badge className={`capitalize ${color} border-0`}>{status}</Badge>;
         },
+    },
+    {
+        accessorKey: 'certificate',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Sertifikat" />,
+        cell: ({ row }) => <CertificateCell row={row} />,
+        enableSorting: false,
     },
     {
         id: 'actions',

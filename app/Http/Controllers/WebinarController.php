@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Certificate;
 use App\Models\Invoice;
 use App\Models\Tool;
 use App\Models\Webinar;
@@ -17,7 +18,7 @@ class WebinarController extends Controller
 {
     public function index()
     {
-        $webinars = Webinar::with(['category', 'user'])->latest()->get();
+        $webinars = Webinar::with(['category', 'user', 'certificate'])->latest()->get();
         return Inertia::render('admin/webinars/index', ['webinars' => $webinars]);
     }
 
@@ -98,7 +99,9 @@ class WebinarController extends Controller
             ->latest()
             ->get();
 
-        return Inertia::render('admin/webinars/show', ['webinar' => $webinar, 'transactions' => $transactions]);
+        $certificate = Certificate::where('webinar_id', $id)->first();
+
+        return Inertia::render('admin/webinars/show', ['webinar' => $webinar, 'transactions' => $transactions, 'certificate' => $certificate]);
     }
 
     public function edit(string $id)

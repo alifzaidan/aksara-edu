@@ -25,4 +25,9 @@ class Webinar extends Model
     {
         return $this->belongsToMany(Tool::class, 'webinar_tool');
     }
+
+    public function certificate()
+    {
+        return $this->hasOne(Certificate::class);
+    }
 }

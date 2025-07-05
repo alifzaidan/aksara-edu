@@ -39,6 +39,7 @@ export default function CourseDetail({ course }: { course: Course }) {
                             toast.success('Link pembelian berhasil disalin!');
                         }}
                         className="w-full hover:cursor-pointer"
+                        disabled={course.status === 'draft' || course.status === 'archived'}
                     >
                         Salin Link Pembelian <LinkIcon />
                     </Button>
@@ -52,15 +53,22 @@ export default function CourseDetail({ course }: { course: Course }) {
                             toast.success('Link kelas berhasil disalin!');
                         }}
                         className="w-full hover:cursor-pointer"
+                        disabled={course.status === 'draft' || course.status === 'archived'}
                     >
                         Salin Link Kelas <LinkIcon />
                     </Button>
                 </div>
             </div>
-            <p className="text-muted-foreground text-center text-sm">
-                Share link diatas ke sosial media, whatsapp, tiktok, landing page, email ataupun channel penjualan lainnya agar peserta dapat
-                mengakses kelas online ini.
-            </p>
+            {course.status === 'published' ? (
+                <p className="text-muted-foreground text-center text-sm">
+                    Share link diatas ke sosial media, whatsapp, tiktok, landing page, email ataupun channel penjualan lainnya agar peserta dapat
+                    mengakses kelas online ini.
+                </p>
+            ) : (
+                <p className="text-center text-sm text-red-500">
+                    Kelas ini belum diterbitkan. Silakan terbitkan kelas terlebih dahulu untuk membagikan link akses kelas.
+                </p>
+            )}
             <Table>
                 <TableBody>
                     <TableRow>

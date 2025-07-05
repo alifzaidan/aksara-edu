@@ -47,6 +47,7 @@ export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
                             toast.success('Link pendaftaran berhasil disalin!');
                         }}
                         className="w-full hover:cursor-pointer"
+                        disabled={webinar.status === 'draft' || webinar.status === 'archived'}
                     >
                         Salin Link Pendaftaran <LinkIcon />
                     </Button>
@@ -60,15 +61,22 @@ export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
                             toast.success('Link webinar berhasil disalin!');
                         }}
                         className="w-full hover:cursor-pointer"
+                        disabled={webinar.status === 'draft' || webinar.status === 'archived'}
                     >
                         Salin Link Webinar <LinkIcon />
                     </Button>
                 </div>
             </div>
-            <p className="text-muted-foreground text-center text-sm">
-                Share link diatas ke sosial media, whatsapp, tiktok, landing page, email ataupun channel penjualan lainnya untuk menerima order dan
-                pembayaran
-            </p>
+            {webinar.status === 'published' ? (
+                <p className="text-muted-foreground text-center text-sm">
+                    Share link diatas ke sosial media, whatsapp, tiktok, landing page, email ataupun channel penjualan lainnya untuk menerima order
+                    dan pembayaran
+                </p>
+            ) : (
+                <p className="text-center text-sm text-red-500">
+                    Webinar ini belum diterbitkan. Silakan terbitkan webinar terlebih dahulu untuk membagikan link akses webinar.
+                </p>
+            )}
             <Table>
                 <TableBody>
                     <TableRow>

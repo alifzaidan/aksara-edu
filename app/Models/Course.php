@@ -41,9 +41,9 @@ class Course extends Model
         return $this->hasMany(Enrollment::class);
     }
 
-    public function certificates()
+    public function certificate()
     {
-        return $this->hasMany(Certificate::class);
+        return $this->hasOne(Certificate::class);
     }
 
     public function courseRatings()

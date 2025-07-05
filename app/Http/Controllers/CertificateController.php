@@ -2,9 +2,246 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bootcamp;
+use App\Models\Certificate;
+use App\Models\CertificateDesign;
+use App\Models\CertificateSign;
+use App\Models\Course;
+use App\Models\Webinar;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class CertificateController extends Controller
 {
-    //
+    public function index()
+    {
+        $certificates = Certificate::with(['design', 'sign', 'course', 'bootcamp', 'webinar'])->latest()->get();
+
+        return Inertia::render('admin/certificates/index', [
+            'certificates' => $certificates
+        ]);
+    }
+
+    public function show(Certificate $certificate)
+    {
+        $certificate->load([
+            'design',
+            'sign',
+            'course',
+            'bootcamp',
+            'webinar',
+            'participants.user'
+        ]);
+
+        return Inertia::render('admin/certificates/show', [
+            'certificate' => $certificate
+        ]);
+    }
+
+    public function create(Request $request)
+    {
+        $designs = CertificateDesign::all();
+        $signs = CertificateSign::all();
+
+        $courses = Course::whereDoesntHave('certificate')
+            ->select(['id', 'title'])
+            ->get();
+
+        $bootcamps = Bootcamp::whereDoesntHave('certificate')
+            ->select(['id', 'title'])
+            ->get();
+
+        $webinars = Webinar::whereDoesntHave('certificate')
+            ->select(['id', 'title'])
+            ->get();
+
+        // Pre-fill data jika ada parameter dari URL
+        $prefilledData = [];
+
+        if ($request->has('program_type')) {
+            $prefilledData['program_type'] = $request->get('program_type');
+        }
+
+        if ($request->has('course_id')) {
+            $courseId = $request->get('course_id');
+            $course = Course::find($courseId);
+
+            if ($course) {
+                $prefilledData['program_type'] = 'course';
+                $prefilledData['course_id'] = $courseId;
+                $prefilledData['title'] = "Sertifikat {$course->title}";
+
+                if (!$courses->contains('id', $courseId)) {
+                    $courses->push((object)[
+                        'id' => $course->id,
+                        'title' => $course->title
+                    ]);
+                }
+            }
+        }
+
+        if ($request->has('bootcamp_id')) {
+            $bootcampId = $request->get('bootcamp_id');
+            $bootcamp = Bootcamp::find($bootcampId);
+
+            if ($bootcamp) {
+                $prefilledData['program_type'] = 'bootcamp';
+                $prefilledData['bootcamp_id'] = $bootcampId;
+                $prefilledData['title'] = "Sertifikat {$bootcamp->title}";
+
+                if (!$bootcamps->contains('id', $bootcampId)) {
+                    $bootcamps->push((object)[
+                        'id' => $bootcamp->id,
+                        'title' => $bootcamp->title
+                    ]);
+                }
+            }
+        }
+
+        if ($request->has('webinar_id')) {
+            $webinarId = $request->get('webinar_id');
+            $webinar = Webinar::find($webinarId);
+
+            if ($webinar) {
+                $prefilledData['program_type'] = 'webinar';
+                $prefilledData['webinar_id'] = $webinarId;
+                $prefilledData['title'] = "Sertifikat {$webinar->title}";
+
+                if (!$webinars->contains('id', $webinarId)) {
+                    $webinars->push((object)[
+                        'id' => $webinar->id,
+                        'title' => $webinar->title
+                    ]);
+                }
+            }
+        }
+
+        return Inertia::render('admin/certificates/create', [
+            'designs' => $designs,
+            'signs' => $signs,
+            'courses' => $courses,
+            'bootcamps' => $bootcamps,
+            'webinars' => $webinars,
+            'prefilledData' => $prefilledData
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'design_id' => 'required|exists:certificate_designs,id',
+            'sign_id' => 'required|exists:certificate_signs,id',
+            'certificate_number' => 'required|string|unique:certificates',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'header_top' => 'nullable|string',
+            'header_bottom' => 'nullable|string',
+            'issued_date' => 'nullable|date',
+            'period' => 'nullable|string',
+            'program_type' => 'required|in:course,bootcamp,webinar',
+            'course_id' => 'required_if:program_type,course|nullable|exists:courses,id',
+            'bootcamp_id' => 'required_if:program_type,bootcamp|nullable|exists:bootcamps,id',
+            'webinar_id' => 'required_if:program_type,webinar|nullable|exists:webinars,id',
+        ]);
+
+        $data = $request->all();
+        if ($request->program_type !== 'course') {
+            $data['course_id'] = null;
+        }
+        if ($request->program_type !== 'bootcamp') {
+            $data['bootcamp_id'] = null;
+        }
+        if ($request->program_type !== 'webinar') {
+            $data['webinar_id'] = null;
+        }
+
+        Certificate::create($data);
+
+        return redirect()->route('certificates.index')
+            ->with('success', 'Sertifikat berhasil ditambahkan');
+    }
+
+    public function edit(Certificate $certificate)
+    {
+        $designs = CertificateDesign::all();
+        $signs = CertificateSign::all();
+
+        $courses = Course::where(function ($query) use ($certificate) {
+            $query->whereDoesntHave('certificate')
+                ->orWhere('id', $certificate->course_id);
+        })->select(['id', 'title'])->get();
+
+
+        $bootcamps = Bootcamp::where(function ($query) use ($certificate) {
+            $query->whereDoesntHave('certificate')
+                ->orWhere('id', $certificate->bootcamp_id);
+        })->select(['id', 'title'])->get();
+
+
+        $webinars = Webinar::where(function ($query) use ($certificate) {
+            $query->whereDoesntHave('certificate')
+                ->orWhere('id', $certificate->webinar_id);
+        })->select(['id', 'title'])->get();
+
+        $programType = '';
+        if ($certificate->course_id) {
+            $programType = 'course';
+        } elseif ($certificate->bootcamp_id) {
+            $programType = 'bootcamp';
+        } elseif ($certificate->webinar_id) {
+            $programType = 'webinar';
+        }
+
+        return Inertia::render('admin/certificates/edit', [
+            'certificate' => array_merge($certificate->toArray(), ['program_type' => $programType]),
+            'designs' => $designs,
+            'signs' => $signs,
+            'courses' => $courses,
+            'bootcamps' => $bootcamps,
+            'webinars' => $webinars
+        ]);
+    }
+
+    public function update(Request $request, Certificate $certificate)
+    {
+        $request->validate([
+            'design_id' => 'required|exists:certificate_designs,id',
+            'sign_id' => 'required|exists:certificate_signs,id',
+            'certificate_number' => 'required|string|unique:certificates,certificate_number,' . $certificate->id,
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'header_top' => 'nullable|string',
+            'header_bottom' => 'nullable|string',
+            'issued_date' => 'nullable|date',
+            'period' => 'nullable|string',
+            'program_type' => 'required|in:course,bootcamp,webinar',
+            'course_id' => 'required_if:program_type,course|nullable|exists:courses,id',
+            'bootcamp_id' => 'required_if:program_type,bootcamp|nullable|exists:bootcamps,id',
+            'webinar_id' => 'required_if:program_type,webinar|nullable|exists:webinars,id',
+        ]);
+
+        $data = $request->all();
+        if ($request->program_type !== 'course') {
+            $data['course_id'] = null;
+        }
+        if ($request->program_type !== 'bootcamp') {
+            $data['bootcamp_id'] = null;
+        }
+        if ($request->program_type !== 'webinar') {
+            $data['webinar_id'] = null;
+        }
+
+        $certificate->update($data);
+
+        return redirect()->route('certificates.index')
+            ->with('success', 'Sertifikat berhasil diperbarui');
+    }
+
+    public function destroy(Certificate $certificate)
+    {
+        $certificate->delete();
+
+        return redirect()->route('certificates.index')
+            ->with('success', 'Sertifikat berhasil dihapus');
+    }
 }
