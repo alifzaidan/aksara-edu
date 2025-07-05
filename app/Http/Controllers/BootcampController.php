@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Bootcamp;
 use App\Models\Category;
+use App\Models\Certificate;
 use App\Models\Invoice;
 use App\Models\Tool;
 use Carbon\Carbon;
@@ -16,7 +17,7 @@ class BootcampController extends Controller
 {
     public function index()
     {
-        $bootcamps = Bootcamp::with(['category', 'user', 'schedules'])->latest()->get();
+        $bootcamps = Bootcamp::with(['category', 'user', 'schedules', 'certificate'])->latest()->get();
         return Inertia::render('admin/bootcamps/index', ['bootcamps' => $bootcamps]);
     }
 
@@ -114,7 +115,9 @@ class BootcampController extends Controller
             ->latest()
             ->get();
 
-        return Inertia::render('admin/bootcamps/show', ['bootcamp' => $bootcamp, 'transactions' => $transactions]);
+        $certificate = Certificate::where('bootcamp_id', $id)->first();
+
+        return Inertia::render('admin/bootcamps/show', ['bootcamp' => $bootcamp, 'transactions' => $transactions, 'certificate' => $certificate]);
     }
 
     public function edit(string $id)

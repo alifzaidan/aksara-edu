@@ -11,7 +11,7 @@ import { Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Folder, Trash } from 'lucide-react';
+import { Award, Folder, Trash } from 'lucide-react';
 
 export default function BootcampActions({ bootcamp }: { bootcamp: Bootcamp }) {
     const handleDelete = () => {
@@ -75,6 +75,12 @@ export type Bootcamp = {
     start_date: string;
     end_date: string;
     status: 'draft' | 'published' | 'archived';
+    certificate?: {
+        id: string;
+        title: string;
+        certificate_number: string;
+        created_at: string;
+    } | null;
 };
 
 export const columns: ColumnDef<Bootcamp>[] = [
@@ -191,6 +197,66 @@ export const columns: ColumnDef<Bootcamp>[] = [
             if (status === 'archived') color = 'bg-zinc-300 text-zinc-700';
             return <Badge className={`capitalize ${color} border-0`}>{status}</Badge>;
         },
+    },
+    {
+        accessorKey: 'certificate',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Sertifikat" />,
+        cell: ({ row }) => {
+            const certificate = row.original.certificate;
+
+            if (certificate) {
+                return (
+                    <div className="flex items-center gap-2">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="sm" asChild>
+                                    <Link href={route('certificates.show', { certificate: certificate.id })}>
+                                        <Award className="h-4 w-4 text-green-600" />
+                                        <Badge variant="outline" className="ml-1 border-green-200 bg-green-50 text-green-700">
+                                            Tersedia
+                                        </Badge>
+                                    </Link>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <div className="text-xs">
+                                    <p className="font-medium">{certificate.title}</p>
+                                    <p className="text-muted-foreground">
+                                        Dibuat: {format(new Date(certificate.created_at), 'dd MMM yyyy', { locale: id })}
+                                    </p>
+                                </div>
+                            </TooltipContent>
+                        </Tooltip>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex items-center gap-2">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" asChild>
+                                <Link
+                                    href={route('certificates.create', {
+                                        program_type: 'bootcamp',
+                                        bootcamp_id: row.original.id,
+                                    })}
+                                >
+                                    <Award className="h-4 w-4 text-gray-400" />
+                                    <Badge variant="outline" className="ml-1 border-gray-200 bg-gray-50 text-gray-600">
+                                        Belum Ada
+                                    </Badge>
+                                </Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p className="text-xs">Klik untuk membuat sertifikat</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </div>
+            );
+        },
+        enableSorting: false,
     },
     {
         id: 'actions',

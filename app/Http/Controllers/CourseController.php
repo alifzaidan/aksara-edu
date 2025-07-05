@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\Invoice;
 use App\Models\Tool;
@@ -16,7 +17,7 @@ class CourseController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $query = Course::with(['category', 'user'])->latest();
+        $query = Course::with(['category', 'user', 'certificate'])->latest();
 
         if ($user->hasRole('mentor')) {
             $query->where('user_id', $user->id);
@@ -143,7 +144,13 @@ class CourseController extends Controller
             ->latest()
             ->get();
 
-        return Inertia::render('admin/courses/show', ['course' => $course, 'transactions' => $transactions]);
+        $certificate = Certificate::where('course_id', $id)->first();
+
+        return Inertia::render('admin/courses/show', [
+            'course' => $course,
+            'transactions' => $transactions,
+            'certificate' => $certificate
+        ]);
     }
 
     public function edit(string $id)

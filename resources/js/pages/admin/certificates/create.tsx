@@ -54,9 +54,16 @@ interface CertificateCreateProps {
     courses: { id: string; title: string }[];
     bootcamps: { id: string; title: string }[];
     webinars: { id: string; title: string }[];
+    prefilledData?: {
+        program_type?: string;
+        course_id?: string;
+        bootcamp_id?: string;
+        webinar_id?: string;
+        title?: string;
+    };
 }
 
-export default function CreateCertificate({ designs, signs, courses, bootcamps, webinars }: CertificateCreateProps) {
+export default function CreateCertificate({ designs, signs, courses, bootcamps, webinars, prefilledData = {} }: CertificateCreateProps) {
     const [isDesignPopoverOpen, setIsDesignPopoverOpen] = useState(false);
     const [isSignPopoverOpen, setIsSignPopoverOpen] = useState(false);
     const [isProgramPopoverOpen, setIsProgramPopoverOpen] = useState(false);
@@ -68,20 +75,25 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
             design_id: '',
             sign_id: '',
             certificate_number: '',
-            title: '',
+            title: prefilledData.title || '',
             description: '',
             header_top: '',
             header_bottom: '',
             issued_date: '',
             period: '',
-            program_type: undefined,
-            course_id: '',
-            bootcamp_id: '',
-            webinar_id: '',
+            program_type: prefilledData.program_type as 'course' | 'bootcamp' | 'webinar' | undefined,
+            course_id: prefilledData.course_id || '',
+            bootcamp_id: prefilledData.bootcamp_id || '',
+            webinar_id: prefilledData.webinar_id || '',
         },
     });
 
     const programType = form.watch('program_type');
+
+    const isPrefilledFromCourse = !!prefilledData.course_id;
+    const isPrefilledFromBootcamp = !!prefilledData.bootcamp_id;
+    const isPrefilledFromWebinar = !!prefilledData.webinar_id;
+    const isPrefilledProgram = isPrefilledFromCourse || isPrefilledFromBootcamp || isPrefilledFromWebinar;
 
     function onSubmit(values: z.infer<typeof formSchema>) {
         router.post(route('certificates.store'), values);
@@ -126,6 +138,14 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
         }
     };
 
+    const getSelectedProgramName = () => {
+        const programFieldName = getProgramFieldName();
+        const selectedId = form.watch(programFieldName as 'course_id' | 'bootcamp_id' | 'webinar_id');
+        const options = getProgramOptions();
+        const selected = options.find((option) => option.id === selectedId);
+        return selected?.title || '';
+    };
+
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title="Tambah Sertifikat Baru" />
@@ -134,6 +154,19 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
                 <p className="text-muted-foreground mb-6 max-w-2xl text-sm">
                     Silakan isi form di bawah ini untuk membuat sertifikat baru. Pastikan semua informasi yang diperlukan telah diisi dengan benar.
                 </p>
+
+                {isPrefilledProgram && (
+                    <div className="mb-6 rounded-lg bg-blue-50 p-4">
+                        <div className="mb-2 flex items-center gap-2">
+                            <Award className="h-4 w-4 text-blue-600" />
+                            <h3 className="text-sm font-medium text-blue-900">Program Terpilih</h3>
+                        </div>
+                        <p className="text-sm text-blue-700">
+                            Sertifikat ini akan dibuat untuk program: <strong>{getSelectedProgramName()}</strong>
+                        </p>
+                    </div>
+                )}
+
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
                         <div className="space-y-6 rounded-lg border p-4">
@@ -249,12 +282,15 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
                                         <Select
                                             onValueChange={(value) => {
                                                 field.onChange(value);
-                                                // Reset program IDs when type changes
-                                                form.setValue('course_id', '');
-                                                form.setValue('bootcamp_id', '');
-                                                form.setValue('webinar_id', '');
+                                                // Reset program IDs when type changes (only if not prefilled)
+                                                if (!isPrefilledProgram) {
+                                                    form.setValue('course_id', '');
+                                                    form.setValue('bootcamp_id', '');
+                                                    form.setValue('webinar_id', '');
+                                                }
                                             }}
                                             defaultValue={field.value}
+                                            disabled={isPrefilledProgram}
                                         >
                                             <FormControl>
                                                 <SelectTrigger>
@@ -267,6 +303,11 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
                                                 <SelectItem value="webinar">Webinar</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                        {isPrefilledProgram && (
+                                            <FormDescription className="text-blue-600">
+                                                Program sudah dipilih dari halaman detail program
+                                            </FormDescription>
+                                        )}
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -282,54 +323,68 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
                                                 {programType === 'course' ? 'Kelas Online' : programType === 'bootcamp' ? 'Bootcamp' : 'Webinar'}{' '}
                                                 <span className="text-red-500">*</span>
                                             </FormLabel>
-                                            <Popover open={isProgramPopoverOpen} onOpenChange={setIsProgramPopoverOpen}>
-                                                <PopoverTrigger asChild>
-                                                    <FormControl>
-                                                        <Button
-                                                            variant="outline"
-                                                            role="combobox"
-                                                            className={cn('justify-between', !field.value && 'text-muted-foreground')}
-                                                        >
-                                                            {field.value
-                                                                ? getProgramOptions().find((option) => option.id === field.value)?.title
-                                                                : getProgramPlaceholder()}
-                                                            <span className="sr-only">Pilih program</span>
-                                                            <ChevronsUpDown className="opacity-50" />
-                                                        </Button>
-                                                    </FormControl>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="p-0">
-                                                    <Command>
-                                                        <CommandInput placeholder={`Cari ${programType}...`} className="h-9" />
-                                                        <CommandList>
-                                                            <CommandEmpty>Tidak ada {programType} ditemukan.</CommandEmpty>
-                                                            <CommandGroup>
-                                                                {getProgramOptions().map((option) => (
-                                                                    <CommandItem
-                                                                        value={option.title}
-                                                                        key={option.id}
-                                                                        onSelect={() => {
-                                                                            form.setValue(
-                                                                                getProgramFieldName() as 'course_id' | 'bootcamp_id' | 'webinar_id',
-                                                                                option.id,
-                                                                            );
-                                                                            setIsProgramPopoverOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        {option.title}
-                                                                        <Check
-                                                                            className={cn(
-                                                                                'ml-auto',
-                                                                                option.id === field.value ? 'opacity-100' : 'opacity-0',
-                                                                            )}
-                                                                        />
-                                                                    </CommandItem>
-                                                                ))}
-                                                            </CommandGroup>
-                                                        </CommandList>
-                                                    </Command>
-                                                </PopoverContent>
-                                            </Popover>
+                                            {isPrefilledProgram ? (
+                                                // Show selected program as disabled input when prefilled
+                                                <FormControl>
+                                                    <Input value={getSelectedProgramName()} disabled className="bg-gray-50" />
+                                                </FormControl>
+                                            ) : (
+                                                // Show dropdown when not prefilled
+                                                <Popover open={isProgramPopoverOpen} onOpenChange={setIsProgramPopoverOpen}>
+                                                    <PopoverTrigger asChild>
+                                                        <FormControl>
+                                                            <Button
+                                                                variant="outline"
+                                                                role="combobox"
+                                                                className={cn('justify-between', !field.value && 'text-muted-foreground')}
+                                                            >
+                                                                {field.value
+                                                                    ? getProgramOptions().find((option) => option.id === field.value)?.title
+                                                                    : getProgramPlaceholder()}
+                                                                <span className="sr-only">Pilih program</span>
+                                                                <ChevronsUpDown className="opacity-50" />
+                                                            </Button>
+                                                        </FormControl>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="p-0">
+                                                        <Command>
+                                                            <CommandInput placeholder={`Cari ${programType}...`} className="h-9" />
+                                                            <CommandList>
+                                                                <CommandEmpty>Tidak ada {programType} ditemukan.</CommandEmpty>
+                                                                <CommandGroup>
+                                                                    {getProgramOptions().map((option) => (
+                                                                        <CommandItem
+                                                                            value={option.title}
+                                                                            key={option.id}
+                                                                            onSelect={() => {
+                                                                                form.setValue(
+                                                                                    getProgramFieldName() as
+                                                                                        | 'course_id'
+                                                                                        | 'bootcamp_id'
+                                                                                        | 'webinar_id',
+                                                                                    option.id,
+                                                                                );
+                                                                                setIsProgramPopoverOpen(false);
+                                                                            }}
+                                                                        >
+                                                                            {option.title}
+                                                                            <Check
+                                                                                className={cn(
+                                                                                    'ml-auto',
+                                                                                    option.id === field.value ? 'opacity-100' : 'opacity-0',
+                                                                                )}
+                                                                            />
+                                                                        </CommandItem>
+                                                                    ))}
+                                                                </CommandGroup>
+                                                            </CommandList>
+                                                        </Command>
+                                                    </PopoverContent>
+                                                </Popover>
+                                            )}
+                                            {isPrefilledProgram && (
+                                                <FormDescription className="text-blue-600">Program sudah dipilih dari halaman detail</FormDescription>
+                                            )}
                                             <FormMessage />
                                         </FormItem>
                                     )}

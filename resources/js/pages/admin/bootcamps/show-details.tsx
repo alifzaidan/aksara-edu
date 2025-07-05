@@ -49,6 +49,7 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                             toast.success('Link pendaftaran berhasil disalin!');
                         }}
                         className="w-full hover:cursor-pointer"
+                        disabled={bootcamp.status === 'draft' || bootcamp.status === 'archived'}
                     >
                         Salin Link Pendaftaran <LinkIcon />
                     </Button>
@@ -62,15 +63,22 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                             toast.success('Link bootcamp berhasil disalin!');
                         }}
                         className="w-full hover:cursor-pointer"
+                        disabled={bootcamp.status === 'draft' || bootcamp.status === 'archived'}
                     >
                         Salin Link Bootcamp <LinkIcon />
                     </Button>
                 </div>
             </div>
-            <p className="text-muted-foreground text-center text-sm">
-                Share link diatas ke sosial media, whatsapp, tiktok, landing page, email ataupun channel penjualan lainnya untuk menerima order dan
-                pembayaran
-            </p>
+            {bootcamp.status === 'published' ? (
+                <p className="text-muted-foreground text-center text-sm">
+                    Share link diatas ke sosial media, whatsapp, tiktok, landing page, email ataupun channel penjualan lainnya untuk menerima order
+                    dan pembayaran
+                </p>
+            ) : (
+                <p className="text-center text-sm text-red-500">
+                    Bootcamp ini belum diterbitkan. Silakan terbitkan bootcamp terlebih dahulu untuk membagikan link akses bootcamp.
+                </p>
+            )}
             <Table>
                 <TableBody>
                     <TableRow>

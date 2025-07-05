@@ -38,29 +38,91 @@ class CertificateController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $designs = CertificateDesign::all();
         $signs = CertificateSign::all();
 
-        $courses = Course::whereDoesntHave('certificates')
+        $courses = Course::whereDoesntHave('certificate')
             ->select(['id', 'title'])
             ->get();
 
-        $bootcamps = Bootcamp::whereDoesntHave('certificates')
+        $bootcamps = Bootcamp::whereDoesntHave('certificate')
             ->select(['id', 'title'])
             ->get();
 
-        $webinars = Webinar::whereDoesntHave('certificates')
+        $webinars = Webinar::whereDoesntHave('certificate')
             ->select(['id', 'title'])
             ->get();
+
+        // Pre-fill data jika ada parameter dari URL
+        $prefilledData = [];
+
+        if ($request->has('program_type')) {
+            $prefilledData['program_type'] = $request->get('program_type');
+        }
+
+        if ($request->has('course_id')) {
+            $courseId = $request->get('course_id');
+            $course = Course::find($courseId);
+
+            if ($course) {
+                $prefilledData['program_type'] = 'course';
+                $prefilledData['course_id'] = $courseId;
+                $prefilledData['title'] = "Sertifikat {$course->title}";
+
+                if (!$courses->contains('id', $courseId)) {
+                    $courses->push((object)[
+                        'id' => $course->id,
+                        'title' => $course->title
+                    ]);
+                }
+            }
+        }
+
+        if ($request->has('bootcamp_id')) {
+            $bootcampId = $request->get('bootcamp_id');
+            $bootcamp = Bootcamp::find($bootcampId);
+
+            if ($bootcamp) {
+                $prefilledData['program_type'] = 'bootcamp';
+                $prefilledData['bootcamp_id'] = $bootcampId;
+                $prefilledData['title'] = "Sertifikat {$bootcamp->title}";
+
+                if (!$bootcamps->contains('id', $bootcampId)) {
+                    $bootcamps->push((object)[
+                        'id' => $bootcamp->id,
+                        'title' => $bootcamp->title
+                    ]);
+                }
+            }
+        }
+
+        if ($request->has('webinar_id')) {
+            $webinarId = $request->get('webinar_id');
+            $webinar = Webinar::find($webinarId);
+
+            if ($webinar) {
+                $prefilledData['program_type'] = 'webinar';
+                $prefilledData['webinar_id'] = $webinarId;
+                $prefilledData['title'] = "Sertifikat {$webinar->title}";
+
+                if (!$webinars->contains('id', $webinarId)) {
+                    $webinars->push((object)[
+                        'id' => $webinar->id,
+                        'title' => $webinar->title
+                    ]);
+                }
+            }
+        }
 
         return Inertia::render('admin/certificates/create', [
             'designs' => $designs,
             'signs' => $signs,
             'courses' => $courses,
             'bootcamps' => $bootcamps,
-            'webinars' => $webinars
+            'webinars' => $webinars,
+            'prefilledData' => $prefilledData
         ]);
     }
 
@@ -105,19 +167,19 @@ class CertificateController extends Controller
         $signs = CertificateSign::all();
 
         $courses = Course::where(function ($query) use ($certificate) {
-            $query->whereDoesntHave('certificates')
+            $query->whereDoesntHave('certificate')
                 ->orWhere('id', $certificate->course_id);
         })->select(['id', 'title'])->get();
 
 
         $bootcamps = Bootcamp::where(function ($query) use ($certificate) {
-            $query->whereDoesntHave('certificates')
+            $query->whereDoesntHave('certificate')
                 ->orWhere('id', $certificate->bootcamp_id);
         })->select(['id', 'title'])->get();
 
 
         $webinars = Webinar::where(function ($query) use ($certificate) {
-            $query->whereDoesntHave('certificates')
+            $query->whereDoesntHave('certificate')
                 ->orWhere('id', $certificate->webinar_id);
         })->select(['id', 'title'])->get();
 
