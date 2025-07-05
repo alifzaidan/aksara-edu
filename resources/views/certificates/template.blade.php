@@ -225,7 +225,7 @@
             {{-- Content --}}
             <div class="content">
                 <div class="content-text">
-                    0001/{{ $certificate->certificate_number }}
+                    {{ sprintf('%04d', $data['certificate_number']) }}/{{ $certificate->certificate_number }}
                 </div>
 
                 <div class="participant-name">
@@ -269,7 +269,7 @@
                     @endif
                 </div>
                 <div class="period-section">
-                    <div class="certificate-url">http://aksademy/certificates/23hrrdh81</div>
+                    <div class="certificate-url">https://aksademy/certificates/{{ $data['certificate_code'] }}</div>
                     <div class="certificate-period">Sertifikat berlaku sampai</div>
                     <div class="certificate-period">{{ $certificate->period }}</div>
                 </div>

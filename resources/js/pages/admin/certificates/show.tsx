@@ -1,14 +1,15 @@
 import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminLayout from '@/layouts/admin-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Download, SquarePen, Trash } from 'lucide-react';
-import { useEffect } from 'react';
+import { Download, Eye, SquarePen, Trash } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import CertificateDetail from './show-details';
 import CertificateParticipants from './show-participants';
@@ -57,6 +58,8 @@ interface CertificateProps {
 }
 
 export default function ShowCertificate({ certificate, flash }: CertificateProps) {
+    const [isLoading, setIsLoading] = useState(true);
+
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Sertifikat',
@@ -79,6 +82,10 @@ export default function ShowCertificate({ certificate, flash }: CertificateProps
 
     const handleDelete = () => {
         router.delete(route('certificates.destroy', certificate.id));
+    };
+
+    const handleIframeLoad = () => {
+        setIsLoading(false);
     };
 
     return (
@@ -104,10 +111,10 @@ export default function ShowCertificate({ certificate, flash }: CertificateProps
                         <h2 className="my-2 text-lg font-medium">Aksi & Kelola</h2>
                         <div className="space-y-4 rounded-lg border p-4">
                             <Button asChild className="w-full" variant="default">
-                                <Link href={route('certificates.download.all', { certificate: certificate.id })} target="_blank">
+                                <a href={route('certificates.download.all', { certificate: certificate.id })} target="_blank">
                                     <Download className="h-4 w-4" />
                                     Unduh Semua Sertifikat
-                                </Link>
+                                </a>
                             </Button>
 
                             <Separator />
@@ -139,20 +146,30 @@ export default function ShowCertificate({ certificate, flash }: CertificateProps
                             <div className="space-y-3">
                                 <Button asChild className="w-full" variant="outline">
                                     <a href={route('certificates.preview', { certificate: certificate.id })} target="_blank">
-                                        <Download className="h-4 w-4" />
-                                        Lihat Preview PDF
+                                        <Eye className="h-4 w-4" />
+                                        Lihat Contoh Sertifikat
                                     </a>
                                 </Button>
 
                                 <div className="text-center">
+                                    {isLoading && (
+                                        <div className="space-y-3">
+                                            <Skeleton className="h-[250px] w-full rounded-lg" />
+                                            <div className="space-y-2">
+                                                <Skeleton className="mx-auto h-3 w-3/4" />
+                                                <Skeleton className="mx-auto h-3 w-1/2" />
+                                            </div>
+                                        </div>
+                                    )}
                                     <iframe
-                                        src={route('certificates.preview', { certificate: certificate.id })}
-                                        className="h-64 w-full rounded-lg border"
+                                        src={`${route('certificates.preview', { certificate: certificate.id })}#toolbar=0`}
+                                        className={`h-[250px] w-full rounded-lg border ${isLoading ? 'absolute opacity-0' : 'opacity-100'}`}
                                         title="Preview Sertifikat"
+                                        onLoad={handleIframeLoad}
                                     />
                                 </div>
 
-                                <p className="text-center text-xs text-gray-500">
+                                <p className={`text-center text-xs text-gray-500 ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
                                     Preview menggunakan data dummy untuk tampilan. Data sebenarnya akan digunakan saat mengunduh sertifikat peserta.
                                 </p>
                             </div>

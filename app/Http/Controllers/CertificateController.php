@@ -12,6 +12,7 @@ use App\Models\Webinar;
 use App\Services\CertificatePdfService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use ZipArchive;
 
 class CertificateController extends Controller
 {
@@ -301,29 +302,22 @@ class CertificateController extends Controller
                 return back()->with('error', 'Tidak ada peserta untuk sertifikat ini.');
             }
 
-            $zip = new \ZipArchive();
-            $zipFileName = 'sertifikat-' . $certificate->certificate_number . '-all.zip';
-            $zipPath = storage_path('app/temp/' . $zipFileName);
-
-            // Pastikan directory temp ada
-            if (!file_exists(storage_path('app/temp'))) {
-                mkdir(storage_path('app/temp'), 0755, true);
+            // Buat HTML page yang akan trigger download satu per satu
+            $downloadUrls = [];
+            foreach ($participants as $participant) {
+                $downloadUrls[] = [
+                    'url' => route('certificates.participant.download', $participant->id),
+                    'filename' => 'sertifikat-' . $participant->certificate_code . '.pdf',
+                    'participant_name' => $participant->user->name
+                ];
             }
 
-            if ($zip->open($zipPath, \ZipArchive::CREATE) === TRUE) {
-                foreach ($participants as $participant) {
-                    $pdf = $this->pdfService->generateParticipantCertificate($participant);
-                    $filename = 'sertifikat-' . $participant->certificate_code . '.pdf';
-                    $zip->addFromString($filename, $pdf);
-                }
-                $zip->close();
-
-                return response()->download($zipPath)->deleteFileAfterSend(true);
-            } else {
-                throw new \Exception('Tidak dapat membuat file ZIP.');
-            }
+            return view('certificates.download-all', [
+                'certificate' => $certificate,
+                'downloads' => $downloadUrls
+            ]);
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal mengunduh semua sertifikat: ' . $e->getMessage());
+            return back()->with('error', 'Gagal memproses download: ' . $e->getMessage());
         }
     }
 }

@@ -4,7 +4,6 @@ import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -71,9 +70,9 @@ export const columns: ColumnDef<CertificateParticipant>[] = [
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button variant="ghost" size="sm" asChild>
-                                <Link href={route('certificates.participant.download', { participant: participant.id })} target="_blank">
+                                <a href={route('certificates.participant.download', { participant: participant.id })} target="_blank">
                                     <Download className="h-4 w-4" />
-                                </Link>
+                                </a>
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent>
