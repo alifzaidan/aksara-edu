@@ -23,6 +23,7 @@ interface CourseLayoutProps {
     children: ReactNode;
     breadcrumbs?: BreadcrumbItem[];
     courseSlug: string;
+    courseTitle?: string;
     modules: Module[];
     selectedLesson: Lesson | null;
     setSelectedLesson: Dispatch<SetStateAction<Lesson | null>>;
@@ -33,6 +34,7 @@ export default ({
     children, 
     breadcrumbs, 
     courseSlug, 
+    courseTitle,
     modules, 
     selectedLesson, 
     setSelectedLesson,
@@ -67,7 +69,7 @@ export default ({
                 onLessonComplete={handleLessonComplete}
             />
             <AppContent variant="sidebar">
-                <AppSidebarHeader breadcrumbs={breadcrumbs} />
+                <AppSidebarHeader breadcrumbs={breadcrumbs} hideSidebarTrigger={true} courseTitle={courseTitle} />
                 {children}
                 <Toaster />
             </AppContent>
