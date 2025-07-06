@@ -50,7 +50,7 @@ export default function AddRecordingDialog({ webinarId, currentRecordingUrl }: A
             <DialogTrigger asChild>
                 <Button className="w-full">
                     <Plus />
-                    {currentRecordingUrl ? 'Edit Link Rekaman' : 'Tambah Link Rekaman'}
+                    {currentRecordingUrl ? 'Edit Link Rekaman' : 'Upload Link Rekaman'}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
@@ -66,6 +66,7 @@ export default function AddRecordingDialog({ webinarId, currentRecordingUrl }: A
                             value={data.recording_url}
                             onChange={(e) => setData('recording_url', e.target.value)}
                             placeholder="https://www.youtube.com/watch?v=xxxxxx"
+                            autoComplete="off"
                         />
                         <InputError message={errors.recording_url} />
                     </div>

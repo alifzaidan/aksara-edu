@@ -7,7 +7,7 @@ import { BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Award, CircleX, Copy, Plus, Send, SquarePen, Trash } from 'lucide-react';
+import { AlertTriangle, Award, CircleX, Copy, Plus, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { Invoice } from './columns-transactions';
@@ -85,11 +85,30 @@ export default function ShowWebinar({ webinar, transactions, certificate, flash 
         router.delete(route('webinars.destroy', webinar.id));
     };
 
+    const webinarEndTime = new Date(webinar.end_time);
+    const isWebinarEnded = new Date() > webinarEndTime;
+    const needsRecording = isWebinarEnded && !webinar.recording_url;
+
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title={`Detail Webinar - ${webinar.title}`} />
             <div className="px-4 py-4 md:px-6">
                 <h1 className="mb-4 text-2xl font-semibold">{`Detail ${webinar.title}`}</h1>
+                {needsRecording && (
+                    <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+                        <div className="flex items-start gap-3">
+                            <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                            <div className="flex-1">
+                                <h3 className="font-semibold text-amber-800 dark:text-amber-200">Webinar Sudah Selesai - Rekaman Belum Diupload</h3>
+                                <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
+                                    Webinar ini telah berakhir pada{' '}
+                                    <span className="font-medium">{format(webinarEndTime, 'dd MMMM yyyy HH:mm', { locale: id })}</span>. Silakan
+                                    upload link rekaman untuk memberikan akses kepada peserta yang telah terdaftar.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
                     <Tabs defaultValue="detail" className="lg:col-span-2">
                         <TabsList>
