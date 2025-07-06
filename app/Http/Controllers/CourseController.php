@@ -114,6 +114,7 @@ class CourseController extends Controller
                                 'video_url' => $lesson['type'] === 'video' ? ($lesson['video_url'] ?? null) : null,
                                 'attachment' => $attachmentPath,
                                 'is_free' => $lesson['is_free'] ?? false,
+                                'is_preview' => $lesson['is_preview'] ?? true,
                                 'order' => $lessonIdx,
                             ]);
                             if ($lesson['type'] === 'quiz' && !empty($lesson['quizzes'])) {
@@ -322,6 +323,7 @@ class CourseController extends Controller
                                         'video_url' => $lesson['type'] === 'video' ? ($lesson['video_url'] ?? null) : null,
                                         'attachment' => $lesson['type'] === 'file' ? $attachmentPath : null,
                                         'is_free' => $lesson['is_free'] ?? false,
+                                        'is_preview' => $lesson['is_preview'] ?? true,
                                         'order' => $lessonIdx,
                                     ]);
                                 } else {
@@ -343,6 +345,7 @@ class CourseController extends Controller
                                     'video_url' => $lesson['type'] === 'video' ? ($lesson['video_url'] ?? null) : null,
                                     'attachment' => $lesson['type'] === 'file' ? $attachmentPath : null,
                                     'is_free' => $lesson['is_free'] ?? false,
+                                    'is_preview' => $lesson['is_preview'] ?? true,
                                     'order' => $lessonIdx,
                                 ]);
                             }

@@ -6,17 +6,17 @@ const items = [
         title: 'Belajar Fleksibel & Bersertifikat.',
         subtitle:
             'Disusun bertahap dari level dasar hingga lanjutan oleh praktisi industri dari berbagai company. Dapatkan e-certificate di tiap materi.',
-        image: '/assets/images/feature-course-1.svg',
+        image: '/assets/images/feature-course-1.webp',
     },
     {
         title: 'Kombinasi Strategi Praktek & Portofolio.',
         subtitle: 'Belajar sambil praktek dengan ragam case study, worksheet, dan framework. Didasarkan pada kebutuhan industri dan profesi.',
-        image: '/assets/images/feature-course-2.svg',
+        image: '/assets/images/feature-course-2.webp',
     },
     {
         title: 'Gabung Komunitas Secara Lifetime.',
         subtitle: 'Bangun network profesional , saling sharing ilmu dalam praktik, sambil berbagai info loker maupun freelance.',
-        image: '/assets/images/feature-course-3.svg',
+        image: '/assets/images/feature-course-3.webp',
     },
 ];
 

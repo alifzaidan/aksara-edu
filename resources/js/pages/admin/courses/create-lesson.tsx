@@ -58,7 +58,8 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
             titleInput.current?.focus();
             return;
         }
-        onAdd({
+        
+        const lessonData = {
             title,
             type,
             description,
@@ -76,8 +77,10 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                           },
                       ]
                     : undefined,
-            is_preview: type === 'file' ? isPreview : true,
-        });
+            is_preview: isPreview,
+        };
+        
+        onAdd(lessonData);
         setTitle('');
         setDescription('');
         setType('text');
@@ -226,7 +229,7 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                             />
                             {/* Switch for file download permission */}
                             <div className="mt-2 flex items-center space-x-2">
-                                <Switch id="is-preview" checked={!isPreview} onCheckedChange={(val) => setIsPreview(!val)} />
+                                <Switch id="is-preview" checked={isPreview} onCheckedChange={setIsPreview} />
                                 <Label htmlFor="is-preview">
                                     {isPreview ? 'File hanya bisa dilihat (preview)' : 'File bisa di-download'}
                                 </Label>

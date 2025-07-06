@@ -15,6 +15,7 @@ interface Lesson {
     content?: string;
     video_url?: string;
     attachment?: string;
+    is_preview?: boolean | number;
     isCompleted: boolean;
     quizzes?: {
         id: string;
@@ -326,32 +327,38 @@ function LessonContent({ lesson, onQuizComplete, courseSlug }: { lesson: Lesson 
                     </div>
                 );
             }
-            // Cek isPreview (true: hanya preview, false: bisa download)
-            const isPreview = (lesson as any).is_preview !== false;
+            // Cek is_preview: 1/true = hanya preview (no download), 0/false = bisa download
+            const isPreview = (lesson as any).is_preview === true || (lesson as any).is_preview === 1;
             return (
-                <div className="w-full h-[600px]">
-                    <iframe
-                        src={`/storage/${lesson.attachment}#toolbar=0&navpanes=0&scrollbar=0`}
-                        title={lesson.title}
-                        className="w-full h-full rounded-lg border"
-                        style={{
-                            border: 'none',
-                            outline: 'none'
-                        }}
-                    />
-                    {isPreview && (
-                        <div className="flex justify-end mt-2">
-                            <Button
-                                asChild
-                                variant="outline"
-                                className="flex items-center gap-2"
-                            >   
-                                <a href={`/storage/${lesson.attachment}`} download target="_blank" rel="noopener noreferrer">
-                                    <FileDown className="h-4 w-4" /> Download File
-                                </a>
-                            </Button>
+                <div className="w-full">
+                    {!isPreview && (
+                        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center justify-between">
+                                <span className="text-blue-900 font-medium">
+                                    Silahkan download file ini untuk melanjutkan ke materi selanjutnya
+                                </span>
+                                <Button
+                                    asChild
+                                    className="flex items-center gap-2"
+                                >   
+                                    <a href={`/storage/${lesson.attachment}`} download target="_blank" rel="noopener noreferrer">
+                                        <FileDown className="h-4 w-4" /> Download File
+                                    </a>
+                                </Button>
+                            </div>
                         </div>
                     )}
+                    <div className="w-full h-[600px]">
+                        <iframe
+                            src={`/storage/${lesson.attachment}#toolbar=0&navpanes=0&scrollbar=0`}
+                            title={lesson.title}
+                            className="w-full h-full rounded-lg border"
+                            style={{
+                                border: 'none',
+                                outline: 'none'
+                            }}
+                        />
+                    </div>
                 </div>
             );
         case 'quiz':
@@ -521,6 +528,7 @@ export default function CourseDetail({ course }: { course: Course }) {
         <CourseLayout
             breadcrumbs={breadcrumbs}
             courseSlug={course.slug}
+            courseTitle={course.title}
             modules={moduleData}
             selectedLesson={selectedLesson}
             setSelectedLesson={setSelectedLesson}

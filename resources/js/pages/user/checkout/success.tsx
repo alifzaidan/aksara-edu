@@ -59,7 +59,7 @@ export default function CheckoutSuccess({ invoice }: InvoiceProps) {
                     <h2 className="mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
                         {title}
                     </h2>
-                    <img src="/assets/images/payment-success.svg" alt="Pembayaran Berhasil" className="mb-6 w-[300px]" />
+                    <img src="/assets/images/payment-success.webp" alt="Pembayaran Berhasil" className="mb-6 w-[300px]" />
                     <p className="mb-6 max-w-lg text-center text-gray-400">
                         Terima kasih telah menyelesaikan pembayaran. Anda sekarang dapat mengakses materi dengan klik tombol di bawah ini.
                     </p>
