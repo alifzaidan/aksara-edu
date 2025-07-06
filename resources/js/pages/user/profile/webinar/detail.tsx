@@ -1,7 +1,9 @@
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Award, BadgeCheck, Calendar, CheckCircle, Clock, Download, Users, Youtube } from 'lucide-react';
+import { ArrowLeft, Award, BadgeCheck, Calendar, CheckCircle, Clock, Download, Eye, Users, Youtube } from 'lucide-react';
+import { useState } from 'react';
 
 interface Category {
     id: string;
@@ -54,6 +56,25 @@ interface WebinarProps {
     updated_at: string;
 }
 
+interface Certificate {
+    id: string;
+    title: string;
+    certificate_number: string;
+    description?: string;
+}
+
+interface CertificateParticipant {
+    id: string;
+    certificate_code: string;
+    certificate_number: number;
+}
+
+interface DetailWebinarProps {
+    webinar: WebinarProps;
+    certificate?: Certificate | null;
+    certificateParticipant?: CertificateParticipant | null;
+}
+
 function parseList(items?: string | null): string[] {
     if (!items) return [];
     const matches = items.match(/<li>(.*?)<\/li>/g);
@@ -69,11 +90,16 @@ function getYoutubeEmbedUrl(url: string): string | null {
     return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
 }
 
-export default function DetailMyWebinar({ webinar }: { webinar: WebinarProps }) {
+export default function DetailMyWebinar({ webinar, certificate, certificateParticipant }: DetailWebinarProps) {
     const webinarItem = webinar.webinar_items?.[0];
     const webinarData = webinarItem?.webinar;
     const webinarInvoiceStatus = webinar.status;
     const benefitList = parseList(webinarData.benefits);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const handleIframeLoad = () => {
+        setIsLoading(false);
+    };
 
     if (!webinarData || !webinarItem) {
         return (
@@ -90,6 +116,8 @@ export default function DetailMyWebinar({ webinar }: { webinar: WebinarProps }) 
     const isWebinarFinished = new Date() > webinarEndDate;
     const isCompleted = isWebinarFinished;
     const hasRecording = webinarData.recording_url && getYoutubeEmbedUrl(webinarData.recording_url);
+
+    const hasCertificate = certificate && isCompleted && webinarInvoiceStatus === 'paid';
 
     return (
         <UserLayout>
@@ -114,14 +142,14 @@ export default function DetailMyWebinar({ webinar }: { webinar: WebinarProps }) 
                                     year: 'numeric',
                                 })}
                             </span>
-                            {isCompleted && (
-                                <span className="mb-4 flex w-fit items-center gap-2 rounded-full bg-green-100 px-4 py-1 text-sm font-medium text-green-800 shadow-xs">
+                            {hasCertificate && (
+                                <span className="mb-4 flex w-fit items-center gap-2 rounded-full border border-green-800 bg-green-100 px-4 py-1 text-sm font-medium text-green-800 shadow-xs">
                                     <Award size={16} />
                                     Sertifikat Tersedia
                                 </span>
                             )}
                             {hasRecording && (
-                                <span className="mb-4 flex w-fit items-center gap-2 rounded-full bg-red-100 px-4 py-1 text-sm font-medium text-red-800 shadow-xs">
+                                <span className="mb-4 flex w-fit items-center gap-2 rounded-full border border-red-800 bg-red-100 px-4 py-1 text-sm font-medium text-red-800 shadow-xs">
                                     <Youtube size={16} />
                                     Recording Tersedia
                                 </span>
@@ -320,27 +348,86 @@ export default function DetailMyWebinar({ webinar }: { webinar: WebinarProps }) 
                     <div className="col-span-1">
                         {isWebinarFinished ? (
                             <div className="sticky top-6 space-y-4">
-                                {/* Certificate */}
                                 <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
                                     <div className="mb-4 flex items-center gap-2">
                                         <Award className="text-yellow-500" size={20} />
                                         <h3 className="font-semibold">Sertifikat Partisipasi</h3>
                                     </div>
-                                    <div className="group relative">
-                                        <img
-                                            src={'/assets/images/placeholder.png'}
-                                            alt="Sertifikat"
-                                            className="aspect-video rounded-lg border object-cover shadow-lg transition-transform group-hover:scale-105 dark:border-zinc-700"
-                                        />
-                                        <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+
+                                    {isLoading && hasCertificate && <Skeleton className="h-[236px] w-full rounded-lg" />}
+
+                                    <div className="relative">
+                                        {hasCertificate ? (
+                                            <div className={`group ${isLoading ? 'absolute opacity-0' : 'relative opacity-100'}`}>
+                                                <iframe
+                                                    src={`${route('profile.webinar.certificate.preview', { webinar: webinarData.slug })}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                                                    className="h-[238px] w-full rounded-lg border shadow-lg dark:border-zinc-700"
+                                                    title="Preview Sertifikat"
+                                                    onLoad={handleIframeLoad}
+                                                />
+                                                <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                                            </div>
+                                        ) : (
+                                            <div className="group relative">
+                                                <img
+                                                    src={'/assets/images/placeholder.png'}
+                                                    alt="Sertifikat"
+                                                    className="aspect-video rounded-lg border object-cover shadow-lg transition-transform group-hover:scale-105 dark:border-zinc-700"
+                                                />
+                                                <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                                            </div>
+                                        )}
                                     </div>
-                                    <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-                                        Unduh sertifikat sebagai bukti keikutsertaan dalam webinar ini.
-                                    </p>
-                                    <Button className="mt-3 w-full" disabled>
-                                        <Download size={16} className="mr-2" />
-                                        Unduh Sertifikat (Segera)
-                                    </Button>
+
+                                    {hasCertificate ? (
+                                        <div>
+                                            <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+                                                Unduh sertifikat sebagai bukti keikutsertaan dalam webinar ini.
+                                            </p>
+                                            {certificateParticipant && (
+                                                <p className="mt-2 text-center text-xs text-blue-600 dark:text-blue-400">
+                                                    No. Sertifikat: {String(certificateParticipant.certificate_number).padStart(4, '0')}/
+                                                    {certificate.certificate_number}
+                                                </p>
+                                            )}
+                                            <div className="mt-3 space-y-2">
+                                                <Button className="w-full" asChild>
+                                                    <a href={route('profile.webinar.certificate', { webinar: webinarData.slug })} target="_blank">
+                                                        <Download size={16} className="mr-2" />
+                                                        Unduh Sertifikat
+                                                    </a>
+                                                </Button>
+
+                                                <Button variant="outline" className="w-full" asChild>
+                                                    <a
+                                                        href={route('profile.webinar.certificate.preview', { webinar: webinarData.slug })}
+                                                        target="_blank"
+                                                    >
+                                                        <Eye size={16} className="mr-2" />
+                                                        Lihat Preview
+                                                    </a>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+                                                {!certificate
+                                                    ? 'Sertifikat belum dibuat untuk webinar ini.'
+                                                    : webinarInvoiceStatus !== 'paid'
+                                                      ? 'Selesaikan pembayaran untuk mendapatkan sertifikat.'
+                                                      : 'Sertifikat akan tersedia setelah webinar selesai.'}
+                                            </p>
+                                            <Button className="mt-3 w-full" disabled>
+                                                <Download size={16} className="mr-2" />
+                                                {!certificate
+                                                    ? 'Sertifikat Belum Tersedia'
+                                                    : webinarInvoiceStatus !== 'paid'
+                                                      ? 'Selesaikan Pembayaran'
+                                                      : 'Menunggu Webinar Selesai'}
+                                            </Button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         ) : (

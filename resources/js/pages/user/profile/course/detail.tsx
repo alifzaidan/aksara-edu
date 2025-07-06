@@ -1,8 +1,9 @@
 import RatingDialog from '@/components/rating-dialog';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Award, BadgeCheck, CheckCircle, Download, Star } from 'lucide-react';
+import { ArrowLeft, Award, BadgeCheck, CheckCircle, Download, Eye, Star } from 'lucide-react';
 import { useState } from 'react';
 
 interface Category {
@@ -64,6 +65,19 @@ interface CourseRating {
     updated_at: string;
 }
 
+interface Certificate {
+    id: string;
+    title: string;
+    certificate_number: string;
+    description?: string;
+}
+
+interface CertificateParticipant {
+    id: string;
+    certificate_code: string;
+    certificate_number: number;
+}
+
 function parseList(items?: string | null): string[] {
     if (!items) return [];
     const matches = items.match(/<li>(.*?)<\/li>/g);
@@ -71,8 +85,23 @@ function parseList(items?: string | null): string[] {
     return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
 }
 
-export default function DetailMyCourse({ course, courseRating }: { course: CourseProps | null; courseRating: CourseRating | null }) {
+export default function DetailMyCourse({
+    course,
+    courseRating,
+    certificate,
+    certificateParticipant,
+}: {
+    course: CourseProps | null;
+    courseRating: CourseRating | null;
+    certificate?: Certificate | null;
+    certificateParticipant?: CertificateParticipant | null;
+}) {
     const [isRatingDialogOpen, setIsRatingDialogOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const handleIframeLoad = () => {
+        setIsLoading(false);
+    };
 
     if (!course) {
         return (
@@ -94,10 +123,8 @@ export default function DetailMyCourse({ course, courseRating }: { course: Cours
     const courseData = courseItem?.course;
     const courseInvoiceStatus = course.status;
     const keyPointList = parseList(courseData?.key_points);
-
-    const handleCertificateDownload = () => {
-        window.open('https://drive.google.com/uc?export=download&id=1EmPRuGJ01PceQNtjbwqW0tkbgGrv4W5U', '_blank');
-    };
+    const isCompleted = courseItem?.progress === 100;
+    const hasCertificate = certificate && isCompleted && courseRating && courseInvoiceStatus === 'paid';
 
     const renderCertificateSection = () => {
         if (!courseItem || courseItem.progress !== 100) return null;
@@ -130,7 +157,7 @@ export default function DetailMyCourse({ course, courseRating }: { course: Cours
             );
         }
 
-        if (courseRating) {
+        if (courseRating && !hasCertificate) {
             return (
                 <div className="mb-6 rounded-lg border border-yellow-200 bg-gradient-to-r from-yellow-50 to-yellow-100 p-4 dark:border-yellow-700 dark:from-yellow-900/20 dark:to-yellow-800/20">
                     <div className="flex items-center justify-between">
@@ -139,9 +166,9 @@ export default function DetailMyCourse({ course, courseRating }: { course: Cours
                                 <Award className="h-5 w-5 text-white" />
                             </div>
                             <div>
-                                <h3 className="font-semibold text-gray-900 dark:text-gray-100">🎉 Selamat! Anda telah menyelesaikan kelas ini</h3>
+                                <h3 className="font-semibold text-gray-900 dark:text-gray-100">🎉 Terima kasih atas rating Anda!</h3>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    Terima kasih telah memberikan rating. Sertifikat kelulusan tersedia untuk diunduh
+                                    {!certificate ? 'Sertifikat belum dibuat untuk course ini.' : 'Sertifikat sedang diproses.'}
                                 </p>
                                 <div className="mt-1 flex items-center gap-1">
                                     <span className="text-xs text-gray-500">Rating Anda:</span>
@@ -155,13 +182,9 @@ export default function DetailMyCourse({ course, courseRating }: { course: Cours
                                 </div>
                             </div>
                         </div>
-                        <Button
-                            size="sm"
-                            className="border-none bg-gradient-to-r from-yellow-400 to-yellow-600 text-white shadow-lg hover:from-yellow-500 hover:to-yellow-700"
-                            onClick={handleCertificateDownload}
-                        >
+                        <Button size="sm" disabled>
                             <Download className="mr-2 h-4 w-4" />
-                            Unduh Sertifikat
+                            {!certificate ? 'Sertifikat Belum Tersedia' : 'Menunggu Sertifikat'}
                         </Button>
                     </div>
                 </div>
@@ -211,6 +234,12 @@ export default function DetailMyCourse({ course, courseRating }: { course: Cours
                                     <span className="text-secondary border-secondary bg-background mb-4 inline-block rounded-full border bg-gradient-to-t from-[#FED6AD] to-white px-3 py-1 text-sm font-medium shadow-xs hover:text-[#FF925B]">
                                         🎮 Level <span className="capitalize">{courseData.level}</span>
                                     </span>
+                                    {hasCertificate && (
+                                        <span className="mb-4 flex w-fit items-center gap-2 rounded-full border border-green-800 bg-green-100 px-4 py-1 text-sm font-medium text-green-800 shadow-xs">
+                                            <Award size={16} />
+                                            Sertifikat Tersedia
+                                        </span>
+                                    )}
                                 </div>
 
                                 <h1 className="mx-auto mb-4 max-w-2xl text-4xl leading-tight font-bold italic sm:text-5xl">{courseData.title}</h1>
@@ -294,22 +323,78 @@ export default function DetailMyCourse({ course, courseRating }: { course: Cours
                                     ))}
                                 </ul>
                             </div>
-                            <div className="col-span-1 flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
-                                <h2 className="mb-4 text-center font-semibold">{courseData.title}</h2>
-                                <img
-                                    src={courseData.thumbnail ? `/storage/${courseData.thumbnail}` : '/assets/images/placeholder.png'}
-                                    alt={courseData.title}
-                                    className="aspect-video rounded-xl object-cover shadow-lg"
-                                />
-                                <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">{courseData.short_description}</p>
 
-                                <Button
-                                    className="mt-2 w-full"
-                                    disabled={courseInvoiceStatus !== 'paid'}
-                                    onClick={() => router.get(route('learn.course.detail', { course: courseData.slug }))}
-                                >
-                                    Lanjutkan Belajar
-                                </Button>
+                            <div className="col-span-1 space-y-4">
+                                <div className="flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
+                                    <h2 className="mb-4 text-center font-semibold">{courseData.title}</h2>
+                                    <img
+                                        src={courseData.thumbnail ? `/storage/${courseData.thumbnail}` : '/assets/images/placeholder.png'}
+                                        alt={courseData.title}
+                                        className="aspect-video rounded-xl object-cover shadow-lg"
+                                    />
+                                    <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">{courseData.short_description}</p>
+
+                                    <Button
+                                        className="mt-2 w-full"
+                                        disabled={courseInvoiceStatus !== 'paid'}
+                                        onClick={() => router.get(route('learn.course.detail', { course: courseData.slug }))}
+                                    >
+                                        Lanjutkan Belajar
+                                    </Button>
+                                </div>
+
+                                {isCompleted && hasCertificate && (
+                                    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+                                        <div className="mb-4 flex items-center gap-2">
+                                            <Award className="text-yellow-500" size={20} />
+                                            <h3 className="font-semibold">Sertifikat Kelulusan</h3>
+                                        </div>
+
+                                        {isLoading && <Skeleton className="h-[200px] w-full rounded-lg" />}
+
+                                        <div className="relative">
+                                            <div className={`group ${isLoading ? 'absolute opacity-0' : 'relative opacity-100'}`}>
+                                                <iframe
+                                                    src={`${route('profile.course.certificate.preview', { course: courseData.slug })}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                                                    className="h-[238px] w-full rounded-lg border shadow-lg dark:border-zinc-700"
+                                                    title="Preview Sertifikat"
+                                                    onLoad={handleIframeLoad}
+                                                />
+                                                <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+                                                Unduh sertifikat sebagai bukti kelulusan dari course ini.
+                                            </p>
+                                            {certificateParticipant && (
+                                                <p className="mt-2 text-center text-xs text-blue-600 dark:text-blue-400">
+                                                    No. Sertifikat: {String(certificateParticipant.certificate_number).padStart(4, '0')}/
+                                                    {certificate.certificate_number}
+                                                </p>
+                                            )}
+                                            <div className="mt-3 space-y-2">
+                                                <Button className="w-full" asChild>
+                                                    <a href={route('profile.course.certificate', { course: courseData.slug })} target="_blank">
+                                                        <Download size={16} className="mr-2" />
+                                                        Unduh Sertifikat
+                                                    </a>
+                                                </Button>
+
+                                                <Button variant="outline" className="w-full" asChild>
+                                                    <a
+                                                        href={route('profile.course.certificate.preview', { course: courseData.slug })}
+                                                        target="_blank"
+                                                    >
+                                                        <Eye size={16} className="mr-2" />
+                                                        Lihat Preview
+                                                    </a>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </section>

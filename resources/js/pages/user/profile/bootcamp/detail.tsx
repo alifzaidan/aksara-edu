@@ -1,7 +1,9 @@
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Award, BadgeCheck, Calendar, CheckCircle, Clock, Download, Users } from 'lucide-react';
+import { ArrowLeft, Award, BadgeCheck, Calendar, CheckCircle, Clock, Download, Eye, Users } from 'lucide-react';
+import { useState } from 'react';
 
 interface Category {
     id: string;
@@ -55,6 +57,25 @@ interface BootcampProps {
     updated_at: string;
 }
 
+interface Certificate {
+    id: string;
+    title: string;
+    certificate_number: string;
+    description?: string;
+}
+
+interface CertificateParticipant {
+    id: string;
+    certificate_code: string;
+    certificate_number: number;
+}
+
+interface DetailBootcampProps {
+    bootcamp: BootcampProps;
+    certificate?: Certificate | null;
+    certificateParticipant?: CertificateParticipant | null;
+}
+
 function parseList(items?: string | null): string[] {
     if (!items) return [];
     const matches = items.match(/<li>(.*?)<\/li>/g);
@@ -62,12 +83,17 @@ function parseList(items?: string | null): string[] {
     return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
 }
 
-export default function DetailMyBootcamp({ bootcamp }: { bootcamp: BootcampProps }) {
+export default function DetailMyBootcamp({ bootcamp, certificate, certificateParticipant }: DetailBootcampProps) {
     const bootcampItem = bootcamp.bootcamp_items?.[0];
     const bootcampData = bootcampItem?.bootcamp;
     const bootcampInvoiceStatus = bootcamp.status;
     const benefitList = parseList(bootcampData.benefits);
     const curriculumList = parseList(bootcampData.curriculum);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const handleIframeLoad = () => {
+        setIsLoading(false);
+    };
 
     if (!bootcampData || !bootcampItem) {
         return (
@@ -83,6 +109,8 @@ export default function DetailMyBootcamp({ bootcamp }: { bootcamp: BootcampProps
     const bootcampEndDate = new Date(bootcampData.end_date);
     bootcampEndDate.setHours(23, 59, 59, 999);
     const isCompleted = bootcampEndDate < new Date();
+
+    const hasCertificate = certificate && isCompleted && bootcampInvoiceStatus === 'paid';
 
     return (
         <UserLayout>
@@ -107,8 +135,8 @@ export default function DetailMyBootcamp({ bootcamp }: { bootcamp: BootcampProps
                                     year: 'numeric',
                                 })}
                             </span>
-                            {isCompleted && (
-                                <span className="mb-4 flex w-fit items-center gap-2 rounded-full bg-green-100 px-4 py-1 text-sm font-medium text-green-800 shadow-xs">
+                            {hasCertificate && (
+                                <span className="mb-4 flex w-fit items-center gap-2 rounded-full border border-green-800 bg-green-100 px-4 py-1 text-sm font-medium text-green-800 shadow-xs">
                                     <Award size={16} />
                                     Sertifikat Tersedia
                                 </span>
@@ -295,21 +323,81 @@ export default function DetailMyBootcamp({ bootcamp }: { bootcamp: BootcampProps
                                         <Award className="text-yellow-500" size={20} />
                                         <h3 className="font-semibold">Sertifikat Kelulusan</h3>
                                     </div>
-                                    <div className="group relative">
-                                        <img
-                                            src={'/assets/images/placeholder.png'}
-                                            alt="Sertifikat"
-                                            className="aspect-video rounded-lg border object-cover shadow-lg transition-transform group-hover:scale-105 dark:border-zinc-700"
-                                        />
-                                        <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+
+                                    {isLoading && hasCertificate && <Skeleton className="h-[236px] w-full rounded-lg" />}
+
+                                    <div className="relative">
+                                        {hasCertificate ? (
+                                            <div className={`group ${isLoading ? 'absolute opacity-0' : 'relative opacity-100'}`}>
+                                                <iframe
+                                                    src={`${route('profile.bootcamp.certificate.preview', { bootcamp: bootcampData.slug })}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                                                    className="h-[238px] w-full rounded-lg border shadow-lg dark:border-zinc-700"
+                                                    title="Preview Sertifikat"
+                                                    onLoad={handleIframeLoad}
+                                                />
+                                                <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                                            </div>
+                                        ) : (
+                                            <div className="group relative">
+                                                <img
+                                                    src={'/assets/images/placeholder.png'}
+                                                    alt="Sertifikat"
+                                                    className="aspect-video rounded-lg border object-cover shadow-lg transition-transform group-hover:scale-105 dark:border-zinc-700"
+                                                />
+                                                <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                                            </div>
+                                        )}
                                     </div>
-                                    <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-                                        Unduh sertifikat sebagai bukti kelulusan dari bootcamp ini.
-                                    </p>
-                                    <Button className="mt-3 w-full" disabled>
-                                        <Download size={16} className="mr-2" />
-                                        Unduh Sertifikat (Segera)
-                                    </Button>
+
+                                    {hasCertificate ? (
+                                        <>
+                                            <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+                                                Unduh sertifikat sebagai bukti kelulusan dari bootcamp ini.
+                                            </p>
+                                            {certificateParticipant && (
+                                                <p className="mt-2 text-center text-xs text-blue-600 dark:text-blue-400">
+                                                    No. Sertifikat: {String(certificateParticipant.certificate_number).padStart(4, '0')}/
+                                                    {certificate.certificate_number}
+                                                </p>
+                                            )}
+                                            <div className="mt-3 space-y-2">
+                                                <Button className="w-full" asChild>
+                                                    <a href={route('profile.bootcamp.certificate', { bootcamp: bootcampData.slug })} target="_blank">
+                                                        <Download size={16} className="mr-2" />
+                                                        Unduh Sertifikat
+                                                    </a>
+                                                </Button>
+
+                                                <Button variant="outline" className="w-full" asChild>
+                                                    <a
+                                                        href={route('profile.bootcamp.certificate.preview', { bootcamp: bootcampData.slug })}
+                                                        target="_blank"
+                                                    >
+                                                        <Eye size={16} className="mr-2" />
+                                                        Lihat Preview
+                                                    </a>
+                                                </Button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+                                                {!certificate
+                                                    ? 'Sertifikat belum dibuat untuk bootcamp ini.'
+                                                    : bootcampInvoiceStatus !== 'paid'
+                                                      ? 'Selesaikan pembayaran untuk mendapatkan sertifikat.'
+                                                      : 'Sertifikat akan tersedia setelah bootcamp selesai.'}
+                                            </p>
+                                            <Button className="mt-3 w-full" disabled>
+                                                <Download size={16} className="mr-2" />
+                                                {!certificate
+                                                    ? 'Sertifikat Belum Tersedia'
+                                                    : bootcampInvoiceStatus !== 'paid'
+                                                      ? 'Selesaikan Pembayaran'
+                                                      : 'Menunggu Bootcamp Selesai'}
+                                            </Button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         ) : (
