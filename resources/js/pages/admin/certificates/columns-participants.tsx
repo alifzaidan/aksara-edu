@@ -4,10 +4,11 @@ import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Download } from 'lucide-react';
+import { Download, Folder } from 'lucide-react';
 
 interface User {
     id: string;
@@ -57,8 +58,8 @@ export const columns: ColumnDef<CertificateParticipant>[] = [
     },
     {
         accessorKey: 'created_at',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Tanggal Diterbitkan" />,
-        cell: ({ row }) => <p>{format(new Date(row.original.created_at), 'dd MMM yyyy, HH:mm', { locale: id })}</p>,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Tanggal Terbit" />,
+        cell: ({ row }) => <p>{format(new Date(row.original.created_at), 'dd MMM yyyy', { locale: id })}</p>,
     },
     {
         id: 'actions',
@@ -67,6 +68,19 @@ export const columns: ColumnDef<CertificateParticipant>[] = [
             const participant = row.original;
             return (
                 <div className="flex items-center justify-center gap-1">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" asChild>
+                                <Link href={route('certificate.participant.detail', { code: participant.certificate_code })}>
+                                    <Folder className="size-4" />
+                                </Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Lihat Detail</p>
+                        </TooltipContent>
+                    </Tooltip>
+
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button variant="ghost" size="sm" asChild>

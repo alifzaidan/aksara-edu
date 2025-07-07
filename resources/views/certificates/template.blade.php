@@ -269,7 +269,7 @@
                     @endif
                 </div>
                 <div class="period-section">
-                    <div class="certificate-url">https://aksademy/certificates/{{ $data['certificate_code'] }}</div>
+                    <div class="certificate-url">https://aksademy.id/certificate/{{ $data['certificate_code'] }}</div>
                     <div class="certificate-period">Sertifikat berlaku sampai</div>
                     <div class="certificate-period">{{ $certificate->period }}</div>
                 </div>

@@ -7,6 +7,7 @@ use App\Http\Controllers\BootcampController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\CertificateDesignController;
+use App\Http\Controllers\CertificateParticipantController;
 use App\Http\Controllers\CertificateSignController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseDetailController;
@@ -38,6 +39,7 @@ Route::get('/bootcamp', [UserBootcampController::class, 'index'])->name('bootcam
 Route::get('/bootcamp/{bootcamp:slug}', [UserBootcampController::class, 'detail'])->name('bootcamp.detail');
 Route::get('/webinar', [UserWebinarController::class, 'index'])->name('webinar.index');
 Route::get('/webinar/{webinar:slug}', [UserWebinarController::class, 'detail'])->name('webinar.detail');
+Route::get('/certificate/{code}', [CertificateParticipantController::class, 'show'])->name('certificate.participant.detail');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/course/{course:slug}/checkout', [UserCourseController::class, 'showCheckout'])->name('course.checkout');
