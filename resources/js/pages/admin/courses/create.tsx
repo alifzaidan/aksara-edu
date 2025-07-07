@@ -324,7 +324,7 @@ export default function CreateCourse({ categories, tools }: { categories: { id: 
                                     name="key_points"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Syarat Peserta</FormLabel>
+                                            <FormLabel>Materi (Poin Utama)</FormLabel>
                                             <Editor
                                                 apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
                                                 value={field.value ?? ''}
