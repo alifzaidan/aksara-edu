@@ -12,7 +12,7 @@ export default function CertificateParticipants({ participants }: { participants
                 <DataTable columns={columns} data={participants} />
             ) : (
                 <div className="flex flex-col items-center justify-center gap-4 py-12">
-                    <img src="/assets/images/not-found.svg" alt="Peserta Tidak Tersedia" className="w-48" />
+                    <img src="/assets/images/not-found.webp" alt="Peserta Tidak Tersedia" className="w-48" />
                     <p className="text-muted-foreground text-center text-sm">Belum ada peserta untuk sertifikat ini.</p>
                 </div>
             )}

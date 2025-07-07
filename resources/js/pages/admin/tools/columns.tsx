@@ -123,7 +123,7 @@ export const columns: ColumnDef<Tool>[] = [
             const title = row.original.name;
             const icon = row.original.icon;
             const iconUrl = icon ? `/storage/${icon}` : '/assets/images/placeholder.png';
-            return <img src={iconUrl} alt={title} className="h-16 w-16 rounded object-cover" />;
+            return <img src={iconUrl} alt={title} className="h-16 rounded object-cover" />;
         },
     },
     {

@@ -70,7 +70,7 @@ export default function MentorDashboard({ stats }: MentorStatsProps) {
                 <div className="space-y-6">
                     {stats.recent_enrollments.length === 0 ? (
                         <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
-                            <img src="/assets/images/not-found.svg" alt="Pendaftar Tidak Tersedia" className="w-48" />
+                            <img src="/assets/images/not-found.webp" alt="Pendaftar Tidak Tersedia" className="w-48" />
                             <div className="text-center text-gray-500">Belum ada pendaftar baru saat ini.</div>
                         </div>
                     ) : (

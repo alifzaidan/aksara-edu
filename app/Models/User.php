@@ -34,6 +34,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'affiliate_status',
         'commission',
         'avatar',
+        'email_verified_at',
     ];
 
     /**

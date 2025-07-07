@@ -42,6 +42,7 @@ class AffiliateController extends Controller
             'affiliate_code' => $request->affiliate_code,
             'affiliate_status' => $request->affiliate_status,
             'commission' => $request->commission,
+            'email_verified_at' => now(),
         ]);
 
         $user->assignRole('affiliate');
