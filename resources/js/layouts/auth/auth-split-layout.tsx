@@ -13,7 +13,7 @@ export default function AuthSplitLayout({ children, title, description }: PropsW
     return (
         <div className="relative grid h-dvh flex-col items-center justify-center px-8 sm:px-0 lg:max-w-none lg:grid-cols-2 lg:px-0">
             <div className="bg-muted relative hidden h-full flex-col overflow-hidden p-0 text-white lg:flex dark:border-r">
-                <img src="/assets/images/login-img.png" alt="Aksademy" className="absolute inset-0 z-0 h-full w-full object-cover object-center" />
+                <img src="/assets/images/login-img.webp" alt="Aksademy" className="absolute inset-0 z-0 h-full w-full object-cover object-center" />
                 <div className="relative z-10 flex h-full w-full flex-col p-10">
                     {quote && (
                         <div className="mt-auto">

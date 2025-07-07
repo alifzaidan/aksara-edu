@@ -8,7 +8,7 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use Milon\Barcode\DNS2D;
 
 class CertificatePdfService
 {
@@ -26,7 +26,6 @@ class CertificatePdfService
         $options->set('tempDir', storage_path('app/temp'));
         $options->set('dpi', 250);
 
-        // Enable local file access
         $options->set('chroot', [
             public_path(),
             storage_path('app/public'),
@@ -39,14 +38,10 @@ class CertificatePdfService
     public function generatePreview(Certificate $certificate)
     {
         try {
-            // Load relations yang diperlukan
             $certificate->load(['design', 'sign', 'course', 'bootcamp', 'webinar']);
 
-            // Log untuk debugging
             if ($certificate->design && $certificate->design->image_1) {
                 $imagePath = storage_path('app/public/' . $certificate->design->image_1);
-                Log::info('Background image path: ' . $imagePath);
-                Log::info('File exists: ' . (file_exists($imagePath) ? 'Yes' : 'No'));
             }
 
             // Data dummy untuk preview
@@ -59,7 +54,11 @@ class CertificatePdfService
                 'program_type' => $this->getProgramType($certificate)
             ];
 
-            $html = $this->generateHtml($certificate, $dummyData);
+            // Generate QR Code
+            $certificateUrl = "https://aksademy.id/certificate/{$dummyData['certificate_code']}";
+            $qrCodeBase64 = $this->generateQrCode($certificateUrl);
+
+            $html = $this->generateHtml($certificate, $dummyData, $qrCodeBase64, $certificateUrl);
 
             $this->dompdf->loadHtml($html);
             $this->dompdf->setPaper('A4', 'landscape');
@@ -78,7 +77,6 @@ class CertificatePdfService
         try {
             $certificate = $participant->certificate;
 
-            // Load relations yang diperlukan
             $certificate->load(['design', 'sign', 'course', 'bootcamp', 'webinar']);
             $participant->load(['user']);
 
@@ -91,7 +89,11 @@ class CertificatePdfService
                 'program_type' => $this->getProgramType($certificate)
             ];
 
-            $html = $this->generateHtml($certificate, $participantData);
+            // Generate QR Code
+            $certificateUrl = "https://aksademy.id/certificate/{$participant->certificate_code}";
+            $qrCodeBase64 = $this->generateQrCode($certificateUrl);
+
+            $html = $this->generateHtml($certificate, $participantData, $qrCodeBase64, $certificateUrl);
 
             $this->dompdf->loadHtml($html);
             $this->dompdf->setPaper('A4', 'landscape');
@@ -104,11 +106,36 @@ class CertificatePdfService
         }
     }
 
-    private function generateHtml(Certificate $certificate, array $data)
+    private function generateQrCode($url)
+    {
+        try {
+            $qrCodeGenerator = new DNS2D();
+
+            $qrCodePng = $qrCodeGenerator->getBarcodePNG($url, 'QRCODE', 10, 10);
+            if ($qrCodePng) {
+                return 'data:image/png;base64,' . $qrCodePng;
+            }
+
+            $qrCodeSvg = $qrCodeGenerator->getBarcodeSVG($url, 'QRCODE', 8, 8, 'black', false);
+            if ($qrCodeSvg) {
+                $qrCodeSvg = str_replace(['<?xml version="1.0" encoding="UTF-8"?>', '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">'], '', $qrCodeSvg);
+                return 'data:image/svg+xml;base64,' . base64_encode($qrCodeSvg);
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            Log::warning('Failed to generate QR code: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function generateHtml(Certificate $certificate, array $data, $qrCode = null, $certificateUrl = null)
     {
         return View::make('certificates.template', [
             'certificate' => $certificate,
-            'data' => $data
+            'data' => $data,
+            'qrCode' => $qrCode,
+            'certificateUrl' => $certificateUrl
         ])->render();
     }
 

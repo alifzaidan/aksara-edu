@@ -163,7 +163,7 @@ export default function ShowCertificate({ certificate, flash }: CertificateProps
                                     )}
                                     <iframe
                                         src={`${route('certificates.preview', { certificate: certificate.id })}#toolbar=0`}
-                                        className={`h-[250px] w-full rounded-lg border ${isLoading ? 'absolute opacity-0' : 'opacity-100'}`}
+                                        className={`h-[280px] w-full rounded-lg border ${isLoading ? 'absolute opacity-0' : 'opacity-100'}`}
                                         title="Preview Sertifikat"
                                         onLoad={handleIframeLoad}
                                     />

@@ -350,7 +350,19 @@ export default function DetailMyCourse({
                                             <h3 className="font-semibold">Sertifikat Kelulusan</h3>
                                         </div>
 
-                                        {isLoading && <Skeleton className="h-[200px] w-full rounded-lg" />}
+                                        {isLoading && hasCertificate && (
+                                            <div className="space-y-3">
+                                                <Skeleton className="h-[250px] w-full rounded-lg" />
+                                                <div className="space-y-2">
+                                                    <Skeleton className="mx-auto h-3 w-3/4" />
+                                                    <Skeleton className="mx-auto h-3 w-1/2" />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Skeleton className="mx-auto h-8 w-full" />
+                                                    <Skeleton className="mx-auto h-8 w-full" />
+                                                </div>
+                                            </div>
+                                        )}
 
                                         <div className="relative">
                                             <div className={`group ${isLoading ? 'absolute opacity-0' : 'relative opacity-100'}`}>
@@ -364,15 +376,25 @@ export default function DetailMyCourse({
                                             </div>
                                         </div>
 
-                                        <div>
+                                        <div className={`${isLoading ? 'opacity-0' : 'opacity-100'}`}>
                                             <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
                                                 Unduh sertifikat sebagai bukti kelulusan dari course ini.
                                             </p>
                                             {certificateParticipant && (
-                                                <p className="mt-2 text-center text-xs text-blue-600 dark:text-blue-400">
-                                                    No. Sertifikat: {String(certificateParticipant.certificate_number).padStart(4, '0')}/
-                                                    {certificate.certificate_number}
-                                                </p>
+                                                <div className="mt-2 text-center">
+                                                    <p className="text-xs text-blue-600 dark:text-blue-400">
+                                                        No. Sertifikat: {String(certificateParticipant.certificate_number).padStart(4, '0')}/
+                                                        {certificate.certificate_number}
+                                                    </p>
+                                                    <Link
+                                                        href={route('certificate.participant.detail', {
+                                                            code: certificateParticipant.certificate_code,
+                                                        })}
+                                                        className="text-xs text-green-600 underline hover:text-green-800"
+                                                    >
+                                                        Lihat Detail Sertifikat
+                                                    </Link>
+                                                </div>
                                             )}
                                             <div className="mt-3 space-y-2">
                                                 <Button className="w-full" asChild>

@@ -29,7 +29,6 @@
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-
         }
 
         .certificate-container {
@@ -146,18 +145,46 @@
             float: right;
             width: 50%;
             text-align: right;
-            margin-right: 600px
+            margin-top: 100px;
+            margin-right: 600px;
+        }
+
+        .qr-container {
+            margin-bottom: 16px;
+            position: relative;
+            text-align: right;
+        }
+
+        .qr-code {
+            width: 150px;
+            height: 150px;
+            margin: 0 0 16px auto;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 4px;
+            background: white;
+            display: block;
+        }
+
+        .qr-placeholder {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 16px auto;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            background: #f9fafb;
+            font-size: 10px;
+            display: block;
         }
 
         .certificate-url {
-            font-size: 38px;
+            font-size: 32px;
             color: #6b7280;
             font-weight: 600;
-            margin-bottom: 4px;
         }
 
         .certificate-period {
-            font-size: 38px;
+            font-size: 32px;
             margin-bottom: 2px;
         }
 
@@ -166,7 +193,6 @@
             height: 250px;
             margin-bottom: 8px;
             position: relative;
-            text-align: center;
         }
 
         .signature-image {
@@ -268,8 +294,33 @@
                     <div class="signature-title">Aksara Teknologi Mandiri</div>
                     @endif
                 </div>
+
                 <div class="period-section">
-                    <div class="certificate-url">https://aksademy.id/certificate/{{ $data['certificate_code'] }}</div>
+                    {{-- QR Code Section --}}
+                    <div class="qr-container">
+                        @if($qrCode)
+                        <div class="qr-code">
+                            @if(str_contains($qrCode, 'image/png'))
+                            <img src="{{ $qrCode }}" alt="QR Code"
+                                style="width: 100%; height: 100%; object-fit: contain;">
+                            @else
+                            {!! $qrCode !!}
+                            @endif
+                        </div>
+                        @else
+                        <div class="qr-placeholder">
+                            QR Code<br>Not Available
+                        </div>
+                        @endif
+
+                        @if($certificateUrl)
+                        <div class="certificate-url">{{ $certificateUrl }}</div>
+                        @else
+                        <div class="certificate-url">https://aksademy.id/certificate/{{ $data['certificate_code'] }}
+                        </div>
+                        @endif
+                    </div>
+
                     <div class="certificate-period">Sertifikat berlaku sampai</div>
                     <div class="certificate-period">{{ $certificate->period }}</div>
                 </div>
