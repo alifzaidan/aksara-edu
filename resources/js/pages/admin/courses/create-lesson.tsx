@@ -224,7 +224,6 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                             <Input
                                 id="attachment"
                                 type="file"
-                                accept="application/pdf"
                                 onChange={(e) => setAttachment(e.target.files?.[0] ?? null)}
                             />
                             {/* Switch for file download permission */}
@@ -251,14 +250,18 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                                             Fullscreen
                                         </a>
                                     </div>
-                                    <object data={URL.createObjectURL(attachment)} type="application/pdf" width="100%" height="200px">
-                                        <p>
-                                            Preview tidak tersedia.{' '}
-                                            <a href={URL.createObjectURL(attachment)} target="_blank" rel="noopener noreferrer">
-                                                Download PDF
-                                            </a>
-                                        </p>
-                                    </object>
+                                    {attachment.type === 'application/pdf' ? (
+                                        <object data={URL.createObjectURL(attachment)} type="application/pdf" width="100%" height="200px">
+                                            <p>
+                                                Preview tidak tersedia.{' '}
+                                                <a href={URL.createObjectURL(attachment)} target="_blank" rel="noopener noreferrer">
+                                                    Download PDF
+                                                </a>
+                                            </p>
+                                        </object>
+                                    ) : (
+                                        <div className="text-xs text-muted-foreground italic">Preview hanya tersedia untuk file PDF.</div>
+                                    )}
                                 </div>
                             )}
                         </div>
