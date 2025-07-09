@@ -39,6 +39,8 @@ function getYoutubeId(url: string) {
     return match && match[2].length === 11 ? match[2] : '';
 }
 
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+
 export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps) {
     const [title, setTitle] = useState(lesson.title);
     const [type, setType] = useState<Lesson['type']>(lesson.type);
@@ -233,6 +235,11 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
                                 type="file"
                                 onChange={(e) => {
                                     const file = e.target.files?.[0] ?? null;
+                                    if (file && file.size > MAX_FILE_SIZE) {
+                                        setError('Ukuran file maksimal 50 MB');
+                                        setAttachment(null);
+                                        return;
+                                    }
                                     setAttachment(file);
                                     // Automatically turn off switch if file is not PDF
                                     if (file && file.type !== 'application/pdf') {
