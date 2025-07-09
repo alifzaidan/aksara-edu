@@ -337,6 +337,7 @@ function LessonContent({ lesson, onQuizComplete, courseSlug }: { lesson: Lesson 
             }
             // Cek is_preview: 1/true = hanya preview (no download), 0/false = bisa download
             const isPreview = (lesson as any).is_preview === true || (lesson as any).is_preview === 1;
+            const isPdf = lesson.attachment && lesson.attachment.toLowerCase().endsWith('.pdf');
             return (
                 <div className="w-full">
                     {!isPreview && (
@@ -357,15 +358,21 @@ function LessonContent({ lesson, onQuizComplete, courseSlug }: { lesson: Lesson 
                         </div>
                     )}
                     <div className="w-full h-[600px]">
-                        <iframe
-                            src={`/storage/${lesson.attachment}#toolbar=0&navpanes=0&scrollbar=0`}
-                            title={lesson.title}
-                            className="w-full h-full rounded-lg border"
-                            style={{
-                                border: 'none',
-                                outline: 'none'
-                            }}
-                        />
+                        {isPdf ? (
+                            <iframe
+                                src={`/storage/${lesson.attachment}#toolbar=0&navpanes=0&scrollbar=0`}
+                                title={lesson.title}
+                                className="w-full h-full rounded-lg border"
+                                style={{
+                                    border: 'none',
+                                    outline: 'none'
+                                }}
+                            />
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-muted-foreground italic text-sm">
+                                Preview hanya tersedia untuk file PDF.
+                            </div>
+                        )}
                     </div>
                 </div>
             );
