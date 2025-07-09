@@ -145,9 +145,17 @@ function QuizDashboard({ lesson, onStartQuiz }: { lesson: Lesson; onStartQuiz: (
                         <div className="text-2xl font-bold text-blue-600">{quiz.questions?.length || 0}</div>
                         <div className="text-sm text-muted-foreground">Total Soal</div>
                     </div>
-                    <div className="bg-card border rounded-lg p-4">
-                        <div className="text-2xl font-bold text-green-600">{quiz.time_limit || 0}</div>
-                        <div className="text-sm text-muted-foreground">Menit</div>
+                    <div className="bg-card border rounded-lg p-4 flex flex-col justify-center items-center min-h-[72px]">
+                        {quiz.time_limit === 0 ? (
+                            <div className="text-sm font-semibold text-red-600 flex items-center h-full min-h-[48px] justify-center">
+                                Quiz ini tidak memiliki batas waktu
+                            </div>
+                        ) : (
+                            <>
+                                <div className="text-2xl font-bold text-green-600">{quiz.time_limit}</div>
+                                <div className="text-sm text-muted-foreground">Menit</div>
+                            </>
+                        )}
                     </div>
                     <div className="bg-card border rounded-lg p-4">
                         <div className="text-2xl font-bold text-amber-600">{quiz.passing_score}</div>

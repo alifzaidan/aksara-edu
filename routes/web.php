@@ -81,6 +81,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('learn.course.quiz');
     Route::post('/quiz/submit', [QuizSubmissionController::class, 'submit'])->name('quiz.submit');
     Route::get('/quiz/{quiz}/attempt', [QuizSubmissionController::class, 'getAttempt'])->name('quiz.attempt');
+    Route::post('/quiz/save-progress', [App\Http\Controllers\QuizProgressController::class, 'save']);
+    Route::get('/quiz/get-progress', [App\Http\Controllers\QuizProgressController::class, 'get']);
+    Route::post('/quiz/clear-progress', [App\Http\Controllers\QuizProgressController::class, 'clear'])->middleware('auth');
     Route::post('/lesson/{lesson}/complete', [App\Http\Controllers\LessonController::class, 'markComplete'])->name('lesson.complete');
 
     Route::post('/enrollment/progress/{courseSlug}', [EnrollmentProgressController::class, 'updateProgress'])->name('enrollment.progress.update');
