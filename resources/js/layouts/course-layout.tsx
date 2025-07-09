@@ -2,6 +2,7 @@ import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebarCourse } from '@/components/app-sidebar-course';
 import { AppSidebarHeader } from '@/components/app-sidebar-header';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/sonner';
 import { type BreadcrumbItem } from '@/types';
 import { Dispatch, SetStateAction, type ReactNode } from 'react';
@@ -69,7 +70,7 @@ export default ({
                 onLessonComplete={handleLessonComplete}
             />
             <AppContent variant="sidebar">
-                <AppSidebarHeader breadcrumbs={breadcrumbs} hideSidebarTrigger={true} courseTitle={courseTitle} />
+                <AppSidebarHeader breadcrumbs={breadcrumbs} hideSidebarTrigger={false} courseTitle={courseTitle} />
                 {children}
                 <Toaster />
             </AppContent>

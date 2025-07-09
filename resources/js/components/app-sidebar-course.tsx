@@ -1,5 +1,5 @@
 import { NavUser } from '@/components/nav-user';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import { FileDown, FileText, LogOut, PlayCircle, HelpCircle, CheckCircle, Circle } from 'lucide-react';
@@ -9,6 +9,7 @@ import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { useMemo, useState, useEffect } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { useSidebar } from '@/components/ui/sidebar';
 
 interface Lesson {
     id: string;
@@ -34,6 +35,7 @@ interface AppSidebarCourseProps {
 
 export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelectedLesson, onLessonComplete, onProgressUpdate }: AppSidebarCourseProps) {
     const [expandedModule, setExpandedModule] = useState<React.Key | null>(null);
+    const { state } = useSidebar(); // Ambil state sidebar (expanded/collapsed)
 
     // Set module pertama terbuka secara default
     useEffect(() => {
@@ -121,39 +123,43 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href="/admin/dashboard" prefetch>
-                                <img src="/assets/images/logo-primary.png" alt="Aksademy" className="block w-32 fill-current dark:hidden" />
-                                {/* Logo untuk dark mode */}
-                                <img src="/assets/images/logo-secondary.png" alt="Aksademy" className="hidden w-32 fill-current dark:block" />
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+                <div className="flex items-center justify-center">
+                    <SidebarMenu>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton size="lg" asChild>
+                                <Link href="/admin/dashboard" prefetch>
+                                    <img src="/assets/images/logo-primary.png" alt="Aksademy" className="block w-32 fill-current dark:hidden" />
+                                    {/* Logo untuk dark mode */}
+                                    <img src="/assets/images/logo-secondary.png" alt="Aksademy" className="hidden w-32 fill-current dark:block" />
+                                </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    </SidebarMenu>
+                </div>
             </SidebarHeader>
 
             <SidebarContent>
                 {/* Progress Bar Section */}
-                <div className="px-4 py-3 border-b">
-                    <div className="mb-2">
-                        <div className="flex items-center justify-between text-sm">
-                            <span className="font-medium">Progress Pembelajaran</span>
-                            <span className="text-muted-foreground">
-                                {progressData.completedLessons}/{progressData.totalLessons}
-                            </span>
-                        </div>
-                        <div className="mt-2">
-                            <Progress value={progressData.progressPercentage} className="h-2 bg-white border border-gray-200" />
-                        </div>
-                        <div className="mt-1 text-right">
-                            <span className="text-xs text-muted-foreground">
-                                {Math.round(progressData.progressPercentage)}% selesai
-                            </span>
+                {state === 'expanded' && (
+                    <div className="px-4 py-3 border-b">
+                        <div className="mb-2">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="font-medium">Progress Pembelajaran</span>
+                                <span className="text-muted-foreground">
+                                    {progressData.completedLessons}/{progressData.totalLessons}
+                                </span>
+                            </div>
+                            <div className="mt-2">
+                                <Progress value={progressData.progressPercentage} className="h-2 bg-white border border-gray-200" />
+                            </div>
+                            <div className="mt-1 text-right">
+                                <span className="text-xs text-muted-foreground">
+                                    {Math.round(progressData.progressPercentage)}% selesai
+                                </span>
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
                 <Accordion 
                     className="w-full" 
@@ -164,7 +170,13 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
                         <AccordionItem key={module.id} value={module.id}>
                             <AccordionTrigger className="px-2 text-left text-sm font-semibold hover:no-underline">
                                 <div className="flex items-center gap-2 w-full">
-                                    <span className="flex-1">{module.title}</span>
+                                    {state === 'collapsed' ? (
+                                        <span className="flex-1 truncate">
+                                            {module.title.length > 4 ? module.title.slice(0, 4) + '...' : module.title}
+                                        </span>
+                                    ) : (
+                                        <span className="flex-1">{module.title}</span>
+                                    )}
                                     {isModuleCompleted(module) && (
                                         <CheckCircle className="h-4 w-4 text-green-600" />
                                     )}
@@ -176,13 +188,17 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
                                         const accessible = isLessonAccessible(moduleIdx, lessonIdx);
                                         return (
                                             <li key={lesson.id} className="group">
-                                                <div className="flex items-center gap-2">
+                                                <div className={`flex items-center gap-2 ${state === 'collapsed' ? 'justify-center' : ''}`}>
                                                     <TooltipProvider>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
                                                                 <button
                                                                     onClick={() => accessible && setSelectedLesson(lesson)}
-                                                                    className={`flex-1 flex items-center gap-2 rounded-md p-2 text-left text-sm transition-colors ${
+                                                                    className={`rounded-md p-2 text-left text-sm transition-colors ${
+                                                                        state === 'collapsed'
+                                                                            ? 'flex items-center justify-center w-10 h-10'
+                                                                            : 'flex flex-1 items-center gap-2'
+                                                                    } ${
                                                                         selectedLesson?.id === lesson.id
                                                                             ? 'bg-accent text-accent-foreground'
                                                                             : accessible
@@ -192,13 +208,17 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
                                                                     disabled={!accessible}
                                                                     tabIndex={accessible ? 0 : -1}
                                                                 >
-                                                                    {lesson.isCompleted ? (
-                                                                        <CheckCircle className="h-4 w-4 text-green-600" />
-                                                                    ) : (
-                                                                        <Circle className="h-4 w-4" />
-                                                                    )}
-                                                                    <span className="flex-1">{lesson.title}</span>
                                                                     {lessonIcons[lesson.type]}
+                                                                    {state === 'expanded' && (
+                                                                        <>
+                                                                            <span className="flex-1">{lesson.title}</span>
+                                                                            {lesson.isCompleted ? (
+                                                                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                                                            ) : (
+                                                                                <Circle className="h-4 w-4" />
+                                                                            )}
+                                                                        </>
+                                                                    )}
                                                                 </button>
                                                             </TooltipTrigger>
                                                             {!accessible && (

@@ -289,6 +289,9 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                                 value={quizTimeLimit}
                                 onChange={(e) => setQuizTimeLimit(Number(e.target.value))}
                             />
+                            <div className="text-muted-foreground text-xs mt-1">
+                                Isi <span className="font-bold">0</span> jika quiz tidak memiliki batas waktu
+                            </div>
                             <Label htmlFor="quiz-passing-score" className="mb-1 block text-sm font-medium">
                                 Passing Score
                             </Label>

@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Head } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, AlertTriangle, HelpCircle } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { router } from '@inertiajs/react';
 
 interface QuizOption {
@@ -59,8 +59,10 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
     const [timeLeft, setTimeLeft] = useState<number>(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [showConfirmExitDialog, setShowConfirmExitDialog] = useState(false);
 
     const quiz = lesson.quizzes?.[0];
+    const saveTimeout = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         // Initialize timer for quiz
@@ -89,6 +91,37 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
         }
     }, [timeLeft, showResults]);
 
+    // Simpan progress ke backend setiap answers berubah (debounce 1 detik)
+    useEffect(() => {
+        if (!quiz?.id || showResults) return;
+        if (saveTimeout.current) clearTimeout(saveTimeout.current);
+        saveTimeout.current = setTimeout(() => {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            fetch('/quiz/save-progress', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify({ quiz_id: quiz.id, answers }),
+                credentials: 'same-origin',
+            });
+        }, 1000);
+        return () => {
+            if (saveTimeout.current) clearTimeout(saveTimeout.current);
+        };
+    }, [answers, quiz?.id, showResults]);
+
+    // Ambil progress dari backend saat quiz dibuka
+    useEffect(() => {
+        if (!quiz?.id) return;
+        fetch(`/quiz/get-progress?quiz_id=${quiz.id}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.answers) setAnswers(data.answers);
+            });
+    }, [quiz?.id]);
+
     const handleAnswerChange = (questionId: string, answerId: string) => {
         setAnswers(prev => ({
             ...prev,
@@ -98,6 +131,20 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
 
     const handleSubmitQuiz = () => {
         setShowConfirmDialog(true);
+    };
+
+    const clearQuizProgress = async () => {
+        if (!quiz?.id) return;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        await fetch('/quiz/clear-progress', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            body: JSON.stringify({ quiz_id: quiz.id }),
+            credentials: 'same-origin',
+        });
     };
 
     const handleConfirmSubmit = async () => {
@@ -127,6 +174,7 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
             console.log('Quiz submission response:', responseData);
 
             if (response.ok) {
+                await clearQuizProgress(); // clear progress after successful submit
                 setQuizResult(responseData);
                 setShowResults(true);
             } else {
@@ -141,13 +189,27 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
         }
     };
 
-    const handleBackToCourse = () => {
+    const handleBackToCourse = async () => {
+        // Konfirmasi sebelum keluar dari quiz
+        if (!showResults) {
+            setShowConfirmExitDialog(true);
+            return;
+        }
+        await clearQuizProgress(); // clear progress when leaving after submit
+        setAnswers({}); // clear local state as well
         // Kembali ke course dan set URL hash agar menampilkan quiz dashboard
         router.get(`/learn/course/${courseSlug}#quiz-${lesson.id}`);
     };
 
-    const handleRetakeQuiz = () => {
-        // Reset all quiz states
+    // Tombol kembali di header
+    const handleHeaderBack = async () => {
+        await clearQuizProgress(); // clear progress on header back
+        setAnswers({});
+        router.get(`/learn/course/${courseSlug}#quiz-${lesson.id}`);
+    };
+
+    const handleRetakeQuiz = async () => {
+        await clearQuizProgress(); // clear progress on retake
         setCurrentQuestion(0);
         setAnswers({});
         setShowResults(false);
@@ -325,7 +387,7 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
                         <Button 
                             variant="ghost" 
                             size="sm" 
-                            onClick={handleBackToCourse}
+                            onClick={handleHeaderBack}
                             className="gap-2"
                         >
                             <ChevronLeft className="h-4 w-4" />
@@ -337,12 +399,16 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
                                 {lesson.title}
                             </p>
                         </div>
-                        {quiz.time_limit && timeLeft > 0 && (
+                        {quiz.time_limit && timeLeft > 0 ? (
                             <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${
                                 timeLeft <= 60 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
                             }`}>
                                 <Clock className="w-5 h-5" />
                                 <span className="font-medium text-lg">{formatTime(timeLeft)}</span>
+                            </div>
+                        ) : quiz.time_limit === 0 && (
+                            <div className="text-red-600 text-sm font-semibold px-4 py-2 border border-red-200 bg-red-50 rounded">
+                                Quiz ini tidak memiliki durasi pengerjaan
                             </div>
                         )}
                     </div>
@@ -371,7 +437,7 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
                         </div>
                     </div>
 
-                    <div className="flex gap-6">
+                    <div className="flex gap-6 flex-col md:flex-row">
                         {/* Question Content */}
                         <div className="flex-1">
                             <div className="bg-card border rounded-lg p-6 mb-6">
@@ -403,40 +469,64 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
                             </div>
 
                             {/* Navigation Buttons */}
-                            <div className="flex justify-between">
-                                <Button
-                                    variant="outline"
-                                    size="lg"
-                                    onClick={() => setCurrentQuestion(prev => Math.max(0, prev - 1))}
-                                    disabled={currentQuestion === 0}
-                                >
-                                    <ChevronLeft className="w-4 h-4 mr-2" />
-                                    Sebelumnya
-                                </Button>
+                            <div className="flex flex-col gap-4">
+                                <div className="flex justify-between">
+                                    <Button
+                                        variant="outline"
+                                        size="lg"
+                                        onClick={() => setCurrentQuestion(prev => Math.max(0, prev - 1))}
+                                        disabled={currentQuestion === 0}
+                                    >
+                                        <ChevronLeft className="w-4 h-4 mr-2" />
+                                        Sebelumnya
+                                    </Button>
 
-                                {currentQuestion === totalQuestions - 1 ? (
-                                    <Button
-                                        size="lg"
-                                        onClick={handleSubmitQuiz}
-                                        disabled={isSubmitting || answeredCount === 0}
-                                    >
-                                        {isSubmitting ? 'Mengirim...' : 'Selesai Quiz'}
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        size="lg"
-                                        onClick={() => setCurrentQuestion(prev => Math.min(totalQuestions - 1, prev + 1))}
-                                        disabled={currentQuestion === totalQuestions - 1}
-                                    >
-                                        Selanjutnya
-                                        <ChevronRight className="w-4 h-4 ml-2" />
-                                    </Button>
-                                )}
+                                    {currentQuestion === totalQuestions - 1 ? (
+                                        <Button
+                                            size="lg"
+                                            onClick={handleSubmitQuiz}
+                                            disabled={isSubmitting || answeredCount === 0}
+                                        >
+                                            {isSubmitting ? 'Mengirim...' : 'Selesai Quiz'}
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            size="lg"
+                                            onClick={() => setCurrentQuestion(prev => Math.min(totalQuestions - 1, prev + 1))}
+                                            disabled={currentQuestion === totalQuestions - 1}
+                                        >
+                                            Selanjutnya
+                                            <ChevronRight className="w-4 h-4 ml-2" />
+                                        </Button>
+                                    )}
+                                </div>
+                                {/* Navigasi Soal untuk mobile */}
+                                <div className="block md:hidden">
+                                    <div className="bg-card border rounded-lg p-4 mt-2">
+                                        <h4 className="font-semibold mb-4">Navigasi Soal</h4>
+                                        <div className="grid grid-cols-6 gap-2 mb-4">
+                                            {quiz.questions.map((_, index) => (
+                                                <button
+                                                    key={index}
+                                                    onClick={() => setCurrentQuestion(index)}
+                                                    className={`w-10 h-10 rounded text-sm font-medium transition-colors ${
+                                                        index === currentQuestion
+                                                            ? 'bg-blue-900 text-white'
+                                                            : answers[quiz.questions[index]?.id]
+                                                            ? 'bg-green-100 text-green-700 border border-green-300'
+                                                            : 'bg-gray-100 hover:bg-gray-200'
+                                                    }`}
+                                                >
+                                                    {index + 1}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-
-                        {/* Sidebar with Question Numbers */}
-                        <div className="w-80">
+                        {/* Sidebar with Question Numbers (desktop only) */}
+                        <div className="w-80 hidden md:block">
                             <div className="bg-card border rounded-lg p-6 sticky top-6">
                                 <h4 className="font-semibold mb-4">Navigasi Soal</h4>
                                 <div className="grid grid-cols-6 gap-2 mb-6">
@@ -456,7 +546,6 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
                                         </button>
                                     ))}
                                 </div>
-                                
                                 <div className="pt-4 border-t">
                                     <div className="text-sm space-y-2">
                                         <div className="flex items-center gap-3">
@@ -504,6 +593,39 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? 'Mengirim...' : 'Ya, Kirim Jawaban'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Confirmation Dialog for Exit */}
+            <Dialog open={showConfirmExitDialog} onOpenChange={setShowConfirmExitDialog}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-amber-500" />
+                            Konfirmasi Keluar Quiz
+                        </DialogTitle>
+                        <DialogDescription>
+                            Apakah Anda yakin ingin keluar? <span className="font-semibold text-red-600">Jawaban Anda tidak akan terekam.</span>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setShowConfirmExitDialog(false)}
+                            disabled={isSubmitting}
+                        >
+                            Batal
+                        </Button>
+                        <Button 
+                            onClick={() => {
+                                setShowConfirmExitDialog(false);
+                                router.get(`/learn/course/${courseSlug}#quiz-${lesson.id}`);
+                            }}
+                            disabled={isSubmitting}
+                        >
+                            Ya, Keluar Quiz
                         </Button>
                     </DialogFooter>
                 </DialogContent>

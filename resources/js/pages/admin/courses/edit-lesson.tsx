@@ -24,6 +24,7 @@ interface Lesson {
         time_limit: number;
         passing_score: number;
     }[];
+    is_preview?: boolean;
 }
 
 interface EditLessonProps {
@@ -50,6 +51,7 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
     const [quizInstructions, setQuizInstructions] = useState(lesson.quizzes?.[0]?.instructions || '');
     const [quizTimeLimit, setQuizTimeLimit] = useState(lesson.quizzes?.[0]?.time_limit || 0);
     const [quizPassingScore, setQuizPassingScore] = useState(lesson.quizzes?.[0]?.passing_score || 0);
+    const [isPreview, setIsPreview] = useState(lesson.is_preview !== undefined ? lesson.is_preview : true);
     const titleInput = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -63,8 +65,8 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
         setQuizInstructions(lesson.quizzes?.[0]?.instructions || '');
         setQuizTimeLimit(lesson.quizzes?.[0]?.time_limit || 0);
         setQuizPassingScore(lesson.quizzes?.[0]?.passing_score || 0);
-        // Reset error when lesson changes
         setError('');
+        setIsPreview(lesson.is_preview !== undefined ? lesson.is_preview : true);
     }, [lesson]);
 
     const handleSubmit: FormEventHandler = (e) => {
@@ -94,6 +96,7 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
                           },
                       ]
                     : undefined,
+            is_preview: type === 'file' ? isPreview : lesson.is_preview,
         });
     };
 
@@ -231,6 +234,13 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
                                 accept="application/pdf"
                                 onChange={(e) => setAttachment(e.target.files?.[0] ?? null)}
                             />
+                            {/* Switch for file download permission */}
+                            <div className="mt-2 flex items-center space-x-2">
+                                <Switch id="is-preview" checked={isPreview} onCheckedChange={setIsPreview} />
+                                <Label htmlFor="is-preview">
+                                    {isPreview ? 'File hanya bisa dilihat (preview)' : 'File bisa di-download'}
+                                </Label>
+                            </div>
                             {/* Preview PDF */}
                             {(() => {
                                 let preview: { type: 'file'; url: string } | null = null;
