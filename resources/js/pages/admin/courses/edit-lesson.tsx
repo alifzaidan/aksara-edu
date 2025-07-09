@@ -231,16 +231,33 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
                             <Input
                                 id="attachment"
                                 type="file"
-                                accept="application/pdf"
-                                onChange={(e) => setAttachment(e.target.files?.[0] ?? null)}
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0] ?? null;
+                                    setAttachment(file);
+                                    // Automatically turn off switch if file is not PDF
+                                    if (file && file.type !== 'application/pdf') {
+                                        setIsPreview(false);
+                                    }
+                                }}
                             />
                             {/* Switch for file download permission */}
                             <div className="mt-2 flex items-center space-x-2">
-                                <Switch id="is-preview" checked={isPreview} onCheckedChange={setIsPreview} />
-                                <Label htmlFor="is-preview">
+                                <Switch 
+                                    id="is-preview" 
+                                    checked={isPreview} 
+                                    onCheckedChange={attachment && attachment.type !== 'application/pdf' ? undefined : setIsPreview}
+                                    className={attachment && attachment.type !== 'application/pdf' ? 'opacity-50 cursor-not-allowed' : ''}
+                                />
+                                <Label htmlFor="is-preview" className={attachment && attachment.type !== 'application/pdf' ? 'text-muted-foreground' : ''}>
                                     {isPreview ? 'File hanya bisa dilihat (preview)' : 'File bisa di-download'}
                                 </Label>
                             </div>
+                            {/* Show message when non-PDF file is selected */}
+                            {attachment && attachment.type !== 'application/pdf' && (
+                                <div className="mt-1 text-xs text-muted-foreground">
+                                    Preview hanya tersedia untuk file PDF. File non-PDF otomatis bisa di-download.
+                                </div>
+                            )}
                             {/* Preview PDF */}
                             {(() => {
                                 let preview: { type: 'file'; url: string } | null = null;
@@ -257,30 +274,39 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
                                     preview.url && (
                                         <div className="mt-2 w-full rounded border p-2">
                                             <div className="mt-2 flex items-center gap-2 text-xs">
-                                                <a
-                                                    href={preview.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="mb-2 rounded bg-black/60 px-2 py-1 text-xs text-white hover:bg-black/80"
-                                                    title="Tampilkan Fullscreen"
-                                                >
-                                                    {attachment instanceof File ? 'Fullscreen' : 'Lihat File Lama'}
-                                                </a>
+                                                {(attachment instanceof File && attachment.type === 'application/pdf') || 
+                                                 (typeof attachment === 'string' && attachment) ? (
+                                                    <a
+                                                        href={preview.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="mb-2 rounded bg-black/60 px-2 py-1 text-xs text-white hover:bg-black/80"
+                                                        title="Tampilkan Fullscreen"
+                                                    >
+                                                        {attachment instanceof File ? 'Fullscreen' : 'Lihat File Lama'}
+                                                    </a>
+                                                ) : null}
                                                 {attachment instanceof File && (
                                                     <>
+                                                        <span className="font-medium">File:</span>
                                                         <span>{attachment.name}</span>
                                                         <span>({Math.round(attachment.size / 1024)} KB)</span>
                                                     </>
                                                 )}
                                             </div>
-                                            <object data={preview.url} type="application/pdf" width="100%" height="200px">
-                                                <p>
-                                                    Preview tidak tersedia.{' '}
-                                                    <a href={preview.url} target="_blank" rel="noopener noreferrer">
-                                                        Download PDF
-                                                    </a>
-                                                </p>
-                                            </object>
+                                            {(attachment instanceof File && attachment.type === 'application/pdf') || 
+                                             (typeof attachment === 'string' && attachment) ? (
+                                                <object data={preview.url} type="application/pdf" width="100%" height="200px">
+                                                    <p>
+                                                        Preview tidak tersedia.{' '}
+                                                        <a href={preview.url} target="_blank" rel="noopener noreferrer">
+                                                            Download PDF
+                                                        </a>
+                                                    </p>
+                                                </object>
+                                            ) : (
+                                                <div className="text-xs text-muted-foreground italic">Preview hanya tersedia untuk file PDF.</div>
+                                            )}
                                         </div>
                                     )
                                 );
