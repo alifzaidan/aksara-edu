@@ -143,7 +143,7 @@
             float: right;
             width: 50%;
             text-align: right;
-            margin-top: 100px;
+            margin-top: 150px;
             margin-right: 600px;
         }
 
@@ -194,7 +194,7 @@
         }
 
         .signature-image {
-            max-width: 200px;
+            max-width: 500px;
             max-height: 500px;
             object-fit: contain;
         }
@@ -319,7 +319,6 @@
                         @endif
                     </div>
 
-                    <div class="certificate-period">Sertifikat berlaku sampai</div>
                     <div class="certificate-period">{{ $certificate->period }}</div>
                 </div>
             </div>

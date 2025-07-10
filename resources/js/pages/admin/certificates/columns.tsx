@@ -110,10 +110,6 @@ export const columns: ColumnDef<Certificate>[] = [
         cell: ({ row }) => <p>{format(new Date(row.getValue('issued_date')), 'dd MMM yyyy', { locale: id })}</p>,
     },
     {
-        accessorKey: 'period',
-        header: 'Periode',
-    },
-    {
         id: 'actions',
         header: () => <div className="text-center">Aksi</div>,
         cell: ({ row }) => <CertificateActions certificate={row.original} />,

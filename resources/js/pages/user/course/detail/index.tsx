@@ -3,7 +3,6 @@ import { Head } from '@inertiajs/react';
 import AboutSection from './about-section';
 import HeroSection from './hero-section';
 import ModulesSection from './modules-section';
-import RatingSection from './rating-section';
 import RegisterSection from './register-section';
 import ToolsSection from './tools-section';
 import VideoSection from './video-section';
@@ -90,7 +89,7 @@ export default function DetailCourse({ course }: { course: Course }) {
             <ModulesSection course={course} />
             <ToolsSection course={course} />
             <RegisterSection course={course} />
-            <RatingSection course={course} />
+            {/* <RatingSection course={course} /> */}
         </UserLayout>
     );
 }
