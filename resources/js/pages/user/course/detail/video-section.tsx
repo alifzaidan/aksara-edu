@@ -26,12 +26,14 @@ export default function VideoSection({ course }: { course: Course }) {
     const [activeIndex, setActiveIndex] = useState(0);
 
     const items =
-        course.modules?.flatMap((module) =>
-            (module.lessons?.filter((lesson) => lesson.type === 'video').slice(0, 2) || []).map((lesson) => ({
-                title: lesson.title,
-                videoUrl: lesson.video_url,
-            })),
-        ) || [];
+        course.modules
+            ?.flatMap((module) =>
+                (module.lessons?.filter((lesson) => lesson.type === 'video') || []).map((lesson) => ({
+                    title: lesson.title,
+                    videoUrl: lesson.video_url,
+                })),
+            )
+            .slice(0, 2) || [];
 
     const totalLessons = course.modules?.reduce((total, module) => total + (module.lessons?.length || 0), 0) || 0;
 
