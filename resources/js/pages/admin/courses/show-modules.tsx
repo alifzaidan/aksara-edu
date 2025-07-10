@@ -140,15 +140,20 @@ export default function ShowModules({ modules, courseId }: { modules?: Module[];
                                                                 <button
                                                                     type="button"
                                                                     disabled={!lesson.attachment}
-                                                                    onClick={() =>
-                                                                        lesson.attachment &&
-                                                                        handlePreview(
-                                                                            'file',
-                                                                            `/storage/${lesson.attachment}`,
-                                                                            lesson.title,
-                                                                            lesson.description || null,
-                                                                        )
-                                                                    }
+                                                                    onClick={() => {
+                                                                        if (lesson.attachment) {
+                                                                            const fileUrl = `/storage/${lesson.attachment}`;
+                                                                            const fileName = lesson.attachment.split('/').pop() || '';
+                                                                            const isPdf = fileName.toLowerCase().endsWith('.pdf');
+                                                                            
+                                                                            if (isPdf) {
+                                                                                handlePreview('file', fileUrl, lesson.title, lesson.description || null);
+                                                                            } else {
+                                                                                // Open non-PDF files directly in new tab
+                                                                                window.open(fileUrl, '_blank');
+                                                                            }
+                                                                        }
+                                                                    }}
                                                                     className={
                                                                         'font-medium hover:underline ' +
                                                                         (lesson.attachment
@@ -158,6 +163,13 @@ export default function ShowModules({ modules, courseId }: { modules?: Module[];
                                                                 >
                                                                     {lesson.title}
                                                                 </button>
+                                                                {lesson.attachment && (
+                                                                    <div className="text-xs text-muted-foreground mt-1">
+                                                                        {lesson.attachment.split('/').pop()?.toLowerCase().endsWith('.pdf') 
+                                                                            ? 'Klik untuk preview PDF' 
+                                                                            : 'Klik untuk download - Tidak ada preview untuk format file ini'}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         )}
                                                         {lesson.type === 'video' && (

@@ -36,6 +36,8 @@ function getYoutubeId(url: string) {
     return match && match[2].length === 11 ? match[2] : '';
 }
 
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+
 export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
     const [title, setTitle] = useState('');
     const [type, setType] = useState<Lesson['type']>('text');
@@ -224,15 +226,38 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                             <Input
                                 id="attachment"
                                 type="file"
-                                onChange={(e) => setAttachment(e.target.files?.[0] ?? null)}
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0] ?? null;
+                                    if (file && file.size > MAX_FILE_SIZE) {
+                                        setError('Ukuran file maksimal 50 MB');
+                                        setAttachment(null);
+                                        return;
+                                    }
+                                    setAttachment(file);
+                                    // Automatically turn off switch if file is not PDF
+                                    if (file && file.type !== 'application/pdf') {
+                                        setIsPreview(false);
+                                    }
+                                }}
                             />
                             {/* Switch for file download permission */}
                             <div className="mt-2 flex items-center space-x-2">
-                                <Switch id="is-preview" checked={isPreview} onCheckedChange={setIsPreview} />
-                                <Label htmlFor="is-preview">
+                                <Switch 
+                                    id="is-preview" 
+                                    checked={isPreview} 
+                                    onCheckedChange={attachment && attachment.type !== 'application/pdf' ? undefined : setIsPreview}
+                                    className={attachment && attachment.type !== 'application/pdf' ? 'opacity-50 cursor-not-allowed' : ''}
+                                />
+                                <Label htmlFor="is-preview" className={attachment && attachment.type !== 'application/pdf' ? 'text-muted-foreground' : ''}>
                                     {isPreview ? 'File hanya bisa dilihat (preview)' : 'File bisa di-download'}
                                 </Label>
                             </div>
+                            {/* Show message when non-PDF file is selected */}
+                            {attachment && attachment.type !== 'application/pdf' && (
+                                <div className="mt-1 text-xs text-muted-foreground">
+                                    Preview hanya tersedia untuk file PDF. File non-PDF otomatis bisa di-download.
+                                </div>
+                            )}
                             {/* Preview PDF */}
                             {attachment && (
                                 <div className="mt-2 rounded border p-2">
@@ -240,15 +265,17 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                                         <span className="font-medium">File:</span>
                                         <span>{attachment.name}</span>
                                         <span>({Math.round(attachment.size / 1024)} KB)</span>
-                                        <a
-                                            href={URL.createObjectURL(attachment)}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="ml-auto rounded bg-black/60 px-2 py-1 text-xs text-white hover:bg-black/80"
-                                            title="Tampilkan Fullscreen"
-                                        >
-                                            Fullscreen
-                                        </a>
+                                        {attachment.type === 'application/pdf' && (
+                                            <a
+                                                href={URL.createObjectURL(attachment)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="ml-auto rounded bg-black/60 px-2 py-1 text-xs text-white hover:bg-black/80"
+                                                title="Tampilkan Fullscreen"
+                                            >
+                                                Fullscreen
+                                            </a>
+                                        )}
                                     </div>
                                     {attachment.type === 'application/pdf' ? (
                                         <object data={URL.createObjectURL(attachment)} type="application/pdf" width="100%" height="200px">
