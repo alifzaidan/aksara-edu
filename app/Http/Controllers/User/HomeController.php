@@ -22,7 +22,7 @@ class HomeController extends Controller
         $courses = Course::with(['category'])
             ->where('status', 'published')
             ->orderBy('created_at', 'desc')
-            ->take(2)
+            ->take(6)
             ->get()
             ->map(function ($course) {
                 return [
@@ -43,7 +43,7 @@ class HomeController extends Controller
             ->where('status', 'published')
             ->where('start_date', '>=', now())
             ->orderBy('created_at', 'desc')
-            ->take(2)
+            ->take(6)
             ->get()
             ->map(function ($bootcamp) {
                 return [
@@ -65,7 +65,7 @@ class HomeController extends Controller
             ->where('status', 'published')
             ->where('start_time', '>=', now())
             ->orderBy('created_at', 'desc')
-            ->take(2)
+            ->take(6)
             ->get()
             ->map(function ($webinar) {
                 return [
@@ -91,7 +91,6 @@ class HomeController extends Controller
             ->take(6)
             ->values();
 
-        // Ambil ID produk yang sudah dimiliki user
         $myProductIds = [
             'courses' => [],
             'bootcamps' => [],
@@ -101,7 +100,6 @@ class HomeController extends Controller
         if (Auth::check()) {
             $userId = Auth::id();
 
-            // Course IDs
             $myCourseIds = Invoice::with('courseItems')
                 ->where('user_id', $userId)
                 ->where('status', 'paid')
@@ -113,7 +111,6 @@ class HomeController extends Controller
                 ->values()
                 ->all();
 
-            // Bootcamp IDs
             $myBootcampIds = Invoice::with('bootcampItems')
                 ->where('user_id', $userId)
                 ->where('status', 'paid')
@@ -125,7 +122,6 @@ class HomeController extends Controller
                 ->values()
                 ->all();
 
-            // Webinar IDs
             $myWebinarIds = Invoice::with('webinarItems')
                 ->where('user_id', $userId)
                 ->where('status', 'paid')
