@@ -58,7 +58,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('profile', 'profile/dashboard');
     Route::get('/profile/dashboard', [ProfileController::class, 'index'])->name('profile.index');
     Route::get('/profile/my-courses', [ProfileCourseController::class, 'index'])->name('profile.courses');
-    Route::get('/profile/my-courses/{course}', [ProfileCourseController::class, 'detail'])->name('profile.courses.detail');
+    Route::get('/profile/my-courses/{course}', [ProfileCourseController::class, 'detail'])->name('profile.course.detail');
     Route::get('/profile/my-courses/{course}/certificate', [ProfileCourseController::class, 'downloadCertificate'])->name('profile.course.certificate');
     Route::get('/profile/my-courses/{course}/certificate/preview', [ProfileCourseController::class, 'previewCertificate'])->name('profile.course.certificate.preview');
     Route::get('/profile/my-bootcamps', [ProfileBootcampController::class, 'index'])->name('profile.bootcamps');

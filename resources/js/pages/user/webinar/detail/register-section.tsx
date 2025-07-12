@@ -20,9 +20,26 @@ interface Webinar {
 export default function RegisterSection({ webinar }: { webinar: Webinar }) {
     const { auth } = usePage<SharedData>().props;
 
-    const isProfileComplete = auth.user && auth.user.phone_number;
-    const registrationUrl = isProfileComplete ? webinar.registration_url : route('profile.edit', { redirect: window.location.href });
-    const buttonText = isProfileComplete ? 'Daftar Sekarang' : 'Lengkapi Profil untuk Mendaftar';
+    const isLoggedIn = !!auth.user;
+    const isProfileComplete = isLoggedIn && auth.user?.phone_number;
+
+    let registrationUrl: string;
+    let buttonText: string;
+    let warningMessage: string | null = null;
+
+    if (!isLoggedIn) {
+        registrationUrl = webinar.registration_url;
+        buttonText = 'Login untuk Mendaftar';
+        warningMessage = 'Anda harus login terlebih dahulu!';
+    } else if (!isProfileComplete) {
+        registrationUrl = route('profile.edit', { redirect: window.location.href });
+        buttonText = 'Lengkapi Profil untuk Mendaftar';
+        warningMessage = 'Profil Anda belum lengkap!';
+    } else {
+        registrationUrl = webinar.registration_url;
+        buttonText = 'Gabung Sekarang';
+        warningMessage = null;
+    }
 
     const deadline = new Date(webinar.registration_deadline);
     const isRegistrationOpen = new Date() < deadline;
@@ -122,10 +139,12 @@ export default function RegisterSection({ webinar }: { webinar: Webinar }) {
                         </p>
                         {isRegistrationOpen ? (
                             <>
-                                {!isProfileComplete && <p className="mb-2 text-center text-sm text-red-500">Profil Anda belum lengkap!</p>}
-                                <Button className="w-full" asChild>
-                                    <Link href={registrationUrl}>{buttonText}</Link>
-                                </Button>
+                                <div className="mt-auto">
+                                    {warningMessage && <p className="mb-2 text-sm text-red-500">{warningMessage}</p>}
+                                    <Button className="w-full" asChild>
+                                        <Link href={registrationUrl}>{buttonText}</Link>
+                                    </Button>
+                                </div>
                             </>
                         ) : (
                             <Button className="w-full" disabled>

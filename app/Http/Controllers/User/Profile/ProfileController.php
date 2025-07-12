@@ -29,15 +29,76 @@ class ProfileController extends Controller
             $query->where('user_id', $userId)->where('status', 'paid');
         })->count();
 
-        $recentTransactions = Invoice::with([
-            'courseItems.course:id,title,slug',
-            'bootcampItems.bootcamp:id,title,slug',
-            'webinarItems.webinar:id,title,slug',
-        ])
-            ->where('user_id', $userId)
+        // Ambil enrollment courses dengan progress
+        $enrolledCourses = EnrollmentCourse::with(['course:id,title,slug', 'invoice'])
+            ->whereHas('invoice', function ($query) use ($userId) {
+                $query->where('user_id', $userId)->where('status', 'paid');
+            })
             ->orderBy('created_at', 'desc')
             ->limit(5)
-            ->get();
+            ->get()
+            ->map(function ($enrollment) {
+                return [
+                    'id' => $enrollment->course->id,
+                    'title' => $enrollment->course->title,
+                    'slug' => $enrollment->course->slug,
+                    'type' => 'course',
+                    'progress' => $enrollment->progress,
+                    'completed_at' => $enrollment->completed_at,
+                    'enrolled_at' => $enrollment->created_at,
+                ];
+            });
+
+        // Ambil enrollment bootcamps dengan jadwal dan group URL
+        $enrolledBootcamps = EnrollmentBootcamp::with(['bootcamp:id,title,slug,start_date,end_date,group_url', 'invoice'])
+            ->whereHas('invoice', function ($query) use ($userId) {
+                $query->where('user_id', $userId)->where('status', 'paid');
+            })
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($enrollment) {
+                return [
+                    'id' => $enrollment->bootcamp->id,
+                    'title' => $enrollment->bootcamp->title,
+                    'slug' => $enrollment->bootcamp->slug,
+                    'type' => 'bootcamp',
+                    'start_date' => $enrollment->bootcamp->start_date,
+                    'end_date' => $enrollment->bootcamp->end_date,
+                    'group_url' => $enrollment->bootcamp->group_url,
+                    'enrolled_at' => $enrollment->created_at,
+                ];
+            });
+
+        // Ambil enrollment webinars dengan jadwal dan group URL
+        $enrolledWebinars = EnrollmentWebinar::with(['webinar:id,title,slug,start_time,end_time,group_url', 'invoice'])
+            ->whereHas('invoice', function ($query) use ($userId) {
+                $query->where('user_id', $userId)->where('status', 'paid');
+            })
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($enrollment) {
+                return [
+                    'id' => $enrollment->webinar->id,
+                    'title' => $enrollment->webinar->title,
+                    'slug' => $enrollment->webinar->slug,
+                    'type' => 'webinar',
+                    'start_time' => $enrollment->webinar->start_time,
+                    'end_time' => $enrollment->webinar->end_time,
+                    'group_url' => $enrollment->webinar->group_url,
+                    'enrolled_at' => $enrollment->created_at,
+                ];
+            });
+
+        // Gabungkan semua produk dan urutkan berdasarkan tanggal enrollment
+        $recentProducts = collect()
+            ->merge($enrolledCourses)
+            ->merge($enrolledBootcamps)
+            ->merge($enrolledWebinars)
+            ->sortByDesc('enrolled_at')
+            ->take(10)
+            ->values();
 
         return Inertia::render('user/profile/index', [
             'stats' => [
@@ -46,7 +107,7 @@ class ProfileController extends Controller
                 'webinars' => $webinarCount,
                 'total' => $courseCount + $bootcampCount + $webinarCount,
             ],
-            'recentTransactions' => $recentTransactions,
+            'recentProducts' => $recentProducts,
         ]);
     }
 }

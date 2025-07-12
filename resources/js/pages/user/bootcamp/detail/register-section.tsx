@@ -26,9 +26,29 @@ export default function RegisterSection({ bootcamp }: { bootcamp: Bootcamp }) {
     const diffDays = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
     const totalWeeks = Math.ceil(diffDays / 7);
 
-    const isProfileComplete = auth.user && auth.user.phone_number;
-    const registrationUrl = isProfileComplete ? bootcamp.registration_url : route('profile.edit', { redirect: window.location.href });
-    const buttonText = isProfileComplete ? 'Daftar Sekarang' : 'Lengkapi Profil untuk Mendaftar';
+    const isLoggedIn = !!auth.user;
+    const isProfileComplete = isLoggedIn && auth.user?.phone_number;
+
+    let registrationUrl: string;
+    let buttonText: string;
+    let warningMessage: string | null = null;
+
+    if (!isLoggedIn) {
+        registrationUrl = bootcamp.registration_url;
+        buttonText = 'Login untuk Mendaftar';
+        warningMessage = 'Anda harus login terlebih dahulu!';
+    } else if (!isProfileComplete) {
+        registrationUrl = route('profile.edit', { redirect: window.location.href });
+        buttonText = 'Lengkapi Profil untuk Mendaftar';
+        warningMessage = 'Profil Anda belum lengkap!';
+    } else {
+        registrationUrl = bootcamp.registration_url;
+        buttonText = 'Daftar Sekarang';
+        warningMessage = null;
+    }
+
+    const deadline = new Date(bootcamp.registration_deadline);
+    const isRegistrationOpen = new Date() < deadline;
 
     return (
         <section className="mx-auto my-8 w-full max-w-5xl px-4" id="register">
@@ -135,10 +155,20 @@ export default function RegisterSection({ bootcamp }: { bootcamp: Bootcamp }) {
                                 year: 'numeric',
                             })}
                         </p>
-                        {!isProfileComplete && <p className="mb-2 text-sm text-red-500">Profil Anda belum lengkap!</p>}
-                        <Button className="w-full" asChild>
-                            <Link href={registrationUrl}>{buttonText}</Link>
-                        </Button>
+                        {isRegistrationOpen ? (
+                            <>
+                                <div className="mt-auto">
+                                    {warningMessage && <p className="mb-2 text-sm text-red-500">{warningMessage}</p>}
+                                    <Button className="w-full" asChild>
+                                        <Link href={registrationUrl}>{buttonText}</Link>
+                                    </Button>
+                                </div>
+                            </>
+                        ) : (
+                            <Button className="w-full" disabled>
+                                Pendaftaran Ditutup
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>

@@ -26,9 +26,26 @@ export default function RegisterSection({ course }: { course: Course }) {
     const { auth } = usePage<SharedData>().props;
     const totalLessons = course.modules?.reduce((total, module) => total + (module.lessons?.length || 0), 0) || 0;
 
-    const isProfileComplete = auth.user && auth.user.phone_number;
-    const registrationUrl = isProfileComplete ? course.registration_url : route('profile.edit', { redirect: window.location.href });
-    const buttonText = isProfileComplete ? 'Gabung Sekarang' : 'Lengkapi Profil untuk Mendaftar';
+    const isLoggedIn = !!auth.user;
+    const isProfileComplete = isLoggedIn && auth.user?.phone_number;
+
+    let registrationUrl: string;
+    let buttonText: string;
+    let warningMessage: string | null = null;
+
+    if (!isLoggedIn) {
+        registrationUrl = course.registration_url;
+        buttonText = 'Login untuk Mendaftar';
+        warningMessage = 'Anda harus login terlebih dahulu!';
+    } else if (!isProfileComplete) {
+        registrationUrl = route('profile.edit', { redirect: window.location.href });
+        buttonText = 'Lengkapi Profil untuk Mendaftar';
+        warningMessage = 'Profil Anda belum lengkap!';
+    } else {
+        registrationUrl = course.registration_url;
+        buttonText = 'Gabung Sekarang';
+        warningMessage = null;
+    }
 
     return (
         <section className="mx-auto mt-8 w-full max-w-5xl px-4" id="register">
@@ -92,7 +109,7 @@ export default function RegisterSection({ course }: { course: Course }) {
                         </li>
                     </ul>
                     <div className="mt-auto">
-                        {!isProfileComplete && <p className="mb-2 text-center text-sm text-red-500">Profil Anda belum lengkap!</p>}
+                        {warningMessage && <p className="mb-2 text-center text-sm text-red-500">{warningMessage}</p>}
                         <Button className="w-full" asChild>
                             <Link href={registrationUrl}>{buttonText}</Link>
                         </Button>
