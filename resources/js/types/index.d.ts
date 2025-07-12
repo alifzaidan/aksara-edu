@@ -33,6 +33,11 @@ export interface ServiceItem {
     href: string;
 }
 
+export interface OtherItem {
+    title: string;
+    href: string;
+}
+
 export interface SharedData {
     name: string;
     quote: { message: string; author: string };

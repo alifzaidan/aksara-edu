@@ -14,6 +14,7 @@ use App\Http\Controllers\CourseDetailController;
 use App\Http\Controllers\EnrollmentProgressController;
 use App\Http\Controllers\CourseRatingController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\MentorController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
@@ -34,6 +35,8 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/terms-and-conditions', [LegalController::class, 'termsAndConditions'])->name('terms-and-conditions');
+Route::get('/privacy-policy', [LegalController::class, 'privacyPolicy'])->name('privacy-policy');
 Route::get('/course', [UserCourseController::class, 'index'])->name('course.index');
 Route::get('/course/{course:slug}', [UserCourseController::class, 'detail'])->name('course.detail');
 Route::get('/bootcamp', [UserBootcampController::class, 'index'])->name('bootcamp.index');
