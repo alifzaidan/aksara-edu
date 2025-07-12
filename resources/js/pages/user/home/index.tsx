@@ -1,3 +1,4 @@
+import FakeNotifications from '@/components/fake-notifications';
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
 import AboutSection from './about-section';
@@ -47,9 +48,15 @@ interface HomeProps {
     tools: Tool[];
     latestProducts: Product[];
     myProductIds: MyProductIds;
+    allProducts: Array<{
+        id: string;
+        title: string;
+        type: 'course' | 'bootcamp' | 'webinar';
+        price: number;
+    }>;
 }
 
-export default function Home({ tools, latestProducts, myProductIds }: HomeProps) {
+export default function Home({ tools, latestProducts, myProductIds, allProducts }: HomeProps) {
     return (
         <UserLayout>
             <Head title="Beranda" />
@@ -62,6 +69,8 @@ export default function Home({ tools, latestProducts, myProductIds }: HomeProps)
             <TestimonySection />
             <FaqSection />
             <CtaSection />
+
+            <FakeNotifications products={allProducts} />
 
             <a
                 href="https://wa.me/+6285142505797?text=Halo%20Admin%20Aksademy,%20saya%20ingin%20bertanya%20tentang%20kelas%20online."

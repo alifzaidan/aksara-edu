@@ -10,9 +10,7 @@ export default function PageNotFound() {
                 <img src="/assets/images/404-light.webp" alt="Page not found" className="mb-8 block max-w-[300px] dark:hidden" />
                 <img src="/assets/images/404-dark.webp" alt="Page not found" className="mb-8 hidden max-w-[300px] dark:block" />
 
-                <p className="mb-8 max-w-md text-base text-gray-600 dark:text-gray-400">
-                    We can't seem to find the page you're looking for. It might have been moved or deleted.
-                </p>
+                <p className="mb-8 max-w-md text-base text-gray-600 dark:text-gray-400">Maaf, halaman yang Anda cari tidak ditemukan.</p>
 
                 <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4">
                     <Button asChild size="lg">

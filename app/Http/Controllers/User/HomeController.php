@@ -91,6 +91,20 @@ class HomeController extends Controller
             ->take(6)
             ->values();
 
+        // Ambil semua produk untuk fake notifications (tidak hanya 6 teratas)
+        $allProducts = collect()
+            ->merge($courses)
+            ->merge($bootcamps)
+            ->merge($webinars)
+            ->map(function ($product) {
+                return [
+                    'id' => $product['id'],
+                    'title' => $product['title'],
+                    'type' => $product['type'],
+                    'price' => $product['price'],
+                ];
+            });
+
         $myProductIds = [
             'courses' => [],
             'bootcamps' => [],
@@ -144,6 +158,7 @@ class HomeController extends Controller
             'tools' => $tools,
             'latestProducts' => $latestProducts,
             'myProductIds' => $myProductIds,
+            'allProducts' => $allProducts,
         ]);
     }
 }
