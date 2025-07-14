@@ -230,7 +230,7 @@ export default function CheckoutCourse({
                                                 <>
                                                     <div className="flex items-center justify-between">
                                                         <span className="text-gray-600">Harga Asli</span>
-                                                        <span className="font-semibold text-gray-500 line-through">
+                                                        <span className="font-semibold text-gray-500">
                                                             Rp {course.strikethrough_price.toLocaleString('id-ID')}
                                                         </span>
                                                     </div>

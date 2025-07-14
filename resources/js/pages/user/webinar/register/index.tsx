@@ -43,6 +43,9 @@ export default function RegisterWebinar({
     const benefitList = parseList(webinar.benefits);
     const isFree = webinar.price === 0;
 
+    const transactionFee = 5000;
+    const totalPrice = isFree ? 0 : webinar.price + transactionFee;
+
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!termsAccepted && !isFree) {
@@ -59,13 +62,20 @@ export default function RegisterWebinar({
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
                     },
-                    body: JSON.stringify({ type: 'webinar', id: webinar.id }),
+                    body: JSON.stringify({
+                        type: 'webinar',
+                        id: webinar.id,
+                        discount_amount: webinar.strikethrough_price || 0,
+                        nett_amount: webinar.price,
+                        transaction_fee: 0,
+                        total_amount: 0,
+                    }),
                 });
                 const data = await res.json();
                 if (res.ok && data.redirect_url) {
                     window.location.href = data.redirect_url;
                 } else {
-                    alert(data.message || 'Gagal mendaftar kelas gratis.');
+                    alert(data.message || 'Gagal mendaftar webinar gratis.');
                 }
             } catch {
                 alert('Terjadi kesalahan saat proses pendaftaran.');
@@ -83,7 +93,14 @@ export default function RegisterWebinar({
                     'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
                 },
                 credentials: 'same-origin',
-                body: JSON.stringify({ type: 'webinar', id: webinar.id }),
+                body: JSON.stringify({
+                    type: 'webinar',
+                    id: webinar.id,
+                    discount_amount: webinar.strikethrough_price || 0,
+                    nett_amount: webinar.price,
+                    transaction_fee: transactionFee,
+                    total_amount: totalPrice,
+                }),
             });
             const data = await res.json();
             if (data.url) {
@@ -147,7 +164,7 @@ export default function RegisterWebinar({
                             <Hourglass size={64} className="text-yellow-500" />
                             <h2 className="text-xl font-bold">Pembayaran Tertunda</h2>
                             <p className="text-sm text-gray-500">
-                                Anda memiliki pembayaran yang belum selesai untuk kelas ini. Silakan lanjutkan untuk membayar.
+                                Anda memiliki pembayaran yang belum selesai untuk webinar ini. Silakan lanjutkan untuk membayar.
                             </p>
                             <Button asChild className="w-full">
                                 <a href={pendingInvoiceUrl}>Lanjutkan Pembayaran</a>
@@ -159,40 +176,41 @@ export default function RegisterWebinar({
                             <div className="space-y-4 rounded-lg border p-4">
                                 {isFree ? (
                                     <div className="flex items-center justify-between p-4 text-center">
-                                        <span className="w-full text-2xl font-bold text-green-600">KELAS GRATIS</span>
+                                        <span className="w-full text-2xl font-bold text-green-600">WEBINAR GRATIS</span>
                                     </div>
                                 ) : (
                                     <>
                                         <Input type="text" placeholder="Masukkan Kode Promo (Opsional)" className="w-full" />
                                         <div className="space-y-2 rounded-lg border p-4">
                                             {webinar.strikethrough_price > 0 && (
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-gray-600">Harga Asli</span>
-                                                    <span className="font-semibold text-gray-500">
-                                                        Rp {webinar.strikethrough_price.toLocaleString('id-ID')}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            {webinar.strikethrough_price > 0 && (
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-gray-600">Diskon</span>
-                                                    <span className="font-semibold text-red-500">
-                                                        -Rp {(webinar.strikethrough_price - webinar.price).toLocaleString('id-ID')}
-                                                    </span>
-                                                </div>
+                                                <>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-gray-600">Harga Asli</span>
+                                                        <span className="font-semibold text-gray-500 line-through">
+                                                            Rp {webinar.strikethrough_price.toLocaleString('id-ID')}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-gray-600">Diskon</span>
+                                                        <span className="font-semibold text-red-500">
+                                                            -Rp {(webinar.strikethrough_price - webinar.price).toLocaleString('id-ID')}
+                                                        </span>
+                                                    </div>
+                                                    <Separator className="my-2" />
+                                                </>
                                             )}
                                             <div className="flex items-center justify-between">
-                                                <span className="text-gray-600">Harga Kelas</span>
+                                                <span className="text-gray-600">Harga Webinar</span>
                                                 <span className="font-semibold text-gray-500">Rp {webinar.price.toLocaleString('id-ID')}</span>
                                             </div>
                                             <div className="flex items-center justify-between">
-                                                <span className="text-gray-600">Pajak</span>
-                                                <span className="font-semibold text-gray-500">+Rp 0</span>
+                                                <span className="text-gray-600">Biaya Transaksi</span>
+                                                <span className="font-semibold text-gray-500">Rp {transactionFee.toLocaleString('id-ID')}</span>
                                             </div>
                                             <Separator className="my-2" />
                                             <div className="flex items-center justify-between">
-                                                <span className="text-gray-600">Harga Total</span>
-                                                <span className="text-xl font-bold">Rp {webinar.price.toLocaleString('id-ID')}</span>
+                                                <span className="font-semibold text-gray-900">Total Pembayaran</span>
+                                                <span className="text-primary text-xl font-bold">Rp {totalPrice.toLocaleString('id-ID')}</span>
                                             </div>
                                         </div>
                                     </>
@@ -205,11 +223,21 @@ export default function RegisterWebinar({
                                             checked={termsAccepted}
                                             onCheckedChange={(checked) => setTermsAccepted(checked === true)}
                                         />
-                                        <Label htmlFor="terms">Saya menyetujui syarat dan ketentuan</Label>
+                                        <Label htmlFor="terms">
+                                            Saya menyetujui{' '}
+                                            <a
+                                                href="/terms-and-conditions"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-700 hover:underline"
+                                            >
+                                                syarat dan ketentuan
+                                            </a>
+                                        </Label>
                                     </div>
                                 )}
                                 <Button className="w-full" type="submit" disabled={(isFree ? false : !termsAccepted) || loading}>
-                                    {loading ? 'Memproses...' : isFree ? 'Dapatkan Akses Gratis Sekarang' : 'Bayar Sekarang'}
+                                    {loading ? 'Memproses...' : isFree ? 'Dapatkan Akses Gratis Sekarang' : 'Lanjutkan Pembayaran'}
                                 </Button>
                             </div>
                         </form>
