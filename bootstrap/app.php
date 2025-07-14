@@ -31,5 +31,19 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (\Illuminate\Database\Eloquent\ModelNotFoundException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Resource not found.'], 404);
+            }
+
+            return \Inertia\Inertia::render('errors/not-found')
+                ->toResponse($request)
+                ->setStatusCode(404);
+        });
+
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
+            return \Inertia\Inertia::render('errors/not-found')
+                ->toResponse($request)
+                ->setStatusCode(404);
+        });
     })->create();
