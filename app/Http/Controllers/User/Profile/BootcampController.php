@@ -23,7 +23,10 @@ class BootcampController extends Controller
     public function index()
     {
         $userId = Auth::id();
-        $myBootcamps = Invoice::with('bootcampItems.bootcamp.category')->where('user_id', $userId)->orderBy('created_at', 'desc')->get();
+        $myBootcamps = Invoice::with('bootcampItems.bootcamp.category')
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get();
         return Inertia::render('user/profile/bootcamp/index', ['myBootcamps' => $myBootcamps]);
     }
 

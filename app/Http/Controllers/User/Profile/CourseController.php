@@ -24,7 +24,11 @@ class CourseController extends Controller
     public function index()
     {
         $userId = Auth::id();
-        $myCourses = Invoice::with('courseItems.course.category')->where('user_id', $userId)->orderBy('created_at', 'desc')->get();
+        $myCourses = Invoice::with('courseItems.course.category')
+            ->where('user_id', $userId)
+            ->where('status', 'paid')
+            ->orderBy('created_at', 'desc')
+            ->get();
         return Inertia::render('user/profile/course/index', ['myCourses' => $myCourses]);
     }
 

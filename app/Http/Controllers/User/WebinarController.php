@@ -26,6 +26,7 @@ class WebinarController extends Controller
             $userId = Auth::id();
             $myWebinarIds = Invoice::with('webinarItems.webinar.category')
                 ->where('user_id', $userId)
+                ->where('status', 'paid')
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->webinarItems->pluck('webinar_id');
@@ -48,14 +49,18 @@ class WebinarController extends Controller
     {
         $webinar->load(['tools']);
         $hasAccess = false;
+        $pendingInvoiceUrl = null;
+
         if (Auth::check()) {
             $userId = Auth::id();
+
             $hasAccess = Invoice::where('user_id', $userId)
-                ->whereIn('status', ['paid', 'completed'])
+                ->where('status', 'paid')
                 ->whereHas('webinarItems', function ($query) use ($webinar) {
                     $query->where('webinar_id', $webinar->id);
                 })
                 ->exists();
+
             if (!$hasAccess) {
                 $pendingInvoice = Invoice::where('user_id', $userId)
                     ->where('status', 'pending')
@@ -70,7 +75,11 @@ class WebinarController extends Controller
                 }
             }
         }
-        return Inertia::render('user/webinar/register/index', ['webinar' => $webinar, 'hasAccess' => $hasAccess, 'pendingInvoiceUrl' => $pendingInvoiceUrl ?? null]);
+        return Inertia::render('user/webinar/register/index', [
+            'webinar' => $webinar,
+            'hasAccess' => $hasAccess,
+            'pendingInvoiceUrl' => $pendingInvoiceUrl
+        ]);
     }
 
     public function showRegisterSuccess()

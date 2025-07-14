@@ -25,6 +25,7 @@ class CourseController extends Controller
             $userId = Auth::id();
             $myCourseIds = Invoice::with('courseItems.course.category')
                 ->where('user_id', $userId)
+                ->where('status', 'paid')
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->courseItems->pluck('course_id');
@@ -46,14 +47,18 @@ class CourseController extends Controller
     {
         $course->load(['modules.lessons']);
         $hasAccess = false;
+        $pendingInvoiceUrl = null;
+
         if (Auth::check()) {
             $userId = Auth::id();
+
             $hasAccess = Invoice::where('user_id', $userId)
-                ->whereIn('status', ['paid', 'completed'])
+                ->where('status', 'paid')
                 ->whereHas('courseItems', function ($query) use ($course) {
                     $query->where('course_id', $course->id);
                 })
                 ->exists();
+
             if (!$hasAccess) {
                 $pendingInvoice = Invoice::where('user_id', $userId)
                     ->where('status', 'pending')
@@ -68,7 +73,12 @@ class CourseController extends Controller
                 }
             }
         }
-        return Inertia::render('user/course/checkout/index', ['course' => $course, 'hasAccess' => $hasAccess, 'pendingInvoiceUrl' => $pendingInvoiceUrl ?? null]);
+
+        return Inertia::render('user/course/checkout/index', [
+            'course' => $course,
+            'hasAccess' => $hasAccess,
+            'pendingInvoiceUrl' => $pendingInvoiceUrl
+        ]);
     }
 
     public function showCheckoutSuccess()

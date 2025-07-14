@@ -23,7 +23,11 @@ class WebinarController extends Controller
     public function index()
     {
         $userId = Auth::id();
-        $myWebinars = Invoice::with('webinarItems.webinar.category')->where('user_id', $userId)->orderBy('created_at', 'desc')->get();
+        $myWebinars = Invoice::with('webinarItems.webinar.category')
+            ->where('user_id', $userId)
+            ->where('status', 'paid')
+            ->orderBy('created_at', 'desc')
+            ->get();
         return Inertia::render('user/profile/webinar/index', ['myWebinars' => $myWebinars]);
     }
 

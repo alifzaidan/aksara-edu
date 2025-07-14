@@ -26,6 +26,7 @@ class BootcampController extends Controller
             $userId = Auth::id();
             $myBootcampIds = Invoice::with('bootcampItems.bootcamp.category')
                 ->where('user_id', $userId)
+                ->where('status', 'paid')
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->bootcampItems->pluck('bootcamp_id');
@@ -47,14 +48,18 @@ class BootcampController extends Controller
     {
         $bootcamp->load(['schedules']);
         $hasAccess = false;
+        $pendingInvoiceUrl = null;
+
         if (Auth::check()) {
             $userId = Auth::id();
+
             $hasAccess = Invoice::where('user_id', $userId)
-                ->whereIn('status', ['paid', 'completed'])
+                ->where('status', 'paid')
                 ->whereHas('bootcampItems', function ($query) use ($bootcamp) {
                     $query->where('bootcamp_id', $bootcamp->id);
                 })
                 ->exists();
+
             if (!$hasAccess) {
                 $pendingInvoice = Invoice::where('user_id', $userId)
                     ->where('status', 'pending')
@@ -69,7 +74,11 @@ class BootcampController extends Controller
                 }
             }
         }
-        return Inertia::render('user/bootcamp/register/index', ['bootcamp' => $bootcamp, 'hasAccess' => $hasAccess, 'pendingInvoiceUrl' => $pendingInvoiceUrl ?? null]);
+        return Inertia::render('user/bootcamp/register/index', [
+            'bootcamp' => $bootcamp,
+            'hasAccess' => $hasAccess,
+            'pendingInvoiceUrl' => $pendingInvoiceUrl
+        ]);
     }
 
     public function showRegisterSuccess()
