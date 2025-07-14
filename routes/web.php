@@ -57,6 +57,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/invoice', [InvoiceController::class, 'store'])->name('invoice.store');
     Route::post('/enroll/free', [InvoiceController::class, 'enrollFree'])->name('enroll.free');
     Route::get('/invoice/{id}', [InvoiceController::class, 'show'])->name('invoice.show');
+    Route::post('/invoice/{id}/cancel', [InvoiceController::class, 'cancel'])->name('invoice.cancel');
+    Route::post('/invoice/expire-old', [InvoiceController::class, 'expireOldInvoices'])->name('invoice.expire-old');
 
     Route::redirect('profile', 'profile/dashboard');
     Route::get('/profile/dashboard', [ProfileController::class, 'index'])->name('profile.index');
@@ -73,6 +75,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile/my-webinars/{webinar}/certificate', [ProfileWebinarController::class, 'downloadCertificate'])->name('profile.webinar.certificate');
     Route::get('/profile/my-webinars/{webinar}/certificate/preview', [ProfileWebinarController::class, 'previewCertificate'])->name('profile.webinar.certificate.preview');
     Route::get('/profile/transactions', [ProfileTransactionController::class, 'index'])->name('profile.transactions');
+    Route::get('/profile/transactions/{invoice}', [ProfileTransactionController::class, 'show'])->name('profile.transaction.detail');
 
     Route::redirect('learn', 'profile/my-courses');
     Route::redirect('learn/course', 'profile/my-courses');

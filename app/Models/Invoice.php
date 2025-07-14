@@ -30,4 +30,11 @@ class Invoice extends Model
     {
         return $this->hasMany(EnrollmentWebinar::class);
     }
+
+    protected function casts(): array
+    {
+        return [
+            'expires_at' => 'datetime',
+        ];
+    }
 }

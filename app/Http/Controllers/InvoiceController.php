@@ -13,12 +13,14 @@ use App\Models\EnrollmentWebinar;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Models\Webinar;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Haruncpi\LaravelIdGenerator\IdGenerator;
+use Illuminate\Support\Facades\Log;
 
 use Xendit\Configuration;
 use Xendit\Invoice\CreateInvoiceRequest;
@@ -73,6 +75,7 @@ class InvoiceController extends Controller
                 throw new \Exception('Tipe pembelian tidak valid');
             }
 
+            // Validasi harga untuk keamanan
             if ($nettAmount != $item->price) {
                 throw new \Exception('Harga tidak sesuai');
             }
@@ -102,12 +105,15 @@ class InvoiceController extends Controller
                 'prefix' => 'AKS-' . date('y')
             ]);
 
+            $expiresAt = Carbon::now()->addHours(24);
+
             $invoice = Invoice::create([
                 'user_id' => $userId,
                 'invoice_code' => $invoice_code,
                 'discount_amount' => $discountAmount,
                 'amount' => $totalAmount,
                 'nett_amount' => $nettAmount,
+                'expires_at' => $expiresAt,
             ]);
 
             // Request create invoice ke Xendit
@@ -134,7 +140,7 @@ class InvoiceController extends Controller
             $enrollmentTable::create([
                 'invoice_id' => $invoice->id,
                 $enrollmentField => $item->id,
-                'price' => $item->price, // Simpan harga asli item
+                'price' => $item->price,
                 'completed_at' => null,
                 'progress' => 0,
             ]);
@@ -233,6 +239,80 @@ class InvoiceController extends Controller
     {
         $invoice = Invoice::with(['courseItems.course', 'bootcampItems.bootcamp', 'webinarItems.webinar'])->findOrFail($id);
         return Inertia::render('user/checkout/success', ['invoice' => $invoice]);
+    }
+
+    /**
+     * Cancel invoice manually (both in database and Xendit)
+     */
+    public function cancel($id)
+    {
+        DB::beginTransaction();
+        try {
+            $invoice = Invoice::where('id', $id)
+                ->where('user_id', Auth::id())
+                ->where('status', 'pending')
+                ->firstOrFail();
+
+            $this->expireInvoiceInXendit($invoice->invoice_code);
+
+            // Update status di database
+            $invoice->update(['status' => 'failed']);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Invoice berhasil dibatalkan.',
+                'success' => true
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Gagal membatalkan invoice. ' . $e->getMessage(),
+                'success' => false
+            ], 400);
+        }
+    }
+
+    /**
+     * Expire invoice di Xendit menggunakan external_id
+     */
+    private function expireInvoiceInXendit($externalId)
+    {
+        try {
+            $xendit_api_instance = new InvoiceApi();
+
+            $invoices = $xendit_api_instance->getInvoices(null, null, $externalId);
+
+            if (!empty($invoices) && isset($invoices[0]['id'])) {
+                $xenditInvoiceId = $invoices[0]['id'];
+
+                $xendit_api_instance->expireInvoice($xenditInvoiceId);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to expire invoice in Xendit: ' . $e->getMessage(), [
+                'external_id' => $externalId
+            ]);
+        }
+    }
+
+    /**
+     * Check and expire old invoices (to be called by scheduler)
+     */
+    public function expireOldInvoices()
+    {
+        $expiredInvoices = Invoice::where('status', 'pending')
+            ->where('expires_at', '<', Carbon::now())
+            ->get();
+
+        foreach ($expiredInvoices as $invoice) {
+            $this->expireInvoiceInXendit($invoice->invoice_code);
+            $invoice->update(['status' => 'failed']);
+        }
+
+        return response()->json([
+            'message' => count($expiredInvoices) . ' invoices expired and updated.',
+            'expired_count' => count($expiredInvoices)
+        ]);
     }
 
     public function callbackXendit(Request $request)

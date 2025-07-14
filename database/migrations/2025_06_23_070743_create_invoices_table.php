@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('payment_method')->nullable(); //xendit
             $table->string('payment_channel')->nullable(); //xendit
             $table->timestamp('paid_at')->nullable(); //callback
+            $table->timestamp('expires_at')->nullable();
             $table->timestamps();
         });
     }
