@@ -52,6 +52,11 @@ class InvoiceController extends Controller
             $type = $request->input('type', 'course');
             $itemId = $request->input('id');
 
+            $discountAmount = $request->input('discount_amount', 0);
+            $nettAmount = $request->input('nett_amount', 0);
+            $transactionFee = $request->input('transaction_fee', 5000);
+            $totalAmount = $request->input('total_amount');
+
             if ($type === 'course') {
                 $item = Course::findOrFail($itemId);
                 $enrollmentTable = EnrollmentCourse::class;
@@ -68,7 +73,18 @@ class InvoiceController extends Controller
                 throw new \Exception('Tipe pembelian tidak valid');
             }
 
-            $amount = $item->price;
+            if ($nettAmount != $item->price) {
+                throw new \Exception('Harga tidak sesuai');
+            }
+
+            if ($discountAmount > 0 && $discountAmount != $item->strikethrough_price) {
+                throw new \Exception('Discount amount tidak sesuai');
+            }
+
+            $calculatedTotal = $item->price > 0 ? $item->price + $transactionFee : 0;
+            if ($totalAmount != $calculatedTotal) {
+                throw new \Exception('Total amount tidak sesuai');
+            }
 
             $items = [
                 [
@@ -89,7 +105,9 @@ class InvoiceController extends Controller
             $invoice = Invoice::create([
                 'user_id' => $userId,
                 'invoice_code' => $invoice_code,
-                'amount' => $amount,
+                'discount_amount' => $discountAmount,
+                'amount' => $totalAmount,
+                'nett_amount' => $nettAmount,
             ]);
 
             // Request create invoice ke Xendit
@@ -99,7 +117,7 @@ class InvoiceController extends Controller
                     'given_names' => Auth::user()->name,
                     'email' => Auth::user()->email,
                 ],
-                'amount' => $amount,
+                'amount' => $totalAmount,
                 'items' => $items,
                 'failure_redirect_url' => route('invoice.show', ['id' => $invoice->id]),
                 'success_redirect_url' => route('invoice.show', ['id' => $invoice->id]),
@@ -116,7 +134,7 @@ class InvoiceController extends Controller
             $enrollmentTable::create([
                 'invoice_id' => $invoice->id,
                 $enrollmentField => $item->id,
-                'price' => $item->price,
+                'price' => $item->price, // Simpan harga asli item
                 'completed_at' => null,
                 'progress' => 0,
             ]);
@@ -164,6 +182,10 @@ class InvoiceController extends Controller
                 throw new \Exception('Tipe pendaftaran tidak valid');
             }
 
+            if ($item->price > 0) {
+                throw new \Exception('Item ini tidak gratis');
+            }
+
             $invoice_code = IdGenerator::generate([
                 'table' => 'invoices',
                 'field' => 'invoice_code',
@@ -175,7 +197,9 @@ class InvoiceController extends Controller
             $invoice = Invoice::create([
                 'user_id' => $userId,
                 'invoice_code' => $invoice_code,
+                'discount_amount' => 0,
                 'amount' => 0,
+                'nett_amount' => 0,
                 'status' => 'paid',
                 'paid_at' => now(),
                 'payment_method' => 'FREE',

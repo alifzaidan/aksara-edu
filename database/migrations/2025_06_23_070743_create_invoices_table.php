@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::create('invoices', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
+            $table->bigInteger('discount_amount')->default(0);
             $table->bigInteger('amount');
+            $table->bigInteger('nett_amount');
             $table->enum('status', ['pending', 'paid', 'failed'])->default('pending');
             $table->string('invoice_code');
             $table->string('invoice_url')->nullable(); //xendit

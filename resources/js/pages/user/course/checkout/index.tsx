@@ -61,6 +61,9 @@ export default function CheckoutCourse({
     const keyPointList = parseList(course.key_points);
     const isFree = course.price === 0;
 
+    const transactionFee = 5000;
+    const totalPrice = isFree ? 0 : course.price + transactionFee;
+
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!termsAccepted && !isFree) {
@@ -77,7 +80,14 @@ export default function CheckoutCourse({
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
                     },
-                    body: JSON.stringify({ type: 'course', id: course.id }),
+                    body: JSON.stringify({
+                        type: 'course',
+                        id: course.id,
+                        discount_amount: course.strikethrough_price || 0,
+                        nett_amount: course.price,
+                        transaction_fee: 0,
+                        total_amount: 0,
+                    }),
                 });
                 const data = await res.json();
                 if (res.ok && data.redirect_url) {
@@ -101,7 +111,14 @@ export default function CheckoutCourse({
                     'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
                 },
                 credentials: 'same-origin',
-                body: JSON.stringify({ type: 'course', id: course.id }),
+                body: JSON.stringify({
+                    type: 'course',
+                    id: course.id,
+                    discount_amount: course.strikethrough_price || 0,
+                    nett_amount: course.price,
+                    transaction_fee: transactionFee,
+                    total_amount: totalPrice,
+                }),
             });
             const data = await res.json();
             if (data.url) {
@@ -210,33 +227,34 @@ export default function CheckoutCourse({
                                         <Input type="text" placeholder="Masukkan Kode Promo (Opsional)" className="w-full" />
                                         <div className="space-y-2 rounded-lg border p-4">
                                             {course.strikethrough_price > 0 && (
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-gray-600">Harga Asli</span>
-                                                    <span className="font-semibold text-gray-500">
-                                                        Rp {course.strikethrough_price.toLocaleString('id-ID')}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            {course.strikethrough_price > 0 && (
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-gray-600">Diskon</span>
-                                                    <span className="font-semibold text-red-500">
-                                                        -Rp {(course.strikethrough_price - course.price).toLocaleString('id-ID')}
-                                                    </span>
-                                                </div>
+                                                <>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-gray-600">Harga Asli</span>
+                                                        <span className="font-semibold text-gray-500 line-through">
+                                                            Rp {course.strikethrough_price.toLocaleString('id-ID')}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-gray-600">Diskon</span>
+                                                        <span className="font-semibold text-red-500">
+                                                            -Rp {(course.strikethrough_price - course.price).toLocaleString('id-ID')}
+                                                        </span>
+                                                    </div>
+                                                    <Separator className="my-2" />
+                                                </>
                                             )}
                                             <div className="flex items-center justify-between">
                                                 <span className="text-gray-600">Harga Kelas</span>
                                                 <span className="font-semibold text-gray-500">Rp {course.price.toLocaleString('id-ID')}</span>
                                             </div>
                                             <div className="flex items-center justify-between">
-                                                <span className="text-gray-600">Pajak</span>
-                                                <span className="font-semibold text-gray-500">+Rp 0</span>
+                                                <span className="text-gray-600">Biaya Transaksi</span>
+                                                <span className="font-semibold text-gray-500">Rp {transactionFee.toLocaleString('id-ID')}</span>
                                             </div>
                                             <Separator className="my-2" />
                                             <div className="flex items-center justify-between">
-                                                <span className="text-gray-600">Harga Total</span>
-                                                <span className="text-xl font-bold">Rp {course.price.toLocaleString('id-ID')}</span>
+                                                <span className="font-semibold text-gray-900">Total Pembayaran</span>
+                                                <span className="text-primary text-xl font-bold">Rp {totalPrice.toLocaleString('id-ID')}</span>
                                             </div>
                                         </div>
                                     </>
@@ -249,11 +267,21 @@ export default function CheckoutCourse({
                                             checked={termsAccepted}
                                             onCheckedChange={(checked) => setTermsAccepted(checked === true)}
                                         />
-                                        <Label htmlFor="terms">Saya menyetujui syarat dan ketentuan</Label>
+                                        <Label htmlFor="terms">
+                                            Saya menyetujui{' '}
+                                            <a
+                                                href="/terms-and-conditions"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-700 hover:underline"
+                                            >
+                                                syarat dan ketentuan
+                                            </a>
+                                        </Label>
                                     </div>
                                 )}
                                 <Button className="w-full" type="submit" disabled={(isFree ? false : !termsAccepted) || loading}>
-                                    {loading ? 'Memproses...' : isFree ? 'Dapatkan Akses Gratis Sekarang' : 'Bayar Sekarang'}
+                                    {loading ? 'Memproses...' : isFree ? 'Dapatkan Akses Gratis Sekarang' : 'Lanjutkan Pembayaran'}
                                 </Button>
                             </div>
                         </form>
