@@ -204,7 +204,7 @@ export default function TransactionShow({ invoice }: Props) {
                                         <img
                                             src={productInfo.thumbnail ? `/storage/${productInfo.thumbnail}` : '/assets/images/placeholder.png'}
                                             alt={productInfo.name}
-                                            className="h-16 rounded-lg object-cover md:h-20 md:w-20"
+                                            className="h-16 rounded-lg object-cover md:h-20"
                                         />
                                         <div className="flex-1">
                                             <h4 className="font-semibold text-gray-900 dark:text-white">{productInfo.name}</h4>
