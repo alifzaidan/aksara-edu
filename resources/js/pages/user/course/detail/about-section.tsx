@@ -27,21 +27,23 @@ export default function AboutSection({ course }: { course: Course }) {
                 </h2>
                 <p className="text-center text-gray-600 dark:text-gray-400">{course.description}</p>
             </section>
-            <section className="mx-auto mt-4 w-full max-w-5xl px-4">
-                <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                    Highlight Kelas
-                </p>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {course.images?.map((image, index) => (
-                        <img
-                            key={index}
-                            src={image.image_url ? `/storage/${image.image_url}` : '/assets/images/placeholder.png'}
-                            alt={course.title}
-                            className="aspect-video rounded-lg border border-gray-200 object-cover shadow-md"
-                        />
-                    ))}
-                </div>
-            </section>
+            {course.images!.length > 0 && (
+                <section className="mx-auto mt-4 w-full max-w-5xl px-4">
+                    <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
+                        Highlight Kelas
+                    </p>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {course.images?.map((image, index) => (
+                            <img
+                                key={index}
+                                src={image.image_url ? `/storage/${image.image_url}` : '/assets/images/placeholder.png'}
+                                alt={course.title}
+                                className="aspect-video rounded-lg border border-gray-200 object-cover shadow-md"
+                            />
+                        ))}
+                    </div>
+                </section>
+            )}
             <section className="mx-auto mt-4 w-full max-w-5xl px-4">
                 <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
                     Poin Utama
