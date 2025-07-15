@@ -59,7 +59,7 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
                 />
                 <DataTableViewOptions table={table} />
             </div>
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto max-w-full w-[1000px] min-w-full">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
