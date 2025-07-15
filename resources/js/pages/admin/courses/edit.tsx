@@ -15,6 +15,7 @@ import { cn, parseRupiah, rupiahFormatter } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Head, router } from '@inertiajs/react';
+import { Editor } from '@tinymce/tinymce-react';
 import { BookMarked, Check, ChevronsUpDown } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -28,6 +29,7 @@ const formSchema = z
         category_id: z.string().nonempty('Kategori harus dipilih'),
         short_description: z.string().max(200).nullable(),
         description: z.string().max(1000).nullable(),
+        key_points: z.string().nullable(),
         thumbnail: z.any().nullable(),
         strikethrough_price: z.number().min(0),
         price: z.number().min(0),
@@ -53,6 +55,7 @@ interface Course {
     category_id: number | string;
     short_description?: string;
     description?: string;
+    key_points?: string;
     thumbnail?: string;
     strikethrough_price: number;
     price: number;
@@ -158,6 +161,7 @@ export default function EditCourse({ course, categories, tools }: EditCourseProp
             category_id: String(course.category_id) || '',
             short_description: course.short_description || '',
             description: course.description || '',
+            key_points: course.key_points || '',
             thumbnail: '',
             strikethrough_price: course.strikethrough_price || 0,
             price: course.price || 0,
@@ -388,6 +392,48 @@ export default function EditCourse({ course, categories, tools }: EditCourseProp
                                                 className="w-full rounded border p-2"
                                                 placeholder="Masukkan deskripsi lengkap"
                                                 autoComplete="off"
+                                            />
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="key_points"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Materi (Poin Utama)</FormLabel>
+                                            <Editor
+                                                apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
+                                                value={field.value ?? ''}
+                                                onEditorChange={(content) => field.onChange(content)}
+                                                init={{
+                                                    plugins: [
+                                                        'anchor',
+                                                        'autolink',
+                                                        'charmap',
+                                                        'codesample',
+                                                        'emoticons',
+                                                        'image',
+                                                        'link',
+                                                        'lists',
+                                                        'media',
+                                                        'searchreplace',
+                                                        'table',
+                                                        'visualblocks',
+                                                        'wordcount',
+                                                    ],
+                                                    onboarding: false,
+                                                    toolbar:
+                                                        'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+                                                    tinycomments_mode: 'embedded',
+                                                    tinycomments_author: 'Author name',
+                                                    mergetags_list: [
+                                                        { value: 'First.Name', title: 'First Name' },
+                                                        { value: 'Email', title: 'Email' },
+                                                    ],
+                                                    height: 300,
+                                                }}
                                             />
                                             <FormMessage />
                                         </FormItem>
