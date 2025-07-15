@@ -4,6 +4,7 @@ import AboutSection from './about-section';
 import HeroSection from './hero-section';
 import ModulesSection from './modules-section';
 import RegisterSection from './register-section';
+import RelatedProduct from './related-product';
 import ToolsSection from './tools-section';
 import VideoSection from './video-section';
 
@@ -12,6 +13,7 @@ interface Course {
     title: string;
     user?: { name: string; bio: string | null };
     category?: { name: string };
+    category_id?: string;
     tools?: { name: string; description?: string | null; icon: string | null }[];
     images?: { image_url: string }[];
     short_description?: string | null;
@@ -40,56 +42,67 @@ interface Course {
     }[];
 }
 
-export default function DetailCourse({ course }: { course: Course }) {
+interface RelatedCourse {
+    id: string;
+    title: string;
+    slug: string;
+    thumbnail?: string | null;
+    price: number;
+    strikethrough_price: number;
+    level: 'beginner' | 'intermediate' | 'advanced';
+    category?: {
+        name: string;
+    };
+}
+
+export default function DetailCourse({
+    course,
+    relatedCourses,
+    myCourseIds,
+}: {
+    course: Course;
+    relatedCourses: RelatedCourse[];
+    myCourseIds: string[];
+}) {
     return (
         <UserLayout>
-            <Head title="Kelas Online" />
+            <Head title={`${course.title} - Kelas Online`} />
 
             <HeroSection course={course} />
             <VideoSection course={course} />
+
             <div className="mx-auto mt-8 mb-4 flex w-full max-w-7xl justify-center gap-2 px-4">
                 <a
                     href="#about"
-                    type="button"
-                    className={
-                        'hover:bg-accent dark:hover:bg-primary/10 bg-background rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-800 transition hover:cursor-pointer dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100'
-                    }
+                    className="bg-background hover:bg-accent dark:hover:bg-primary/10 rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-800 transition hover:cursor-pointer dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100"
                 >
                     Informasi Kelas
                 </a>
                 <a
                     href="#modules"
-                    type="button"
-                    className={
-                        'hover:bg-accent dark:hover:bg-primary/10 bg-background rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-800 transition hover:cursor-pointer dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100'
-                    }
+                    className="bg-background hover:bg-accent dark:hover:bg-primary/10 rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-800 transition hover:cursor-pointer dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100"
                 >
                     Modul
                 </a>
                 <a
                     href="#tools"
-                    type="button"
-                    className={
-                        'hover:bg-accent dark:hover:bg-primary/10 bg-background rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-800 transition hover:cursor-pointer dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100'
-                    }
+                    className="bg-background hover:bg-accent dark:hover:bg-primary/10 rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-800 transition hover:cursor-pointer dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100"
                 >
                     Tools
                 </a>
                 <a
-                    href="#reviews"
-                    type="button"
-                    className={
-                        'hover:bg-accent dark:hover:bg-primary/10 bg-background rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-800 transition hover:cursor-pointer dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100'
-                    }
+                    href="#related"
+                    className="bg-background hover:bg-accent dark:hover:bg-primary/10 rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-800 transition hover:cursor-pointer dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100"
                 >
-                    Review
+                    Kelas Serupa
                 </a>
             </div>
+
             <AboutSection course={course} />
             <ModulesSection course={course} />
             <ToolsSection course={course} />
             <RegisterSection course={course} />
-            {/* <RatingSection course={course} /> */}
+            <RelatedProduct relatedCourses={relatedCourses} myCourseIds={myCourseIds} />
         </UserLayout>
     );
 }

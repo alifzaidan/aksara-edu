@@ -40,7 +40,35 @@ class CourseController extends Controller
     public function detail(Course $course)
     {
         $course->load(['category', 'user', 'tools', 'images', 'modules.lessons.quizzes.questions']);
-        return Inertia::render('user/course/detail/index', ['course' => $course]);
+
+        $relatedCourses = Course::with(['category'])
+            ->where('status', 'published')
+            ->where('category_id', $course->category_id)
+            ->where('id', '!=', $course->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(3)
+            ->get();
+
+        $myCourseIds = [];
+        if (Auth::check()) {
+            $userId = Auth::id();
+            $myCourseIds = Invoice::with('courseItems.course.category')
+                ->where('user_id', $userId)
+                ->where('status', 'paid')
+                ->get()
+                ->flatMap(function ($invoice) {
+                    return $invoice->courseItems->pluck('course_id');
+                })
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        return Inertia::render('user/course/detail/index', [
+            'course' => $course,
+            'relatedCourses' => $relatedCourses,
+            'myCourseIds' => $myCourseIds
+        ]);
     }
 
     public function showCheckout(Course $course)

@@ -41,7 +41,35 @@ class BootcampController extends Controller
     public function detail(Bootcamp $bootcamp)
     {
         $bootcamp->load(['category', 'schedules', 'tools']);
-        return Inertia::render('user/bootcamp/detail/index', ['bootcamp' => $bootcamp]);
+
+        $relatedBootcamps = Bootcamp::with(['category'])
+            ->where('status', 'published')
+            ->where('category_id', $bootcamp->category_id)
+            ->where('id', '!=', $bootcamp->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(3)
+            ->get();
+
+        $myBootcampIds = [];
+        if (Auth::check()) {
+            $userId = Auth::id();
+            $myBootcampIds = Invoice::with('bootcampItems.bootcamp.category')
+                ->where('user_id', $userId)
+                ->where('status', 'paid')
+                ->get()
+                ->flatMap(function ($invoice) {
+                    return $invoice->bootcampItems->pluck('bootcamp_id');
+                })
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        return Inertia::render('user/bootcamp/detail/index', [
+            'bootcamp' => $bootcamp,
+            'relatedBootcamps' => $relatedBootcamps,
+            'myBootcampIds' => $myBootcampIds
+        ]);
     }
 
     public function showRegister(Bootcamp $bootcamp)

@@ -41,7 +41,35 @@ class WebinarController extends Controller
     public function detail(Webinar $webinar)
     {
         $webinar->load(['category', 'tools']);
-        return Inertia::render('user/webinar/detail/index', ['webinar' => $webinar]);
+
+        $relatedWebinars = Webinar::with(['category'])
+            ->where('status', 'published')
+            ->where('category_id', $webinar->category_id)
+            ->where('id', '!=', $webinar->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(3)
+            ->get();
+
+        $myWebinarIds = [];
+        if (Auth::check()) {
+            $userId = Auth::id();
+            $myWebinarIds = Invoice::with('webinarItems.webinar.category')
+                ->where('user_id', $userId)
+                ->where('status', 'paid')
+                ->get()
+                ->flatMap(function ($invoice) {
+                    return $invoice->webinarItems->pluck('webinar_id');
+                })
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        return Inertia::render('user/webinar/detail/index', [
+            'webinar' => $webinar,
+            'relatedWebinars' => $relatedWebinars,
+            'myWebinarIds' => $myWebinarIds
+        ]);
     }
 
 

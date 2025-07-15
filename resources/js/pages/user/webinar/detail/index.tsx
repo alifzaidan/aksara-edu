@@ -5,12 +5,14 @@ import BenefitsSection from './benefits-section';
 import HeroSection from './hero-section';
 import MentorSection from './mentor-section';
 import RegisterSection from './register-section';
+import RelatedProduct from './related-product';
 import ToolsSection from './tools-section';
 
 interface Webinar {
     id: string;
     title: string;
     category?: { name: string };
+    category_id?: string;
     tools?: { name: string; description?: string | null; icon: string | null }[];
     batch?: string | null;
     strikethrough_price: number;
@@ -31,10 +33,31 @@ interface Webinar {
     created_at: string | Date;
 }
 
-export default function Webinar({ webinar }: { webinar: Webinar }) {
+interface RelatedWebinar {
+    id: string;
+    title: string;
+    slug: string;
+    thumbnail?: string | null;
+    price: number;
+    strikethrough_price: number;
+    start_time: string;
+    category?: {
+        name: string;
+    };
+}
+
+export default function Webinar({
+    webinar,
+    relatedWebinars,
+    myWebinarIds,
+}: {
+    webinar: Webinar;
+    relatedWebinars: RelatedWebinar[];
+    myWebinarIds: string[];
+}) {
     return (
         <UserLayout>
-            <Head title="Webinar" />
+            <Head title={`${webinar.title} - Webinar`} />
 
             <HeroSection webinar={webinar} />
             <AboutSection />
@@ -42,6 +65,7 @@ export default function Webinar({ webinar }: { webinar: Webinar }) {
             <ToolsSection webinar={webinar} />
             <MentorSection webinar={webinar} />
             <RegisterSection webinar={webinar} />
+            <RelatedProduct relatedWebinars={relatedWebinars} myWebinarIds={myWebinarIds} />
         </UserLayout>
     );
 }

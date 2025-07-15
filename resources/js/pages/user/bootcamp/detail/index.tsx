@@ -4,6 +4,7 @@ import AboutSection from './about-section';
 import HeroSection from './hero-section';
 import MentorSection from './mentor-section';
 import RegisterSection from './register-section';
+import RelatedProduct from './related-product';
 import RequirementSection from './requirement-section';
 import TimelineSection from './timeline-section';
 import ToolsSection from './tools-section';
@@ -12,6 +13,7 @@ interface Bootcamp {
     id: string;
     title: string;
     category?: { name: string };
+    category_id?: string;
     schedules?: { day: string; start_time: string; end_time: string }[];
     tools?: { name: string; description?: string | null; icon: string | null }[];
     batch?: string | null;
@@ -35,10 +37,32 @@ interface Bootcamp {
     created_at: string | Date;
 }
 
-export default function Bootcamp({ bootcamp }: { bootcamp: Bootcamp }) {
+interface RelatedBootcamp {
+    id: string;
+    title: string;
+    slug: string;
+    thumbnail?: string | null;
+    price: number;
+    strikethrough_price: number;
+    start_date: string;
+    end_date: string;
+    category?: {
+        name: string;
+    };
+}
+
+export default function Bootcamp({
+    bootcamp,
+    relatedBootcamps,
+    myBootcampIds,
+}: {
+    bootcamp: Bootcamp;
+    relatedBootcamps: RelatedBootcamp[];
+    myBootcampIds: string[];
+}) {
     return (
         <UserLayout>
-            <Head title="Bootcamp" />
+            <Head title={`${bootcamp.title} - Bootcamp`} />
 
             <HeroSection bootcamp={bootcamp} />
             <AboutSection />
@@ -47,6 +71,7 @@ export default function Bootcamp({ bootcamp }: { bootcamp: Bootcamp }) {
             <ToolsSection bootcamp={bootcamp} />
             <MentorSection bootcamp={bootcamp} />
             <RegisterSection bootcamp={bootcamp} />
+            <RelatedProduct relatedBootcamps={relatedBootcamps} myBootcampIds={myBootcampIds} />
         </UserLayout>
     );
 }
