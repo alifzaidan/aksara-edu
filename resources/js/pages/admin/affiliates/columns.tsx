@@ -114,7 +114,11 @@ export const columns: ColumnDef<Affiliate>[] = [
         accessorKey: 'name',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Nama Afiliasi" />,
         cell: ({ row }) => {
-            return <div className="font-medium">{row.original.name}</div>;
+            return (
+                <Link href={route('affiliates.show', row.original.id)} className="text-primary font-medium hover:underline">
+                    {row.original.name}
+                </Link>
+            );
         },
     },
     {

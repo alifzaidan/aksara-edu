@@ -107,7 +107,11 @@ export const columns: ColumnDef<Webinar>[] = [
         accessorKey: 'title',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Judul" />,
         cell: ({ row }) => {
-            return <div className="font-medium">{row.original.title}</div>;
+            return (
+                <Link href={route('webinars.show', row.original.id)} className="text-primary font-medium hover:underline">
+                    {row.original.title}
+                </Link>
+            );
         },
     },
     {

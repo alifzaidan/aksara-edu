@@ -85,7 +85,11 @@ export const columns: ColumnDef<Certificate>[] = [
         accessorKey: 'title',
         header: 'Judul',
         cell: ({ row }) => {
-            return <span className="font-medium">{row.getValue('title')}</span>;
+            return (
+                <Link href={route('certificates.show', row.original.id)} className="text-primary font-medium hover:underline">
+                    {row.original.title}
+                </Link>
+            );
         },
     },
     {
