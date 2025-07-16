@@ -1,6 +1,5 @@
 import RatingDialog from '@/components/rating-dialog';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, Award, BadgeCheck, CheckCircle, Download, Eye, Star } from 'lucide-react';
@@ -97,11 +96,6 @@ export default function DetailMyCourse({
     certificateParticipant?: CertificateParticipant | null;
 }) {
     const [isRatingDialogOpen, setIsRatingDialogOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-
-    const handleIframeLoad = () => {
-        setIsLoading(false);
-    };
 
     if (!course) {
         return (
@@ -186,6 +180,59 @@ export default function DetailMyCourse({
                             <Download className="mr-2 h-4 w-4" />
                             {!certificate ? 'Sertifikat Belum Tersedia' : 'Menunggu Sertifikat'}
                         </Button>
+                    </div>
+                </div>
+            );
+        }
+
+        if (hasCertificate) {
+            return (
+                <div className="mb-6 rounded-lg border border-green-200 bg-gradient-to-r from-green-50 to-green-100 p-6 dark:border-green-700 dark:from-green-900/20 dark:to-green-800/20">
+                    <div className="mb-4 flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-green-400 to-green-600">
+                            <Award className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">🎉 Sertifikat Kelulusan Tersedia!</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                Anda telah berhasil menyelesaikan kelas ini dan sertifikat sudah siap diunduh
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-between">
+                        {certificateParticipant && (
+                            <div className="mt-4">
+                                <p className="text-sm text-gray-700 dark:text-gray-300">
+                                    No. Sertifikat: {String(certificateParticipant.certificate_number).padStart(4, '0')}/
+                                    {certificate.certificate_number}
+                                </p>
+                                <Link
+                                    href={route('certificate.participant.detail', {
+                                        code: certificateParticipant.certificate_code,
+                                    })}
+                                    className="text-sm text-green-600 underline hover:text-green-800 dark:text-green-400"
+                                >
+                                    Lihat Detail Sertifikat
+                                </Link>
+                            </div>
+                        )}
+
+                        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            <Button className="w-full" asChild>
+                                <a href={route('profile.course.certificate', { course: courseData.slug })} target="_blank">
+                                    <Download size={16} className="mr-2" />
+                                    Unduh Sertifikat
+                                </a>
+                            </Button>
+
+                            <Button variant="outline" className="w-full" asChild>
+                                <a href={route('profile.course.certificate.preview', { course: courseData.slug })} target="_blank">
+                                    <Eye size={16} className="mr-2" />
+                                    Lihat Preview
+                                </a>
+                            </Button>
+                        </div>
                     </div>
                 </div>
             );
@@ -339,84 +386,9 @@ export default function DetailMyCourse({
                                         disabled={courseInvoiceStatus !== 'paid'}
                                         onClick={() => router.get(route('learn.course.detail', { course: courseData.slug }))}
                                     >
-                                        Lanjutkan Belajar
+                                        {isCompleted ? 'Lihat Kembali Materi' : 'Lanjutkan Belajar'}
                                     </Button>
                                 </div>
-
-                                {isCompleted && hasCertificate && (
-                                    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-                                        <div className="mb-4 flex items-center gap-2">
-                                            <Award className="text-yellow-500" size={20} />
-                                            <h3 className="font-semibold">Sertifikat Kelulusan</h3>
-                                        </div>
-
-                                        {isLoading && hasCertificate && (
-                                            <div className="space-y-3">
-                                                <Skeleton className="h-[250px] w-full rounded-lg" />
-                                                <div className="space-y-2">
-                                                    <Skeleton className="mx-auto h-3 w-3/4" />
-                                                    <Skeleton className="mx-auto h-3 w-1/2" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Skeleton className="mx-auto h-8 w-full" />
-                                                    <Skeleton className="mx-auto h-8 w-full" />
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <div className="relative">
-                                            <div className={`group ${isLoading ? 'absolute opacity-0' : 'relative opacity-100'}`}>
-                                                <iframe
-                                                    src={`${route('profile.course.certificate.preview', { course: courseData.slug })}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-                                                    className="h-[238px] w-full rounded-lg border shadow-lg dark:border-zinc-700"
-                                                    title="Preview Sertifikat"
-                                                    onLoad={handleIframeLoad}
-                                                />
-                                                <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-                                            </div>
-                                        </div>
-
-                                        <div className={`${isLoading ? 'opacity-0' : 'opacity-100'}`}>
-                                            <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-                                                Unduh sertifikat sebagai bukti kelulusan dari course ini.
-                                            </p>
-                                            {certificateParticipant && (
-                                                <div className="mt-2 text-center">
-                                                    <p className="text-xs text-blue-600 dark:text-blue-400">
-                                                        No. Sertifikat: {String(certificateParticipant.certificate_number).padStart(4, '0')}/
-                                                        {certificate.certificate_number}
-                                                    </p>
-                                                    <Link
-                                                        href={route('certificate.participant.detail', {
-                                                            code: certificateParticipant.certificate_code,
-                                                        })}
-                                                        className="text-xs text-green-600 underline hover:text-green-800"
-                                                    >
-                                                        Lihat Detail Sertifikat
-                                                    </Link>
-                                                </div>
-                                            )}
-                                            <div className="mt-3 space-y-2">
-                                                <Button className="w-full" asChild>
-                                                    <a href={route('profile.course.certificate', { course: courseData.slug })} target="_blank">
-                                                        <Download size={16} className="mr-2" />
-                                                        Unduh Sertifikat
-                                                    </a>
-                                                </Button>
-
-                                                <Button variant="outline" className="w-full" asChild>
-                                                    <a
-                                                        href={route('profile.course.certificate.preview', { course: courseData.slug })}
-                                                        target="_blank"
-                                                    >
-                                                        <Eye size={16} className="mr-2" />
-                                                        Lihat Preview
-                                                    </a>
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     </section>
