@@ -79,7 +79,7 @@ export default function FakeNotifications({ products }: FakeNotificationsProps) 
             );
         };
 
-        const initialTimeout = setTimeout(showFakeNotification, 5000);
+        const initialTimeout = setTimeout(showFakeNotification, 10000);
 
         const interval = setInterval(
             () => {
@@ -87,7 +87,7 @@ export default function FakeNotifications({ products }: FakeNotificationsProps) 
                     showFakeNotification();
                 }
             },
-            Math.random() * 30000 + 15000,
+            Math.random() * 30000 + 30000,
         );
 
         return () => {
