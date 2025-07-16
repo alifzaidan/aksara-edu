@@ -1,3 +1,4 @@
+import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
@@ -11,7 +12,7 @@ import EditLesson from './edit-lesson';
 import EditModule from './edit-module';
 
 interface Lesson {
-    id?: string | number; 
+    id?: string | number;
     title: string;
     type: 'text' | 'video' | 'file' | 'quiz';
     description?: string;
@@ -166,15 +167,19 @@ export default function CourseModulesSection({ modules, setModules }: CourseModu
                                         </Dialog>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <Button
-                                                    variant="link"
-                                                    size="icon"
-                                                    className="size-8 text-red-500 hover:cursor-pointer"
-                                                    onClick={() => handleRemoveModule(idx)}
-                                                >
-                                                    <Trash />
-                                                    <span className="sr-only">Hapus Modul</span>
-                                                </Button>
+                                                <div>
+                                                    <DeleteConfirmDialog
+                                                        trigger={
+                                                            <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
+                                                                <Trash />
+                                                                <span className="sr-only">Hapus Modul</span>
+                                                            </Button>
+                                                        }
+                                                        title="Apakah Anda yakin ingin menghapus modul ini?"
+                                                        itemName={`Modul ${mod.title}`}
+                                                        onConfirm={handleRemoveModule.bind(null, idx)}
+                                                    />
+                                                </div>
                                             </TooltipTrigger>
                                             <TooltipContent>
                                                 <p>Hapus Modul</p>
@@ -247,15 +252,23 @@ export default function CourseModulesSection({ modules, setModules }: CourseModu
                                                     </Dialog>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
-                                                            <Button
-                                                                variant="link"
-                                                                size="icon"
-                                                                className="size-8 text-red-500 hover:cursor-pointer"
-                                                                onClick={() => handleRemoveLesson(idx, lidx)}
-                                                            >
-                                                                <Trash />
-                                                                <span className="sr-only">Hapus Materi</span>
-                                                            </Button>
+                                                            <div>
+                                                                <DeleteConfirmDialog
+                                                                    trigger={
+                                                                        <Button
+                                                                            variant="link"
+                                                                            size="icon"
+                                                                            className="size-8 text-red-500 hover:cursor-pointer"
+                                                                        >
+                                                                            <Trash />
+                                                                            <span className="sr-only">Hapus Materi</span>
+                                                                        </Button>
+                                                                    }
+                                                                    title="Apakah Anda yakin ingin menghapus materi ini?"
+                                                                    itemName={`Materi ${lesson.title}`}
+                                                                    onConfirm={handleRemoveLesson.bind(null, idx, lidx)}
+                                                                />
+                                                            </div>
                                                         </TooltipTrigger>
                                                         <TooltipContent>
                                                             <p>Hapus Materi</p>
