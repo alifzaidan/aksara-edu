@@ -10,9 +10,11 @@ import { id } from 'date-fns/locale';
 import { Award, CircleX, Copy, Plus, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { CourseRating } from './columns-ratings';
 import { Invoice } from './columns-transactions';
 import CourseDetail from './show-details';
 import ShowModules from './show-modules';
+import CourseRatingComponent from './show-ratings';
 import CourseTransaction from './show-transactions';
 
 interface Course {
@@ -60,6 +62,7 @@ interface Certificate {
 interface CourseProps {
     course: Course;
     transactions: Invoice[];
+    ratings: CourseRating[];
     certificate?: Certificate | null;
     flash?: {
         success?: string;
@@ -67,7 +70,7 @@ interface CourseProps {
     };
 }
 
-export default function ShowCourse({ course, transactions, certificate, flash }: CourseProps) {
+export default function ShowCourse({ course, transactions, ratings, certificate, flash }: CourseProps) {
     const { auth } = usePage<SharedData>().props;
     const role = auth.role[0];
     const isAdmin = role === 'admin';
@@ -83,6 +86,9 @@ export default function ShowCourse({ course, transactions, certificate, flash }:
             href: route('courses.show', { course: course.id }),
         },
     ];
+
+    const approvedRatings = ratings.filter((rating) => rating.status === 'approved');
+    const averageRating = approvedRatings.length > 0 ? approvedRatings.reduce((sum, rating) => sum + rating.rating, 0) / approvedRatings.length : 0;
 
     useEffect(() => {
         if (flash?.success) {
@@ -128,19 +134,43 @@ export default function ShowCourse({ course, transactions, certificate, flash }:
             <Head title={`Detail Course - ${course.title}`} />
             <div className="px-4 py-4 md:px-6">
                 <h1 className="mb-4 text-2xl font-semibold">{`Detail ${course.title}`}</h1>
+
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
                     <Tabs defaultValue="detail" className="lg:col-span-2">
                         <TabsList>
                             <TabsTrigger value="detail">Detail</TabsTrigger>
-                            <TabsTrigger value="transaksi">Transaksi</TabsTrigger>
+                            <TabsTrigger value="transaksi">
+                                Transaksi
+                                {transactions.length > 0 && (
+                                    <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{transactions.length}</span>
+                                )}
+                            </TabsTrigger>
+                            {isAdmin && (
+                                <TabsTrigger value="rating">
+                                    Rating
+                                    {ratings.length > 0 && (
+                                        <span className="ml-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800">{ratings.length}</span>
+                                    )}
+                                    {ratings.filter((r) => r.status === 'pending').length > 0 && (
+                                        <span className="ml-1 rounded-full bg-red-500 px-1.5 py-0.5 text-xs text-white">
+                                            {ratings.filter((r) => r.status === 'pending').length}
+                                        </span>
+                                    )}
+                                </TabsTrigger>
+                            )}
                         </TabsList>
                         <TabsContent value="detail">
-                            <CourseDetail course={course} />
+                            <CourseDetail course={course} averageRating={averageRating} />
                             <ShowModules modules={course.modules} courseId={course.id} />
                         </TabsContent>
                         <TabsContent value="transaksi">
                             <CourseTransaction transactions={transactions} />
                         </TabsContent>
+                        {isAdmin && (
+                            <TabsContent value="rating">
+                                <CourseRatingComponent ratings={ratings} averageRating={averageRating} />
+                            </TabsContent>
+                        )}
                     </Tabs>
 
                     <div>

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { rupiahFormatter } from '@/lib/utils';
-import { LinkIcon } from 'lucide-react';
+import { LinkIcon, Star } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Course {
@@ -25,7 +25,7 @@ interface Course {
     created_at: string | Date;
 }
 
-export default function CourseDetail({ course }: { course: Course }) {
+export default function CourseDetail({ course, averageRating }: { course: Course; averageRating?: number }) {
     return (
         <div className="space-y-6 rounded-lg border p-4">
             <h2 className="text-lg font-medium">Share Link untuk Mengakses Kelas</h2>
@@ -71,6 +71,27 @@ export default function CourseDetail({ course }: { course: Course }) {
             )}
             <Table>
                 <TableBody>
+                    <TableRow>
+                        <TableCell>Rating</TableCell>
+                        <TableCell>
+                            {averageRating ? (
+                                <div className="flex gap-4">
+                                    <span className="text-lg font-semibold">{averageRating.toFixed(1)}</span>
+                                    <div className="flex items-center gap-1">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <Star
+                                                key={star}
+                                                size={16}
+                                                className={`${star <= Math.round(averageRating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <span className="text-gray-500">Belum ada rating</span>
+                            )}
+                        </TableCell>
+                    </TableRow>
                     <TableRow>
                         <TableCell>Status</TableCell>
                         <TableCell>

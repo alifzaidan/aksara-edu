@@ -49,4 +49,18 @@ class CourseRatingController extends Controller
 
         return redirect()->back()->with('success', 'Terima kasih! Rating Anda telah dikirim. Sertifikat kelulusan sekarang tersedia untuk diunduh.');
     }
+
+    public function approve(CourseRating $rating)
+    {
+        $rating->update(['status' => 'approved']);
+
+        return redirect()->back()->with('success', 'Rating berhasil disetujui.');
+    }
+
+    public function reject(CourseRating $rating)
+    {
+        $rating->update(['status' => 'rejected']);
+
+        return redirect()->back()->with('success', 'Rating berhasil ditolak.');
+    }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Certificate;
 use App\Models\Course;
+use App\Models\CourseRating;
 use App\Models\Invoice;
 use App\Models\Tool;
 use Illuminate\Http\Request;
@@ -138,6 +139,7 @@ class CourseController extends Controller
     public function show(string $id)
     {
         $course = Course::with(['category', 'user', 'tools', 'images', 'modules.lessons.quizzes.questions'])->findOrFail($id);
+
         $transactions = Invoice::with(['user.referrer'])
             ->whereHas('courseItems', function ($query) use ($id) {
                 $query->where('course_id', $id);
@@ -145,11 +147,17 @@ class CourseController extends Controller
             ->latest()
             ->get();
 
+        $ratings = CourseRating::with(['user'])
+            ->where('course_id', $course->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         $certificate = Certificate::where('course_id', $id)->first();
 
         return Inertia::render('admin/courses/show', [
             'course' => $course,
             'transactions' => $transactions,
+            'ratings' => $ratings,
             'certificate' => $certificate
         ]);
     }
@@ -241,7 +249,7 @@ class CourseController extends Controller
                 // Get all existing module and lesson IDs from frontend data
                 $frontendModuleIds = [];
                 $frontendLessonIds = [];
-                
+
                 foreach ($modules as $mod) {
                     if (isset($mod['id']) && !empty($mod['id'])) {
                         $frontendModuleIds[] = $mod['id'];
