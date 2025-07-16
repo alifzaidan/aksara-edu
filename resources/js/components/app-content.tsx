@@ -7,11 +7,16 @@ interface AppContentProps extends React.ComponentProps<'main'> {
 
 export function AppContent({ variant = 'header', children, ...props }: AppContentProps) {
     if (variant === 'sidebar') {
-    return (
-        <SidebarInset className="flex-1 overflow-x-hidden" {...props}>
-            {children}
-        </SidebarInset>
-    );
-}
+        return (
+            <SidebarInset className="flex-1 overflow-x-hidden" {...props}>
+                {children}
+            </SidebarInset>
+        );
+    }
 
+    return (
+        <main className="mx-auto flex h-full w-full flex-1 flex-col gap-4 overflow-x-hidden" {...props}>
+            {children}
+        </main>
+    );
 }
