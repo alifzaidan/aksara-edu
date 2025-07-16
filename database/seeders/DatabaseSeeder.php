@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
         $admin = User::factory()->create([
             'name' => 'Admin',
             'email' => 'admin@gmail.com',
-            'phone_number' => '085142505797',
+            'phone_number' => '085142505794',
             'bio' => 'Admin Ganteng',
             'password' => bcrypt('M@lang2025'),
         ]);
@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
         $adminAffiliate = User::factory()->create([
             'name' => 'Aksara Teknologi Mandiri',
             'email' => 'aksarateknologimandiri@gmail.com',
-            'phone_number' => '085142505797',
+            'phone_number' => '085142505794',
             'bio' => "Aksara Teknologi Mandiri's Affiliate",
             'password' => bcrypt('aksara2025'),
             'affiliate_code' => 'ATM2025',

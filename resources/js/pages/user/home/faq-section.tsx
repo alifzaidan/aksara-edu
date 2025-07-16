@@ -73,8 +73,8 @@ export default function FaqSection() {
                     <AccordionContent>
                         <p className="text-sm text-zinc-500 md:text-base dark:text-zinc-400">
                             Untuk informasi lebih lanjut tentang Aksademi, Anda dapat menghubungi admin kami di{' '}
-                            <a href="https://wa.me/+6285142505797" className="text-primary hover:underline">
-                                +6285142505797
+                            <a href="https://wa.me/+6285142505794" className="text-primary hover:underline">
+                                +6285142505794
                             </a>
                             . Kami juga aktif di media sosial, jadi pastikan untuk mengikuti kami di platform seperti Instagram, Tiktok, dan Linkedin
                             untuk update terbaru dan tips belajar.

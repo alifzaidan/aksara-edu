@@ -214,7 +214,7 @@ export default function TermsAndConditions() {
                                             <strong>CV. Aksara Teknologi Mandiri</strong>
                                         </p>
                                         <p>Email: aksarateknologimandiri@gmail.com</p>
-                                        <p>WhatsApp: +6285142505797</p>
+                                        <p>WhatsApp: +6285142505794</p>
                                         <p>
                                             Alamat: Perumahan Permata Permadani, Blok B1
                                             <br />

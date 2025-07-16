@@ -77,7 +77,7 @@ export default function HeroSection() {
                         <a href="#webinar">
                             <Button>Lihat Webinar</Button>
                         </a>
-                        <a href="https://wa.me/+6285142505797" target="_blank" rel="noopener noreferrer">
+                        <a href="https://wa.me/+6285142505794" target="_blank" rel="noopener noreferrer">
                             <Button variant="outline">Konsultasi Gratis</Button>
                         </a>
                     </div>

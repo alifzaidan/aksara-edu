@@ -73,7 +73,7 @@ export default function Home({ tools, latestProducts, myProductIds, allProducts 
             <FakeNotifications products={allProducts} />
 
             <a
-                href="https://wa.me/+6285142505797?text=Halo%20Admin%20Aksademy,%20saya%20ingin%20bertanya%20tentang%20kelas%20online."
+                href="https://wa.me/+6285142505794?text=Halo%20Admin%20Aksademy,%20saya%20ingin%20bertanya%20tentang%20kelas%20online."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="fixed right-10 bottom-6 z-50 flex h-16 w-16 animate-bounce items-center justify-center rounded-full bg-green-100 shadow-lg transition duration-1000 hover:bg-green-200"

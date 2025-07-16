@@ -24,7 +24,7 @@ const serviceItems: ServiceItem[] = [
     },
     {
         title: 'Pusat Bantuan',
-        href: 'https://wa.me/+6285142505797',
+        href: 'https://wa.me/+6285142505794',
     },
 ];
 
@@ -51,7 +51,7 @@ export default function AppFooter() {
                     <p className="my-4">Empowering Minds, Rising Together 🚀</p>
                     <h5 className="font-semibold">CV. Aksara Teknologi Mandiri</h5>
                     <p className="text-gray-800 dark:text-gray-400">
-                        Perumahan Permata Permadani, Blok B1. Kel. Pendem Kec. Junrejo Kota Batu Prov. Jawa Timur, 65324 <br /> +6285142505797
+                        Perumahan Permata Permadani, Blok B1. Kel. Pendem Kec. Junrejo Kota Batu Prov. Jawa Timur, 65324 <br /> +6285142505794
                     </p>
                 </div>
                 <div className="flex gap-8 sm:gap-12">

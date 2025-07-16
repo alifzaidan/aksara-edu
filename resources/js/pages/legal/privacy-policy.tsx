@@ -300,7 +300,7 @@ export default function PrivacyPolicy() {
                                         </p>
                                         <p>Email: privacy@aksademy.co.id</p>
                                         <p>Email umum: info@aksademy.co.id</p>
-                                        <p>WhatsApp: +6285142505797</p>
+                                        <p>WhatsApp: +6285142505794</p>
                                         <p>
                                             Alamat: Perumahan Permata Permadani, Blok B1
                                             <br />
