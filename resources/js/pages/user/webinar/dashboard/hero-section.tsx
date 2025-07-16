@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { motion } from 'motion/react';
 
 export default function HeroSection() {
     return (
@@ -9,7 +10,54 @@ export default function HeroSection() {
             </div>
             <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 lg:grid-cols-3">
                 <div className="col-span-1 hidden lg:block">
-                    <img src="assets/images/webinar.gif" alt="Animasi Course" width={360} />
+                    <div className="relative flex justify-center">
+                        <div className="relative h-[480px] w-[360px]">
+                            <motion.img
+                                src="assets/images/animated/4.webp"
+                                alt="Animasi Course 1"
+                                width={360}
+                                className="absolute top-12 left-12 z-10 rotate-3 transform"
+                                animate={{
+                                    y: [0, -20, 0],
+                                }}
+                                transition={{
+                                    duration: 3,
+                                    repeat: Infinity,
+                                    ease: 'easeInOut',
+                                }}
+                            />
+                            <motion.img
+                                src="assets/images/animated/5.webp"
+                                alt="Animasi Course 2"
+                                width={360}
+                                className="absolute top-6 left-4 z-20 scale-110 rotate-3 transform"
+                                animate={{
+                                    y: [0, 25, 0],
+                                }}
+                                transition={{
+                                    duration: 3,
+                                    repeat: Infinity,
+                                    ease: 'easeInOut',
+                                    delay: 0.5,
+                                }}
+                            />
+                            <motion.img
+                                src="assets/images/animated/6.webp"
+                                alt="Animasi Course 3"
+                                width={360}
+                                className="absolute top-24 left-0 z-30 rotate-3 transform"
+                                animate={{
+                                    y: [0, -20, 0],
+                                }}
+                                transition={{
+                                    duration: 3,
+                                    repeat: Infinity,
+                                    ease: 'easeInOut',
+                                    delay: 1,
+                                }}
+                            />
+                        </div>
+                    </div>
                 </div>
                 <div className="col-span-2">
                     <span className="text-secondary border-secondary bg-background mb-4 inline-block rounded-full border bg-gradient-to-t from-[#FED6AD] to-white px-3 py-1 text-sm font-medium shadow-xs hover:text-[#FF925B]">
