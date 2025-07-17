@@ -34,6 +34,7 @@ class Invoice extends Model
     protected function casts(): array
     {
         return [
+            'paid_at' => 'datetime',
             'expires_at' => 'datetime',
         ];
     }

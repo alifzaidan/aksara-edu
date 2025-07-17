@@ -60,8 +60,9 @@ export default function CheckoutSuccess({ invoice }: InvoiceProps) {
                         {title}
                     </h2>
                     <img src="/assets/images/payment-success.webp" alt="Pembayaran Berhasil" className="mb-6 w-[300px]" />
-                    <p className="mb-6 max-w-lg text-center text-gray-400">
-                        Terima kasih telah menyelesaikan pembayaran. Anda sekarang dapat mengakses materi dengan klik tombol di bawah ini.
+                    <p className="mb-6 max-w-xl text-center text-gray-400">
+                        Terima kasih telah menyelesaikan pembayaran. Anda sekarang dapat mengakses detail produk dengan klik tombol di bawah ini.
+                        Invoice sudah dikirimkan ke nomor WA anda.
                     </p>
                     <Button variant="secondary" className="mx-auto w-fit" asChild>
                         <Link href={link}>{label}</Link>

@@ -53,7 +53,9 @@ class WebinarController extends Controller
         $data = $request->all();
         foreach (['start_time', 'end_time', 'registration_deadline'] as $field) {
             if (!empty($data[$field])) {
-                $data[$field] = Carbon::parse($data[$field])->format('Y-m-d H:i:s');
+                $data[$field] = Carbon::parse($data[$field])
+                    ->setTimezone(config('app.timezone'))
+                    ->format('Y-m-d H:i:s');
             }
         }
 
@@ -138,7 +140,9 @@ class WebinarController extends Controller
 
         foreach (['start_time', 'end_time', 'registration_deadline'] as $field) {
             if (!empty($data[$field])) {
-                $data[$field] = Carbon::parse($data[$field])->format('Y-m-d H:i:s');
+                $data[$field] = Carbon::parse($data[$field])
+                    ->setTimezone(config('app.timezone'))
+                    ->format('Y-m-d H:i:s');
             }
         }
 

@@ -42,9 +42,9 @@ export default function HeroSection({ webinar }: { webinar: Webinar }) {
                     <div className="flex flex-wrap gap-4">
                         <a href="#register">
                             <Button>Daftar Sekarang</Button>
-                            <a href="https://wa.me/+6285142505794" target="_blank" rel="noopener noreferrer">
-                                <Button variant="outline">Hubungi Kami</Button>
-                            </a>
+                        </a>
+                        <a href="https://wa.me/+6285142505794" target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline">Hubungi Kami</Button>
                         </a>
                     </div>
                 </div>
