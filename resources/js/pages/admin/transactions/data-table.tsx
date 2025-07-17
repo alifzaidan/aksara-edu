@@ -13,11 +13,32 @@ import {
     VisibilityState,
 } from '@tanstack/react-table';
 
+import { DataTableFacetedFilter } from '@/components/data-table-faceted-filter';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { DataTableViewOptions } from '@/components/data-table-view-option';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CheckCircle, Clock, X, XCircle } from 'lucide-react';
 import React from 'react';
+
+export const status = [
+    {
+        value: 'pending',
+        label: 'Pending',
+        icon: Clock,
+    },
+    {
+        value: 'paid',
+        label: 'Paid',
+        icon: CheckCircle,
+    },
+    {
+        value: 'failed',
+        label: 'Failed',
+        icon: XCircle,
+    },
+];
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -48,18 +69,34 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
         },
     });
 
+    const isFiltered = table.getState().columnFilters.length > 0;
+
     return (
         <div>
-            <div className="flex items-center py-4">
+            <div className="flex items-center gap-2 py-4">
                 <Input
-                    placeholder="Cari kode invoice..."
-                    value={(table.getColumn('invoice_code')?.getFilterValue() as string) ?? ''}
-                    onChange={(event) => table.getColumn('invoice_code')?.setFilterValue(event.target.value)}
+                    placeholder="Cari nama pembeli..."
+                    value={(table.getColumn('user_name')?.getFilterValue() as string) ?? ''}
+                    onChange={(event) => table.getColumn('user_name')?.setFilterValue(event.target.value)}
                     className="sm:max-w-sm"
                 />
+                <div className="flex flex-col items-center gap-2 lg:flex-row">
+                    {table.getColumn('status') && <DataTableFacetedFilter column={table.getColumn('status')} title="Status" options={status} />}
+                    {isFiltered && (
+                        <Button
+                            onClick={() => {
+                                table.resetColumnFilters();
+                            }}
+                            className="h-8 px-2 lg:px-3"
+                        >
+                            Reset
+                            <X />
+                        </Button>
+                    )}
+                </div>
                 <DataTableViewOptions table={table} />
             </div>
-            <div className="rounded-md border overflow-x-auto max-w-full w-[1000px] min-w-full">
+            <div className="w-[1000px] max-w-full min-w-full overflow-x-auto rounded-md border">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
