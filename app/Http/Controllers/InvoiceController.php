@@ -10,6 +10,7 @@ use App\Models\Course;
 use App\Models\EnrollmentBootcamp;
 use App\Models\EnrollmentCourse;
 use App\Models\EnrollmentWebinar;
+use App\Models\FreeEnrollmentRequirement;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Models\Webinar;
@@ -227,13 +228,37 @@ class InvoiceController extends Controller
                 'expires_at' => null,
             ]);
 
-            $enrollmentTable::create([
+            $enrollment = $enrollmentTable::create([
                 'invoice_id' => $invoice->id,
                 $enrollmentField => $item->id,
                 'price' => 0,
                 'completed_at' => null,
                 'progress' => 0,
             ]);
+
+            if ($type === 'webinar' || $type === 'bootcamp') {
+                $requirementData = [
+                    'enrollment_type' => $type,
+                    'enrollment_id' => $enrollment->id
+                ];
+
+                if ($request->hasFile('ig_follow_proof')) {
+                    $requirementData['ig_follow_proof'] = $request->file('ig_follow_proof')
+                        ->store('free-requirements/ig', 'public');
+                }
+
+                if ($request->hasFile('tiktok_follow_proof')) {
+                    $requirementData['tiktok_follow_proof'] = $request->file('tiktok_follow_proof')
+                        ->store('free-requirements/tiktok', 'public');
+                }
+
+                if ($request->hasFile('tag_friend_proof')) {
+                    $requirementData['tag_friend_proof'] = $request->file('tag_friend_proof')
+                        ->store('free-requirements/tag', 'public');
+                }
+
+                FreeEnrollmentRequirement::create($requirementData);
+            }
 
             $this->addToCertificateParticipants($type, $item->id, $userId);
 

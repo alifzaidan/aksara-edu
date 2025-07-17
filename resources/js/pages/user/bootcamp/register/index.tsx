@@ -43,6 +43,14 @@ export default function RegisterBootcamp({
 }) {
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
+
+    const [showFreeForm, setShowFreeForm] = useState(false);
+    const [freeFormData, setFreeFormData] = useState({
+        ig_follow_proof: null as File | null,
+        tiktok_follow_proof: null as File | null,
+        tag_friend_proof: null as File | null,
+    });
+
     const requirementList = parseList(bootcamp.requirements);
     const benefitList = parseList(bootcamp.benefits);
     const curriculumList = parseList(bootcamp.curriculum);
@@ -50,6 +58,44 @@ export default function RegisterBootcamp({
 
     const transactionFee = 5000;
     const totalPrice = isFree ? 0 : bootcamp.price + transactionFee;
+
+    const handleFreeCheckout = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!freeFormData.ig_follow_proof || !freeFormData.tiktok_follow_proof || !freeFormData.tag_friend_proof) {
+            alert('Harap upload semua bukti yang diperlukan!');
+            return;
+        }
+
+        setLoading(true);
+
+        const formData = new FormData();
+        formData.append('type', 'bootcamp');
+        formData.append('id', bootcamp.id);
+        formData.append('ig_follow_proof', freeFormData.ig_follow_proof);
+        formData.append('tiktok_follow_proof', freeFormData.tiktok_follow_proof);
+        formData.append('tag_friend_proof', freeFormData.tag_friend_proof);
+
+        try {
+            const res = await fetch(route('enroll.free'), {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                },
+                body: formData,
+            });
+            const data = await res.json();
+            if (res.ok && data.redirect_url) {
+                window.location.href = data.redirect_url;
+            } else {
+                alert(data.message || 'Gagal mendaftar bootcamp gratis.');
+            }
+        } catch {
+            alert('Terjadi kesalahan saat proses pendaftaran.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -60,33 +106,8 @@ export default function RegisterBootcamp({
         setLoading(true);
 
         if (isFree) {
-            try {
-                const res = await fetch(route('enroll.free'), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
-                    },
-                    body: JSON.stringify({
-                        type: 'bootcamp',
-                        id: bootcamp.id,
-                        discount_amount: bootcamp.strikethrough_price || 0,
-                        nett_amount: bootcamp.price,
-                        transaction_fee: 0,
-                        total_amount: 0,
-                    }),
-                });
-                const data = await res.json();
-                if (res.ok && data.redirect_url) {
-                    window.location.href = data.redirect_url;
-                } else {
-                    alert(data.message || 'Gagal mendaftar bootcamp gratis.');
-                }
-            } catch {
-                alert('Terjadi kesalahan saat proses pendaftaran.');
-            } finally {
-                setLoading(false);
-            }
+            setShowFreeForm(true);
+            setLoading(false);
             return;
         }
 
@@ -204,13 +225,22 @@ export default function RegisterBootcamp({
                                 <a href={pendingInvoiceUrl}>Lanjutkan Pembayaran</a>
                             </Button>
                         </div>
-                    ) : (
+                    ) : !showFreeForm ? (
                         <form onSubmit={handleCheckout}>
-                            <h2 className="my-2 text-xl font-bold italic">Detail Pembayaran</h2>
+                            <h2 className="my-2 text-xl font-bold italic">Detail {isFree ? 'Pendaftaran' : 'Pembayaran'}</h2>
                             <div className="space-y-4 rounded-lg border p-4">
                                 {isFree ? (
-                                    <div className="flex items-center justify-between p-4 text-center">
-                                        <span className="w-full text-2xl font-bold text-green-600">BOOTCAMP GRATIS</span>
+                                    <div className="space-y-2 text-center">
+                                        <div className="flex items-center justify-between p-4">
+                                            <span className="w-full text-2xl font-bold text-green-600">BOOTCAMP GRATIS</span>
+                                        </div>
+                                        <p className="text-sm text-gray-600">Untuk mendapatkan akses gratis, Anda perlu:</p>
+                                        <ul className="space-y-1 text-left text-sm">
+                                            <li>• Follow Instagram kami</li>
+                                            <li>• Follow TikTok kami</li>
+                                            <li>• Tag 3 teman di postingan Instagram kami</li>
+                                        </ul>
+                                        <p className="text-xs text-gray-500">Upload bukti follow dan tag untuk mendapatkan akses</p>
                                     </div>
                                 ) : (
                                     <>
@@ -271,8 +301,76 @@ export default function RegisterBootcamp({
                                     </div>
                                 )}
                                 <Button className="w-full" type="submit" disabled={(isFree ? false : !termsAccepted) || loading}>
-                                    {loading ? 'Memproses...' : isFree ? 'Dapatkan Akses Gratis Sekarang' : 'Lanjutkan Pembayaran'}
+                                    {loading ? 'Memproses...' : isFree ? 'Upload Bukti Follow' : 'Lanjutkan Pembayaran'}
                                 </Button>
+                            </div>
+                        </form>
+                    ) : (
+                        <form onSubmit={handleFreeCheckout}>
+                            <h2 className="my-2 text-xl font-bold italic">Upload Bukti Follow & Tag</h2>
+                            <div className="space-y-4 rounded-lg border p-4">
+                                <div>
+                                    <Label>Bukti Follow Instagram</Label>
+                                    <Input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) =>
+                                            setFreeFormData((prev) => ({
+                                                ...prev,
+                                                ig_follow_proof: e.target.files?.[0] || null,
+                                            }))
+                                        }
+                                        required
+                                    />
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Screenshot halaman profil Instagram kami yang menunjukkan Anda sudah follow
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <Label>Bukti Follow TikTok</Label>
+                                    <Input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) =>
+                                            setFreeFormData((prev) => ({
+                                                ...prev,
+                                                tiktok_follow_proof: e.target.files?.[0] || null,
+                                            }))
+                                        }
+                                        required
+                                    />
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Screenshot halaman profil TikTok kami yang menunjukkan Anda sudah follow
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <Label>Bukti Tag 3 Teman di Instagram</Label>
+                                    <Input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) =>
+                                            setFreeFormData((prev) => ({
+                                                ...prev,
+                                                tag_friend_proof: e.target.files?.[0] || null,
+                                            }))
+                                        }
+                                        required
+                                    />
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Screenshot postingan Instagram kami yang menunjukkan Anda sudah tag 3 teman di komentar
+                                    </p>
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <Button type="button" variant="outline" onClick={() => setShowFreeForm(false)} className="flex-1">
+                                        Kembali
+                                    </Button>
+                                    <Button type="submit" disabled={loading} className="flex-1">
+                                        {loading ? 'Memproses...' : 'Dapatkan Akses Gratis'}
+                                    </Button>
+                                </div>
                             </div>
                         </form>
                     )}

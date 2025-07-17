@@ -20,4 +20,10 @@ class EnrollmentWebinar extends Model
     {
         return $this->belongsTo(Webinar::class);
     }
+
+    public function freeRequirement()
+    {
+        return $this->hasOne(FreeEnrollmentRequirement::class, 'enrollment_id')
+            ->where('enrollment_type', 'webinar');
+    }
 }

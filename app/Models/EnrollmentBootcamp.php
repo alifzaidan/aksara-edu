@@ -20,4 +20,10 @@ class EnrollmentBootcamp extends Model
     {
         return $this->belongsTo(Bootcamp::class);
     }
+
+    public function freeRequirement()
+    {
+        return $this->hasOne(FreeEnrollmentRequirement::class, 'enrollment_id')
+            ->where('enrollment_type', 'bootcamp');
+    }
 }
