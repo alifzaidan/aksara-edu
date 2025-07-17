@@ -96,7 +96,12 @@ export default function ShowBootcamp({ bootcamp, transactions, certificate, flas
                     <Tabs defaultValue="detail" className="lg:col-span-2">
                         <TabsList>
                             <TabsTrigger value="detail">Detail</TabsTrigger>
-                            <TabsTrigger value="transaksi">Transaksi</TabsTrigger>
+                            <TabsTrigger value="transaksi">
+                                Transaksi
+                                {transactions.length > 0 && (
+                                    <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{transactions.length}</span>
+                                )}
+                            </TabsTrigger>
                         </TabsList>
                         <TabsContent value="detail">
                             <BootcampDetail bootcamp={bootcamp} />

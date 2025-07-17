@@ -94,7 +94,14 @@ class WebinarController extends Controller
     public function show(string $id)
     {
         $webinar = Webinar::with(['category', 'user', 'tools'])->findOrFail($id);
-        $transactions = Invoice::with(['user.referrer'])
+
+        $transactions = Invoice::with([
+            'user.referrer',
+            'webinarItems' => function ($query) use ($id) {
+                $query->where('webinar_id', $id)
+                    ->with('freeRequirement');
+            }
+        ])
             ->whereHas('webinarItems', function ($query) use ($id) {
                 $query->where('webinar_id', $id);
             })
