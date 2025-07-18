@@ -24,12 +24,18 @@ export default function HeroSection({ webinar }: { webinar: Webinar }) {
                             month: 'long',
                             year: 'numeric',
                         })}{' '}
+                        {new Date(webinar.start_time).toLocaleTimeString('id-ID', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            timeZone: 'Asia/Jakarta',
+                        })}{' '}
                         -{' '}
-                        {new Date(webinar.end_time).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                        })}
+                        {new Date(webinar.end_time).toLocaleTimeString('id-ID', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            timeZone: 'Asia/Jakarta',
+                        })}{' '}
+                        WIB
                     </span>
 
                     <h1 className="mb-6 text-4xl leading-tight font-bold italic sm:text-5xl">{webinar.title}</h1>

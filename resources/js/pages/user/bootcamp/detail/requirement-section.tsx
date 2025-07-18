@@ -26,7 +26,7 @@ export default function RequirementSection({ bootcamp }: { bootcamp: Bootcamp })
                     <ul className="space-y-2">
                         {requirementList.map((req, idx) => (
                             <li key={idx} className="flex gap-2">
-                                <BadgeCheck className="mt-1 w-12 text-green-600" />
+                                <BadgeCheck className="mt-1 min-w-12 text-green-600" />
                                 <div>
                                     <h4 className="text-lg font-semibold">{req}</h4>
                                 </div>
@@ -42,7 +42,7 @@ export default function RequirementSection({ bootcamp }: { bootcamp: Bootcamp })
                     <ul className="space-y-2">
                         {benefitList.map((benefit, idx) => (
                             <li key={idx} className="flex gap-2">
-                                <BadgeCheck className="mt-1 w-12 text-green-600" />
+                                <BadgeCheck className="mt-1 min-w-12 text-green-600" />
                                 <div>
                                     <h4 className="text-lg font-semibold">{benefit}</h4>
                                 </div>
