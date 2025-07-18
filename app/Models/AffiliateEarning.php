@@ -20,4 +20,9 @@ class AffiliateEarning extends Model
     {
         return $this->belongsTo(Invoice::class, 'invoice_id');
     }
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class);
+    }
 }

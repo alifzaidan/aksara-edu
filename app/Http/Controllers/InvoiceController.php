@@ -727,6 +727,38 @@ class InvoiceController extends Controller
                 ]);
             }
         }
+
+        $this->recordMentorCommission($invoice);
+    }
+
+    /**
+     * Mencatat komisi untuk mentor dari penjualan kelas mereka
+     *
+     * @param Invoice $invoice
+     * @return void
+     */
+    private function recordMentorCommission(Invoice $invoice)
+    {
+        $invoice->load(['courseItems.course.user']);
+
+        foreach ($invoice->courseItems as $courseItem) {
+            $course = $courseItem->course;
+            $mentor = $course->user;
+
+            if ($mentor && $mentor->hasRole('mentor') && $mentor->affiliate_status === 'Active' && $mentor->commission > 0) {
+                $commissionAmount = $courseItem->price * ($mentor->commission / 100);
+
+                AffiliateEarning::create([
+                    'affiliate_user_id' => $mentor->id,
+                    'invoice_id' => $invoice->id,
+                    'amount' => $commissionAmount,
+                    'rate' => $mentor->commission,
+                    'status' => 'pending',
+                    'type' => 'mentor_course',
+                    'course_id' => $course->id,
+                ]);
+            }
+        }
     }
 
     /**

@@ -13,6 +13,7 @@ interface EditMentorProps {
         bio?: string;
         email: string;
         phone_number: string;
+        commission: number;
     };
     setOpen: (open: boolean) => void;
 }
@@ -22,14 +23,16 @@ export default function EditMentor({ mentor, setOpen }: EditMentorProps) {
     const bioInput = useRef<HTMLInputElement>(null);
     const emailInput = useRef<HTMLInputElement>(null);
     const phoneInput = useRef<HTMLInputElement>(null);
+    const commissionInput = useRef<HTMLInputElement>(null);
 
     const { data, setData, put, processing, reset, errors, clearErrors } = useForm<
-        Required<{ name: string; bio: string; email: string; phone_number: string }>
+        Required<{ name: string; bio: string; email: string; phone_number: string; commission: number }>
     >({
         name: mentor.name,
         bio: mentor.bio ?? '',
         email: mentor.email,
         phone_number: mentor.phone_number,
+        commission: mentor.commission,
     });
 
     useEffect(() => {
@@ -38,6 +41,7 @@ export default function EditMentor({ mentor, setOpen }: EditMentorProps) {
             bio: mentor.bio ?? '',
             email: mentor.email,
             phone_number: mentor.phone_number,
+            commission: mentor.commission,
         });
         clearErrors();
     }, [mentor, setData, clearErrors]);
@@ -125,6 +129,23 @@ export default function EditMentor({ mentor, setOpen }: EditMentorProps) {
                         autoComplete="off"
                     />
                     <InputError message={errors.phone_number} />
+
+                    <Label htmlFor="commission" className="text-xs text-gray-500">
+                        Komisi (%) - Komisi yang akan diterima mentor dari setiap transaksi
+                    </Label>
+                    <Input
+                        id="commission"
+                        type="number"
+                        name="commission"
+                        ref={commissionInput}
+                        value={data.commission}
+                        onChange={(e) => {
+                            setData('commission', Number(e.target.value));
+                        }}
+                        placeholder="Komisi"
+                        autoComplete="off"
+                    />
+                    <InputError message={errors.commission} />
                 </div>
                 <DialogFooter className="gap-2">
                     <DialogClose asChild>

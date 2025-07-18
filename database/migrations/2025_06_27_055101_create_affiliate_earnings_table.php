@@ -15,6 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('affiliate_user_id')->constrained('users')->onDelete('cascade');
             $table->foreignUuid('invoice_id')->constrained('invoices')->onDelete('cascade');
+            $table->foreignUuid('course_id')->nullable()->constrained('courses')->onDelete('set null');
             $table->bigInteger('amount');
             $table->tinyInteger('rate');
             $table->enum('status', ['pending', 'approved', 'paid', 'rejected'])->default('pending');

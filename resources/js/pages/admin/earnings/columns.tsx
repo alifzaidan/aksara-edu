@@ -1,6 +1,17 @@
 'use client';
 
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -155,42 +166,99 @@ export const getColumns = (isAdmin: boolean): ColumnDef<Earning>[] => {
 
                 return (
                     <div className="flex items-center justify-center">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" asChild>
-                                    <Link
-                                        href={route('earnings.approve', earning.id)}
-                                        method="post"
-                                        as="button"
-                                        className="text-green-500 hover:text-green-600"
-                                        onBefore={() => confirm('Anda yakin ingin menyetujui komisi ini?')}
-                                    >
-                                        <CheckCircle className="size-4" />
-                                    </Link>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Setujui Komisi</p>
-                            </TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" asChild>
-                                    <Link
-                                        href={route('earnings.reject', earning.id)}
-                                        method="post"
-                                        as="button"
-                                        className="text-red-500 hover:text-red-600"
-                                        onBefore={() => confirm('Anda yakin ingin menolak komisi ini?')}
-                                    >
-                                        <XCircle className="size-4" />
-                                    </Link>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Tolak Komisi</p>
-                            </TooltipContent>
-                        </Tooltip>
+                        <AlertDialog>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="text-green-500 hover:text-green-600">
+                                            <CheckCircle className="size-4" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Setujui Komisi</p>
+                                </TooltipContent>
+                            </Tooltip>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Setujui Komisi</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Anda yakin ingin menyetujui komisi sebesar{' '}
+                                        <strong>
+                                            {new Intl.NumberFormat('id-ID', {
+                                                style: 'currency',
+                                                currency: 'IDR',
+                                                minimumFractionDigits: 0,
+                                            }).format(earning.amount)}
+                                        </strong>{' '}
+                                        untuk invoice <strong>{earning.invoice.invoice_code}</strong>?
+                                        <br />
+                                        <br />
+                                        Tindakan ini tidak dapat dibatalkan dan komisi akan langsung disetujui.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                                    <AlertDialogAction asChild>
+                                        <Link
+                                            href={route('earnings.approve', earning.id)}
+                                            method="post"
+                                            as="button"
+                                            className="bg-green-600 hover:bg-green-700"
+                                        >
+                                            Ya, Setujui
+                                        </Link>
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+
+                        <AlertDialog>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
+                                            <XCircle className="size-4" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Tolak Komisi</p>
+                                </TooltipContent>
+                            </Tooltip>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Tolak Komisi</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Anda yakin ingin menolak komisi sebesar{' '}
+                                        <strong>
+                                            {new Intl.NumberFormat('id-ID', {
+                                                style: 'currency',
+                                                currency: 'IDR',
+                                                minimumFractionDigits: 0,
+                                            }).format(earning.amount)}
+                                        </strong>{' '}
+                                        untuk invoice <strong>{earning.invoice.invoice_code}</strong>?
+                                        <br />
+                                        <br />
+                                        Tindakan ini tidak dapat dibatalkan dan komisi akan ditolak secara permanen.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                                    <AlertDialogAction asChild>
+                                        <Link
+                                            href={route('earnings.reject', earning.id)}
+                                            method="post"
+                                            as="button"
+                                            className="bg-red-600 hover:bg-red-700"
+                                        >
+                                            Ya, Tolak
+                                        </Link>
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 );
             },

@@ -28,12 +28,12 @@ class AffiliateEarningController extends Controller
     public function approveEarning(AffiliateEarning $earning)
     {
         $earning->update(['status' => 'approved']);
-        return redirect()->route('affiliates.show', $earning->affiliate_user_id)->with('success', 'Komisi berhasil disetujui.');
+        return back()->with('success', 'Komisi berhasil disetujui.');
     }
 
     public function rejectEarning(AffiliateEarning $earning)
     {
         $earning->update(['status' => 'rejected']);
-        return redirect()->route('affiliates.show', $earning->affiliate_user_id)->with('success', 'Komisi berhasil ditolak.');
+        return back()->with('success', 'Komisi berhasil ditolak.');
     }
 }

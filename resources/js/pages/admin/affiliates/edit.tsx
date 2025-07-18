@@ -109,8 +109,8 @@ export default function EditAffiliate({ affiliate, setOpen }: EditAffiliateProps
                     />
                     <InputError message={errors.phone_number} />
 
-                    <Label htmlFor="commission" className="sr-only">
-                        Komisi
+                    <Label htmlFor="commission" className="text-xs text-gray-500">
+                        Komisi (%) - Komisi yang akan diterima mentor dari setiap transaksi
                     </Label>
                     <Input
                         id="commission"

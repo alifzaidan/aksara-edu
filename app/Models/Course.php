@@ -36,9 +36,9 @@ class Course extends Model
         return $this->hasMany(Module::class);
     }
 
-    public function enrollments()
+    public function enrollmentCourses()
     {
-        return $this->hasMany(Enrollment::class);
+        return $this->hasMany(EnrollmentCourse::class);
     }
 
     public function certificate()

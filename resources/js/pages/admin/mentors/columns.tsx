@@ -4,41 +4,33 @@ import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Edit, Trash } from 'lucide-react';
-import { useState } from 'react';
-import EditMentor from './edit';
+import { Folder, Trash } from 'lucide-react';
 
 export default function MentorActions({ mentor }: { mentor: Mentor }) {
-    const [open, setOpen] = useState(false);
     const handleDelete = () => {
         router.delete(route('mentors.destroy', mentor.id));
     };
 
     return (
         <div className="flex items-center justify-center gap-2">
-            <Dialog open={open} onOpenChange={setOpen}>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <Edit className="size-4" />
-                            </Button>
-                        </DialogTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Edit Mentor</p>
-                    </TooltipContent>
-                </Tooltip>
-                <DialogContent>
-                    <EditMentor mentor={mentor} setOpen={setOpen} />
-                </DialogContent>
-            </Dialog>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="link" size="icon" className="size-8" asChild>
+                        <Link href={route('mentors.show', mentor.id)}>
+                            <Folder />
+                            <span className="sr-only">Detail Mentor</span>
+                        </Link>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Lihat Mentor</p>
+                </TooltipContent>
+            </Tooltip>
             <Tooltip>
                 <TooltipTrigger asChild>
                     <div>
@@ -69,6 +61,7 @@ export type Mentor = {
     bio?: string;
     email: string;
     phone_number: string;
+    commission: number;
     created_at: string;
 };
 
@@ -101,7 +94,11 @@ export const columns: ColumnDef<Mentor>[] = [
         accessorKey: 'name',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Nama Mentor" />,
         cell: ({ row }) => {
-            return <div className="font-medium">{row.original.name}</div>;
+            return (
+                <Link href={route('mentors.show', row.original.id)} className="text-primary font-medium hover:underline">
+                    {row.original.name}
+                </Link>
+            );
         },
     },
     {
@@ -118,6 +115,11 @@ export const columns: ColumnDef<Mentor>[] = [
     {
         accessorKey: 'phone_number',
         header: ({ column }) => <DataTableColumnHeader column={column} title="No. Telepon" />,
+    },
+    {
+        accessorKey: 'commission',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Komisi" />,
+        cell: ({ row }) => <p>{row.original.commission ? `${row.original.commission} %` : '-'}</p>,
     },
     {
         accessorKey: 'created_at',

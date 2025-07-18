@@ -15,6 +15,7 @@ export default function CreateMentor({ setOpen }: CreateMentorProps) {
     const bioInput = useRef<HTMLInputElement>(null);
     const emailInput = useRef<HTMLInputElement>(null);
     const phoneInput = useRef<HTMLInputElement>(null);
+    const commissionInput = useRef<HTMLInputElement>(null);
 
     const {
         data,
@@ -24,12 +25,13 @@ export default function CreateMentor({ setOpen }: CreateMentorProps) {
         reset,
         errors,
         clearErrors,
-    } = useForm<Required<{ name: string; bio: string; email: string; phone_number: string; password: string }>>({
+    } = useForm<Required<{ name: string; bio: string; email: string; phone_number: string; password: string; commission: number }>>({
         name: '',
         bio: '',
         email: '',
         phone_number: '',
         password: '',
+        commission: 0,
     });
 
     const createMentor: FormEventHandler = (e) => {
@@ -133,6 +135,23 @@ export default function CreateMentor({ setOpen }: CreateMentorProps) {
                         disabled
                     />
                     <InputError message={errors.password} />
+
+                    <Label htmlFor="commission" className="text-xs text-gray-500">
+                        Komisi (%) - Komisi yang akan diterima mentor dari setiap transaksi
+                    </Label>
+                    <Input
+                        id="commission"
+                        type="number"
+                        name="commission"
+                        ref={commissionInput}
+                        value={data.commission}
+                        onChange={(e) => {
+                            setData('commission', Number(e.target.value));
+                        }}
+                        placeholder="Komisi"
+                        autoComplete="off"
+                    />
+                    <InputError message={errors.commission} />
                 </div>
                 <DialogFooter className="gap-2">
                     <DialogClose asChild>

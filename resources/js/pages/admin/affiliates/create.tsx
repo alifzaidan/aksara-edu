@@ -140,23 +140,6 @@ export default function CreateAffiliate({ setOpen }: CreateAffiliateProps) {
                     />
                     <InputError message={errors.affiliate_code} />
 
-                    <Label htmlFor="commission" className="sr-only">
-                        Komisi
-                    </Label>
-                    <Input
-                        id="commission"
-                        type="number"
-                        name="commission"
-                        ref={commissionInput}
-                        value={data.commission}
-                        onChange={(e) => {
-                            setData('commission', Number(e.target.value));
-                        }}
-                        placeholder="Komisi"
-                        autoComplete="off"
-                    />
-                    <InputError message={errors.commission} />
-
                     <Label htmlFor="password" className="sr-only">
                         Password
                     </Label>
@@ -171,6 +154,23 @@ export default function CreateAffiliate({ setOpen }: CreateAffiliateProps) {
                         disabled
                     />
                     <InputError message={errors.password} />
+
+                    <Label htmlFor="commission" className="text-xs text-gray-500">
+                        Komisi (%) - Komisi yang akan diterima mentor dari setiap transaksi
+                    </Label>
+                    <Input
+                        id="commission"
+                        type="number"
+                        name="commission"
+                        ref={commissionInput}
+                        value={data.commission}
+                        onChange={(e) => {
+                            setData('commission', Number(e.target.value));
+                        }}
+                        placeholder="Komisi"
+                        autoComplete="off"
+                    />
+                    <InputError message={errors.commission} />
                 </div>
                 <DialogFooter className="gap-2">
                     <DialogClose asChild>
