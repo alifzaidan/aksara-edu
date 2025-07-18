@@ -243,7 +243,13 @@
                 @endif
 
                 <div class="certificate-title">Sertifikat</div>
-                <div class="certificate-subtitle">Kompetensi Kelulusan</div>
+                <div class="certificate-subtitle">
+                    @if($certificate->webinar_id)
+                    Partisipasi
+                    @else
+                    Kompetensi Kelulusan
+                    @endif
+                </div>
             </div>
 
             {{-- Content --}}
@@ -257,7 +263,11 @@
                 </div>
 
                 <div class="program-description">
+                    @if($certificate->webinar_id)
+                    TELAH BERPARTISIPASI PADA
+                    @else
                     TELAH MENGIKUTI DAN DINYATAKAN LULUS
+                    @endif
                 </div>
 
                 @if($certificate->description)
