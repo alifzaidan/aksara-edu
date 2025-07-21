@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
+import { Crown, FileText } from 'lucide-react';
 
 interface CourseItem {
     course: { title: string; slug: string; thumbnail: string };
@@ -64,8 +65,17 @@ export default function CheckoutSuccess({ invoice }: InvoiceProps) {
                         Terima kasih telah menyelesaikan pembayaran. Anda sekarang dapat mengakses detail produk dengan klik tombol di bawah ini.
                         Invoice sudah dikirimkan ke nomor WA anda.
                     </p>
-                    <Button variant="secondary" className="mx-auto w-fit" asChild>
-                        <Link href={link}>{label}</Link>
+                    <Button variant="secondary" className="mx-auto mb-4 w-fit" asChild>
+                        <Link href={link}>
+                            <Crown />
+                            {label}
+                        </Link>
+                    </Button>
+                    <Button variant="outline" asChild>
+                        <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
+                            <FileText className="size-4" />
+                            Unduh Invoice
+                        </a>
                     </Button>
                 </div>
             </section>

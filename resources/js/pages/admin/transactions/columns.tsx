@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Eye } from 'lucide-react';
+import { FileText } from 'lucide-react';
 
 interface Referrer {
     id: string;
@@ -152,18 +152,20 @@ export const columns: ColumnDef<Invoice>[] = [
 
             return (
                 <div className="flex items-center justify-center">
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" asChild>
-                                <a href={invoice.invoice_url ?? '#'} target="_blank" rel="noopener noreferrer">
-                                    <Eye className="size-4" />
-                                </a>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Lihat Invoice</p>
-                        </TooltipContent>
-                    </Tooltip>
+                    {invoice.status === 'paid' && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" asChild>
+                                    <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
+                                        <FileText className="size-4" />
+                                    </a>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Lihat Invoice</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    )}
 
                     {whatsappUrl && (
                         <Tooltip>

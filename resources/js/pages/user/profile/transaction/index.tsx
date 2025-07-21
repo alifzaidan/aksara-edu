@@ -166,11 +166,7 @@ export default function Transactions({ myTransactions }: Props) {
                                                 item.payment_channel || item.payment_method || '-'
                                             )}
                                         </td>
-                                        <td className="p-2">
-                                            <Link href={route('invoice.show', { id: item.invoice_id })} className="text-primary hover:underline">
-                                                {item.invoice_code}
-                                            </Link>
-                                        </td>
+                                        <td className="p-2">{item.invoice_code}</td>
                                         <td className="p-2">
                                             {item.invoice_status === 'pending' && item.invoice_url ? (
                                                 <Button asChild size="sm" variant="outline">

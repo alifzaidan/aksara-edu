@@ -15,6 +15,7 @@ use App\Models\Invoice;
 use App\Models\User;
 use App\Models\Webinar;
 use App\Traits\WablasTrait;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -821,5 +822,35 @@ class InvoiceController extends Controller
         foreach ($invoice->webinarItems as $webinarItem) {
             $this->addToCertificateParticipants('webinar', $webinarItem->webinar_id, $invoice->user_id);
         }
+    }
+
+    public function generatePDF($id)
+    {
+        $invoice = Invoice::with([
+            'user',
+            'courseItems.course',
+            'bootcampItems.bootcamp',
+            'webinarItems.webinar'
+        ])->findOrFail($id);
+
+        if ($invoice->status !== 'paid') {
+            abort(403, 'Invoice belum dibayar');
+        }
+
+        $data = [
+            'invoice' => $invoice,
+            'company' => [
+                'name' => 'Aksademy',
+                'address' => 'Perumahan Permata Permadani, Blok B1. Kel. Pendem Kec. Junrejo Kota Batu Prov. Jawa Timur, 65324',
+                'phone' => '+6285142505794',
+                'email' => 'aksarateknologi@gmail.com',
+                'website' => 'www.aksademy.id'
+            ]
+        ];
+
+        $pdf = PDF::loadView('invoices.pdf', $data);
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->stream("invoice-{$invoice->invoice_code}.pdf");
     }
 }

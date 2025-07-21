@@ -1,5 +1,4 @@
-import { Link } from '@inertiajs/react';
-import { Mic, Star, User } from 'lucide-react';
+import { Star, User } from 'lucide-react';
 
 interface Webinar {
     host_name?: string | null;
@@ -20,7 +19,6 @@ export default function MentorSection({ webinar }: { webinar: Webinar }) {
                     <div className="w-full">
                         <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{webinar.host_name}</h3>
-                            <Mic size={20} className="text-gray-500 dark:text-gray-400" />
                         </div>
                         <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">{webinar.host_description}</p>
                         <div className="flex items-center justify-between">
@@ -31,9 +29,6 @@ export default function MentorSection({ webinar }: { webinar: Webinar }) {
                                 <Star size={18} className="text-yellow-500" fill="currentColor" />
                                 <Star size={18} className="text-yellow-500" fill="currentColor" />
                             </div>
-                            <Link href="#" className="text-primary dark:text-primary-foreground text-sm font-medium hover:underline">
-                                Lihat Profil
-                            </Link>
                         </div>
                     </div>
                 </div>

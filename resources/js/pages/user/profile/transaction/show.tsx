@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
-import { AlertTriangle, CheckCircle, Clock, ExternalLink, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Clock, ExternalLink, FileText, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -379,13 +379,12 @@ export default function TransactionShow({ invoice }: Props) {
                                         <Button asChild className="w-full sm:w-auto" variant="outline">
                                             <Link href={route('profile.transactions')}>Lihat Riwayat Transaksi</Link>
                                         </Button>
-                                        {productInfo && (
-                                            <Button asChild>
-                                                <Link href={route(productInfo.profileRoute, { [productInfo.type]: productInfo.slug })}>
-                                                    Lihat Produk di Profile
-                                                </Link>
-                                            </Button>
-                                        )}
+                                        <Button asChild>
+                                            <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
+                                                <FileText className="size-4" />
+                                                Unduh Invoice
+                                            </a>
+                                        </Button>
                                     </>
                                 )}
 
