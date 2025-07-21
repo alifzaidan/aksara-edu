@@ -364,7 +364,7 @@ export default function DetailMyCourse({
                                 <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
                                     {keyPointList.map((keyPoint, idx) => (
                                         <li key={idx} className="flex items-center gap-2">
-                                            <BadgeCheck size="18" className="text-green-600" />
+                                            <BadgeCheck size={18} className="mt-1 min-w-6 text-green-600" />
                                             <p>{keyPoint}</p>
                                         </li>
                                     ))}

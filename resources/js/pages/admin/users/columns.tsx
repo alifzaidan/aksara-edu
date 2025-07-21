@@ -49,7 +49,7 @@ export const columns: ColumnDef<User>[] = [
     },
     {
         accessorKey: 'name',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Nama Mentor" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Nama Pengguna" />,
         cell: ({ row }) => {
             return <div className="font-medium">{row.original.name}</div>;
         },

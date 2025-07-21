@@ -334,7 +334,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                     <div className="space-y-3">
                                         {benefitList.map((benefit, idx) => (
                                             <div key={idx} className="flex items-start gap-3 rounded-lg bg-green-50 p-3 dark:bg-green-900/20">
-                                                <BadgeCheck size={18} className="mt-0.5 flex-shrink-0 text-green-600" />
+                                                <BadgeCheck size={18} className="mt-1 min-w-6 text-green-600" />
                                                 <p className="text-gray-700 dark:text-gray-300">{benefit}</p>
                                             </div>
                                         ))}

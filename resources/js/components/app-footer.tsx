@@ -95,7 +95,7 @@ export default function AppFooter() {
                 <div className="sm:text-right">
                     <h4 className="mb-4 font-semibold">Media Sosial</h4>
                     <div className="flex items-center gap-4 sm:justify-end">
-                        <a href="https://www.instagram.com/aksarateknologi/" target="_blank">
+                        <a href="https://www.instagram.com/aksademy/" target="_blank">
                             <Instagram />
                         </a>
                         <a href="https://www.linkedin.com/company/aksarateknologi" target="_blank">
@@ -107,7 +107,7 @@ export default function AppFooter() {
                     </p>
                 </div>
             </div>
-            <div className="mt-12 text-center text-xs text-blue-200">&copy; 2025 CV. Aksara Teknologi Mandiri. All rights reserved.</div>
+            <div className="mt-12 text-center text-xs">&copy; 2025 CV. Aksara Teknologi Mandiri. All rights reserved.</div>
         </footer>
     );
 }
