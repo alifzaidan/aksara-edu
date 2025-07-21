@@ -5,8 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UserLayout from '@/layouts/user-layout';
-import { Head } from '@inertiajs/react';
-import { BadgeCheck, Hourglass } from 'lucide-react';
+import { SharedData } from '@/types';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { BadgeCheck, Hourglass, User } from 'lucide-react';
 import { useState } from 'react';
 
 interface Bootcamp {
@@ -41,6 +42,10 @@ export default function RegisterBootcamp({
     hasAccess: boolean;
     pendingInvoiceUrl?: string | null;
 }) {
+    const { auth } = usePage<SharedData>().props;
+    const isLoggedIn = !!auth.user;
+    const isProfileComplete = isLoggedIn && auth.user?.phone_number;
+
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
 
@@ -99,6 +104,13 @@ export default function RegisterBootcamp({
 
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!isProfileComplete) {
+            alert('Profil Anda belum lengkap! Harap lengkapi nomor telepon terlebih dahulu.');
+            window.location.href = route('profile.edit');
+            return;
+        }
+
         if (!termsAccepted && !isFree) {
             alert('Anda harus menyetujui syarat dan ketentuan!');
             return;
@@ -141,6 +153,34 @@ export default function RegisterBootcamp({
         }
     };
 
+    if (!isProfileComplete) {
+        return (
+            <UserLayout>
+                <Head title="Daftar Bootcamp" />
+                <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
+                    <div className="mx-auto my-12 w-full max-w-7xl px-4">
+                        <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
+                            Daftar Bootcamp "{bootcamp.title}"
+                        </h2>
+                        <p className="text-center text-gray-400">Silakan lengkapi profil Anda terlebih dahulu.</p>
+                    </div>
+                </section>
+                <section className="mx-auto my-4 w-full max-w-7xl px-4">
+                    <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
+                        <User size={64} className="text-orange-500" />
+                        <h2 className="text-xl font-bold">Profil Belum Lengkap</h2>
+                        <p className="text-sm text-gray-500">
+                            Profil Anda belum lengkap! Harap lengkapi nomor telepon terlebih dahulu untuk mendaftar bootcamp.
+                        </p>
+                        <Button asChild className="w-full max-w-md">
+                            <Link href={route('profile.edit', { redirect: window.location.href })}>Lengkapi Profil</Link>
+                        </Button>
+                    </div>
+                </section>
+            </UserLayout>
+        );
+    }
+
     return (
         <UserLayout>
             <Head title="Daftar Bootcamp" />
@@ -149,7 +189,11 @@ export default function RegisterBootcamp({
                     <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
                         Daftar Bootcamp "{bootcamp.title}"
                     </h2>
-                    <p className="text-center text-gray-400">Silakan selesaikan pembayaran untuk mendaftar bootcamp.</p>
+                    <p className="text-center text-gray-400">
+                        {isFree
+                            ? 'Silahkan lengkapi persyaratan berikut untuk mendaftar bootcamp.'
+                            : 'Silakan selesaikan pembayaran untuk mendaftar bootcamp.'}
+                    </p>
                 </div>
             </section>
             <section className="mx-auto my-4 w-full max-w-7xl px-4">
@@ -166,7 +210,7 @@ export default function RegisterBootcamp({
                                 <ul className="space-y-2">
                                     {benefitList.map((benefit, idx) => (
                                         <li key={idx} className="flex items-center gap-2">
-                                            <BadgeCheck size="18" className="text-green-600" />
+                                            <BadgeCheck size={18} className="mt-1 min-w-6 text-green-600" />
                                             <p className="text-sm md:text-base">{benefit}</p>
                                         </li>
                                     ))}
@@ -178,7 +222,7 @@ export default function RegisterBootcamp({
                                 <ul className="space-y-2">
                                     {requirementList.map((requirement, idx) => (
                                         <li key={idx} className="flex items-center gap-2">
-                                            <BadgeCheck size="18" className="text-green-600" />
+                                            <BadgeCheck size={18} className="mt-1 min-w-6 text-green-600" />
                                             <p className="text-sm md:text-base">{requirement}</p>
                                         </li>
                                     ))}

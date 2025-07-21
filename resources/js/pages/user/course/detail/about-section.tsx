@@ -51,7 +51,7 @@ export default function AboutSection({ course }: { course: Course }) {
                 <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {keyPoints.map((req, idx) => (
                         <li key={idx} className="flex items-center gap-2">
-                            <BadgeCheck size="18" className="text-green-600" />
+                            <BadgeCheck className="mt-1 min-w-12 text-green-600" />
                             <p>{req}</p>
                         </li>
                     ))}
