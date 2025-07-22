@@ -38,6 +38,20 @@
 
     <title inertia>{{ config('app.name', 'Aksademy') }}</title>
 
+    <meta name="description"
+        content="Aksademy adalah platform edukasi digital yang menyediakan layanan pembelajaran dan pengembangan keterampilan mulai dari kelas online, webinar, dan bootcamp.">
+    <meta name="keywords"
+        content="Aksademy, platform edukasi, pembelajaran online, kelas online, webinar, bootcamp, pengembangan keterampilan, kursus digital">
+    <meta name="author" content="Aksara Teknologi Mandiri">
+    <meta name="robots" content="index, follow">
+
+    <meta property="og:title" content="Aksademy">
+    <meta property="og:description"
+        content="Aksademy adalah platform edukasi digital yang menyediakan layanan pembelajaran dan pengembangan keterampilan mulai dari kelas online, webinar, dan bootcamp.">
+    <meta property="og:image" content="{{ asset('assets/images/logo-primary-sm.png') }}">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:type" content="website">
+
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
