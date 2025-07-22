@@ -39,7 +39,7 @@
     <title inertia>{{ config('app.name', 'Aksademy') }}</title>
 
     <meta name="description"
-        content="Aksademy adalah platform edukasi digital yang menyediakan layanan pembelajaran dan pengembangan keterampilan mulai dari kelas online, webinar, dan bootcamp.">
+        content="Aksademy adalah platform edukasi digital yang menyediakan layanan pembelajaran mulai dari kelas online, webinar, dan bootcamp.">
     <meta name="keywords"
         content="Aksademy, platform edukasi, pembelajaran online, kelas online, webinar, bootcamp, pengembangan keterampilan, kursus digital">
     <meta name="author" content="Aksara Teknologi Mandiri">
@@ -47,8 +47,8 @@
 
     <meta property="og:title" content="Aksademy">
     <meta property="og:description"
-        content="Aksademy adalah platform edukasi digital yang menyediakan layanan pembelajaran dan pengembangan keterampilan mulai dari kelas online, webinar, dan bootcamp.">
-    <meta property="og:image" content="{{ asset('assets/images/logo-primary-sm.png') }}">
+        content="Aksademy adalah platform edukasi digital yang menyediakan layanan pembelajaran mulai dari kelas online, webinar, dan bootcamp.">
+    <meta property="og:image" content="{{ asset('assets/images/logo-primary.png') }}">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:type" content="website">
 
