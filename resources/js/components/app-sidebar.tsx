@@ -76,7 +76,7 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         title: 'Pendapatan',
         href: '/admin/affiliate-earnings',
         icon: DollarSign,
-        roles: ['affiliate'],
+        roles: ['affiliate', 'mentor'],
     },
 ];
 

@@ -152,7 +152,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::get('transactions', [InvoiceController::class, 'index'])->name('transactions.index');
     });
 
-    Route::middleware(['role:affiliate'])->group(function () {
+    Route::middleware(['role:affiliate|mentor'])->group(function () {
         Route::get('affiliate-earnings', [AffiliateEarningController::class, 'index'])->name('earnings.index');
     });
 });
