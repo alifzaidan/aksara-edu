@@ -140,7 +140,7 @@ class InvoiceController extends Controller
                     'invoice_reminder' => ['email', 'whatsapp'],
                     'invoice_paid' => ['email'],
                 ],
-                'description' => 'Invoice pembayaran transaksi produk ' . $item->title . ' untuk user ' . $request->name,
+                'description' => 'Invoice pembayaran transaksi produk ' . $item->title . ' untuk user ' . Auth::user()->name,
                 'amount' => $totalAmount,
                 'items' => $items,
                 'fees' => $fees,
