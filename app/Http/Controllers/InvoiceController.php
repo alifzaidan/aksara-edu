@@ -64,6 +64,12 @@ class InvoiceController extends Controller
             $transactionFee = $request->input('transaction_fee', 5000);
             $totalAmount = $request->input('total_amount');
 
+            if ($discountAmount > 0) {
+                $fees = array(['type' => 'Diskon', 'value' => -$discountAmount], ['type' => 'Biaya Transaksi', 'value' => 5000]);
+            } else {
+                $fees = array(['type' => 'Biaya Transaksi', 'value' => 5000]);
+            }
+
             if ($type === 'course') {
                 $item = Course::findOrFail($itemId);
                 $enrollmentTable = EnrollmentCourse::class;
@@ -128,8 +134,10 @@ class InvoiceController extends Controller
                     'given_names' => Auth::user()->name,
                     'email' => Auth::user()->email,
                 ],
+                'description' => 'Invoice pembayaran transaksi produk ' . $item->title . ' untuk user ' . $request->name,
                 'amount' => $totalAmount,
                 'items' => $items,
+                'fees' => $fees,
                 'failure_redirect_url' => route('invoice.show', ['id' => $invoice->id]),
                 'success_redirect_url' => route('invoice.show', ['id' => $invoice->id]),
             ]);
