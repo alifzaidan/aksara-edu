@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AffiliateEarning;
 use App\Models\Bootcamp;
 use App\Models\Course;
+use App\Models\CourseRating;
 use App\Models\EnrollmentBootcamp;
 use App\Models\EnrollmentCourse;
 use App\Models\EnrollmentWebinar;
@@ -58,7 +59,14 @@ class AdminController extends Controller
             'recent_sales' => Invoice::with(['user', 'courseItems.course', 'bootcampItems.bootcamp', 'webinarItems.webinar'])
                 ->where('status', 'paid')->latest()->take(5)->get(),
             'popular_courses' => EnrollmentCourse::select('course_id', DB::raw('count(*) as enrollment_count'))
-                ->groupBy('course_id')->orderByDesc('enrollment_count')->with('course:id,title')->take(5)->get(),
+                ->whereHas('invoice', function ($query) {
+                    $query->where('status', 'paid');
+                })
+                ->groupBy('course_id')
+                ->orderByDesc('enrollment_count')
+                ->with('course:id,title')
+                ->take(5)
+                ->get(),
         ];
     }
 
@@ -79,17 +87,26 @@ class AdminController extends Controller
     private function getMentorStats(User $user)
     {
         $mentorCourses = Course::where('user_id', $user->id)->pluck('id');
+
         $studentIds = Invoice::whereHas('courseItems', function ($query) use ($mentorCourses) {
             $query->whereIn('course_id', $mentorCourses);
-        })->distinct()->pluck('user_id');
+        })->where('status', 'paid')->distinct()->pluck('user_id');
+
+
+        $averageRating = CourseRating::whereIn('course_id', $mentorCourses)
+            ->avg('rating');
 
         return [
             'revenue_this_month' => Invoice::whereHas('courseItems', fn($q) => $q->whereIn('course_id', $mentorCourses))
                 ->where('status', 'paid')->whereMonth('created_at', now()->month)->sum('amount'),
             'total_students' => $studentIds->count(),
             'active_courses' => $mentorCourses->count(),
-            'average_rating' => '4.9',
+            'average_rating' => $averageRating ? round($averageRating, 1) : 0,
+            'total_ratings' => CourseRating::whereIn('course_id', $mentorCourses)->count(),
             'recent_enrollments' => EnrollmentCourse::whereIn('course_id', $mentorCourses)
+                ->whereHas('invoice', function ($query) {
+                    $query->where('status', 'paid');
+                })
                 ->with(['invoice.user:id,name', 'course:id,title'])->latest()->take(3)->get(),
         ];
     }
