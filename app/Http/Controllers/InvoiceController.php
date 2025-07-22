@@ -133,6 +133,12 @@ class InvoiceController extends Controller
                 'customer' => [
                     'given_names' => Auth::user()->name,
                     'email' => Auth::user()->email,
+                    'mobile_number' => Auth::user()->phone_number,
+                ],
+                'customer_notification_preference' => [
+                    'invoice_created' => ['email', 'whatsapp'],
+                    'invoice_reminder' => ['email', 'whatsapp'],
+                    'invoice_paid' => ['email'],
                 ],
                 'description' => 'Invoice pembayaran transaksi produk ' . $item->title . ' untuk user ' . $request->name,
                 'amount' => $totalAmount,
