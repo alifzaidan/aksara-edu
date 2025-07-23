@@ -11,6 +11,8 @@ import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { Menu, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { SearchCommand } from './search-command';
 
 const mainNavItems: NavItem[] = [
     {
@@ -37,6 +39,19 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const page = usePage<SharedData>();
     const { auth } = page.props;
     const getInitials = useInitials();
+    const [searchOpen, setSearchOpen] = useState(false);
+
+    useEffect(() => {
+        const down = (e: KeyboardEvent) => {
+            if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                setSearchOpen((open) => !open);
+            }
+        };
+        document.addEventListener('keydown', down);
+        return () => document.removeEventListener('keydown', down);
+    }, []);
+
     return (
         <>
             <div className="border-sidebar-border/80 bg-background border-b">
@@ -108,8 +123,18 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
 
                     <div className="ml-auto flex items-center space-x-2">
                         <div className="relative flex items-center space-x-1">
-                            <Button variant="ghost" size="icon" className="group hover:bg-primary/5 h-9 w-9 cursor-pointer">
+                            <Button variant="outline" onClick={() => setSearchOpen(true)}>
                                 <Search className="!size-5 opacity-80 group-hover:opacity-100" />
+                                <p className="mr-4 hidden lg:block">Cari Produk...</p>
+                                <div className="hidden lg:block">
+                                    <kbd className="bg-muted text-muted-foreground pointer-events-none inline-flex h-5 items-center gap-1 rounded border px-1.5 font-mono text-[10px] font-medium opacity-100 select-none">
+                                        <span className="text-xs">⌘</span>K
+                                    </kbd>{' '}
+                                    /{' '}
+                                    <kbd className="bg-muted text-muted-foreground pointer-events-none inline-flex h-5 items-center gap-1 rounded border px-1.5 font-mono text-[10px] font-medium opacity-100 select-none">
+                                        <span className="text-xs">Ctrl</span>K
+                                    </kbd>
+                                </div>
                             </Button>
                         </div>
                         {auth.user ? (
@@ -141,6 +166,9 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                     </div>
                 </div>
             </div>
+
+            <SearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
+
             {breadcrumbs.length > 1 && (
                 <div className="border-sidebar-border/70 flex w-full border-b">
                     <div className="mx-auto flex h-12 w-full items-center justify-start px-4 text-neutral-500 md:max-w-7xl">

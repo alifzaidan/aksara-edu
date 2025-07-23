@@ -19,6 +19,7 @@ use App\Http\Controllers\MentorController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\QuizSubmissionController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ToolController;
 use App\Http\Controllers\User\CourseController as UserCourseController;
 use App\Http\Controllers\User\BootcampController as UserBootcampController;

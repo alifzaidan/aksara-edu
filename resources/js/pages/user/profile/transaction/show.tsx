@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
-import { AlertTriangle, CheckCircle, Clock, ExternalLink, FileText, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Clock, ExternalLink, FileText, Home, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -272,18 +272,24 @@ export default function TransactionShow({ invoice }: Props) {
                                 <div>
                                     <h3 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Detail Pembayaran</h3>
                                     <div className="space-y-2 text-sm">
+                                        {invoice.discount_amount > 0 && (
+                                            <>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600 dark:text-gray-400">Harga Asli:</span>
+                                                    <span className="medium">Rp {invoice.discount_amount?.toLocaleString('id-ID')}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600 dark:text-gray-400">Subtotal:</span>
+                                                    <span className="text-gray-500 line-through">
+                                                        Rp {(invoice.discount_amount - invoice.nett_amount)?.toLocaleString('id-ID') || '0'}
+                                                    </span>
+                                                </div>
+                                            </>
+                                        )}
                                         <div className="flex justify-between">
                                             <span className="text-gray-600 dark:text-gray-400">Subtotal:</span>
                                             <span className="font-medium">Rp {invoice.nett_amount?.toLocaleString('id-ID') || '0'}</span>
                                         </div>
-                                        {invoice.discount_amount > 0 && (
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-600 dark:text-gray-400">Harga Asli:</span>
-                                                <span className="text-gray-500 line-through">
-                                                    Rp {invoice.discount_amount?.toLocaleString('id-ID')}
-                                                </span>
-                                            </div>
-                                        )}
                                         <div className="flex justify-between">
                                             <span className="text-gray-600 dark:text-gray-400">Biaya Transaksi:</span>
                                             <span className="font-medium">
@@ -390,7 +396,9 @@ export default function TransactionShow({ invoice }: Props) {
 
                                 {(invoice.status === 'failed' || isExpired) && (
                                     <Button asChild size="lg" className="w-full sm:w-auto">
-                                        <Link href={route('home')}>Kembali ke Beranda</Link>
+                                        <Link href={route('home')}>
+                                            <Home /> Kembali ke Beranda
+                                        </Link>
                                     </Button>
                                 )}
                             </div>
