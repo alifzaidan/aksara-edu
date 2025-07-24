@@ -37,16 +37,203 @@ class AdminController extends Controller
                 break;
         }
 
-        return Inertia::render('admin/dashboard', [
+        return Inertia::render('admin/dashboard/index', [
             'stats' => $stats,
         ]);
+    }
+
+    private function getRevenueData()
+    {
+        return Invoice::where('status', 'paid')
+            ->select(
+                DB::raw('DATE(created_at) as date'),
+                DB::raw('SUM(amount) as total_amount'),
+                DB::raw('COUNT(*) as transaction_count')
+            )
+            ->whereDate('created_at', '>=', now()->subDays(30))
+            ->groupBy('date')
+            ->orderBy('date', 'desc')
+            ->get();
+    }
+
+    private function getMonthlyRevenueData()
+    {
+        return Invoice::where('status', 'paid')
+            ->select(
+                DB::raw('YEAR(created_at) as year'),
+                DB::raw('MONTH(created_at) as month'),
+                DB::raw('SUM(amount) as total_amount'),
+                DB::raw('COUNT(*) as transaction_count')
+            )
+            ->whereDate('created_at', '>=', now()->subMonths(12))
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'asc')
+            ->orderBy('month', 'asc')
+            ->get()
+            ->map(function ($item) {
+                $monthNames = [
+                    1 => 'Jan',
+                    2 => 'Feb',
+                    3 => 'Mar',
+                    4 => 'Apr',
+                    5 => 'Mei',
+                    6 => 'Jun',
+                    7 => 'Jul',
+                    8 => 'Ags',
+                    9 => 'Sep',
+                    10 => 'Okt',
+                    11 => 'Nov',
+                    12 => 'Des'
+                ];
+
+                return [
+                    'month' => $monthNames[$item->month],
+                    'year' => $item->year,
+                    'month_year' => $monthNames[$item->month] . ' ' . $item->year,
+                    'total_amount' => (float) $item->total_amount,
+                    'transaction_count' => $item->transaction_count,
+                ];
+            });
+    }
+
+    private function getParticipantData()
+    {
+        $courseEnrollments = EnrollmentCourse::select(
+            DB::raw('DATE(created_at) as date'),
+            DB::raw('COUNT(*) as count'),
+            DB::raw('"course" as type')
+        )
+            ->whereDate('created_at', '>=', now()->subDays(30))
+            ->groupBy('date');
+
+        $bootcampEnrollments = EnrollmentBootcamp::select(
+            DB::raw('DATE(created_at) as date'),
+            DB::raw('COUNT(*) as count'),
+            DB::raw('"bootcamp" as type')
+        )
+            ->whereDate('created_at', '>=', now()->subDays(30))
+            ->groupBy('date');
+
+        $webinarEnrollments = EnrollmentWebinar::select(
+            DB::raw('DATE(created_at) as date'),
+            DB::raw('COUNT(*) as count'),
+            DB::raw('"webinar" as type')
+        )
+            ->whereDate('created_at', '>=', now()->subDays(30))
+            ->groupBy('date');
+
+        return $courseEnrollments
+            ->union($bootcampEnrollments)
+            ->union($webinarEnrollments)
+            ->orderBy('date', 'desc')
+            ->get();
+    }
+
+    private function getPopularProducts()
+    {
+        $popularCourses = DB::table('enrollment_courses')
+            ->join('invoices', 'enrollment_courses.invoice_id', '=', 'invoices.id')
+            ->join('courses', 'enrollment_courses.course_id', '=', 'courses.id')
+            ->select(
+                'courses.id as product_id',
+                'courses.title',
+                'courses.thumbnail',
+                'courses.price',
+                DB::raw('COUNT(*) as enrollment_count'),
+                DB::raw('"course" as type')
+            )
+            ->where('invoices.status', 'paid')
+            ->groupBy('courses.id', 'courses.title', 'courses.thumbnail', 'courses.price')
+            ->get();
+
+        $popularBootcamps = DB::table('enrollment_bootcamps')
+            ->join('invoices', 'enrollment_bootcamps.invoice_id', '=', 'invoices.id')
+            ->join('bootcamps', 'enrollment_bootcamps.bootcamp_id', '=', 'bootcamps.id')
+            ->select(
+                'bootcamps.id as product_id',
+                'bootcamps.title',
+                'bootcamps.thumbnail',
+                'bootcamps.price',
+                DB::raw('COUNT(*) as enrollment_count'),
+                DB::raw('"bootcamp" as type')
+            )
+            ->where('invoices.status', 'paid')
+            ->groupBy('bootcamps.id', 'bootcamps.title', 'bootcamps.thumbnail', 'bootcamps.price')
+            ->get();
+
+        $popularWebinars = DB::table('enrollment_webinars')
+            ->join('invoices', 'enrollment_webinars.invoice_id', '=', 'invoices.id')
+            ->join('webinars', 'enrollment_webinars.webinar_id', '=', 'webinars.id')
+            ->select(
+                'webinars.id as product_id',
+                'webinars.title',
+                'webinars.thumbnail',
+                'webinars.price',
+                DB::raw('COUNT(*) as enrollment_count'),
+                DB::raw('"webinar" as type')
+            )
+            ->where('invoices.status', 'paid')
+            ->groupBy('webinars.id', 'webinars.title', 'webinars.thumbnail', 'webinars.price')
+            ->get();
+
+        // Gabungkan semua data dan konversi ke array
+        $allProducts = collect([])
+            ->merge($popularCourses->map(function ($item) {
+                return [
+                    'id' => $item->product_id,
+                    'title' => $item->title,
+                    'type' => $item->type,
+                    'enrollment_count' => (int) $item->enrollment_count,
+                    'thumbnail' => $item->thumbnail,
+                    'price' => (float) $item->price,
+                ];
+            }))
+            ->merge($popularBootcamps->map(function ($item) {
+                return [
+                    'id' => $item->product_id,
+                    'title' => $item->title,
+                    'type' => $item->type,
+                    'enrollment_count' => (int) $item->enrollment_count,
+                    'thumbnail' => $item->thumbnail,
+                    'price' => (float) $item->price,
+                ];
+            }))
+            ->merge($popularWebinars->map(function ($item) {
+                return [
+                    'id' => $item->product_id,
+                    'title' => $item->title,
+                    'type' => $item->type,
+                    'enrollment_count' => (int) $item->enrollment_count,
+                    'thumbnail' => $item->thumbnail,
+                    'price' => (float) $item->price,
+                ];
+            }))
+            ->sortByDesc('enrollment_count')
+            ->take(10)
+            ->values()
+            ->toArray();
+
+        return $allProducts;
     }
 
     private function getAdminStats()
     {
         return [
             'total_revenue' => Invoice::where('status', 'paid')->sum('amount'),
+            'revenue_this_month' => Invoice::where('status', 'paid')
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->sum('amount'),
+            'revenue_today' => Invoice::where('status', 'paid')
+                ->whereDate('created_at', today())
+                ->sum('amount'),
             'total_participants' => EnrollmentCourse::count() + EnrollmentBootcamp::count() + EnrollmentWebinar::count(),
+            'participants_this_month' => EnrollmentCourse::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count() +
+                EnrollmentBootcamp::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count() +
+                EnrollmentWebinar::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count(),
+            'participants_today' => EnrollmentCourse::whereDate('created_at', today())->count() +
+                EnrollmentBootcamp::whereDate('created_at', today())->count() +
+                EnrollmentWebinar::whereDate('created_at', today())->count(),
             'total_users' => User::role('user')->count(),
             'new_users_last_week' => User::role('user')->where('created_at', '>=', now()->subWeek())->count(),
             'total_mentors' => User::role('mentor')->count(),
@@ -58,15 +245,10 @@ class AdminController extends Controller
             'total_webinars' => Webinar::count(),
             'recent_sales' => Invoice::with(['user', 'courseItems.course', 'bootcampItems.bootcamp', 'webinarItems.webinar'])
                 ->where('status', 'paid')->latest()->take(5)->get(),
-            'popular_courses' => EnrollmentCourse::select('course_id', DB::raw('count(*) as enrollment_count'))
-                ->whereHas('invoice', function ($query) {
-                    $query->where('status', 'paid');
-                })
-                ->groupBy('course_id')
-                ->orderByDesc('enrollment_count')
-                ->with('course:id,title')
-                ->take(5)
-                ->get(),
+            'revenue_data' => $this->getRevenueData(),
+            'monthly_revenue_data' => $this->getMonthlyRevenueData(),
+            'participant_data' => $this->getParticipantData(),
+            'popular_products' => $this->getPopularProducts(),
         ];
     }
 

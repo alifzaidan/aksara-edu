@@ -35,7 +35,11 @@ export default function MentorDashboard({ stats }: MentorStatsProps) {
             value: formatCurrency(stats.revenue_this_month),
             icon: <DollarSign className="text-muted-foreground size-5" />,
         },
-        { title: 'Total Siswa Anda', value: stats.total_students.toLocaleString('id-ID'), icon: <Users className="text-muted-foreground size-5" /> },
+        {
+            title: 'Total Siswa Anda',
+            value: stats.total_students.toLocaleString('id-ID'),
+            icon: <Users className="text-muted-foreground size-5" />,
+        },
         {
             title: 'Jumlah Kelas Aktif',
             value: stats.active_courses.toLocaleString('id-ID'),
@@ -47,6 +51,8 @@ export default function MentorDashboard({ stats }: MentorStatsProps) {
             icon: <Star className="text-muted-foreground size-5" />,
         },
     ];
+
+    const validEnrollments = stats.recent_enrollments?.filter((enrollment) => enrollment?.user?.name && enrollment?.course?.title) || [];
 
     return (
         <>
@@ -68,13 +74,13 @@ export default function MentorDashboard({ stats }: MentorStatsProps) {
                 <h3 className="text-lg font-semibold">Pendaftar Terbaru di Kelas Anda</h3>
                 <p className="text-muted-foreground mb-4 text-sm">Siswa yang baru saja mendaftar di kelas Anda.</p>
                 <div className="space-y-6">
-                    {stats.recent_enrollments.length === 0 ? (
+                    {validEnrollments.length === 0 ? (
                         <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
                             <img src="/assets/images/not-found.webp" alt="Pendaftar Tidak Tersedia" className="w-48" />
                             <div className="text-center text-gray-500">Belum ada pendaftar baru saat ini.</div>
                         </div>
                     ) : (
-                        stats.recent_enrollments.map((enrollment) => (
+                        validEnrollments.map((enrollment) => (
                             <div key={enrollment.id} className="flex items-center">
                                 <div className="bg-muted flex size-10 items-center justify-center rounded-full">
                                     <span className="font-medium">{enrollment.user.name.substring(0, 2).toUpperCase()}</span>
