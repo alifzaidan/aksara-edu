@@ -19,6 +19,7 @@ export type User = {
     name: string;
     email: string;
     phone_number: string;
+    email_verified_at: string | null;
     created_at: string;
 };
 
@@ -61,6 +62,13 @@ export const columns: ColumnDef<User>[] = [
     {
         accessorKey: 'phone_number',
         header: ({ column }) => <DataTableColumnHeader column={column} title="No. Telepon" />,
+    },
+    {
+        accessorKey: 'email_verified_at',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Email Terverifikasi" />,
+        cell: ({ row }) => (
+            <p>{row.original.email_verified_at ? format(new Date(row.original.email_verified_at), 'dd MMMM yyyy', { locale: id }) : '-'}</p>
+        ),
     },
     {
         accessorKey: 'created_at',
