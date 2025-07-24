@@ -224,6 +224,26 @@ class AdminController extends Controller
 
     private function getAdminStats()
     {
+        $totalParticipantsPaid = EnrollmentCourse::join('invoices', 'enrollment_courses.invoice_id', '=', 'invoices.id')
+            ->where('invoices.status', 'paid')->count() +
+            EnrollmentBootcamp::join('invoices', 'enrollment_bootcamps.invoice_id', '=', 'invoices.id')
+            ->where('invoices.status', 'paid')->count() +
+            EnrollmentWebinar::join('invoices', 'enrollment_webinars.invoice_id', '=', 'invoices.id')
+            ->where('invoices.status', 'paid')->count();
+
+        $participantsThisMonthPaid = EnrollmentCourse::join('invoices', 'enrollment_courses.invoice_id', '=', 'invoices.id')
+            ->where('invoices.status', 'paid')
+            ->whereMonth('enrollment_courses.created_at', now()->month)
+            ->whereYear('enrollment_courses.created_at', now()->year)->count() +
+            EnrollmentBootcamp::join('invoices', 'enrollment_bootcamps.invoice_id', '=', 'invoices.id')
+            ->where('invoices.status', 'paid')
+            ->whereMonth('enrollment_bootcamps.created_at', now()->month)
+            ->whereYear('enrollment_bootcamps.created_at', now()->year)->count() +
+            EnrollmentWebinar::join('invoices', 'enrollment_webinars.invoice_id', '=', 'invoices.id')
+            ->where('invoices.status', 'paid')
+            ->whereMonth('enrollment_webinars.created_at', now()->month)
+            ->whereYear('enrollment_webinars.created_at', now()->year)->count();
+
         return [
             'total_revenue' => Invoice::where('status', 'paid')->sum('amount'),
             'revenue_this_month' => Invoice::where('status', 'paid')
@@ -233,13 +253,8 @@ class AdminController extends Controller
             'revenue_today' => Invoice::where('status', 'paid')
                 ->whereDate('created_at', today())
                 ->sum('amount'),
-            'total_participants' => EnrollmentCourse::count() + EnrollmentBootcamp::count() + EnrollmentWebinar::count(),
-            'participants_this_month' => EnrollmentCourse::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count() +
-                EnrollmentBootcamp::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count() +
-                EnrollmentWebinar::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count(),
-            'participants_today' => EnrollmentCourse::whereDate('created_at', today())->count() +
-                EnrollmentBootcamp::whereDate('created_at', today())->count() +
-                EnrollmentWebinar::whereDate('created_at', today())->count(),
+            'total_participants' => $totalParticipantsPaid,
+            'participants_this_month' => $participantsThisMonthPaid,
             'total_users' => User::role('user')->count(),
             'new_users_last_week' => User::role('user')->where('created_at', '>=', now()->subWeek())->count(),
             'total_mentors' => User::role('mentor')->count(),
