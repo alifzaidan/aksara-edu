@@ -140,6 +140,20 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                         )}
                                     </NavigationMenuItem>
                                 ))}
+                                {auth.user && (
+                                    <NavigationMenuItem className="relative flex h-full items-center">
+                                        <Link
+                                            href="/profile"
+                                            className={cn(
+                                                navigationMenuTriggerStyle(),
+                                                page.url.startsWith('/profile') && activeItemStyles,
+                                                'hover:bg-primary/5 dark:hover:bg-primary/40 h-9 cursor-pointer px-3',
+                                            )}
+                                        >
+                                            Profil Saya
+                                        </Link>
+                                    </NavigationMenuItem>
+                                )}
                             </NavigationMenuList>
                         </NavigationMenu>
                     </div>
@@ -181,7 +195,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 <Button variant="outline" asChild>
                                     <Link href={route('login')}>Masuk</Link>
                                 </Button>
-                                <Button variant="default" asChild>
+                                <Button variant="default" asChild className="hidden lg:inline-flex">
                                     <Link href={route('register')}>Daftar</Link>
                                 </Button>
                             </>
@@ -192,7 +206,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
 
             {/* Mobile Navigation Dock */}
             <div className="fixed right-0 bottom-0 left-0 z-50 lg:hidden">
-                <div className="bg-background/95 border-border border-t shadow-lg backdrop-blur-md">
+                <div className="bg-background/95 border-border border-t pb-2 shadow-lg backdrop-blur-md">
                     <div className={`grid gap-1 px-2 py-2 ${auth.user ? 'grid-cols-5' : 'grid-cols-4'}`}>
                         {mobileNavItems.map((item) => {
                             const isActive = item.href === '/' ? page.url === '/' : page.url.startsWith(item.href);
@@ -201,11 +215,11 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                     key={item.href}
                                     href={item.href}
                                     className={cn(
-                                        'flex flex-col items-center justify-center rounded-lg p-2 transition-colors duration-200',
+                                        'flex flex-col items-center justify-center rounded-lg px-2 py-3 transition-colors duration-200',
                                         isActive ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
                                     )}
                                 >
-                                    <Icon iconNode={item.icon ?? Home} className="mb-1 h-4 w-4" />
+                                    <Icon iconNode={item.icon ?? Home} className="mb-1 h-5 w-6" />
                                     <span className="text-center text-xs leading-none font-medium">{item.title}</span>
                                 </Link>
                             );
@@ -219,11 +233,11 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                         key="/profile"
                                         href="/profile"
                                         className={cn(
-                                            'flex flex-col items-center justify-center rounded-lg p-2 transition-colors duration-200',
+                                            'flex flex-col items-center justify-center rounded-lg px-2 py-3 transition-colors duration-200',
                                             isActive ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
                                         )}
                                     >
-                                        <User className="mb-1 h-4 w-4" />
+                                        <User className="mb-1 h-5 w-6" />
                                         <span className="text-center text-xs leading-none font-medium">Profil</span>
                                     </Link>
                                 );

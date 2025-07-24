@@ -70,13 +70,13 @@ export default function Home({ tools, latestProducts, myProductIds, allProducts 
             <FaqSection />
             <CtaSection />
 
-            <FakeNotifications products={allProducts} />
+            {typeof window !== 'undefined' && window.innerWidth >= 1024 && <FakeNotifications products={allProducts} />}
 
             <a
                 href="https://wa.me/+6285142505794?text=Halo%20Admin%20Aksademy,%20saya%20ingin%20bertanya%20tentang%20kelas%20online."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="fixed right-10 bottom-18 z-50 flex h-12 w-12 animate-bounce items-center justify-center rounded-full bg-green-100 shadow-lg transition duration-1000 hover:bg-green-200 md:bottom-6 md:h-16 md:w-16"
+                className="fixed right-4 bottom-18 z-50 flex h-12 w-12 animate-bounce items-center justify-center rounded-full bg-green-100 shadow-lg transition duration-1000 hover:bg-green-200 md:right-10 md:h-16 md:w-16 lg:bottom-6"
                 aria-label="Chat WhatsApp"
             >
                 <img src="/assets/images/icon-wa.svg" alt="WhatsApp" className="h-8 w-8 md:h-12 md:w-12" />
