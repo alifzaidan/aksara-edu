@@ -98,28 +98,34 @@ class AdminController extends Controller
 
     private function getParticipantData()
     {
-        $courseEnrollments = EnrollmentCourse::select(
-            DB::raw('DATE(created_at) as date'),
-            DB::raw('COUNT(*) as count'),
-            DB::raw('"course" as type')
-        )
-            ->whereDate('created_at', '>=', now()->subDays(30))
+        $courseEnrollments = EnrollmentCourse::join('invoices', 'enrollment_courses.invoice_id', '=', 'invoices.id')
+            ->select(
+                DB::raw('DATE(enrollment_courses.created_at) as date'),
+                DB::raw('COUNT(*) as count'),
+                DB::raw('"course" as type')
+            )
+            ->where('invoices.status', 'paid')
+            ->whereDate('enrollment_courses.created_at', '>=', now()->subDays(30))
             ->groupBy('date');
 
-        $bootcampEnrollments = EnrollmentBootcamp::select(
-            DB::raw('DATE(created_at) as date'),
-            DB::raw('COUNT(*) as count'),
-            DB::raw('"bootcamp" as type')
-        )
-            ->whereDate('created_at', '>=', now()->subDays(30))
+        $bootcampEnrollments = EnrollmentBootcamp::join('invoices', 'enrollment_bootcamps.invoice_id', '=', 'invoices.id')
+            ->select(
+                DB::raw('DATE(enrollment_bootcamps.created_at) as date'),
+                DB::raw('COUNT(*) as count'),
+                DB::raw('"bootcamp" as type')
+            )
+            ->where('invoices.status', 'paid')
+            ->whereDate('enrollment_bootcamps.created_at', '>=', now()->subDays(30))
             ->groupBy('date');
 
-        $webinarEnrollments = EnrollmentWebinar::select(
-            DB::raw('DATE(created_at) as date'),
-            DB::raw('COUNT(*) as count'),
-            DB::raw('"webinar" as type')
-        )
-            ->whereDate('created_at', '>=', now()->subDays(30))
+        $webinarEnrollments = EnrollmentWebinar::join('invoices', 'enrollment_webinars.invoice_id', '=', 'invoices.id')
+            ->select(
+                DB::raw('DATE(enrollment_webinars.created_at) as date'),
+                DB::raw('COUNT(*) as count'),
+                DB::raw('"webinar" as type')
+            )
+            ->where('invoices.status', 'paid')
+            ->whereDate('enrollment_webinars.created_at', '>=', now()->subDays(30))
             ->groupBy('date');
 
         return $courseEnrollments

@@ -238,16 +238,6 @@ export default function AdminDashboard({ stats }: StatsProps) {
                                 stats.popular_products.slice(0, 8).map((product) => (
                                     <div key={product.id} className="flex items-center justify-between">
                                         <div className="flex min-w-0 flex-1 items-center space-x-3">
-                                            {product.thumbnail && (
-                                                <img
-                                                    src={`/storage/${product.thumbnail}`}
-                                                    alt={product.title}
-                                                    className="h-10 w-10 flex-shrink-0 rounded-lg object-cover"
-                                                    onError={(e) => {
-                                                        e.currentTarget.src = '/assets/images/placeholder.png';
-                                                    }}
-                                                />
-                                            )}
                                             <div className="min-w-0 flex-1">
                                                 <p className="truncate text-sm font-medium">{product.title}</p>
                                                 <div className="mt-1 flex items-center space-x-2">
