@@ -18,7 +18,7 @@ export default function CtaSection() {
                             <User className="text-primary h-3 w-3" />
                         </div>
                     </div>
-                    <p className="mr-2 text-sm text-gray-200">Bergabung dengan 1000+ alumni</p>
+                    <p className="mr-2 hidden text-sm text-gray-200 sm:block">Bergabung dengan 1000+ alumni</p>
                 </div>
                 <h2 className="mx-auto my-4 max-w-2xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-3xl font-bold text-transparent italic sm:my-6 sm:text-5xl">
                     Daftar Kelas Sekarang

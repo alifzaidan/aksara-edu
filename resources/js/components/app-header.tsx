@@ -10,7 +10,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Menu, Search } from 'lucide-react';
+import { BookText, Home, Menu, MonitorPlay, Presentation, Search, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SearchCommand } from './search-command';
 
@@ -26,6 +26,29 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Webinar',
         href: '/webinar',
+    },
+];
+
+const mobileNavItems = [
+    {
+        title: 'Beranda',
+        href: '/',
+        icon: Home,
+    },
+    {
+        title: 'Kelas',
+        href: '/course',
+        icon: BookText,
+    },
+    {
+        title: 'Bootcamp',
+        href: '/bootcamp',
+        icon: Presentation,
+    },
+    {
+        title: 'Webinar',
+        href: '/webinar',
+        icon: MonitorPlay,
     },
 ];
 
@@ -56,8 +79,8 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
         <>
             <div className="border-sidebar-border/80 bg-background border-b">
                 <div className="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
-                    {/* Mobile Menu */}
-                    <div className="lg:hidden">
+                    {/* Mobile Menu : Sementara tidak digunakan karena diganti dengan dock */}
+                    <div className="hidden">
                         <Sheet>
                             <SheetTrigger asChild>
                                 <Button variant="ghost" size="icon" className="mr-2 h-[34px] w-[34px]">
@@ -163,6 +186,48 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 </Button>
                             </>
                         )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile Navigation Dock */}
+            <div className="fixed right-0 bottom-0 left-0 z-50 lg:hidden">
+                <div className="bg-background/95 border-border border-t shadow-lg backdrop-blur-md">
+                    <div className={`grid gap-1 px-2 py-2 ${auth.user ? 'grid-cols-5' : 'grid-cols-4'}`}>
+                        {mobileNavItems.map((item) => {
+                            const isActive = item.href === '/' ? page.url === '/' : page.url.startsWith(item.href);
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className={cn(
+                                        'flex flex-col items-center justify-center rounded-lg p-2 transition-colors duration-200',
+                                        isActive ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                                    )}
+                                >
+                                    <Icon iconNode={item.icon ?? Home} className="mb-1 h-4 w-4" />
+                                    <span className="text-center text-xs leading-none font-medium">{item.title}</span>
+                                </Link>
+                            );
+                        })}
+
+                        {auth.user &&
+                            (() => {
+                                const isActive = page.url.startsWith('/profile');
+                                return (
+                                    <Link
+                                        key="/profile"
+                                        href="/profile"
+                                        className={cn(
+                                            'flex flex-col items-center justify-center rounded-lg p-2 transition-colors duration-200',
+                                            isActive ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                                        )}
+                                    >
+                                        <User className="mb-1 h-4 w-4" />
+                                        <span className="text-center text-xs leading-none font-medium">Profil</span>
+                                    </Link>
+                                );
+                            })()}
                     </div>
                 </div>
             </div>
