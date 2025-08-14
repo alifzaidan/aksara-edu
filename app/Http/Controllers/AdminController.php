@@ -295,13 +295,30 @@ class AdminController extends Controller
             $query->whereIn('course_id', $mentorCourses);
         })->where('status', 'paid')->distinct()->pluck('user_id');
 
-
         $averageRating = CourseRating::whereIn('course_id', $mentorCourses)
             ->avg('rating');
 
+        $totalCourseRevenue = Invoice::whereHas('courseItems', fn($q) => $q->whereIn('course_id', $mentorCourses))
+            ->where('status', 'paid')->sum('nett_amount');
+
+        $mentorCommissionRate = $user->commission / 100;
+        $mentorRevenue = $totalCourseRevenue * $mentorCommissionRate;
+
+        $monthlyRevenue = Invoice::whereHas('courseItems', fn($q) => $q->whereIn('course_id', $mentorCourses))
+            ->where('status', 'paid')
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->sum('nett_amount') * $mentorCommissionRate;
+
+        $todayRevenue = Invoice::whereHas('courseItems', fn($q) => $q->whereIn('course_id', $mentorCourses))
+            ->where('status', 'paid')
+            ->whereDate('created_at', today())
+            ->sum('nett_amount') * $mentorCommissionRate;
+
         return [
-            'revenue_this_month' => Invoice::whereHas('courseItems', fn($q) => $q->whereIn('course_id', $mentorCourses))
-                ->where('status', 'paid')->whereMonth('created_at', now()->month)->sum('amount'),
+            'total_revenue' => $mentorRevenue,
+            'revenue_this_month' => $monthlyRevenue,
+            'revenue_today' => $todayRevenue,
             'total_students' => $studentIds->count(),
             'active_courses' => $mentorCourses->count(),
             'average_rating' => $averageRating ? round($averageRating, 1) : 0,
@@ -310,7 +327,22 @@ class AdminController extends Controller
                 ->whereHas('invoice', function ($query) {
                     $query->where('status', 'paid');
                 })
-                ->with(['invoice.user:id,name', 'course:id,title'])->latest()->take(3)->get(),
+                ->with(['invoice.user:id,name', 'course:id,title'])
+                ->latest()
+                ->take(3)
+                ->get()
+                ->map(function ($enrollment) {
+                    return [
+                        'id' => $enrollment->id,
+                        'user' => [
+                            'name' => $enrollment->invoice->user->name ?? 'Unknown User'
+                        ],
+                        'course' => [
+                            'title' => $enrollment->course->title ?? 'Unknown Course'
+                        ],
+                        'created_at' => $enrollment->created_at
+                    ];
+                }),
         ];
     }
 }

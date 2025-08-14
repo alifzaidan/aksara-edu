@@ -1,4 +1,4 @@
-import { BookOpen, DollarSign, Star, Users } from 'lucide-react';
+import { BookOpen, DollarSign, Star, TrendingUp, Users } from 'lucide-react';
 
 interface Enrollment {
     id: number | string;
@@ -8,11 +8,14 @@ interface Enrollment {
     course: {
         title: string;
     };
+    created_at: string;
 }
 
 interface MentorStatsProps {
     stats: {
+        total_revenue: number;
         revenue_this_month: number;
+        revenue_today: number;
         total_students: number;
         active_courses: number;
         average_rating: number | string | null;
@@ -29,12 +32,25 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function MentorDashboard({ stats }: MentorStatsProps) {
-    const mentorStatsCards = [
+    const topStatsCards = [
+        {
+            title: 'Total Pendapatan',
+            value: formatCurrency(stats.total_revenue),
+            icon: <DollarSign className="text-muted-foreground size-5" />,
+        },
         {
             title: 'Pendapatan Bulan Ini',
             value: formatCurrency(stats.revenue_this_month),
             icon: <DollarSign className="text-muted-foreground size-5" />,
         },
+        {
+            title: 'Pendapatan Hari Ini',
+            value: formatCurrency(stats.revenue_today),
+            icon: <TrendingUp className="text-muted-foreground size-5" />,
+        },
+    ];
+
+    const mentorStatsCards = [
         {
             title: 'Total Siswa Anda',
             value: stats.total_students.toLocaleString('id-ID'),
@@ -56,7 +72,18 @@ export default function MentorDashboard({ stats }: MentorStatsProps) {
 
     return (
         <>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {topStatsCards.map((card, index) => (
+                    <div key={index} className="border-border bg-card text-card-foreground rounded-xl border p-6 shadow-sm">
+                        <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <h3 className="text-sm font-medium tracking-tight">{card.title}</h3>
+                            {card.icon}
+                        </div>
+                        <div>
+                            <div className="text-2xl font-bold">{card.value}</div>
+                        </div>
+                    </div>
+                ))}
                 {mentorStatsCards.map((card, index) => (
                     <div key={index} className="border-border bg-card text-card-foreground rounded-xl border p-6 shadow-sm">
                         <div className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -88,6 +115,13 @@ export default function MentorDashboard({ stats }: MentorStatsProps) {
                                 <div className="ml-4 flex-1 space-y-1">
                                     <p className="text-sm leading-none font-medium">{enrollment.user.name}</p>
                                     <p className="text-muted-foreground text-sm">Mendaftar di kelas "{enrollment.course.title}"</p>
+                                </div>
+                                <div className="text-muted-foreground text-sm">
+                                    {new Date(enrollment.created_at).toLocaleDateString('id-ID', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    })}
                                 </div>
                             </div>
                         ))
