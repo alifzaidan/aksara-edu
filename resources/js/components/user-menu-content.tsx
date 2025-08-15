@@ -1,8 +1,8 @@
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
-import { type User } from '@/types';
-import { Link, router } from '@inertiajs/react';
+import { SharedData, type User } from '@/types';
+import { Link, router, usePage } from '@inertiajs/react';
 import { LogOut, Settings, UserIcon } from 'lucide-react';
 
 interface UserMenuContentProps {
@@ -17,6 +17,9 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
         router.flushAll();
     };
 
+    const { auth } = usePage<SharedData>().props;
+    const isUser = auth.role.includes('user');
+
     return (
         <>
             <DropdownMenuLabel className="p-0 font-normal">
@@ -26,12 +29,14 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-                <DropdownMenuItem asChild>
-                    <Link className="block w-full hover:cursor-pointer" href={route('profile.index')} as="button" prefetch onClick={cleanup}>
-                        <UserIcon className="mr-2" />
-                        Profil
-                    </Link>
-                </DropdownMenuItem>
+                {isUser && (
+                    <DropdownMenuItem asChild>
+                        <Link className="block w-full hover:cursor-pointer" href={route('profile.index')} as="button" prefetch onClick={cleanup}>
+                            <UserIcon className="mr-2" />
+                            Profil
+                        </Link>
+                    </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                     <Link className="block w-full hover:cursor-pointer" href={route('profile.edit')} as="button" prefetch onClick={cleanup}>
                         <Settings className="mr-2" />

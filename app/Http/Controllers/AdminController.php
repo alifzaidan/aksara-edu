@@ -245,14 +245,14 @@ class AdminController extends Controller
             ->whereYear('enrollment_webinars.created_at', now()->year)->count();
 
         return [
-            'total_revenue' => Invoice::where('status', 'paid')->sum('amount'),
+            'total_revenue' => Invoice::where('status', 'paid')->sum('nett_amount'),
             'revenue_this_month' => Invoice::where('status', 'paid')
                 ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
-                ->sum('amount'),
+                ->sum('nett_amount'),
             'revenue_today' => Invoice::where('status', 'paid')
                 ->whereDate('created_at', today())
-                ->sum('amount'),
+                ->sum('nett_amount'),
             'total_participants' => $totalParticipantsPaid,
             'participants_this_month' => $participantsThisMonthPaid,
             'total_users' => User::role('user')->count(),
@@ -277,7 +277,7 @@ class AdminController extends Controller
     {
         $earnings = AffiliateEarning::where('affiliate_user_id', $user->id);
         return [
-            'total_commission' => $earnings->sum('amount'),
+            'total_commission' => $earnings->sum('nett_amount'),
             'total_referrals' => User::where('referred_by_user_id', $user->id)->count(),
             'conversion_rate' => 0, // Data klik belum ada, jadi kita set 0
             'total_clicks' => 0, // Data klik belum ada, jadi kita set 0

@@ -50,8 +50,8 @@ export default function Password() {
     };
 
     const { auth } = usePage<SharedData>().props;
-    const isAdmin = auth.role.includes('admin');
-    const Layout = isAdmin ? AdminLayout : UserLayout;
+    const isUser = auth.role.includes('user');
+    const Layout = isUser ? UserLayout : AdminLayout;
 
     return (
         <Layout breadcrumbs={breadcrumbs}>
