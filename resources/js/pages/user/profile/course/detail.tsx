@@ -336,7 +336,6 @@ export default function DetailMyCourse({
 
                                     <Button
                                         className="mt-2 w-full"
-                                        disabled={courseInvoiceStatus !== 'paid'}
                                         onClick={() => router.get(route('learn.course.detail', { course: courseData.slug }))}
                                     >
                                         Lanjutkan Belajar
