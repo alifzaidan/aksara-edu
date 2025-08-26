@@ -295,7 +295,7 @@ export default function DetailMyCourse({
 
                                 <div className="flex items-center justify-center gap-4">
                                     <span className={`font-semibold ${courseInvoiceStatus === 'paid' ? 'text-green-600' : 'text-red-600'}`}>
-                                        {courseInvoiceStatus !== 'paid' ? (
+                                        {courseInvoiceStatus !== 'paid' && (
                                             <>
                                                 <span className="block text-red-600">⚠️ Status Pembayaran: {courseInvoiceStatus.toUpperCase()}</span>
                                                 <span className="block text-sm text-gray-600">
@@ -304,8 +304,6 @@ export default function DetailMyCourse({
                                                         : 'Selesaikan pembayaran untuk mengakses kelas.'}
                                                 </span>
                                             </>
-                                        ) : (
-                                            <span className="text-green-600">✅ Pembayaran Berhasil</span>
                                         )}
                                     </span>
                                 </div>
