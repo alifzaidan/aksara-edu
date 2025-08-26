@@ -13,14 +13,19 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Dashboard() {
-    const { auth, stats } = usePage<SharedData>().props;
+    const { auth, stats, filters } = usePage<SharedData>().props;
     const user = auth.user;
     const role = auth.role[0];
 
     const renderDashboardContent = () => {
         switch (role) {
             case 'admin':
-                return <AdminDashboard stats={stats as Parameters<typeof AdminDashboard>[0]['stats']} />;
+                return (
+                    <AdminDashboard
+                        stats={stats as Parameters<typeof AdminDashboard>[0]['stats']}
+                        filters={filters as Parameters<typeof AdminDashboard>[0]['filters']}
+                    />
+                );
             case 'mentor':
                 return <MentorDashboard stats={stats as Parameters<typeof MentorDashboard>[0]['stats']} />;
             case 'affiliate':
