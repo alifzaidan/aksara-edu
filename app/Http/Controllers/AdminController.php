@@ -348,21 +348,81 @@ class AdminController extends Controller
         ];
     }
 
-    private function getAffiliateStats(User $user)
+    private function getAffiliateStats(User $user, $startDate = null, $endDate = null)
     {
-        $earnings = AffiliateEarning::where('affiliate_user_id', $user->id);
+        // Query dasar untuk earnings affiliate
+        $earningsQuery = AffiliateEarning::where('affiliate_user_id', $user->id);
+
+        // Total commission (dengan filter jika ada)
+        $totalCommissionQuery = clone $earningsQuery;
+        if ($startDate && $endDate) {
+            $totalCommissionQuery->whereBetween('created_at', [
+                Carbon::parse($startDate)->startOfDay(),
+                Carbon::parse($endDate)->endOfDay()
+            ]);
+        }
+        $totalCommission = $totalCommissionQuery->sum('amount');
+
+        // Commission bulan ini
+        $monthlyCommission = (clone $earningsQuery)
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->sum('amount');
+
+        // Commission bulan lalu
+        $lastMonthCommission = (clone $earningsQuery)
+            ->whereMonth('created_at', now()->subMonth()->month)
+            ->whereYear('created_at', now()->subMonth()->year)
+            ->sum('amount');
+
+        // Commission hari ini
+        $todayCommission = (clone $earningsQuery)
+            ->whereDate('created_at', today())
+            ->sum('amount');
+
+        // Commission kemarin
+        $yesterdayCommission = (clone $earningsQuery)
+            ->whereDate('created_at', now()->subDay())
+            ->sum('amount');
+
+        // Hitung persentase perubahan harian
+        $dailyCommissionChange = 0;
+        if ($yesterdayCommission > 0) {
+            $dailyCommissionChange = (($todayCommission - $yesterdayCommission) / $yesterdayCommission) * 100;
+        } elseif ($todayCommission > 0) {
+            $dailyCommissionChange = 100;
+        }
+
+        // Hitung persentase perubahan bulanan
+        $monthlyCommissionChange = 0;
+        if ($lastMonthCommission > 0) {
+            $monthlyCommissionChange = (($monthlyCommission - $lastMonthCommission) / $lastMonthCommission) * 100;
+        } elseif ($monthlyCommission > 0) {
+            $monthlyCommissionChange = 100;
+        }
+
         return [
-            'total_commission' => $earnings->sum('nett_amount'),
+            'total_commission' => $totalCommission,
+            'commission_this_month' => $monthlyCommission,
+            'commission_today' => $todayCommission,
+            'commission_yesterday' => $yesterdayCommission,
+            'commission_last_month' => $lastMonthCommission,
+            'daily_commission_change' => round($dailyCommissionChange, 1),
+            'monthly_commission_change' => round($monthlyCommissionChange, 1),
             'total_referrals' => User::where('referred_by_user_id', $user->id)->count(),
             'conversion_rate' => 0, // Data klik belum ada, jadi kita set 0
             'total_clicks' => 0, // Data klik belum ada, jadi kita set 0
             'recent_referrals' => AffiliateEarning::where('affiliate_user_id', $user->id)
                 ->with(['invoice.user', 'invoice.courseItems.course', 'invoice.bootcampItems.bootcamp', 'invoice.webinarItems.webinar'])
                 ->latest()->take(3)->get(),
+            'filtered_date_range' => $startDate && $endDate ? [
+                'start' => Carbon::parse($startDate)->format('d M Y'),
+                'end' => Carbon::parse($endDate)->format('d M Y')
+            ] : null,
         ];
     }
 
-    private function getMentorStats(User $user)
+    private function getMentorStats(User $user, $startDate = null, $endDate = null)
     {
         $mentorCourses = Course::where('user_id', $user->id)->pluck('id');
 
@@ -373,27 +433,61 @@ class AdminController extends Controller
         $averageRating = CourseRating::whereIn('course_id', $mentorCourses)
             ->avg('rating');
 
-        $totalCourseRevenue = Invoice::whereHas('courseItems', fn($q) => $q->whereIn('course_id', $mentorCourses))
-            ->where('status', 'paid')->sum('nett_amount');
-
         $mentorCommissionRate = $user->commission / 100;
+
+        $revenueQuery = Invoice::whereHas('courseItems', fn($q) => $q->whereIn('course_id', $mentorCourses))
+            ->where('status', 'paid');
+
+        $totalRevenueQuery = clone $revenueQuery;
+        if ($startDate && $endDate) {
+            $totalRevenueQuery->whereBetween('created_at', [
+                Carbon::parse($startDate)->startOfDay(),
+                Carbon::parse($endDate)->endOfDay()
+            ]);
+        }
+        $totalCourseRevenue = $totalRevenueQuery->sum('nett_amount');
         $mentorRevenue = $totalCourseRevenue * $mentorCommissionRate;
 
-        $monthlyRevenue = Invoice::whereHas('courseItems', fn($q) => $q->whereIn('course_id', $mentorCourses))
-            ->where('status', 'paid')
+        $monthlyRevenue = (clone $revenueQuery)
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->sum('nett_amount') * $mentorCommissionRate;
 
-        $todayRevenue = Invoice::whereHas('courseItems', fn($q) => $q->whereIn('course_id', $mentorCourses))
-            ->where('status', 'paid')
+        $lastMonthRevenue = (clone $revenueQuery)
+            ->whereMonth('created_at', now()->subMonth()->month)
+            ->whereYear('created_at', now()->subMonth()->year)
+            ->sum('nett_amount') * $mentorCommissionRate;
+
+        $todayRevenue = (clone $revenueQuery)
             ->whereDate('created_at', today())
             ->sum('nett_amount') * $mentorCommissionRate;
+
+        $yesterdayRevenue = (clone $revenueQuery)
+            ->whereDate('created_at', now()->subDay())
+            ->sum('nett_amount') * $mentorCommissionRate;
+
+        $dailyRevenueChange = 0;
+        if ($yesterdayRevenue > 0) {
+            $dailyRevenueChange = (($todayRevenue - $yesterdayRevenue) / $yesterdayRevenue) * 100;
+        } elseif ($todayRevenue > 0) {
+            $dailyRevenueChange = 100;
+        }
+
+        $monthlyRevenueChange = 0;
+        if ($lastMonthRevenue > 0) {
+            $monthlyRevenueChange = (($monthlyRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100;
+        } elseif ($monthlyRevenue > 0) {
+            $monthlyRevenueChange = 100;
+        }
 
         return [
             'total_revenue' => $mentorRevenue,
             'revenue_this_month' => $monthlyRevenue,
             'revenue_today' => $todayRevenue,
+            'revenue_yesterday' => $yesterdayRevenue,
+            'revenue_last_month' => $lastMonthRevenue,
+            'daily_revenue_change' => round($dailyRevenueChange, 1),
+            'monthly_revenue_change' => round($monthlyRevenueChange, 1),
             'total_students' => $studentIds->count(),
             'active_courses' => $mentorCourses->count(),
             'average_rating' => $averageRating ? round($averageRating, 1) : 0,
@@ -418,6 +512,10 @@ class AdminController extends Controller
                         'created_at' => $enrollment->created_at
                     ];
                 }),
+            'filtered_date_range' => $startDate && $endDate ? [
+                'start' => Carbon::parse($startDate)->format('d M Y'),
+                'end' => Carbon::parse($endDate)->format('d M Y')
+            ] : null,
         ];
     }
 }

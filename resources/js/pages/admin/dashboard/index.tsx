@@ -27,9 +27,20 @@ export default function Dashboard() {
                     />
                 );
             case 'mentor':
-                return <MentorDashboard stats={stats as Parameters<typeof MentorDashboard>[0]['stats']} />;
+                return (
+                    <MentorDashboard
+                        stats={stats as Parameters<typeof MentorDashboard>[0]['stats']}
+                        filters={filters as Parameters<typeof AdminDashboard>[0]['filters']}
+                    />
+                );
             case 'affiliate':
-                return <AffiliateDashboard user={user} stats={stats as Parameters<typeof AffiliateDashboard>[0]['stats']} />;
+                return (
+                    <AffiliateDashboard
+                        user={user}
+                        stats={stats as Parameters<typeof AffiliateDashboard>[0]['stats']}
+                        filters={filters as Parameters<typeof AdminDashboard>[0]['filters']}
+                    />
+                );
             default:
                 return <p>Anda tidak memiliki akses ke dashboard ini.</p>;
         }

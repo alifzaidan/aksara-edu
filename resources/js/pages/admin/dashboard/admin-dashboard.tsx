@@ -10,6 +10,7 @@ import { id } from 'date-fns/locale';
 import {
     BookOpen,
     CalendarIcon,
+    ChartNoAxesGantt,
     ChevronDownIcon,
     DollarSign,
     Euro,
@@ -101,11 +102,15 @@ const formatPercentage = (percentage: number): string => {
 };
 
 const getPercentageColor = (percentage: number): string => {
-    return percentage >= 0 ? 'text-green-600' : 'text-red-600';
+    if (percentage > 0) return 'text-green-600';
+    if (percentage < 0) return 'text-red-600';
+    return 'text-gray-600';
 };
 
 const getPercentageIcon = (percentage: number) => {
-    return percentage >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />;
+    if (percentage > 0) return <TrendingUp className="h-3 w-3" />;
+    if (percentage < 0) return <TrendingDown className="h-3 w-3" />;
+    return <ChartNoAxesGantt className="h-3 w-3" />;
 };
 
 const formatCurrency = (amount: number | string) => {
