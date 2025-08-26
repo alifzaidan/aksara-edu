@@ -221,7 +221,7 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                     {type === 'file' && (
                         <div>
                             <Label htmlFor="attachment" className="mb-1 block text-sm font-medium">
-                                Upload File (Format PDF)
+                                Upload File (Format PDF, DOCX, XLSX, PPTX)
                             </Label>
                             <Input
                                 id="attachment"
