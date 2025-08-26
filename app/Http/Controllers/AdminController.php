@@ -15,30 +15,38 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Models\User;
 use App\Models\Webinar;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = User::find(Auth::user()->id);
         $role =  $user->hasRole('admin') ? 'admin' : ($user->hasRole('affiliate') ? 'affiliate' : 'mentor');
         $stats = [];
 
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
         switch ($role) {
             case 'admin':
-                $stats = $this->getAdminStats();
+                $stats = $this->getAdminStats($startDate, $endDate);
                 break;
             case 'affiliate':
-                $stats = $this->getAffiliateStats($user);
+                $stats = $this->getAffiliateStats($user, $startDate, $endDate);
                 break;
             case 'mentor':
-                $stats = $this->getMentorStats($user);
+                $stats = $this->getMentorStats($user, $startDate, $endDate);
                 break;
         }
 
         return Inertia::render('admin/dashboard/index', [
             'stats' => $stats,
+            'filters' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ],
         ]);
     }
 
@@ -47,7 +55,7 @@ class AdminController extends Controller
         return Invoice::where('status', 'paid')
             ->select(
                 DB::raw('DATE(created_at) as date'),
-                DB::raw('SUM(amount) as total_amount'),
+                DB::raw('SUM(nett_amount) as total_amount'),
                 DB::raw('COUNT(*) as transaction_count')
             )
             ->whereDate('created_at', '>=', now()->subDays(30))
@@ -62,7 +70,7 @@ class AdminController extends Controller
             ->select(
                 DB::raw('YEAR(created_at) as year'),
                 DB::raw('MONTH(created_at) as month'),
-                DB::raw('SUM(amount) as total_amount'),
+                DB::raw('SUM(nett_amount) as total_amount'),
                 DB::raw('COUNT(*) as transaction_count')
             )
             ->whereDate('created_at', '>=', now()->subMonths(12))
@@ -222,14 +230,46 @@ class AdminController extends Controller
         return $allProducts;
     }
 
-    private function getAdminStats()
+    private function getAdminStats($startDate = null, $endDate = null)
     {
-        $totalParticipantsPaid = EnrollmentCourse::join('invoices', 'enrollment_courses.invoice_id', '=', 'invoices.id')
-            ->where('invoices.status', 'paid')->count() +
-            EnrollmentBootcamp::join('invoices', 'enrollment_bootcamps.invoice_id', '=', 'invoices.id')
-            ->where('invoices.status', 'paid')->count() +
-            EnrollmentWebinar::join('invoices', 'enrollment_webinars.invoice_id', '=', 'invoices.id')
-            ->where('invoices.status', 'paid')->count();
+        $invoiceQuery = Invoice::where('status', 'paid');
+
+        if ($startDate && $endDate) {
+            $invoiceQuery->whereBetween('created_at', [
+                Carbon::parse($startDate)->startOfDay(),
+                Carbon::parse($endDate)->endOfDay()
+            ]);
+        }
+
+        $totalRevenue = (clone $invoiceQuery)->sum('nett_amount');
+
+        $enrollmentCourseQuery = EnrollmentCourse::join('invoices', 'enrollment_courses.invoice_id', '=', 'invoices.id')
+            ->where('invoices.status', 'paid');
+
+        $enrollmentBootcampQuery = EnrollmentBootcamp::join('invoices', 'enrollment_bootcamps.invoice_id', '=', 'invoices.id')
+            ->where('invoices.status', 'paid');
+
+        $enrollmentWebinarQuery = EnrollmentWebinar::join('invoices', 'enrollment_webinars.invoice_id', '=', 'invoices.id')
+            ->where('invoices.status', 'paid');
+
+        if ($startDate && $endDate) {
+            $enrollmentCourseQuery->whereBetween('enrollment_courses.created_at', [
+                Carbon::parse($startDate)->startOfDay(),
+                Carbon::parse($endDate)->endOfDay()
+            ]);
+            $enrollmentBootcampQuery->whereBetween('enrollment_bootcamps.created_at', [
+                Carbon::parse($startDate)->startOfDay(),
+                Carbon::parse($endDate)->endOfDay()
+            ]);
+            $enrollmentWebinarQuery->whereBetween('enrollment_webinars.created_at', [
+                Carbon::parse($startDate)->startOfDay(),
+                Carbon::parse($endDate)->endOfDay()
+            ]);
+        }
+
+        $totalParticipantsPaid = $enrollmentCourseQuery->count() +
+            $enrollmentBootcampQuery->count() +
+            $enrollmentWebinarQuery->count();
 
         $participantsThisMonthPaid = EnrollmentCourse::join('invoices', 'enrollment_courses.invoice_id', '=', 'invoices.id')
             ->where('invoices.status', 'paid')
@@ -244,15 +284,46 @@ class AdminController extends Controller
             ->whereMonth('enrollment_webinars.created_at', now()->month)
             ->whereYear('enrollment_webinars.created_at', now()->year)->count();
 
+        $revenueToday = Invoice::where('status', 'paid')
+            ->whereDate('created_at', today())
+            ->sum('nett_amount');
+
+        $revenueYesterday = Invoice::where('status', 'paid')
+            ->whereDate('created_at', now()->subDay())
+            ->sum('nett_amount');
+
+        $dailyRevenueChange = 0;
+        if ($revenueYesterday > 0) {
+            $dailyRevenueChange = (($revenueToday - $revenueYesterday) / $revenueYesterday) * 100;
+        } elseif ($revenueToday > 0) {
+            $dailyRevenueChange = 100;
+        }
+
+        $revenueThisMonth = Invoice::where('status', 'paid')
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->sum('nett_amount');
+
+        $revenueLastMonth = Invoice::where('status', 'paid')
+            ->whereMonth('created_at', now()->subMonth()->month)
+            ->whereYear('created_at', now()->subMonth()->year)
+            ->sum('nett_amount');
+
+        $monthlyRevenueChange = 0;
+        if ($revenueLastMonth > 0) {
+            $monthlyRevenueChange = (($revenueThisMonth - $revenueLastMonth) / $revenueLastMonth) * 100;
+        } elseif ($revenueThisMonth > 0) {
+            $monthlyRevenueChange = 100;
+        }
+
         return [
-            'total_revenue' => Invoice::where('status', 'paid')->sum('nett_amount'),
-            'revenue_this_month' => Invoice::where('status', 'paid')
-                ->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)
-                ->sum('nett_amount'),
-            'revenue_today' => Invoice::where('status', 'paid')
-                ->whereDate('created_at', today())
-                ->sum('nett_amount'),
+            'total_revenue' => $totalRevenue,
+            'revenue_this_month' => $revenueThisMonth,
+            'revenue_today' => $revenueToday,
+            'revenue_yesterday' => $revenueYesterday,
+            'revenue_last_month' => $revenueLastMonth,
+            'daily_revenue_change' => round($dailyRevenueChange, 1),
+            'monthly_revenue_change' => round($monthlyRevenueChange, 1),
             'total_participants' => $totalParticipantsPaid,
             'participants_this_month' => $participantsThisMonthPaid,
             'total_users' => User::role('user')->count(),
@@ -270,6 +341,10 @@ class AdminController extends Controller
             'monthly_revenue_data' => $this->getMonthlyRevenueData(),
             'participant_data' => $this->getParticipantData(),
             'popular_products' => $this->getPopularProducts(),
+            'filtered_date_range' => $startDate && $endDate ? [
+                'start' => Carbon::parse($startDate)->format('d M Y'),
+                'end' => Carbon::parse($endDate)->format('d M Y')
+            ] : null,
         ];
     }
 
