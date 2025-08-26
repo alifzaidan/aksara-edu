@@ -295,8 +295,18 @@ export default function DetailMyCourse({
 
                                 <div className="flex items-center justify-center gap-4">
                                     <span className={`font-semibold ${courseInvoiceStatus === 'paid' ? 'text-green-600' : 'text-red-600'}`}>
-                                        {courseInvoiceStatus !== 'paid' ? 'Selesaikan Pembayaran Untuk Mengakses Kelas!!' : ''}
-                                        {courseInvoiceStatus}
+                                        {courseInvoiceStatus !== 'paid' ? (
+                                            <>
+                                                <span className="block text-red-600">⚠️ Status Pembayaran: {courseInvoiceStatus.toUpperCase()}</span>
+                                                <span className="block text-sm text-gray-600">
+                                                    {courseInvoiceStatus === 'failed'
+                                                        ? 'Pembayaran gagal atau dibatalkan. Silakan lakukan pembelian ulang.'
+                                                        : 'Selesaikan pembayaran untuk mengakses kelas.'}
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <span className="text-green-600">✅ Pembayaran Berhasil</span>
+                                        )}
                                     </span>
                                 </div>
                             </div>
@@ -384,6 +394,7 @@ export default function DetailMyCourse({
 
                                     <Button
                                         className="mt-2 w-full"
+                                        disabled={courseInvoiceStatus !== 'paid'}
                                         onClick={() => router.get(route('learn.course.detail', { course: courseData.slug }))}
                                     >
                                         {isCompleted ? 'Lihat Kembali Materi' : 'Lanjutkan Belajar'}

@@ -314,6 +314,75 @@ class InvoiceController extends Controller
 
             $this->expireInvoiceInXendit($invoice->invoice_code);
 
+            if ($invoice->courseItems->count() > 0) {
+                EnrollmentCourse::where('invoice_id', $invoice->id)->delete();
+            }
+
+            if ($invoice->bootcampItems->count() > 0) {
+                EnrollmentBootcamp::where('invoice_id', $invoice->id)->delete();
+            }
+
+            if ($invoice->webinarItems->count() > 0) {
+                EnrollmentWebinar::where('invoice_id', $invoice->id)->delete();
+            }
+
+            $userId = $invoice->user_id;
+
+            foreach ($invoice->courseItems as $courseItem) {
+                $certificate = Certificate::where('course_id', $courseItem->course_id)->first();
+                if ($certificate) {
+                    // Cek apakah user masih memiliki enrollment lain untuk course yang sama yang statusnya paid
+                    $hasOtherPaidEnrollment = EnrollmentCourse::where('course_id', $courseItem->course_id)
+                        ->whereHas('invoice', function ($query) use ($userId) {
+                            $query->where('user_id', $userId)
+                                ->where('status', 'paid');
+                        })
+                        ->exists();
+
+                    if (!$hasOtherPaidEnrollment) {
+                        CertificateParticipant::where('certificate_id', $certificate->id)
+                            ->where('user_id', $userId)
+                            ->delete();
+                    }
+                }
+            }
+
+            foreach ($invoice->bootcampItems as $bootcampItem) {
+                $certificate = Certificate::where('bootcamp_id', $bootcampItem->bootcamp_id)->first();
+                if ($certificate) {
+                    $hasOtherPaidEnrollment = EnrollmentBootcamp::where('bootcamp_id', $bootcampItem->bootcamp_id)
+                        ->whereHas('invoice', function ($query) use ($userId) {
+                            $query->where('user_id', $userId)
+                                ->where('status', 'paid');
+                        })
+                        ->exists();
+
+                    if (!$hasOtherPaidEnrollment) {
+                        CertificateParticipant::where('certificate_id', $certificate->id)
+                            ->where('user_id', $userId)
+                            ->delete();
+                    }
+                }
+            }
+
+            foreach ($invoice->webinarItems as $webinarItem) {
+                $certificate = Certificate::where('webinar_id', $webinarItem->webinar_id)->first();
+                if ($certificate) {
+                    $hasOtherPaidEnrollment = EnrollmentWebinar::where('webinar_id', $webinarItem->webinar_id)
+                        ->whereHas('invoice', function ($query) use ($userId) {
+                            $query->where('user_id', $userId)
+                                ->where('status', 'paid');
+                        })
+                        ->exists();
+
+                    if (!$hasOtherPaidEnrollment) {
+                        CertificateParticipant::where('certificate_id', $certificate->id)
+                            ->where('user_id', $userId)
+                            ->delete();
+                    }
+                }
+            }
+
             // Update status di database
             $invoice->update(['status' => 'failed']);
 

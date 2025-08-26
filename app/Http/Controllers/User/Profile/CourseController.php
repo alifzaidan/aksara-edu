@@ -40,6 +40,8 @@ class CourseController extends Controller
             ->whereHas('courseItems.course', function ($query) use ($slug) {
                 $query->where('slug', $slug);
             })
+            ->orderByRaw("CASE WHEN status = 'paid' THEN 0 ELSE 1 END")
+            ->orderBy('created_at', 'desc')
             ->first();
 
         $courseRating = null;
@@ -81,6 +83,7 @@ class CourseController extends Controller
                 ->whereHas('courseItems.course', function ($query) use ($slug) {
                     $query->where('slug', $slug);
                 })
+                ->orderBy('created_at', 'desc')
                 ->first();
 
             if (!$course) {
@@ -138,6 +141,7 @@ class CourseController extends Controller
                 ->whereHas('courseItems.course', function ($query) use ($slug) {
                     $query->where('slug', $slug);
                 })
+                ->orderBy('created_at', 'desc')
                 ->first();
 
             if (!$course) {
