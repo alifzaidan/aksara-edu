@@ -23,7 +23,7 @@ export default function RegisterSection({ bootcamp }: { bootcamp: Bootcamp }) {
     const start = new Date(bootcamp.start_date);
     const end = new Date(bootcamp.end_date);
     const diffMs = end.getTime() - start.getTime();
-    const diffDays = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
+    const diffDays = Math.ceil(diffMs / (24 * 60 * 60 * 1000)) + 1;
     const totalWeeks = Math.ceil(diffDays / 7);
 
     const isLoggedIn = !!auth.user;
