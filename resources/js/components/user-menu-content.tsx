@@ -3,7 +3,7 @@ import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { SharedData, type User } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
-import { LogOut, Settings, UserIcon } from 'lucide-react';
+import { AppWindow, LogOut, Settings, UserIcon } from 'lucide-react';
 
 interface UserMenuContentProps {
     user: User;
@@ -19,6 +19,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
 
     const { auth } = usePage<SharedData>().props;
     const isUser = auth.role.includes('user');
+    const isAdmin = auth.role.includes('admin');
 
     return (
         <>
@@ -34,6 +35,14 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
                         <Link className="block w-full hover:cursor-pointer" href={route('profile.index')} as="button" prefetch onClick={cleanup}>
                             <UserIcon className="mr-2" />
                             Profil
+                        </Link>
+                    </DropdownMenuItem>
+                )}
+                {isAdmin && (
+                    <DropdownMenuItem asChild>
+                        <Link className="block w-full hover:cursor-pointer" href={route('home')} as="button" prefetch onClick={cleanup}>
+                            <AppWindow className="mr-2" />
+                            User Page
                         </Link>
                     </DropdownMenuItem>
                 )}
