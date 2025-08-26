@@ -296,6 +296,7 @@ export default function DetailMyCourse({
                                 <div className="flex items-center justify-center gap-4">
                                     <span className={`font-semibold ${courseInvoiceStatus === 'paid' ? 'text-green-600' : 'text-red-600'}`}>
                                         {courseInvoiceStatus !== 'paid' ? 'Selesaikan Pembayaran Untuk Mengakses Kelas!!' : ''}
+                                        {courseInvoiceStatus}
                                     </span>
                                 </div>
                             </div>
