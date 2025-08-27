@@ -15,7 +15,40 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::role('user')->latest()->get();
+        $users = User::role('user')
+            ->withCount([
+                'courseEnrollments as courses_count' => function ($query) {
+                    $query->whereHas('invoice', function ($q) {
+                        $q->where('status', 'paid');
+                    });
+                },
+                'bootcampEnrollments as bootcamps_count' => function ($query) {
+                    $query->whereHas('invoice', function ($q) {
+                        $q->where('status', 'paid');
+                    });
+                },
+                'webinarEnrollments as webinars_count' => function ($query) {
+                    $query->whereHas('invoice', function ($q) {
+                        $q->where('status', 'paid');
+                    });
+                }
+            ])
+            ->latest()
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone_number' => $user->phone_number,
+                    'email_verified_at' => $user->email_verified_at,
+                    'created_at' => $user->created_at,
+                    'courses_count' => $user->courses_count,
+                    'bootcamps_count' => $user->bootcamps_count,
+                    'webinars_count' => $user->webinars_count,
+                    'total_enrollments' => $user->courses_count + $user->bootcamps_count + $user->webinars_count,
+                ];
+            });
 
         return Inertia::render('admin/users/index', ['users' => $users]);
     }

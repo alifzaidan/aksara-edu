@@ -2,6 +2,7 @@
 
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import DeleteConfirmDialog from '@/components/delete-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
@@ -10,7 +11,7 @@ import { Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Edit, Folder, Trash } from 'lucide-react';
+import { BookText, Edit, Folder, MonitorPlay, Presentation, Trash } from 'lucide-react';
 import { useState } from 'react';
 import EditUser from './edit';
 
@@ -21,6 +22,10 @@ export type User = {
     phone_number: string;
     email_verified_at: string | null;
     created_at: string;
+    courses_count: number;
+    bootcamps_count: number;
+    webinars_count: number;
+    total_enrollments: number;
 };
 
 export const columns: ColumnDef<User>[] = [
@@ -66,6 +71,35 @@ export const columns: ColumnDef<User>[] = [
     {
         accessorKey: 'phone_number',
         header: ({ column }) => <DataTableColumnHeader column={column} title="No. Telepon" />,
+    },
+    {
+        accessorKey: 'total_enrollments',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Program Diikuti" />,
+        cell: ({ row }) => {
+            const user = row.original;
+            return (
+                <div className="flex flex-col gap-1">
+                    {user.courses_count > 0 && (
+                        <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                            <BookText className="h-3 w-3" />
+                            Course : {user.courses_count}
+                        </Badge>
+                    )}
+                    {user.bootcamps_count > 0 && (
+                        <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                            <Presentation className="h-3 w-3" />
+                            Bootcamp : {user.bootcamps_count}
+                        </Badge>
+                    )}
+                    {user.webinars_count > 0 && (
+                        <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                            <MonitorPlay className="h-3 w-3" />
+                            Webinar : {user.webinars_count}
+                        </Badge>
+                    )}
+                </div>
+            );
+        },
     },
     {
         accessorKey: 'email_verified_at',
