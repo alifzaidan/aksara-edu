@@ -10,7 +10,7 @@ import { Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Edit, Trash } from 'lucide-react';
+import { Edit, Folder, Trash } from 'lucide-react';
 import { useState } from 'react';
 import EditUser from './edit';
 
@@ -52,7 +52,11 @@ export const columns: ColumnDef<User>[] = [
         accessorKey: 'name',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Nama Pengguna" />,
         cell: ({ row }) => {
-            return <div className="font-medium">{row.original.name}</div>;
+            return (
+                <Link href={route('users.show', row.original.id)} className="text-primary font-medium hover:underline">
+                    {row.original.name}
+                </Link>
+            );
         },
     },
     {
@@ -114,6 +118,19 @@ export const columns: ColumnDef<User>[] = [
                         </Tooltip>
                     )}
 
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" asChild>
+                                <Link href={`/admin/users/${user.id}`} className="text-blue-600 hover:text-blue-800">
+                                    <Folder className="size-4" />
+                                </Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Detail Pengguna</p>
+                        </TooltipContent>
+                    </Tooltip>
+
                     <Dialog open={open} onOpenChange={setOpen}>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -131,10 +148,6 @@ export const columns: ColumnDef<User>[] = [
                             <EditUser user={user} setOpen={setOpen} />
                         </DialogContent>
                     </Dialog>
-
-                    <Link href={`/admin/users/${user.id}`} className="text-blue-600 hover:text-blue-800">
-                        Lihat Detail
-                    </Link>
 
                     <Tooltip>
                         <TooltipTrigger asChild>
