@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 interface CreateToolProps {
     setOpen: (open: boolean) => void;
@@ -16,6 +17,7 @@ export default function CreateTool({ setOpen }: CreateToolProps) {
     const descInput = useRef<HTMLTextAreaElement>(null);
     const iconInput = useRef<HTMLInputElement>(null);
     const [preview, setPreview] = useState<string | null>(null);
+    const [thumbnailError, setThumbnailError] = useState(false);
 
     const {
         data,
@@ -118,9 +120,26 @@ export default function CreateTool({ setOpen }: CreateToolProps) {
                         type="file"
                         name="icon"
                         ref={iconInput}
-                        accept="image/*"
+                        accept="image/png, image/jpeg, image/jpg"
+                        className={thumbnailError ? 'border-red-500 focus-visible:ring-red-500' : ''}
                         onChange={(e) => {
                             const file = e.target.files?.[0] ?? null;
+                            if (file) {
+                                const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+                                if (!validTypes.includes(file.type)) {
+                                    setThumbnailError(true);
+                                    setData('icon', null);
+                                    toast('Gambar harus png, jpg, atau jpeg');
+                                    return;
+                                }
+                                if (file.size > 2 * 1024 * 1024) {
+                                    setThumbnailError(true);
+                                    setData('icon', null);
+                                    toast('Ukuran file maksimal 2MB!');
+                                    return;
+                                }
+                            }
+                            setThumbnailError(false);
                             setData('icon', file);
                             if (file) {
                                 const reader = new FileReader();

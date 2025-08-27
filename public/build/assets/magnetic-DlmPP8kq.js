@@ -1,4 +1,12 @@
+<<<<<<< HEAD:public/build/assets/magnetic-DlmPP8kq.js
 import{c as R}from"./createLucideIcon-BFhA-L2e.js";import{r as a,j as X}from"./app-x179jI4R.js";import{u as x}from"./use-motion-value-BRNsB7AH.js";import{u as L}from"./use-spring-C266zOO4.js";import{m as Y}from"./proxy-BElDoQdn.js";/**
+=======
+<<<<<<<< HEAD:public/build/assets/magnetic-DZMSt2wp.js
+import{c as R}from"./createLucideIcon-DrWuAsqV.js";import{r as a,j as X}from"./app-BKrwHhRF.js";import{u as x}from"./use-motion-value-JuF63PZq.js";import{u as L}from"./use-spring-lAASpqjH.js";import{m as Y}from"./proxy-BcBdW4V3.js";/**
+========
+import{c as R}from"./createLucideIcon-CyfqCVAG.js";import{r as a,j as X}from"./app-CZcK1jZp.js";import{u as x}from"./use-motion-value-CCStt33q.js";import{u as L}from"./use-spring-DghZRtRT.js";import{m as Y}from"./proxy-CczhE1bF.js";/**
+>>>>>>>> f04b44246414cdc09b0f839480573ef2dda00d2c:public/build/assets/magnetic-CZppPaje.js
+>>>>>>> 4db3e80bc1d39d681a9e7f877d4d66a3ec12dac6:public/build/assets/magnetic-DZMSt2wp.js
  * @license lucide-react v0.475.0 - ISC
  *
  * This source code is licensed under the ISC license.

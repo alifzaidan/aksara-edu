@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { CertificateDesign } from './columns';
 
 interface EditDesignProps {
@@ -20,6 +21,8 @@ export default function EditDesign({ design, setOpen }: EditDesignProps) {
     // State untuk preview gambar baru
     const [preview1, setPreview1] = useState<string | null>(null);
     const [preview2, setPreview2] = useState<string | null>(null);
+    const [thumbnailError, setThumbnailError] = useState(false);
+    const [thumbnailError2, setThumbnailError2] = useState(false);
 
     const { data, setData, post, processing, reset, errors, clearErrors } = useForm({
         name: design.name,
@@ -66,6 +69,22 @@ export default function EditDesign({ design, setOpen }: EditDesignProps) {
     // Handler untuk gambar 1
     const handleImage1Change = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] ?? null;
+        if (file) {
+            const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+            if (!validTypes.includes(file.type)) {
+                setThumbnailError(true);
+                setData('image_1', null);
+                toast('Gambar harus png, jpg, atau jpeg');
+                return;
+            }
+            if (file.size > 2 * 1024 * 1024) {
+                setThumbnailError(true);
+                setData('image_1', null);
+                toast('Ukuran file maksimal 2MB!');
+                return;
+            }
+        }
+        setThumbnailError(false);
         setData('image_1', file);
         if (file) {
             const reader = new FileReader();
@@ -79,6 +98,22 @@ export default function EditDesign({ design, setOpen }: EditDesignProps) {
     // Handler untuk gambar 2
     const handleImage2Change = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] ?? null;
+        if (file) {
+            const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+            if (!validTypes.includes(file.type)) {
+                setThumbnailError2(true);
+                setData('image_2', null);
+                toast('Gambar harus png, jpg, atau jpeg');
+                return;
+            }
+            if (file.size > 2 * 1024 * 1024) {
+                setThumbnailError2(true);
+                setData('image_2', null);
+                toast('Ukuran file maksimal 2MB!');
+                return;
+            }
+        }
+        setThumbnailError2(false);
         setData('image_2', file);
         if (file) {
             const reader = new FileReader();
@@ -142,7 +177,8 @@ export default function EditDesign({ design, setOpen }: EditDesignProps) {
                             type="file"
                             name="image_1"
                             ref={image1Input}
-                            accept="image/jpeg,image/png,image/jpg"
+                            accept="image/png, image/jpeg, image/jpg"
+                            className={thumbnailError ? 'border-red-500 focus-visible:ring-red-500' : ''}
                             onChange={handleImage1Change}
                         />
                         <p className="text-muted-foreground mt-1 text-xs">
@@ -182,7 +218,8 @@ export default function EditDesign({ design, setOpen }: EditDesignProps) {
                             type="file"
                             name="image_2"
                             ref={image2Input}
-                            accept="image/jpeg,image/png,image/jpg"
+                            accept="image/png, image/jpeg, image/jpg"
+                            className={thumbnailError2 ? 'border-red-500 focus-visible:ring-red-500' : ''}
                             onChange={handleImage2Change}
                         />
                         <p className="text-muted-foreground mt-1 text-xs">

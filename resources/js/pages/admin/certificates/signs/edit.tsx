@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { CertificateSign } from './columns';
 
 interface EditSignProps {
@@ -17,6 +18,7 @@ export default function EditSign({ sign, setOpen }: EditSignProps) {
     const imageInput = useRef<HTMLInputElement>(null);
 
     const [preview, setPreview] = useState<string | null>(null);
+    const [thumbnailError, setThumbnailError] = useState(false);
 
     const { data, setData, post, processing, reset, errors, clearErrors } = useForm({
         name: sign.name,
@@ -59,6 +61,22 @@ export default function EditSign({ sign, setOpen }: EditSignProps) {
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] ?? null;
+        if (file) {
+            const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+            if (!validTypes.includes(file.type)) {
+                setThumbnailError(true);
+                setData('image', null);
+                toast('Gambar harus png, jpg, atau jpeg');
+                return;
+            }
+            if (file.size > 2 * 1024 * 1024) {
+                setThumbnailError(true);
+                setData('image', null);
+                toast('Ukuran file maksimal 2MB!');
+                return;
+            }
+        }
+        setThumbnailError(false);
         setData('image', file);
         if (file) {
             const reader = new FileReader();
@@ -135,7 +153,8 @@ export default function EditSign({ sign, setOpen }: EditSignProps) {
                             type="file"
                             name="image"
                             ref={imageInput}
-                            accept="image/jpeg,image/png,image/jpg"
+                            accept="image/png, image/jpeg, image/jpg"
+                            className={thumbnailError ? 'border-red-500 focus-visible:ring-red-500' : ''}
                             onChange={handleImageChange}
                         />
                         <p className="text-muted-foreground mt-1 text-xs">

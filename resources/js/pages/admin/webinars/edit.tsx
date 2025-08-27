@@ -301,14 +301,22 @@ export default function EditWebinar({
                                         <Input
                                             type="file"
                                             name={field.name}
-                                            accept="image/*"
+                                            accept="image/png, image/jpeg, image/jpg"
                                             className={thumbnailError ? 'border-red-500 focus-visible:ring-red-500' : ''}
                                             onChange={(e) => {
                                                 const file = e.target.files?.[0] ?? null;
-                                                if (file && file.size > 2 * 1024 * 1024) {
-                                                    setThumbnailError(true);
-                                                    toast('Ukuran file maksimal 2MB!');
-                                                    return;
+                                                if (file) {
+                                                    const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+                                                    if (!validTypes.includes(file.type)) {
+                                                        setThumbnailError(true);
+                                                        toast('Gambar harus png, jpg, atau jpeg');
+                                                        return;
+                                                    }
+                                                    if (file.size > 2 * 1024 * 1024) {
+                                                        setThumbnailError(true);
+                                                        toast('Ukuran file maksimal 2MB!');
+                                                        return;
+                                                    }
                                                 }
                                                 setThumbnailError(false);
                                                 field.onChange(file);

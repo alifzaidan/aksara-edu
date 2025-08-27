@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import CourseLayout from '@/layouts/course-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { AlertTriangle, CheckCircle, ExternalLink, FileDown, HelpCircle, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, ChevronLeft, ChevronRight, ExternalLink, FileDown, HelpCircle, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Lesson {
@@ -543,40 +543,154 @@ export default function CourseDetail({ course }: { course: Course }) {
                 </div>
 
                 <div className="bg-card mb-4 rounded-lg border p-4">{currentLessonContent}</div>
-                {selectedLesson && selectedLesson.type !== 'quiz' && (
-                    <div className="flex flex-col items-end gap-2">
-                        {!moduleData.find((m) => m.lessons.find((l) => l.id === selectedLesson.id))?.lessons.find((l) => l.id === selectedLesson.id)
-                            ?.isCompleted ? (
-                            <Button onClick={() => handleLessonComplete(selectedLesson.id)} size="lg">
-                                <CheckCircle className="mr-2 h-4 w-4" />
-                                Selesaikan Materi
-                            </Button>
-                        ) : (
-                            <div className="flex items-center gap-2 rounded-lg bg-green-50 px-4 py-2 text-green-600">
-                                <CheckCircle className="h-5 w-5" />
-                                <span className="font-medium">Materi Sudah Selesai</span>
-                            </div>
-                        )}
+                <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                let prevLesson: Lesson | null = null;
+                                let found = false;
+                                for (const module of moduleData) {
+                                    for (let i = 0; i < module.lessons.length; i++) {
+                                        if (module.lessons[i].id === selectedLesson?.id) {
+                                            if (i > 0) {
+                                                prevLesson = module.lessons[i - 1];
+                                            } else {
+                                                const moduleIndex = moduleData.indexOf(module);
+                                                if (moduleIndex > 0) {
+                                                    const prevModule = moduleData[moduleIndex - 1];
+                                                    prevLesson = prevModule.lessons[prevModule.lessons.length - 1];
+                                                }
+                                            }
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (found) break;
+                                }
+                                if (prevLesson) {
+                                    setSelectedLesson(prevLesson);
+                                }
+                            }}
+                            disabled={!selectedLesson || (moduleData[0]?.lessons[0]?.id === selectedLesson?.id)}
+                            className="gap-2 disabled:cursor-not-allowed"
+                        >
+                            <ChevronLeft className="h-4 w-4" /> Sebelumnya
+                        </Button>
+                        
                     </div>
-                )}
-
-                {/* Status untuk quiz */}
-                {selectedLesson && selectedLesson.type === 'quiz' && (
-                    <div className="flex justify-end">
-                        {moduleData.find((m) => m.lessons.find((l) => l.id === selectedLesson.id))?.lessons.find((l) => l.id === selectedLesson.id)
+                    {/* Status untuk quiz atau materi */}
+                    {selectedLesson && selectedLesson.type === 'quiz' ? (
+                        moduleData.find((m) => m.lessons.find((l) => l.id === selectedLesson.id))?.lessons.find((l) => l.id === selectedLesson.id)
                             ?.isCompleted ? (
-                            <div className="flex items-center gap-2 rounded-lg bg-green-50 px-4 py-2 text-green-600">
-                                <CheckCircle className="h-5 w-5" />
-                                <span className="font-medium">Quiz Sudah Lulus</span>
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 rounded-lg bg-green-50 px-4 py-2 text-green-600">
+                                    <CheckCircle className="h-5 w-5" />
+                                    <span className="font-medium">Quiz Sudah Lulus</span>
+                                </div>
+                                {/* Tombol Next jika quiz sudah selesai dan bukan di lesson terakhir */}
+                                {(() => {
+                                    if (!selectedLesson) return null;
+                                    if (moduleData.length === 0) return null;
+                                    const lastModule = moduleData[moduleData.length - 1];
+                                    if (lastModule.lessons.length === 0) return null;
+                                    const isLast = selectedLesson.id === lastModule.lessons[lastModule.lessons.length - 1].id;
+                                    if (isLast) return null;
+                                    // Cari next lesson
+                                    let nextLesson: Lesson | null = null;
+                                    let found = false;
+                                    for (const module of moduleData) {
+                                        for (let i = 0; i < module.lessons.length; i++) {
+                                            if (module.lessons[i].id === selectedLesson.id) {
+                                                if (i < module.lessons.length - 1) {
+                                                    nextLesson = module.lessons[i + 1];
+                                                } else {
+                                                    const moduleIndex = moduleData.indexOf(module);
+                                                    if (moduleIndex < moduleData.length - 1) {
+                                                        nextLesson = moduleData[moduleIndex + 1].lessons[0];
+                                                    }
+                                                }
+                                                found = true;
+                                                break;
+                                            }
+                                        }
+                                        if (found) break;
+                                    }
+                                    if (!nextLesson) return null;
+                                    return (
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setSelectedLesson(nextLesson)}
+                                            className="gap-2"
+                                        >
+                                            Selanjutnya <ChevronRight className="h-4 w-4" />
+                                        </Button>
+                                    );
+                                })()}
                             </div>
                         ) : (
                             <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2 text-blue-600">
                                 <HelpCircle className="h-5 w-5" />
                                 <span className="font-medium">Selesaikan Quiz untuk Melanjutkan</span>
                             </div>
-                        )}
-                    </div>
-                )}
+                        )
+                    ) : selectedLesson && selectedLesson.type !== 'quiz' && (
+                        !moduleData.find((m) => m.lessons.find((l) => l.id === selectedLesson.id))?.lessons.find((l) => l.id === selectedLesson.id)
+                            ?.isCompleted ? (
+                            <Button onClick={() => handleLessonComplete(selectedLesson.id)} size="lg">
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                Selesaikan Materi
+                            </Button>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 rounded-lg bg-green-50 px-4 py-2 text-green-600">
+                                    <CheckCircle className="h-5 w-5" />
+                                    <span className="font-medium">Materi Sudah Selesai</span>
+                                </div>
+                                {/* Tombol Next jika materi sudah selesai dan bukan di lesson terakhir */}
+                                {(() => {
+                                    if (!selectedLesson) return null;
+                                    if (moduleData.length === 0) return null;
+                                    const lastModule = moduleData[moduleData.length - 1];
+                                    if (lastModule.lessons.length === 0) return null;
+                                    const isLast = selectedLesson.id === lastModule.lessons[lastModule.lessons.length - 1].id;
+                                    if (isLast) return null;
+                                    // Cari next lesson
+                                    let nextLesson: Lesson | null = null;
+                                    let found = false;
+                                    for (const module of moduleData) {
+                                        for (let i = 0; i < module.lessons.length; i++) {
+                                            if (module.lessons[i].id === selectedLesson.id) {
+                                                if (i < module.lessons.length - 1) {
+                                                    nextLesson = module.lessons[i + 1];
+                                                } else {
+                                                    const moduleIndex = moduleData.indexOf(module);
+                                                    if (moduleIndex < moduleData.length - 1) {
+                                                        nextLesson = moduleData[moduleIndex + 1].lessons[0];
+                                                    }
+                                                }
+                                                found = true;
+                                                break;
+                                            }
+                                        }
+                                        if (found) break;
+                                    }
+                                    if (!nextLesson) return null;
+                                    return (
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setSelectedLesson(nextLesson)}
+                                            className="gap-2"
+                                        >
+                                            Selanjutnya <ChevronRight className="h-4 w-4" />
+                                        </Button>
+                                    );
+                                })()}
+                            </div>
+                        )
+                    )}
+                </div>
+
                 {isAllLessonsCompleted && isLastLesson && (
                     <div className="mt-4 flex flex-row items-center justify-center gap-4">
                         <div className="rounded-lg bg-green-100 px-4 py-2 text-center font-medium text-green-700">
