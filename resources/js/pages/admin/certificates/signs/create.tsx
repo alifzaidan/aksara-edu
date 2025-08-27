@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 interface CreateSignProps {
     setOpen: (open: boolean) => void;
@@ -14,6 +15,7 @@ export default function CreateSign({ setOpen }: CreateSignProps) {
     const nameInput = useRef<HTMLInputElement>(null);
     const imageInput = useRef<HTMLInputElement>(null);
     const [preview, setPreview] = useState<string | null>(null);
+    const [thumbnailError, setThumbnailError] = useState(false);
 
     const { data, setData, post, processing, reset, errors, clearErrors } = useForm({
         name: '',
@@ -90,9 +92,26 @@ export default function CreateSign({ setOpen }: CreateSignProps) {
                             type="file"
                             name="image"
                             ref={imageInput}
-                            accept="image/*"
+                            accept="image/png, image/jpeg, image/jpg"
+                            className={thumbnailError ? 'border-red-500 focus-visible:ring-red-500' : ''}
                             onChange={(e) => {
                                 const file = e.target.files?.[0] ?? null;
+                                if (file) {
+                                    const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+                                    if (!validTypes.includes(file.type)) {
+                                        setThumbnailError(true);
+                                        setData('image', null);
+                                        toast('Gambar harus png, jpg, atau jpeg');
+                                        return;
+                                    }
+                                    if (file.size > 2 * 1024 * 1024) {
+                                        setThumbnailError(true);
+                                        setData('image', null);
+                                        toast('Ukuran file maksimal 2MB!');
+                                        return;
+                                    }
+                                }
+                                setThumbnailError(false);
                                 setData('image', file);
                                 if (file) {
                                     const reader = new FileReader();
