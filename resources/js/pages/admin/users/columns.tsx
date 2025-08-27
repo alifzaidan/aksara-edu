@@ -71,31 +71,42 @@ export const columns: ColumnDef<User>[] = [
     {
         accessorKey: 'phone_number',
         header: ({ column }) => <DataTableColumnHeader column={column} title="No. Telepon" />,
+        cell: ({ row }) => {
+            return <p>{row.original.phone_number || '-'}</p>;
+        },
     },
     {
         accessorKey: 'total_enrollments',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Program Diikuti" />,
         cell: ({ row }) => {
             const user = row.original;
+            const hasAnyEnrollment = user.courses_count > 0 || user.bootcamps_count > 0 || user.webinars_count > 0;
+
             return (
-                <div className="flex flex-col gap-1">
-                    {user.courses_count > 0 && (
-                        <Badge variant="secondary" className="flex items-center gap-1 text-xs">
-                            <BookText className="h-3 w-3" />
-                            Course : {user.courses_count}
-                        </Badge>
-                    )}
-                    {user.bootcamps_count > 0 && (
-                        <Badge variant="secondary" className="flex items-center gap-1 text-xs">
-                            <Presentation className="h-3 w-3" />
-                            Bootcamp : {user.bootcamps_count}
-                        </Badge>
-                    )}
-                    {user.webinars_count > 0 && (
-                        <Badge variant="secondary" className="flex items-center gap-1 text-xs">
-                            <MonitorPlay className="h-3 w-3" />
-                            Webinar : {user.webinars_count}
-                        </Badge>
+                <div>
+                    {hasAnyEnrollment ? (
+                        <div className="flex flex-col gap-1">
+                            {user.courses_count > 0 && (
+                                <Badge className="flex items-center gap-1 bg-blue-100 text-xs text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                                    <BookText className="h-3 w-3" />
+                                    Course: {user.courses_count}
+                                </Badge>
+                            )}
+                            {user.bootcamps_count > 0 && (
+                                <Badge className="flex items-center gap-1 bg-green-100 text-xs text-green-800 dark:bg-green-900 dark:text-green-300">
+                                    <Presentation className="h-3 w-3" />
+                                    Bootcamp: {user.bootcamps_count}
+                                </Badge>
+                            )}
+                            {user.webinars_count > 0 && (
+                                <Badge className="flex items-center gap-1 bg-purple-100 text-xs text-purple-800 dark:bg-purple-900 dark:text-purple-300">
+                                    <MonitorPlay className="h-3 w-3" />
+                                    Webinar: {user.webinars_count}
+                                </Badge>
+                            )}
+                        </div>
+                    ) : (
+                        '-'
                     )}
                 </div>
             );
