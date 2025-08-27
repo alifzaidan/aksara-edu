@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -131,6 +131,10 @@ export const columns: ColumnDef<User>[] = [
                             <EditUser user={user} setOpen={setOpen} />
                         </DialogContent>
                     </Dialog>
+
+                    <Link href={`/admin/users/${user.id}`} className="text-blue-600 hover:text-blue-800">
+                        Lihat Detail
+                    </Link>
 
                     <Tooltip>
                         <TooltipTrigger asChild>
