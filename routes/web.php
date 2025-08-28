@@ -13,6 +13,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseDetailController;
 use App\Http\Controllers\EnrollmentProgressController;
 use App\Http\Controllers\CourseRatingController;
+use App\Http\Controllers\DiscountCodeController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\MentorController;
@@ -150,6 +151,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/course-ratings/{rating}/approve', [CourseRatingController::class, 'approve'])->name('course-ratings.approve');
         Route::post('/course-ratings/{rating}/reject', [CourseRatingController::class, 'reject'])->name('course-ratings.reject');
 
+        Route::resource('discount-codes', DiscountCodeController::class);
         Route::get('transactions', [InvoiceController::class, 'index'])->name('transactions.index');
     });
 

@@ -31,6 +31,16 @@ class Invoice extends Model
         return $this->hasMany(EnrollmentWebinar::class);
     }
 
+    public function discountUsage()
+    {
+        return $this->hasOne(DiscountUsage::class);
+    }
+
+    public function discountCode()
+    {
+        return $this->hasOneThrough(DiscountCode::class, DiscountUsage::class, 'invoice_id', 'id', 'id', 'discount_code_id');
+    }
+
     protected function casts(): array
     {
         return [

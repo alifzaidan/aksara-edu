@@ -3,7 +3,20 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookText, Dock, DollarSign, LayoutGrid, List, MonitorPlay, Presentation, SquareMousePointer, User, UserCheck, Users } from 'lucide-react';
+import {
+    Banknote,
+    BookText,
+    Dock,
+    DollarSign,
+    LayoutGrid,
+    List,
+    MonitorPlay,
+    Presentation,
+    SquareMousePointer,
+    User,
+    UserCheck,
+    Users,
+} from 'lucide-react';
 
 const allNavItems: (NavItem & { roles: string[] })[] = [
     {
@@ -64,6 +77,12 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         title: 'Sertifikat',
         href: '/admin/certificates',
         icon: Dock,
+        roles: ['admin'],
+    },
+    {
+        title: 'Kode Diskon',
+        href: '/admin/discount-codes',
+        icon: Banknote,
         roles: ['admin'],
     },
     {
