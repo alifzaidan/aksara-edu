@@ -250,65 +250,91 @@ class DiscountCodeController extends Controller
     // API untuk validasi kode diskon
     public function validate(Request $request)
     {
-        $id = Auth::id();
+        try {
+            $request->validate([
+                'code' => 'required|string',
+                'amount' => 'required|integer|min:1',
+                'product_type' => 'required|string|in:course,bootcamp,webinar',
+                'product_id' => 'required|string',
+            ]);
 
-        $request->validate([
-            'code' => 'required|string',
-            'amount' => 'required|integer|min:1',
-            'product_type' => 'required|string|in:course,bootcamp,webinar',
-            'product_id' => 'required|string',
-        ]);
+            $discountCode = DiscountCode::where('code', $request->code)->first();
 
-        $discountCode = DiscountCode::where('code', $request->code)->first();
+            if (!$discountCode) {
+                return response()->json([
+                    'valid' => false,
+                    'message' => 'Kode diskon tidak ditemukan'
+                ]);
+            }
 
-        if (!$discountCode) {
+            $userId = Auth::id();
+            if (!$userId) {
+                return response()->json([
+                    'valid' => false,
+                    'message' => 'Anda harus login terlebih dahulu'
+                ]);
+            }
+
+            if (!$discountCode->isValid()) {
+                return response()->json([
+                    'valid' => false,
+                    'message' => 'Kode diskon tidak valid atau sudah kedaluwarsa'
+                ]);
+            }
+
+            if (!$discountCode->canBeUsed()) {
+                return response()->json([
+                    'valid' => false,
+                    'message' => 'Kode diskon sudah mencapai batas penggunaan'
+                ]);
+            }
+
+            if (!$discountCode->canBeUsedByUser($userId)) {
+                return response()->json([
+                    'valid' => false,
+                    'message' => 'Anda sudah mencapai batas penggunaan kode diskon ini'
+                ]);
+            }
+
+            if (!$discountCode->isApplicableToProduct($request->product_type, $request->product_id)) {
+                return response()->json([
+                    'valid' => false,
+                    'message' => 'Kode diskon tidak berlaku untuk produk ini'
+                ]);
+            }
+
+            $discountAmount = $discountCode->calculateDiscount($request->amount);
+
+            if ($discountAmount === 0) {
+                $minAmount = $discountCode->minimum_amount ? 'Rp ' . number_format($discountCode->minimum_amount, 0, ',', '.') : 'tidak ada';
+                return response()->json([
+                    'valid' => false,
+                    'message' => "Minimum pembelian untuk kode diskon ini adalah {$minAmount}"
+                ]);
+            }
+
+            return response()->json([
+                'valid' => true,
+                'discount_amount' => $discountAmount,
+                'final_amount' => $request->amount - $discountAmount,
+                'discount_code' => [
+                    'id' => $discountCode->id,
+                    'code' => $discountCode->code,
+                    'name' => $discountCode->name,
+                    'type' => $discountCode->type,
+                    'formatted_value' => $discountCode->formatted_value,
+                ]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'valid' => false,
-                'message' => 'Kode diskon tidak ditemukan'
-            ]);
-        }
-
-        if (!$discountCode->isValid()) {
+                'message' => 'Data tidak valid: ' . implode(', ', $e->validator->errors()->all())
+            ], 422);
+        } catch (\Exception $e) {
             return response()->json([
                 'valid' => false,
-                'message' => 'Kode diskon tidak valid atau sudah kedaluwarsa'
-            ]);
+                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
+            ], 500);
         }
-
-        if (!$discountCode->canBeUsedByUser($id)) {
-            return response()->json([
-                'valid' => false,
-                'message' => 'Anda sudah mencapai batas penggunaan kode diskon ini'
-            ]);
-        }
-
-        if (!$discountCode->isApplicableToProduct($request->product_type, $request->product_id)) {
-            return response()->json([
-                'valid' => false,
-                'message' => 'Kode diskon tidak berlaku untuk produk ini'
-            ]);
-        }
-
-        $discountAmount = $discountCode->calculateDiscount($request->amount);
-
-        if ($discountAmount === 0) {
-            return response()->json([
-                'valid' => false,
-                'message' => 'Minimum pembelian untuk kode diskon ini adalah Rp ' . number_format($discountCode->minimum_amount, 0, ',', '.')
-            ]);
-        }
-
-        return response()->json([
-            'valid' => true,
-            'discount_amount' => $discountAmount,
-            'final_amount' => $request->amount - $discountAmount,
-            'discount_code' => [
-                'id' => $discountCode->id,
-                'code' => $discountCode->code,
-                'name' => $discountCode->name,
-                'type' => $discountCode->type,
-                'formatted_value' => $discountCode->formatted_value,
-            ]
-        ]);
     }
 }

@@ -7,6 +7,7 @@ use App\Models\Bootcamp;
 use App\Models\Certificate;
 use App\Models\CertificateParticipant;
 use App\Models\Course;
+use App\Models\DiscountUsage;
 use App\Models\EnrollmentBootcamp;
 use App\Models\EnrollmentCourse;
 use App\Models\EnrollmentWebinar;
@@ -64,11 +65,8 @@ class InvoiceController extends Controller
             $transactionFee = $request->input('transaction_fee', 5000);
             $totalAmount = $request->input('total_amount');
 
-            if ($discountAmount > 0) {
-                $fees = array(['type' => 'Diskon', 'value' => -$discountAmount], ['type' => 'Biaya Transaksi', 'value' => 5000]);
-            } else {
-                $fees = array(['type' => 'Biaya Transaksi', 'value' => 5000]);
-            }
+            $discountCodeId = $request->input('discount_code_id');
+            $discountCodeAmount = $request->input('discount_code_amount', 0);
 
             if ($type === 'course') {
                 $item = Course::findOrFail($itemId);
@@ -86,19 +84,59 @@ class InvoiceController extends Controller
                 throw new \Exception('Tipe pembelian tidak valid');
             }
 
-            // Validasi harga untuk keamanan
-            if ($nettAmount != $item->price) {
-                throw new \Exception('Harga tidak sesuai');
+            $discountCode = null;
+            if ($discountCodeId) {
+                $discountCode = \App\Models\DiscountCode::find($discountCodeId);
+
+                if (!$discountCode) {
+                    throw new \Exception('Kode diskon tidak ditemukan');
+                }
+
+                if (!$discountCode->isValid()) {
+                    throw new \Exception('Kode diskon tidak valid atau sudah kedaluwarsa');
+                }
+
+                if (!$discountCode->canBeUsed()) {
+                    throw new \Exception('Kode diskon sudah mencapai batas penggunaan');
+                }
+
+                if (!$discountCode->canBeUsedByUser($userId)) {
+                    throw new \Exception('Anda sudah mencapai batas penggunaan kode diskon ini');
+                }
+
+                if (!$discountCode->isApplicableToProduct($type, $itemId)) {
+                    throw new \Exception('Kode diskon tidak berlaku untuk produk ini');
+                }
+
+                $calculatedDiscount = $discountCode->calculateDiscount($item->price);
+                if ($discountCodeAmount !== $calculatedDiscount) {
+                    throw new \Exception('Jumlah diskon tidak sesuai');
+                }
+            }
+
+            $expectedNettAmount = $item->price - $discountCodeAmount;
+            $expectedTotal = $expectedNettAmount > 0 ? $expectedNettAmount + $transactionFee : 0;
+
+            if ($nettAmount != $expectedNettAmount) {
+                throw new \Exception('Harga nett tidak sesuai');
             }
 
             if ($discountAmount > 0 && $discountAmount != $item->strikethrough_price) {
                 throw new \Exception('Discount amount tidak sesuai');
             }
 
-            $calculatedTotal = $item->price > 0 ? $item->price + $transactionFee : 0;
-            if ($totalAmount != $calculatedTotal) {
+            if ($totalAmount != $expectedTotal) {
                 throw new \Exception('Total amount tidak sesuai');
             }
+
+            $fees = [];
+            if ($discountAmount > 0) {
+                $fees[] = ['type' => 'Diskon', 'value' => -$discountAmount];
+            }
+            if ($discountCodeAmount > 0) {
+                $fees[] = ['type' => 'Diskon Promo (' . $discountCode->code . ')', 'value' => -$discountCodeAmount];
+            }
+            $fees[] = ['type' => 'Biaya Transaksi', 'value' => $transactionFee];
 
             $items = [
                 [
@@ -112,7 +150,7 @@ class InvoiceController extends Controller
                 'table' => 'invoices',
                 'field' => 'invoice_code',
                 'length' => 11,
-                'reset_on_prefix_change'  => true,
+                'reset_on_prefix_change' => true,
                 'prefix' => 'AKS-' . date('y')
             ]);
 
@@ -127,7 +165,17 @@ class InvoiceController extends Controller
                 'expires_at' => $expiresAt,
             ]);
 
-            // Request create invoice ke Xendit
+            if ($discountCode) {
+                DiscountUsage::create([
+                    'discount_code_id' => $discountCode->id,
+                    'user_id' => $userId,
+                    'invoice_id' => $invoice->id,
+                    'discount_amount' => $discountCodeAmount,
+                ]);
+
+                $discountCode->incrementUsage();
+            }
+
             $xendit_create_invoice = new CreateInvoiceRequest([
                 'external_id' => $invoice_code,
                 'customer' => [
@@ -155,7 +203,6 @@ class InvoiceController extends Controller
                 'invoice_url' => $xendit_invoice['invoice_url'],
             ]);
 
-            // Simpan detail invoice ke tabel enrollment yang sesuai
             $enrollmentTable::create([
                 'invoice_id' => $invoice->id,
                 $enrollmentField => $item->id,
@@ -170,6 +217,7 @@ class InvoiceController extends Controller
 
             return response()->json([
                 'url' => $xendit_invoice['invoice_url'],
+                'invoice' => $invoice
             ], 200);
         } catch (\Throwable $th) {
             DB::rollBack();
@@ -307,12 +355,21 @@ class InvoiceController extends Controller
     {
         DB::beginTransaction();
         try {
-            $invoice = Invoice::where('id', $id)
+            $invoice = Invoice::with('discountUsage.discountCode')
+                ->where('id', $id)
                 ->where('user_id', Auth::id())
                 ->where('status', 'pending')
                 ->firstOrFail();
 
             $this->expireInvoiceInXendit($invoice->invoice_code);
+
+            if ($invoice->discountUsage) {
+                $discountCode = $invoice->discountUsage->discountCode;
+                if ($discountCode) {
+                    $discountCode->decrement('used_count');
+                }
+                $invoice->discountUsage->delete();
+            }
 
             if ($invoice->courseItems->count() > 0) {
                 EnrollmentCourse::where('invoice_id', $invoice->id)->delete();
@@ -331,7 +388,6 @@ class InvoiceController extends Controller
             foreach ($invoice->courseItems as $courseItem) {
                 $certificate = Certificate::where('course_id', $courseItem->course_id)->first();
                 if ($certificate) {
-                    // Cek apakah user masih memiliki enrollment lain untuk course yang sama yang statusnya paid
                     $hasOtherPaidEnrollment = EnrollmentCourse::where('course_id', $courseItem->course_id)
                         ->whereHas('invoice', function ($query) use ($userId) {
                             $query->where('user_id', $userId)
@@ -383,7 +439,6 @@ class InvoiceController extends Controller
                 }
             }
 
-            // Update status di database
             $invoice->update(['status' => 'failed']);
 
             DB::commit();
@@ -599,6 +654,8 @@ class InvoiceController extends Controller
         $loginUrl = route('login');
         $profileUrl = route('profile.index');
 
+        $invoice->load('discountUsage.discountCode');
+
         $itemType = null;
         $itemData = null;
         $typeInfo = null;
@@ -654,6 +711,10 @@ class InvoiceController extends Controller
         if ($isFreePurchase) {
             $message .= "💰 Biaya: *GRATIS* 🎉\n";
         } else {
+            if ($invoice->discountUsage && $invoice->discountUsage->discountCode) {
+                $discountCode = $invoice->discountUsage->discountCode;
+                $message .= "🏷️ Kode Promo: *{$discountCode->code}* (-Rp " . number_format($invoice->discountUsage->discount_amount, 0, ',', '.') . ")\n";
+            }
             $message .= "💰 Total: *Rp " . number_format($invoice->amount, 0, ',', '.') . "*\n";
         }
 

@@ -10,9 +10,7 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::middleware('auth')->group(function () {
-    Route::post('/discount-codes/validate', [DiscountCodeController::class, 'validate'])->name('discount-codes.validate');
-});
+// Route::post('/discount-codes/validate', [DiscountCodeController::class, 'validate'])->name('discount-codes.validate');
 
 Route::post('/xendit/callback', [InvoiceController::class, 'callbackXendit'])->name('xendit.callback');
 

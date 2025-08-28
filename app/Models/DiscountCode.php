@@ -5,10 +5,14 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class DiscountCode extends Model
 {
     use HasUuids;
+
+    protected $keyType = 'string';
+    public $incrementing = false;
 
     protected $guarded = ['created_at', 'updated_at'];
 
@@ -19,6 +23,16 @@ class DiscountCode extends Model
         'applicable_types' => 'array',
         'applicable_ids' => 'array',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = (string) Str::uuid();
+            }
+        });
+    }
 
     // Relationship dengan discount usages
     public function usages()
@@ -35,6 +49,18 @@ class DiscountCode extends Model
             && $this->starts_at <= $now
             && $this->expires_at >= $now
             && ($this->usage_limit === null || $this->used_count < $this->usage_limit);
+    }
+
+    // Check apakah masih bisa digunakan (belum mencapai usage limit)
+    public function canBeUsed(): bool
+    {
+        // Jika tidak ada limit, selalu bisa digunakan
+        if ($this->usage_limit === null) {
+            return true;
+        }
+
+        // Check apakah usage count masih di bawah limit
+        return $this->used_count < $this->usage_limit;
     }
 
     // Check apakah user sudah mencapai limit
@@ -108,5 +134,10 @@ class DiscountCode extends Model
         }
 
         return 'Rp ' . number_format($this->value, 0, ',', '.');
+    }
+
+    public function incrementUsage(): void
+    {
+        $this->increment('used_count');
     }
 }
