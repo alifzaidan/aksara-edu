@@ -84,7 +84,6 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
     const [isSignPopoverOpen, setIsSignPopoverOpen] = useState(false);
     const [isProgramPopoverOpen, setIsProgramPopoverOpen] = useState(false);
     const [openIssuedCalendar, setOpenIssuedCalendar] = useState(false);
-    console.log(prefilledData);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),

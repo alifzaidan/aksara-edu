@@ -85,6 +85,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Course::class);
     }
 
+    public function affiliateEarnings()
+    {
+        return $this->hasMany(AffiliateEarning::class, 'affiliate_user_id');
+    }
+
     public function courseEnrollments()
     {
         return $this->hasManyThrough(

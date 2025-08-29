@@ -12,7 +12,16 @@ class MentorController extends Controller
 {
     public function index()
     {
-        $mentors = User::role('mentor')->latest()->get();
+        $mentors = User::role('mentor')
+            ->withSum('affiliateEarnings', 'amount')
+            ->withCount('courses as total_courses')
+            ->latest()
+            ->get()
+            ->map(function ($mentor) {
+                $mentor->total_earnings = $mentor->affiliate_earnings_sum_amount ?? 0;
+                unset($mentor->affiliate_earnings_sum_amount);
+                return $mentor;
+            });
 
         return Inertia::render('admin/mentors/index', ['mentors' => $mentors]);
     }

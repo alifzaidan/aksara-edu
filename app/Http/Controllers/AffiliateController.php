@@ -12,7 +12,15 @@ class AffiliateController extends Controller
 {
     public function index()
     {
-        $affiliates = User::role('affiliate')->latest()->get();
+        $affiliates = User::role('affiliate')
+            ->withSum('affiliateEarnings', 'amount')
+            ->latest()
+            ->get()
+            ->map(function ($affiliate) {
+                $affiliate->total_earnings = $affiliate->affiliate_earnings_sum_amount ?? 0;
+                unset($affiliate->affiliate_earnings_sum_amount);
+                return $affiliate;
+            });
 
         return Inertia::render('admin/affiliates/index', ['affiliates' => $affiliates]);
     }

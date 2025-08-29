@@ -63,6 +63,8 @@ export type Mentor = {
     phone_number: string;
     commission: number;
     created_at: string;
+    total_courses: number;
+    total_earnings: number;
 };
 
 export const columns: ColumnDef<Mentor>[] = [
@@ -117,9 +119,25 @@ export const columns: ColumnDef<Mentor>[] = [
         header: ({ column }) => <DataTableColumnHeader column={column} title="No. Telepon" />,
     },
     {
+        accessorKey: 'total_courses',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Total Kelas" />,
+        cell: ({ row }) => {
+            const totalCourses = row.original.total_courses || 0;
+            return <span className="font-medium text-blue-600">{totalCourses} Kelas</span>;
+        },
+    },
+    {
         accessorKey: 'commission',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Komisi" />,
         cell: ({ row }) => <p>{row.original.commission ? `${row.original.commission} %` : '-'}</p>,
+    },
+    {
+        accessorKey: 'total_earnings',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Total Pendapatan" />,
+        cell: ({ row }) => {
+            const totalEarnings = row.original.total_earnings || 0;
+            return <div className="font-medium text-green-600">Rp {totalEarnings.toLocaleString('id-ID')}</div>;
+        },
     },
     {
         accessorKey: 'created_at',

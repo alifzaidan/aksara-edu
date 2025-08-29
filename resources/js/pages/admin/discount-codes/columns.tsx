@@ -164,7 +164,11 @@ export const columns: ColumnDef<DiscountCode>[] = [
         accessorKey: 'code',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Kode" />,
         cell: ({ row }) => {
-            return <Badge className="bg-blue-50font-mono text-base font-bold text-blue-600">{row.original.code}</Badge>;
+            return (
+                <Link href={route('discount-codes.show', row.original.id)} className="text-primary font-medium hover:underline">
+                    <Badge className="bg-blue-50 font-mono text-base font-bold text-blue-600">{row.original.code}</Badge>
+                </Link>
+            );
         },
     },
     {

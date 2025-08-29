@@ -83,11 +83,9 @@ class UserController extends Controller
     {
         $user = User::with(['roles'])->findOrFail($id);
 
-
         $invoicesPage = $request->input('invoices_page', 1);
         $enrollmentsPage = $request->input('enrollments_page', 1);
         $perPage = 5;
-
 
         $invoices = Invoice::where('user_id', $id)
             ->with([
@@ -101,13 +99,11 @@ class UserController extends Controller
             ->latest()
             ->paginate($perPage, ['*'], 'invoices_page', $invoicesPage);
 
+        $paidInvoiceIds = Invoice::where('user_id', $id)
+            ->where('status', 'paid')
+            ->pluck('id');
 
-        $courseEnrollments = EnrollmentCourse::where('invoice_id', function ($query) use ($id) {
-            $query->select('id')
-                ->from('invoices')
-                ->where('user_id', $id)
-                ->where('status', 'paid');
-        })
+        $courseEnrollments = EnrollmentCourse::whereIn('invoice_id', $paidInvoiceIds)
             ->with([
                 'course:id,title,thumbnail,price,user_id',
                 'course.user:id,name',
@@ -115,12 +111,7 @@ class UserController extends Controller
             ])
             ->get();
 
-        $bootcampEnrollments = EnrollmentBootcamp::where('invoice_id', function ($query) use ($id) {
-            $query->select('id')
-                ->from('invoices')
-                ->where('user_id', $id)
-                ->where('status', 'paid');
-        })
+        $bootcampEnrollments = EnrollmentBootcamp::whereIn('invoice_id', $paidInvoiceIds)
             ->with([
                 'bootcamp:id,title,thumbnail,price,user_id',
                 'bootcamp.user:id,name',
@@ -128,12 +119,7 @@ class UserController extends Controller
             ])
             ->get();
 
-        $webinarEnrollments = EnrollmentWebinar::where('invoice_id', function ($query) use ($id) {
-            $query->select('id')
-                ->from('invoices')
-                ->where('user_id', $id)
-                ->where('status', 'paid');
-        })
+        $webinarEnrollments = EnrollmentWebinar::whereIn('invoice_id', $paidInvoiceIds)
             ->with([
                 'webinar:id,title,thumbnail,price,user_id',
                 'webinar.user:id,name',
@@ -141,13 +127,11 @@ class UserController extends Controller
             ])
             ->get();
 
-
         $allEnrollments = collect([
             ...$courseEnrollments->map(fn($e) => [...$e->toArray(), 'type' => 'course']),
             ...$bootcampEnrollments->map(fn($e) => [...$e->toArray(), 'type' => 'bootcamp']),
             ...$webinarEnrollments->map(fn($e) => [...$e->toArray(), 'type' => 'webinar']),
         ])->sortByDesc('created_at');
-
 
         $enrollmentsTotal = $allEnrollments->count();
         $enrollmentsOffset = ($enrollmentsPage - 1) * $perPage;

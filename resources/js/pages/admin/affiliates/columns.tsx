@@ -83,6 +83,7 @@ export type Affiliate = {
     affiliate_status: string;
     commission: number;
     created_at: string;
+    total_earnings: number;
 };
 
 export const columns: ColumnDef<Affiliate>[] = [
@@ -138,6 +139,14 @@ export const columns: ColumnDef<Affiliate>[] = [
         accessorKey: 'commission',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Komisi" />,
         cell: ({ row }) => <p>{row.original.commission ? `${row.original.commission} %` : '-'}</p>,
+    },
+    {
+        accessorKey: 'total_earnings',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Total Pendapatan" />,
+        cell: ({ row }) => {
+            const totalEarnings = row.original.total_earnings || 0;
+            return <div className="font-medium text-green-600">Rp {totalEarnings.toLocaleString('id-ID')}</div>;
+        },
     },
     {
         accessorKey: 'created_at',

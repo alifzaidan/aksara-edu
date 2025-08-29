@@ -206,7 +206,7 @@ class InvoiceController extends Controller
             $enrollmentTable::create([
                 'invoice_id' => $invoice->id,
                 $enrollmentField => $item->id,
-                'price' => $item->price,
+                'price' => $nettAmount,
                 'completed_at' => null,
                 'progress' => 0,
             ]);
@@ -861,7 +861,7 @@ class InvoiceController extends Controller
 
             // Memastikan afiliasi ada, aktif, dan memiliki rate komisi
             if ($affiliate && $affiliate->affiliate_status === 'Active' && $affiliate->commission > 0) {
-                $commissionAmount = $invoice->amount * ($affiliate->commission / 100);
+                $commissionAmount = $invoice->nett_amount * ($affiliate->commission / 100);
 
                 AffiliateEarning::create([
                     'affiliate_user_id' => $affiliate->id,
