@@ -35,6 +35,7 @@ class RegisteredUserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
+            'phone_number' => 'required|string|max:20',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'affiliate_code' => 'nullable|string|exists:users,affiliate_code',
         ]);
@@ -50,6 +51,7 @@ class RegisteredUserController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'phone_number' => $request->phone_number,
             'password' => Hash::make($request->password),
             'referred_by_user_id' => $referred_by_user_id,
         ]);
