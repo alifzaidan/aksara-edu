@@ -20,15 +20,12 @@ interface ParticipantChartProps {
 const chartConfig = {
     course: {
         label: 'Kelas',
-        color: 'hsl(var(--chart-1))',
     },
     bootcamp: {
         label: 'Bootcamp',
-        color: 'hsl(var(--chart-2))',
     },
     webinar: {
         label: 'Webinar',
-        color: 'hsl(var(--chart-3))',
     },
 } satisfies ChartConfig;
 
