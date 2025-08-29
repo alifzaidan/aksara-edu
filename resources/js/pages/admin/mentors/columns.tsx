@@ -5,6 +5,7 @@ import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { rupiahFormatter } from '@/lib/utils';
 import { Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
@@ -136,7 +137,7 @@ export const columns: ColumnDef<Mentor>[] = [
         header: ({ column }) => <DataTableColumnHeader column={column} title="Total Pendapatan" />,
         cell: ({ row }) => {
             const totalEarnings = row.original.total_earnings || 0;
-            return <div className="font-medium text-green-600">Rp {totalEarnings.toLocaleString('id-ID')}</div>;
+            return <div className="font-medium text-green-600">{rupiahFormatter.format(totalEarnings)}</div>;
         },
     },
     {
