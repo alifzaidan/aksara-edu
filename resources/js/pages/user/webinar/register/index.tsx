@@ -328,8 +328,36 @@ export default function RegisterWebinar({
                                         </div>
                                         <p className="text-sm text-gray-600">Untuk mendapatkan akses gratis, Anda perlu:</p>
                                         <ul className="space-y-1 text-left text-sm">
-                                            <li>• Follow Instagram kami</li>
-                                            <li>• Follow TikTok kami</li>
+                                            <li>
+                                                • Follow Instagram kami{' '}
+                                                <a
+                                                    href="https://www.instagram.com/aksarateknologi/"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 underline"
+                                                >
+                                                    @aksarateknologi
+                                                </a>{' '}
+                                                <a
+                                                    href="https://www.instagram.com/aksademy/"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 underline"
+                                                >
+                                                    @aksademy
+                                                </a>
+                                            </li>
+                                            <li>
+                                                • Follow TikTok kami{' '}
+                                                <a
+                                                    href="https://www.tiktok.com/@aksarateknologimandiri"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 underline"
+                                                >
+                                                    @aksarateknologi
+                                                </a>
+                                            </li>
                                             <li>• Tag 3 teman di postingan Instagram kami</li>
                                         </ul>
                                         <p className="text-xs text-gray-500">Upload bukti follow dan tag untuk mendapatkan akses</p>

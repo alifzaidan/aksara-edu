@@ -7,8 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UserLayout from '@/layouts/user-layout';
 import { SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { BadgeCheck, Hourglass, User } from 'lucide-react';
-import { useState } from 'react';
+import { BadgeCheck, Check, Hourglass, User, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Bootcamp {
     id: string;
@@ -24,6 +24,20 @@ interface Bootcamp {
     requirements?: string | null;
     curriculum?: string | null;
     group_url?: string | null;
+}
+
+interface DiscountData {
+    valid: boolean;
+    discount_amount: number;
+    final_amount: number;
+    discount_code: {
+        id: string;
+        code: string;
+        name: string;
+        type: string;
+        formatted_value: string;
+    };
+    message?: string;
 }
 
 function parseList(items?: string | null): string[] {
@@ -48,6 +62,10 @@ export default function RegisterBootcamp({
 
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [promoCode, setPromoCode] = useState('');
+    const [discountData, setDiscountData] = useState<DiscountData | null>(null);
+    const [promoLoading, setPromoLoading] = useState(false);
+    const [promoError, setPromoError] = useState('');
 
     const [showFreeForm, setShowFreeForm] = useState(false);
     const [freeFormData, setFreeFormData] = useState({
@@ -62,7 +80,63 @@ export default function RegisterBootcamp({
     const isFree = bootcamp.price === 0;
 
     const transactionFee = 5000;
-    const totalPrice = isFree ? 0 : bootcamp.price + transactionFee;
+    const basePrice = bootcamp.price;
+    const discountAmount = discountData?.discount_amount || 0;
+    const finalBootcampPrice = basePrice - discountAmount;
+    const totalPrice = isFree ? 0 : finalBootcampPrice + transactionFee;
+
+    useEffect(() => {
+        if (!promoCode.trim() || isFree) {
+            setDiscountData(null);
+            setPromoError('');
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            validatePromoCode();
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [promoCode]);
+
+    const validatePromoCode = async () => {
+        if (!promoCode.trim() || isFree) return;
+
+        setPromoLoading(true);
+        setPromoError('');
+
+        try {
+            const response = await fetch('/api/discount-codes/validate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    code: promoCode,
+                    amount: bootcamp.price,
+                    product_type: 'bootcamp',
+                    product_id: bootcamp.id,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.valid) {
+                setDiscountData(data);
+                setPromoError('');
+            } else {
+                setDiscountData(null);
+                setPromoError(data.message || 'Kode promo tidak valid');
+            }
+        } catch {
+            setDiscountData(null);
+            setPromoError('Terjadi kesalahan saat memvalidasi kode promo');
+        } finally {
+            setPromoLoading(false);
+        }
+    };
 
     const handleFreeCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -124,6 +198,26 @@ export default function RegisterBootcamp({
         }
 
         try {
+            const originalDiscountAmount = bootcamp.strikethrough_price > 0 ? bootcamp.strikethrough_price - bootcamp.price : 0;
+            const promoDiscountAmount = discountData?.discount_amount || 0;
+
+            const invoiceData: any = {
+                type: 'bootcamp',
+                id: bootcamp.id,
+                discount_amount: originalDiscountAmount + promoDiscountAmount, // Total semua diskon
+                nett_amount: finalBootcampPrice,
+                transaction_fee: transactionFee,
+                total_amount: totalPrice,
+            };
+
+            // Add discount code data if applied
+            if (discountData?.valid) {
+                invoiceData.discount_code_id = discountData.discount_code.id;
+                invoiceData.discount_code_amount = discountData.discount_amount;
+            }
+
+            console.log('Sending invoice data:', invoiceData);
+
             const res = await fetch(route('invoice.store'), {
                 method: 'POST',
                 headers: {
@@ -131,22 +225,18 @@ export default function RegisterBootcamp({
                     'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
                 },
                 credentials: 'same-origin',
-                body: JSON.stringify({
-                    type: 'bootcamp',
-                    id: bootcamp.id,
-                    discount_amount: bootcamp.strikethrough_price || 0,
-                    nett_amount: bootcamp.price,
-                    transaction_fee: transactionFee,
-                    total_amount: totalPrice,
-                }),
+                body: JSON.stringify(invoiceData),
             });
+
             const data = await res.json();
-            if (data.url) {
+
+            if (res.ok && data.url) {
                 window.location.href = data.url;
             } else {
-                alert('Gagal membuat invoice.');
+                alert(data.message || 'Gagal membuat invoice.');
             }
-        } catch {
+        } catch (error) {
+            console.error('Checkout error:', error);
             alert('Terjadi kesalahan saat proses pembayaran.');
         } finally {
             setLoading(false);
@@ -280,15 +370,84 @@ export default function RegisterBootcamp({
                                         </div>
                                         <p className="text-sm text-gray-600">Untuk mendapatkan akses gratis, Anda perlu:</p>
                                         <ul className="space-y-1 text-left text-sm">
-                                            <li>• Follow Instagram kami</li>
-                                            <li>• Follow TikTok kami</li>
+                                            <li>
+                                                • Follow Instagram kami{' '}
+                                                <a
+                                                    href="https://www.instagram.com/aksarateknologi/"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 underline"
+                                                >
+                                                    @aksarateknologi
+                                                </a>{' '}
+                                                <a
+                                                    href="https://www.instagram.com/aksademy/"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 underline"
+                                                >
+                                                    @aksademy
+                                                </a>
+                                            </li>
+                                            <li>
+                                                • Follow TikTok kami{' '}
+                                                <a
+                                                    href="https://www.tiktok.com/@aksarateknologimandiri"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 underline"
+                                                >
+                                                    @aksarateknologi
+                                                </a>
+                                            </li>
                                             <li>• Tag 3 teman di postingan Instagram kami</li>
                                         </ul>
                                         <p className="text-xs text-gray-500">Upload bukti follow dan tag untuk mendapatkan akses</p>
                                     </div>
                                 ) : (
                                     <>
-                                        <Input type="text" placeholder="Masukkan Kode Promo (Opsional)" className="w-full" />
+                                        <div className="space-y-2">
+                                            <Label htmlFor="promo-code">Kode Promo (Opsional)</Label>
+                                            <div className="relative">
+                                                <Input
+                                                    id="promo-code"
+                                                    type="text"
+                                                    placeholder="Masukkan kode promo"
+                                                    value={promoCode}
+                                                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                                                    className="pr-10"
+                                                />
+                                                {promoLoading && (
+                                                    <div className="absolute top-1/2 right-3 -translate-y-1/2 transform">
+                                                        <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-blue-600"></div>
+                                                    </div>
+                                                )}
+                                                {!promoLoading && promoCode && (
+                                                    <div className="absolute top-1/2 right-3 -translate-y-1/2 transform">
+                                                        {discountData?.valid ? (
+                                                            <Check className="h-4 w-4 text-green-600" />
+                                                        ) : promoError ? (
+                                                            <X className="h-4 w-4 text-red-600" />
+                                                        ) : null}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {promoError && <p className="text-sm text-red-600">{promoError}</p>}
+                                            {discountData?.valid && (
+                                                <div className="rounded-lg border border-green-200 bg-green-50 p-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <Check className="h-4 w-4 text-green-600" />
+                                                        <p className="text-sm font-medium text-green-800">
+                                                            Kode promo "{discountData.discount_code.code}" berhasil diterapkan!
+                                                        </p>
+                                                    </div>
+                                                    <p className="mt-1 text-xs text-green-600">
+                                                        {discountData.discount_code.name} - Diskon {discountData.discount_code.formatted_value}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+
                                         <div className="space-y-2 rounded-lg border p-4">
                                             {bootcamp.strikethrough_price > 0 && (
                                                 <>
@@ -311,6 +470,17 @@ export default function RegisterBootcamp({
                                                 <span className="text-gray-600">Harga Bootcamp</span>
                                                 <span className="font-semibold text-gray-500">Rp {bootcamp.price.toLocaleString('id-ID')}</span>
                                             </div>
+
+                                            {/* Promo Discount */}
+                                            {discountData?.valid && (
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-600">Diskon Promo ({discountData.discount_code.code})</span>
+                                                    <span className="font-semibold text-green-600">
+                                                        -Rp {discountData.discount_amount.toLocaleString('id-ID')}
+                                                    </span>
+                                                </div>
+                                            )}
+
                                             <div className="flex items-center justify-between">
                                                 <span className="text-gray-600">Biaya Transaksi</span>
                                                 <span className="font-semibold text-gray-500">Rp {transactionFee.toLocaleString('id-ID')}</span>

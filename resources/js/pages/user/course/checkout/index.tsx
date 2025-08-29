@@ -7,8 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UserLayout from '@/layouts/user-layout';
 import { SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { BadgeCheck, Hourglass, User } from 'lucide-react';
-import { useState } from 'react';
+import { BadgeCheck, Check, Hourglass, User, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Course {
     id: string;
@@ -32,6 +32,20 @@ interface Course {
             is_free?: boolean;
         }[];
     }[];
+}
+
+interface DiscountData {
+    valid: boolean;
+    discount_amount: number;
+    final_amount: number;
+    discount_code: {
+        id: string;
+        code: string;
+        name: string;
+        type: string;
+        formatted_value: string;
+    };
+    message?: string;
 }
 
 function getYoutubeId(url: string) {
@@ -63,11 +77,72 @@ export default function CheckoutCourse({
     const firstVideoLesson = course.modules?.flatMap((module) => module.lessons || []).find((lesson) => lesson.type === 'video' && lesson.video_url);
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [promoCode, setPromoCode] = useState('');
+    const [discountData, setDiscountData] = useState<DiscountData | null>(null);
+    const [promoLoading, setPromoLoading] = useState(false);
+    const [promoError, setPromoError] = useState('');
+
     const keyPointList = parseList(course.key_points);
     const isFree = course.price === 0;
 
     const transactionFee = 5000;
-    const totalPrice = isFree ? 0 : course.price + transactionFee;
+    const basePrice = course.price;
+    const discountAmount = discountData?.discount_amount || 0;
+    const finalCoursePrice = basePrice - discountAmount;
+    const totalPrice = isFree ? 0 : finalCoursePrice + transactionFee;
+
+    useEffect(() => {
+        if (!promoCode.trim() || isFree) {
+            setDiscountData(null);
+            setPromoError('');
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            validatePromoCode();
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [promoCode]);
+
+    const validatePromoCode = async () => {
+        if (!promoCode.trim() || isFree) return;
+
+        setPromoLoading(true);
+        setPromoError('');
+
+        try {
+            const response = await fetch('/api/discount-codes/validate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    code: promoCode,
+                    amount: course.price,
+                    product_type: 'course',
+                    product_id: course.id,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.valid) {
+                setDiscountData(data);
+                setPromoError('');
+            } else {
+                setDiscountData(null);
+                setPromoError(data.message || 'Kode promo tidak valid');
+            }
+        } catch {
+            setDiscountData(null);
+            setPromoError('Terjadi kesalahan saat memvalidasi kode promo');
+        } finally {
+            setPromoLoading(false);
+        }
+    };
 
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -116,6 +191,26 @@ export default function CheckoutCourse({
         }
 
         try {
+            const originalDiscountAmount = course.strikethrough_price > 0 ? course.strikethrough_price - course.price : 0;
+            const promoDiscountAmount = discountData?.discount_amount || 0;
+
+            const invoiceData: any = {
+                type: 'course',
+                id: course.id,
+                discount_amount: originalDiscountAmount + promoDiscountAmount,
+                nett_amount: finalCoursePrice,
+                transaction_fee: transactionFee,
+                total_amount: totalPrice,
+            };
+
+            // Add discount code data if applied
+            if (discountData?.valid) {
+                invoiceData.discount_code_id = discountData.discount_code.id;
+                invoiceData.discount_code_amount = discountData.discount_amount;
+            }
+
+            console.log('Sending invoice data:', invoiceData);
+
             const res = await fetch(route('invoice.store'), {
                 method: 'POST',
                 headers: {
@@ -123,22 +218,18 @@ export default function CheckoutCourse({
                     'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
                 },
                 credentials: 'same-origin',
-                body: JSON.stringify({
-                    type: 'course',
-                    id: course.id,
-                    discount_amount: course.strikethrough_price || 0,
-                    nett_amount: course.price,
-                    transaction_fee: transactionFee,
-                    total_amount: totalPrice,
-                }),
+                body: JSON.stringify(invoiceData),
             });
+
             const data = await res.json();
-            if (data.url) {
+
+            if (res.ok && data.url) {
                 window.location.href = data.url;
             } else {
-                alert('Gagal membuat invoice.');
+                alert(data.message || 'Gagal membuat invoice.');
             }
-        } catch {
+        } catch (error) {
+            console.error('Checkout error:', error);
             alert('Terjadi kesalahan saat proses pembayaran.');
         } finally {
             setLoading(false);
@@ -258,7 +349,7 @@ export default function CheckoutCourse({
                         </div>
                     ) : (
                         <form onSubmit={handleCheckout}>
-                            <h2 className="my-2 text-xl font-bold italic">Detail Pembayaran</h2>
+                            <h2 className="my-2 text-xl font-bold italic">Detail {isFree ? 'Pendaftaran' : 'Pembayaran'}</h2>
                             <div className="space-y-4 rounded-lg border p-4">
                                 {isFree ? (
                                     <div className="flex items-center justify-between p-4 text-center">
@@ -266,13 +357,55 @@ export default function CheckoutCourse({
                                     </div>
                                 ) : (
                                     <>
-                                        <Input type="text" placeholder="Masukkan Kode Promo (Opsional)" className="w-full" />
+                                        {/* Promo Code Input */}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="promo-code">Kode Promo (Opsional)</Label>
+                                            <div className="relative">
+                                                <Input
+                                                    id="promo-code"
+                                                    type="text"
+                                                    placeholder="Masukkan kode promo"
+                                                    value={promoCode}
+                                                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                                                    className="pr-10"
+                                                />
+                                                {promoLoading && (
+                                                    <div className="absolute top-1/2 right-3 -translate-y-1/2 transform">
+                                                        <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-blue-600"></div>
+                                                    </div>
+                                                )}
+                                                {!promoLoading && promoCode && (
+                                                    <div className="absolute top-1/2 right-3 -translate-y-1/2 transform">
+                                                        {discountData?.valid ? (
+                                                            <Check className="h-4 w-4 text-green-600" />
+                                                        ) : promoError ? (
+                                                            <X className="h-4 w-4 text-red-600" />
+                                                        ) : null}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {promoError && <p className="text-sm text-red-600">{promoError}</p>}
+                                            {discountData?.valid && (
+                                                <div className="rounded-lg border border-green-200 bg-green-50 p-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <Check className="h-4 w-4 text-green-600" />
+                                                        <p className="text-sm font-medium text-green-800">
+                                                            Kode promo "{discountData.discount_code.code}" berhasil diterapkan!
+                                                        </p>
+                                                    </div>
+                                                    <p className="mt-1 text-xs text-green-600">
+                                                        {discountData.discount_code.name} - Diskon {discountData.discount_code.formatted_value}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+
                                         <div className="space-y-2 rounded-lg border p-4">
                                             {course.strikethrough_price > 0 && (
                                                 <>
                                                     <div className="flex items-center justify-between">
                                                         <span className="text-gray-600">Harga Asli</span>
-                                                        <span className="font-semibold text-gray-500">
+                                                        <span className="font-semibold text-gray-500 line-through">
                                                             Rp {course.strikethrough_price.toLocaleString('id-ID')}
                                                         </span>
                                                     </div>
@@ -289,6 +422,17 @@ export default function CheckoutCourse({
                                                 <span className="text-gray-600">Harga Kelas</span>
                                                 <span className="font-semibold text-gray-500">Rp {course.price.toLocaleString('id-ID')}</span>
                                             </div>
+
+                                            {/* Promo Discount */}
+                                            {discountData?.valid && (
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-600">Diskon Promo ({discountData.discount_code.code})</span>
+                                                    <span className="font-semibold text-green-600">
+                                                        -Rp {discountData.discount_amount.toLocaleString('id-ID')}
+                                                    </span>
+                                                </div>
+                                            )}
+
                                             <div className="flex items-center justify-between">
                                                 <span className="text-gray-600">Biaya Transaksi</span>
                                                 <span className="font-semibold text-gray-500">Rp {transactionFee.toLocaleString('id-ID')}</span>
