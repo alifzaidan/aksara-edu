@@ -13,7 +13,8 @@ import { cn } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Head, router } from '@inertiajs/react';
-import { format } from 'date-fns';
+import { addYears, format } from 'date-fns';
+import { id } from 'date-fns/locale';
 import { Award, CalendarFold, Check, ChevronDownIcon, ChevronsUpDown } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -60,14 +61,30 @@ interface CertificateCreateProps {
         bootcamp_id?: string;
         webinar_id?: string;
         title?: string;
+        description?: string;
     };
 }
+
+const getTodayDate = () => {
+    return format(new Date(), 'yyyy-MM-dd');
+};
+
+const generatePeriod = () => {
+    const today = new Date();
+    const futureDate = addYears(today, 5);
+
+    const currentMonth = format(today, 'MMMM yyyy', { locale: id });
+    const futureMonth = format(futureDate, 'MMMM yyyy', { locale: id });
+
+    return `${currentMonth} - ${futureMonth}`;
+};
 
 export default function CreateCertificate({ designs, signs, courses, bootcamps, webinars, prefilledData = {} }: CertificateCreateProps) {
     const [isDesignPopoverOpen, setIsDesignPopoverOpen] = useState(false);
     const [isSignPopoverOpen, setIsSignPopoverOpen] = useState(false);
     const [isProgramPopoverOpen, setIsProgramPopoverOpen] = useState(false);
     const [openIssuedCalendar, setOpenIssuedCalendar] = useState(false);
+    console.log(prefilledData);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -76,11 +93,11 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
             sign_id: '',
             certificate_number: '',
             title: prefilledData.title || '',
-            description: '',
-            header_top: '',
-            header_bottom: '',
-            issued_date: '',
-            period: '',
+            description: prefilledData.description || '',
+            header_top: 'No: AHU-0001401-AH.01.14 Tahun 2025',
+            header_bottom: 'Alamat Permata Permadani Residence, Junrejo, Kota Batu, Jawa Timur',
+            issued_date: getTodayDate(),
+            period: generatePeriod(),
             program_type: prefilledData.program_type as 'course' | 'bootcamp' | 'webinar' | undefined,
             course_id: prefilledData.course_id || '',
             bootcamp_id: prefilledData.bootcamp_id || '',
