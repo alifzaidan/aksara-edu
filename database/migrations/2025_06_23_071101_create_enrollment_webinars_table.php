@@ -18,6 +18,9 @@ return new class extends Migration
             $table->bigInteger('price');
             $table->timestamp('completed_at')->nullable();
             $table->integer('progress')->default(0);
+            $table->string('attendance_proof')->nullable();
+            $table->boolean('attendance_verified')->default(false);
+            $table->text('review')->nullable();
             $table->timestamps();
         });
     }

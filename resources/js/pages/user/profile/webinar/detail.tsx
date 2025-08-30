@@ -1,8 +1,10 @@
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import UserLayout from '@/layouts/user-layout';
-import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Award, BadgeCheck, Calendar, CheckCircle, Clock, Download, Eye, Users, Youtube } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { ArrowLeft, Award, BadgeCheck, Calendar, CheckCircle, Clock, Download, Eye, MessageSquare, Upload, Users, X, Youtube } from 'lucide-react';
 import { useState } from 'react';
 
 interface Category {
@@ -39,6 +41,10 @@ interface EnrollmentWebinarItem {
     webinar: Webinar;
     progress: number;
     completed_at: string | null;
+    attendance_proof?: string | null;
+    attendance_verified: boolean;
+    review?: string | null;
+    rating?: number | null;
     created_at: string;
     updated_at: string;
 }
@@ -90,6 +96,34 @@ function getYoutubeEmbedUrl(url: string): string | null {
     return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
 }
 
+const StarRating = ({
+    rating,
+    onRatingChange,
+    readonly = false,
+}: {
+    rating: number;
+    onRatingChange?: (rating: number) => void;
+    readonly?: boolean;
+}) => {
+    return (
+        <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                    key={star}
+                    type="button"
+                    disabled={readonly}
+                    onClick={() => !readonly && onRatingChange?.(star)}
+                    className={`text-2xl transition-colors ${
+                        star <= rating ? 'text-yellow-400' : readonly ? 'text-gray-300' : 'text-gray-300 hover:text-yellow-300'
+                    } ${readonly ? 'cursor-default' : 'cursor-pointer'}`}
+                >
+                    ★
+                </button>
+            ))}
+        </div>
+    );
+};
+
 export default function DetailMyWebinar({ webinar, certificate, certificateParticipant }: DetailWebinarProps) {
     const webinarItem = webinar.webinar_items?.[0];
     const webinarData = webinarItem?.webinar;
@@ -97,8 +131,69 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
     const benefitList = parseList(webinarData.benefits);
     const [isLoading, setIsLoading] = useState(true);
 
+    const [submittingForm, setSubmittingForm] = useState(false);
+    const [showCombinedForm, setShowCombinedForm] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [reviewText, setReviewText] = useState('');
+    const [rating, setRating] = useState(0);
+
     const handleIframeLoad = () => {
         setIsLoading(false);
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                alert('Format file harus berupa gambar (JPG, PNG, WEBP)');
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Ukuran file maksimal 5MB');
+                return;
+            }
+
+            setSelectedFile(file);
+        }
+    };
+
+    const handleSubmitForm = async () => {
+        if (!selectedFile || !reviewText.trim() || rating === 0 || !webinarItem) {
+            alert('Mohon lengkapi semua field: upload bukti kehadiran, review, dan rating');
+            return;
+        }
+
+        setSubmittingForm(true);
+
+        const formData = new FormData();
+        formData.append('attendance_proof', selectedFile);
+        formData.append('review', reviewText);
+        formData.append('rating', rating.toString());
+        formData.append('enrollment_id', webinarItem.id);
+
+        router.post(route('profile.webinar.attendance-review.submit'), formData, {
+            preserveState: false,
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowCombinedForm(false);
+                resetForm();
+            },
+            onError: (errors) => {
+                console.error('Submit errors:', errors);
+                alert('Gagal mengirim data');
+            },
+            onFinish: () => {
+                setSubmittingForm(false);
+            },
+        });
+    };
+
+    const resetForm = () => {
+        setSelectedFile(null);
+        setReviewText('');
+        setRating(0);
     };
 
     if (!webinarData || !webinarItem) {
@@ -116,8 +211,10 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
     const isWebinarFinished = new Date() > webinarEndDate;
     const isCompleted = isWebinarFinished;
     const hasRecording = webinarData.recording_url && getYoutubeEmbedUrl(webinarData.recording_url);
+    const isAttendanceVerified = webinarItem.attendance_verified;
+    const hasReview = webinarItem.review && webinarItem.rating;
 
-    const hasCertificate = certificate && isCompleted && webinarInvoiceStatus === 'paid';
+    const hasCertificate = certificate && isCompleted && webinarInvoiceStatus === 'paid' && isAttendanceVerified && hasReview;
 
     return (
         <UserLayout>
@@ -134,7 +231,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                         </Link>
                     </Button>
                     <div className="col-span-2">
-                        <div className="flex justify-center gap-4">
+                        <div className="flex flex-col items-center justify-center md:flex-row md:gap-4">
                             <span className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
                                 📌 Enrolled in{' '}
                                 {new Date(webinarItem.created_at).toLocaleDateString('id-ID', {
@@ -142,18 +239,18 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                     year: 'numeric',
                                 })}
                             </span>
-                            {hasCertificate && (
+                            {hasCertificate ? (
                                 <span className="mb-4 flex w-fit items-center gap-2 rounded-full border border-green-800 bg-green-100 px-4 py-1 text-sm font-medium text-green-800 shadow-xs">
                                     <Award size={16} />
                                     Sertifikat Tersedia
                                 </span>
-                            )}
-                            {hasRecording && (
+                            ) : null}
+                            {hasRecording ? (
                                 <span className="mb-4 flex w-fit items-center gap-2 rounded-full border border-red-800 bg-red-100 px-4 py-1 text-sm font-medium text-red-800 shadow-xs">
                                     <Youtube size={16} />
                                     Recording Tersedia
                                 </span>
-                            )}
+                            ) : null}
                         </div>
 
                         <h1 className="mx-auto mb-4 max-w-2xl text-4xl leading-tight font-bold italic sm:text-5xl">{webinarData.title}</h1>
@@ -345,7 +442,157 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                     )}
 
                     {/* Sidebar */}
-                    <div className="col-span-1">
+                    <div className="col-span-1 space-y-6">
+                        {isCompleted && webinarInvoiceStatus === 'paid' && !hasReview && (
+                            <div className="rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 p-6 dark:border-purple-800 dark:from-purple-900/20 dark:to-pink-900/20">
+                                <div className="mb-4 flex items-center gap-3">
+                                    <div className="rounded-full bg-purple-100 p-2 dark:bg-purple-800">
+                                        <MessageSquare className="text-purple-600 dark:text-purple-400" size={20} />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-purple-800 dark:text-purple-200">Lengkapi Data untuk Sertifikat</h2>
+                                        <p className="text-sm text-purple-600 dark:text-purple-400">Upload bukti kehadiran dan berikan review</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="rounded-lg bg-purple-100 p-4 dark:bg-purple-800/50">
+                                        <p className="text-center text-purple-800 dark:text-purple-200">
+                                            🎯 Untuk mendapatkan sertifikat, silakan upload bukti kehadiran dan berikan review untuk webinar ini.
+                                        </p>
+                                    </div>
+
+                                    {!showCombinedForm ? (
+                                        <Button onClick={() => setShowCombinedForm(true)} className="w-full bg-purple-600 hover:bg-purple-700">
+                                            <Upload size={16} className="mr-2" />
+                                            Lengkapi Data Sertifikat
+                                        </Button>
+                                    ) : (
+                                        <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                                            <div className="flex items-center justify-between">
+                                                <h4 className="font-medium">Formulir Sertifikat</h4>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setShowCombinedForm(false);
+                                                        resetForm();
+                                                    }}
+                                                >
+                                                    <X size={16} />
+                                                </Button>
+                                            </div>
+
+                                            {/* File Upload */}
+                                            <div className="space-y-2">
+                                                <Label htmlFor="attendance_proof">
+                                                    Screenshot Kehadiran <span className="text-red-500">*</span>
+                                                </Label>
+                                                <Input
+                                                    id="attendance_proof"
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleFileSelect}
+                                                    className="file:mr-4 file:rounded file:border-0 file:bg-gray-100 file:px-2 file:py-1 file:text-sm file:text-gray-700 hover:file:bg-gray-200"
+                                                />
+                                                <p className="text-xs text-gray-500">Format: JPG, PNG, WEBP. Maksimal 5MB.</p>
+                                            </div>
+
+                                            {selectedFile && (
+                                                <div className="text-center">
+                                                    <img
+                                                        src={URL.createObjectURL(selectedFile)}
+                                                        alt="Preview"
+                                                        className="mx-auto max-h-32 rounded-lg border shadow-sm"
+                                                    />
+                                                    <p className="mt-2 text-sm text-gray-600">{selectedFile.name}</p>
+                                                </div>
+                                            )}
+
+                                            {/* Rating */}
+                                            <div className="space-y-2">
+                                                <Label>
+                                                    Rating <span className="text-red-500">*</span>
+                                                </Label>
+                                                <StarRating rating={rating} onRatingChange={setRating} />
+                                                <p className="text-xs text-gray-500">Berikan rating 1-5 bintang untuk webinar ini</p>
+                                            </div>
+
+                                            {/* Review */}
+                                            <div className="space-y-2">
+                                                <Label htmlFor="review">
+                                                    Review <span className="text-red-500">*</span>
+                                                </Label>
+                                                <textarea
+                                                    id="review"
+                                                    value={reviewText}
+                                                    onChange={(e) => setReviewText(e.target.value)}
+                                                    placeholder="Bagikan pengalaman Anda mengikuti webinar ini..."
+                                                    className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                    rows={4}
+                                                    maxLength={500}
+                                                />
+                                                <p className="text-xs text-gray-500">Maksimal 500 karakter ({reviewText.length}/500)</p>
+                                            </div>
+
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        setShowCombinedForm(false);
+                                                        resetForm();
+                                                    }}
+                                                    className="flex-1"
+                                                >
+                                                    Batal
+                                                </Button>
+                                                <Button
+                                                    onClick={handleSubmitForm}
+                                                    disabled={!selectedFile || !reviewText.trim() || rating === 0 || submittingForm}
+                                                    className="flex-1 bg-purple-600 hover:bg-purple-700"
+                                                >
+                                                    {submittingForm ? 'Mengirim...' : 'Kirim Data'}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {hasReview && (
+                            <div className="rounded-xl border border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-6 dark:border-green-800 dark:from-green-900/20 dark:to-emerald-900/20">
+                                <div className="mb-4 flex items-center gap-3">
+                                    <div className="rounded-full bg-green-100 p-2 dark:bg-green-800">
+                                        <CheckCircle className="text-green-600 dark:text-green-400" size={20} />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-green-800 dark:text-green-200">✅ Data Telah Lengkap</h2>
+                                        <p className="text-sm text-green-600 dark:text-green-400">Terima kasih atas review Anda!</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="rounded-lg bg-green-100 p-4 dark:bg-green-800/50">
+                                        <div className="mb-2">
+                                            <StarRating rating={webinarItem.rating || 0} readonly />
+                                        </div>
+                                        <p className="text-green-800 dark:text-green-200">"{webinarItem.review}"</p>
+                                    </div>
+
+                                    {webinarItem.attendance_proof ? (
+                                        <div className="text-center">
+                                            <img
+                                                src={`/storage/${webinarItem.attendance_proof}`}
+                                                alt="Bukti Kehadiran"
+                                                className="mx-auto max-h-32 rounded-lg border shadow-sm"
+                                            />
+                                        </div>
+                                    ) : null}
+                                </div>
+                            </div>
+                        )}
+
                         {isWebinarFinished ? (
                             <div className="sticky top-6 space-y-4">
                                 <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
@@ -354,7 +601,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                         <h3 className="font-semibold">Sertifikat Partisipasi</h3>
                                     </div>
 
-                                    {isLoading && hasCertificate && (
+                                    {isLoading && hasCertificate ? (
                                         <div className="space-y-3">
                                             <Skeleton className="h-[250px] w-full rounded-lg" />
                                             <div className="space-y-2">
@@ -366,7 +613,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                 <Skeleton className="mx-auto h-8 w-full" />
                                             </div>
                                         </div>
-                                    )}
+                                    ) : null}
 
                                     <div className="relative">
                                         {hasCertificate ? (
@@ -438,15 +685,19 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                     ? 'Sertifikat belum dibuat untuk webinar ini.'
                                                     : webinarInvoiceStatus !== 'paid'
                                                       ? 'Selesaikan pembayaran untuk mendapatkan sertifikat.'
-                                                      : 'Sertifikat akan tersedia setelah webinar selesai.'}
+                                                      : !hasReview
+                                                        ? 'Lengkapi bukti kehadiran dan review untuk mendapatkan sertifikat.'
+                                                        : 'Sertifikat akan tersedia setelah webinar selesai.'}
                                             </p>
-                                            <Button className="mt-3 w-full" disabled>
+                                            <Button variant="outline" className="mt-3 w-full" disabled>
                                                 <Download size={16} className="mr-2" />
                                                 {!certificate
                                                     ? 'Sertifikat Belum Tersedia'
                                                     : webinarInvoiceStatus !== 'paid'
                                                       ? 'Selesaikan Pembayaran'
-                                                      : 'Menunggu Webinar Selesai'}
+                                                      : !hasReview
+                                                        ? 'Lengkapi Data Diperlukan'
+                                                        : 'Menunggu Webinar Selesai'}
                                             </Button>
                                         </>
                                     )}

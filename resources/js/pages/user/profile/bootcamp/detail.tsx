@@ -127,7 +127,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                         </Link>
                     </Button>
                     <div className="col-span-2">
-                        <div className="flex justify-center gap-4">
+                        <div className="flex flex-col items-center justify-center md:flex-row md:gap-4">
                             <span className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
                                 📌 Enrolled in{' '}
                                 {new Date(bootcampItem.created_at).toLocaleDateString('id-ID', {
@@ -135,12 +135,12 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                     year: 'numeric',
                                 })}
                             </span>
-                            {hasCertificate && (
+                            {hasCertificate ? (
                                 <span className="mb-4 flex w-fit items-center gap-2 rounded-full border border-green-800 bg-green-100 px-4 py-1 text-sm font-medium text-green-800 shadow-xs">
                                     <Award size={16} />
                                     Sertifikat Tersedia
                                 </span>
-                            )}
+                            ) : null}
                         </div>
 
                         <h1 className="mx-auto mb-4 max-w-2xl text-4xl leading-tight font-bold italic sm:text-5xl">{bootcampData.title}</h1>

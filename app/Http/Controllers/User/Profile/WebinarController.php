@@ -5,10 +5,12 @@ namespace App\Http\Controllers\User\Profile;
 use App\Http\Controllers\Controller;
 use App\Models\Certificate;
 use App\Models\CertificateParticipant;
+use App\Models\EnrollmentWebinar;
 use App\Models\Invoice;
 use App\Services\CertificatePdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class WebinarController extends Controller
@@ -63,6 +65,42 @@ class WebinarController extends Controller
         ]);
     }
 
+    public function submitAttendanceAndReview(Request $request)
+    {
+        $id = Auth::id();
+
+        $request->validate([
+            'attendance_proof' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
+            'review' => 'required|string|max:500',
+            'rating' => 'required|integer|min:1|max:5',
+            'enrollment_id' => 'required|exists:enrollment_webinars,id'
+        ]);
+
+        $enrollment = EnrollmentWebinar::findOrFail($request->enrollment_id);
+
+        if ($enrollment->invoice->user_id !== $id) {
+            abort(403);
+        }
+
+        $attendanceProofPath = null;
+        if ($request->hasFile('attendance_proof')) {
+            if ($enrollment->attendance_proof) {
+                Storage::disk('public')->delete($enrollment->attendance_proof);
+            }
+
+            $attendanceProofPath = $request->file('attendance_proof')->store('attendance-proofs', 'public');
+        }
+
+        $enrollment->update([
+            'attendance_proof' => $attendanceProofPath,
+            'attendance_verified' => true,
+            'review' => $request->review,
+            'rating' => $request->rating,
+        ]);
+
+        return redirect()->back()->with('success', 'Bukti kehadiran dan review berhasil dikirim! Anda sekarang dapat mengunduh sertifikat.');
+    }
+
     public function downloadCertificate($slug)
     {
         try {
@@ -80,8 +118,12 @@ class WebinarController extends Controller
                 return back()->with('error', 'Webinar tidak ditemukan atau Anda belum terdaftar.');
             }
 
-            $webinarId = $webinar->webinarItems->first()->webinar_id;
-            $webinarData = $webinar->webinarItems->first()->webinar;
+            $enrollmentWebinar = $webinar->webinarItems->first();
+            $webinarData = $enrollmentWebinar->webinar;
+
+            if (!$enrollmentWebinar->attendance_verified || !$enrollmentWebinar->review || !$enrollmentWebinar->rating) {
+                return back()->with('error', 'Silakan upload bukti kehadiran dan berikan review terlebih dahulu.');
+            }
 
             $webinarEndDate = new \Carbon\Carbon($webinarData->end_time);
 
@@ -89,7 +131,7 @@ class WebinarController extends Controller
                 return back()->with('error', 'Sertifikat belum tersedia. Webinar masih berlangsung.');
             }
 
-            $certificate = Certificate::where('webinar_id', $webinarId)->first();
+            $certificate = Certificate::where('webinar_id', $webinarData->id)->first();
 
             if (!$certificate) {
                 return back()->with('error', 'Sertifikat belum dibuat untuk webinar ini.');
@@ -135,8 +177,12 @@ class WebinarController extends Controller
                 return back()->with('error', 'Webinar tidak ditemukan atau Anda belum terdaftar.');
             }
 
-            $webinarId = $webinar->webinarItems->first()->webinar_id;
-            $webinarData = $webinar->webinarItems->first()->webinar;
+            $enrollmentWebinar = $webinar->webinarItems->first();
+            $webinarData = $enrollmentWebinar->webinar;
+
+            if (!$enrollmentWebinar->attendance_verified || !$enrollmentWebinar->review || !$enrollmentWebinar->rating) {
+                return back()->with('error', 'Silakan upload bukti kehadiran dan berikan review terlebih dahulu.');
+            }
 
             $webinarEndDate = new \Carbon\Carbon($webinarData->end_time);
 
@@ -144,7 +190,7 @@ class WebinarController extends Controller
                 return back()->with('error', 'Sertifikat belum tersedia. Webinar masih berlangsung.');
             }
 
-            $certificate = Certificate::where('webinar_id', $webinarId)->first();
+            $certificate = Certificate::where('webinar_id', $webinarData->id)->first();
 
             if (!$certificate) {
                 return back()->with('error', 'Sertifikat belum dibuat untuk webinar ini.');
