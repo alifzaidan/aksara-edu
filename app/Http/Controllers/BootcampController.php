@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bootcamp;
+use App\Models\BootcampSchedule;
 use App\Models\Category;
 use App\Models\Certificate;
 use App\Models\Invoice;
@@ -85,19 +86,31 @@ class BootcampController extends Controller
 
         $bootcamp = Bootcamp::create($data);
 
-        if ($request->has('schedules') && is_array($request->schedules)) {
-            foreach ($request->schedules as $schedule) {
-                if (
-                    isset($schedule['day'], $schedule['start_time'], $schedule['end_time']) &&
-                    $schedule['day'] && $schedule['start_time'] && $schedule['end_time']
-                ) {
-                    $bootcamp->schedules()->create([
-                        'day' => $schedule['day'],
-                        'start_time' => $schedule['start_time'],
-                        'end_time' => $schedule['end_time'],
-                    ]);
-                }
+        $dayMap = [
+            0 => 'minggu',
+            1 => 'senin',
+            2 => 'selasa',
+            3 => 'rabu',
+            4 => 'kamis',
+            5 => 'jumat',
+            6 => 'sabtu',
+        ];
+
+        foreach ((array) $request->input('schedules', []) as $row) {
+            if (empty($row['schedule_date']) || empty($row['start_time']) || empty($row['end_time'])) {
+                continue;
             }
+
+            $date = Carbon::parse($row['schedule_date'])->toDateString();
+            $dayEnum = $dayMap[Carbon::parse($date)->dayOfWeek];
+
+            BootcampSchedule::create([
+                'bootcamp_id'  => $bootcamp->id,
+                'schedule_date' => $date,
+                'day'          => $dayEnum,
+                'start_time'   => $row['start_time'],
+                'end_time'     => $row['end_time'],
+            ]);
         }
 
         if ($request->has('tools') && is_array($request->tools)) {
@@ -200,15 +213,31 @@ class BootcampController extends Controller
 
         if ($request->has('schedules') && is_array($request->schedules)) {
             $bootcamp->schedules()->delete();
-            foreach ($request->schedules as $schedule) {
+
+            $dayMap = [
+                0 => 'minggu',
+                1 => 'senin',
+                2 => 'selasa',
+                3 => 'rabu',
+                4 => 'kamis',
+                5 => 'jumat',
+                6 => 'sabtu',
+            ];
+
+            foreach ($request->schedules as $scheduleData) {
                 if (
-                    isset($schedule['day'], $schedule['start_time'], $schedule['end_time']) &&
-                    $schedule['day'] && $schedule['start_time'] && $schedule['end_time']
+                    !empty($scheduleData['schedule_date']) &&
+                    !empty($scheduleData['start_time']) &&
+                    !empty($scheduleData['end_time'])
                 ) {
+                    $date = Carbon::parse($scheduleData['schedule_date'])->toDateString();
+                    $dayEnum = $dayMap[Carbon::parse($date)->dayOfWeek];
+
                     $bootcamp->schedules()->create([
-                        'day' => $schedule['day'],
-                        'start_time' => $schedule['start_time'],
-                        'end_time' => $schedule['end_time'],
+                        'schedule_date' => $date,
+                        'day' => $dayEnum,
+                        'start_time' => $scheduleData['start_time'],
+                        'end_time' => $scheduleData['end_time'],
                     ]);
                 }
             }

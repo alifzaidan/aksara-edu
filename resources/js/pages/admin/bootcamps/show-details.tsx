@@ -12,7 +12,7 @@ interface Bootcamp {
     id: string;
     title: string;
     category?: { name: string };
-    schedules?: { day: string; start_time: string; end_time: string }[];
+    schedules?: { schedule_date: string; day: string; start_time: string; end_time: string }[];
     tools?: { name: string; description?: string | null; icon: string | null }[];
     batch?: string | null;
     strikethrough_price: number;
@@ -164,14 +164,19 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                         <TableCell>
                             {bootcamp.schedules && bootcamp.schedules.length > 0 ? (
                                 <ul className="space-y-1">
-                                    {bootcamp.schedules.map((sch: { day: string; start_time: string; end_time: string }, idx: number) => (
-                                        <li key={idx}>
-                                            <span className="inline-block w-20 capitalize">{sch.day}</span>
-                                            <span>
-                                                {sch.start_time?.slice(0, 5)} - {sch.end_time?.slice(0, 5)}
-                                            </span>
-                                        </li>
-                                    ))}
+                                    {bootcamp.schedules.map(
+                                        (sch: { schedule_date: string; day: string; start_time: string; end_time: string }, idx: number) => (
+                                            <li key={idx}>
+                                                <span className="inline-block w-30">
+                                                    {format(new Date(sch.schedule_date), 'dd MMM yyyy', { locale: id })}
+                                                </span>
+                                                <span className="inline-block w-20 capitalize">{sch.day}</span>
+                                                <span>
+                                                    {sch.start_time?.slice(0, 5)} - {sch.end_time?.slice(0, 5)}
+                                                </span>
+                                            </li>
+                                        ),
+                                    )}
                                 </ul>
                             ) : (
                                 <span className="text-muted-foreground text-sm">Belum ada jadwal.</span>

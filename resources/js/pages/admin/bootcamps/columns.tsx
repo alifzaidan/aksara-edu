@@ -61,6 +61,7 @@ export type Bootcamp = {
     id: string;
     category_id: string;
     schedules: {
+        schedule_date: string;
         day: string;
         start_time: string;
         end_time: string;
@@ -161,7 +162,8 @@ export const columns: ColumnDef<Bootcamp>[] = [
                             <ul>
                                 {schedules.map((sch, idx) => (
                                     <li key={idx}>
-                                        <span className="capitalize">{sch.day}</span> {sch.start_time?.slice(0, 5)} - {sch.end_time?.slice(0, 5)}
+                                        {format(sch.schedule_date, 'dd MMM yyyy', { locale: id })} : <span className="capitalize">{sch.day}</span>{' '}
+                                        {sch.start_time?.slice(0, 5)} - {sch.end_time?.slice(0, 5)}
                                     </li>
                                 ))}
                             </ul>
