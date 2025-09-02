@@ -1,7 +1,10 @@
+'use client';
+
 import { ColumnDef } from '@tanstack/react-table';
+import ActionCell from './action-cell';
 
 export interface Promotion {
-    id: number;
+    id: string;
     promotion_flyer: string;
     start_date: string;
     end_date: string;
@@ -9,25 +12,50 @@ export interface Promotion {
     url_redirect: string;
 }
 
-export const columns: ColumnDef<Promotion>[] = [
+export const getColumns = (promotions: Promotion[]): ColumnDef<Promotion>[] => [
+    {
+        id: 'number',
+        header: 'No',
+        cell: ({ row }) => {
+            return <div className="font-medium ml-4 justify-center">{row.index + 1}</div>;
+        },
+    },
     {
         accessorKey: 'promotion_flyer',
         header: 'Flyer',
-        cell: ({ row }) => (
-            <img
-                src={row.original.promotion_flyer}
-                alt="Flyer"
-                className="h-16 rounded border object-cover"
-            />
-        ),
+        cell: ({ row }) => {
+            const imageSrc = row.original.promotion_flyer;
+            return imageSrc ? (
+                <img
+                    src={imageSrc}
+                    alt="Flyer"
+                    className="h-16 w-24 rounded border object-cover"
+                    onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/assets/images/placeholder.png';
+                    }}
+                />
+            ) : (
+                <div className="h-16 w-24 rounded border bg-gray-100 flex items-center justify-center text-xs text-gray-400">
+                    No Image
+                </div>
+            );
+        },
     },
     {
         accessorKey: 'start_date',
         header: 'Mulai',
+        cell: ({ row }) => {
+            const date = new Date(row.original.start_date);
+            return isNaN(date.getTime()) ? '-' : date.toLocaleDateString('id-ID');
+        },
     },
     {
         accessorKey: 'end_date',
         header: 'Selesai',
+        cell: ({ row }) => {
+            const date = new Date(row.original.end_date);
+            return isNaN(date.getTime()) ? '-' : date.toLocaleDateString('id-ID');
+        },
     },
     {
         accessorKey: 'is_active',
@@ -42,16 +70,25 @@ export const columns: ColumnDef<Promotion>[] = [
     {
         accessorKey: 'url_redirect',
         header: 'URL Redirect',
-        cell: ({ row }) => (
-            <a
-                href={row.original.url_redirect}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 underline"
-            >
-                {row.original.url_redirect}
-            </a>
-        ),
+        cell: ({ row }) => {
+            const url = row.original.url_redirect;
+            return url && url.trim() ? (
+                <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline hover:text-blue-800"
+                >
+                    {url.length > 30 ? `${url.substring(0, 30)}...` : url}
+                </a>
+            ) : (
+                <span className="text-gray-400">-</span>
+            );
+        },
     },
-    // Tambahkan kolom aksi jika perlu
+    {
+        id: 'actions',
+        header: 'Aksi',
+        cell: ({ row }) => <ActionCell promotion={row.original} promotions={promotions} />,
+    },
 ];

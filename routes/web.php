@@ -157,9 +157,6 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::get('transactions', [InvoiceController::class, 'index'])->name('transactions.index');
 
         Route::resource('promotions', PromotionController::class);
-        // Route::post('/promotions/{promotion}/create', [PromotionController::class, 'create'])->name('promotions.create');
-        // Route::post('/bootcamps/{bootcamp}/archive', [BootcampController::class, 'archive'])->name('bootcamps.archive');
-        // Route::post('/bootcamps/{bootcamp}/duplicate', [BootcampController::class, 'duplicate'])->name('bootcamps.duplicate');
         
     });
 

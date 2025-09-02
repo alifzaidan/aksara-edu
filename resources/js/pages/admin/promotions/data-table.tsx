@@ -23,7 +23,7 @@ export function DataTable({ columns, data }: DataTableProps) {
                             {columns.map((col, idx) => (
                                 <TableCell key={idx}>
                                     {col.cell
-                                        ? col.cell({ row })
+                                        ? col.cell({ row: { original: row, index: i } })
                                         : (row as any)[col.accessorKey]}
                                 </TableCell>
                             ))}

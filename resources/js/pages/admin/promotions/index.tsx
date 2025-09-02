@@ -1,11 +1,12 @@
 import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { columns, Promotion } from './columns';
+import { getColumns, Promotion } from './columns';
+import CreatePromotionModal from './create';
 import { DataTable } from './data-table';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -28,6 +29,11 @@ interface PromotionsProps {
 }
 
 export default function Promotions({ promotions, flash }: any) {
+    const [createModalOpen, setCreateModalOpen] = useState(false);
+    
+    // Generate columns with promotions data
+    const columns = getColumns(promotions);
+
     useEffect(() => {
         if (flash?.success) {
             toast.success(flash.success);
@@ -46,14 +52,18 @@ export default function Promotions({ promotions, flash }: any) {
                         <h1 className="text-2xl font-semibold">Flyer Promosi</h1>
                         <p className="text-muted-foreground text-sm">Kelola flyer promosi untuk produk Anda.</p>
                     </div>
-                    <Button className="hover:cursor-pointer" asChild>
-                        <Link href={route('promotions.create')}>
-                            Tambah Flyer
-                            <Plus />
-                        </Link>
+                    <Button className="hover:cursor-pointer" onClick={() => setCreateModalOpen(true)}>
+                        Tambah Flyer
+                        <Plus />
                     </Button>
                 </div>
                 <DataTable columns={columns} data={promotions} />
+                
+                <CreatePromotionModal 
+                    open={createModalOpen} 
+                    onOpenChange={setCreateModalOpen} 
+                    promotions={promotions}
+                />
             </div>
         </AdminLayout>
     );
