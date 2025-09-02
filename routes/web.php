@@ -70,6 +70,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile/my-courses/{course}/certificate/preview', [ProfileCourseController::class, 'previewCertificate'])->name('profile.course.certificate.preview');
     Route::get('/profile/my-bootcamps', [ProfileBootcampController::class, 'index'])->name('profile.bootcamps');
     Route::get('/profile/my-bootcamps/{bootcamp}', [ProfileBootcampController::class, 'detail'])->name('profile.bootcamp.detail');
+    Route::post('/profile/bootcamp/attendance/upload', [ProfileBootcampController::class, 'uploadAttendanceProof'])->name('profile.bootcamp.attendance.upload');
     Route::get('/profile/my-bootcamps/{bootcamp}/certificate', [ProfileBootcampController::class, 'downloadCertificate'])->name('profile.bootcamp.certificate');
     Route::get('/profile/my-bootcamps/{bootcamp}/certificate/preview', [ProfileBootcampController::class, 'previewCertificate'])->name('profile.bootcamp.certificate.preview');
     Route::get('/profile/my-webinars', [ProfileWebinarController::class, 'index'])->name('profile.webinars');

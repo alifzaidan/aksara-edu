@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\User\Profile;
 
 use App\Http\Controllers\Controller;
+use App\Models\BootcampAttendance;
 use App\Models\Certificate;
 use App\Models\CertificateParticipant;
+use App\Models\EnrollmentBootcamp;
 use App\Models\Invoice;
 use App\Services\CertificatePdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class BootcampController extends Controller
@@ -33,7 +36,11 @@ class BootcampController extends Controller
     public function detail($slug)
     {
         $userId = Auth::id();
-        $bootcamp = Invoice::with(['bootcampItems.bootcamp.category', 'bootcampItems.bootcamp.schedules'])
+        $bootcamp = Invoice::with([
+            'bootcampItems.bootcamp.category',
+            'bootcampItems.bootcamp.schedules',
+            'bootcampItems.attendances.bootcampSchedule'
+        ])
             ->where('user_id', $userId)
             ->whereHas('bootcampItems.bootcamp', function ($query) use ($slug) {
                 $query->where('slug', $slug);
@@ -62,12 +69,60 @@ class BootcampController extends Controller
         ]);
     }
 
+    public function uploadAttendanceProof(Request $request)
+    {
+        $userId = Auth::id();
+
+        $request->validate([
+            'attendance_proof' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
+            'enrollment_id' => 'required|exists:enrollment_bootcamps,id',
+            'schedule_id' => 'required|exists:bootcamp_schedules,id',
+            'notes' => 'nullable|string|max:500'
+        ]);
+
+        $enrollment = EnrollmentBootcamp::findOrFail($request->enrollment_id);
+
+        if ($enrollment->invoice->user_id !== $userId) {
+            abort(403);
+        }
+
+        $existingAttendance = BootcampAttendance::where('enrollment_bootcamp_id', $enrollment->id)
+            ->where('bootcamp_schedule_id', $request->schedule_id)
+            ->first();
+
+        if ($request->hasFile('attendance_proof')) {
+            if ($existingAttendance && $existingAttendance->attendance_proof) {
+                Storage::disk('public')->delete($existingAttendance->attendance_proof);
+            }
+
+            $attendanceProofPath = $request->file('attendance_proof')->store('bootcamp-attendances', 'public');
+
+            if ($existingAttendance) {
+                $existingAttendance->update([
+                    'attendance_proof' => $attendanceProofPath,
+                    'verified' => true,
+                    'notes' => $request->notes
+                ]);
+            } else {
+                BootcampAttendance::create([
+                    'enrollment_bootcamp_id' => $enrollment->id,
+                    'bootcamp_schedule_id' => $request->schedule_id,
+                    'attendance_proof' => $attendanceProofPath,
+                    'verified' => true,
+                    'notes' => $request->notes
+                ]);
+            }
+        }
+
+        return redirect()->back()->with('success', 'Bukti kehadiran berhasil diupload dan akan diverifikasi oleh tim kami.');
+    }
+
     public function downloadCertificate($slug)
     {
         try {
             $userId = Auth::id();
 
-            $bootcamp = Invoice::with('bootcampItems.bootcamp')
+            $bootcamp = Invoice::with(['bootcampItems.bootcamp.schedules', 'bootcampItems.attendances'])
                 ->where('user_id', $userId)
                 ->where('status', 'paid')
                 ->whereHas('bootcampItems.bootcamp', function ($query) use ($slug) {
@@ -79,8 +134,8 @@ class BootcampController extends Controller
                 return back()->with('error', 'Bootcamp tidak ditemukan atau Anda belum terdaftar.');
             }
 
-            $bootcampId = $bootcamp->bootcampItems->first()->bootcamp_id;
-            $bootcampData = $bootcamp->bootcampItems->first()->bootcamp;
+            $enrollment = $bootcamp->bootcampItems->first();
+            $bootcampData = $enrollment->bootcamp;
 
             $bootcampEndDate = new \Carbon\Carbon($bootcampData->end_date);
             $bootcampEndDate->setTime(23, 59, 59);
@@ -89,7 +144,14 @@ class BootcampController extends Controller
                 return back()->with('error', 'Sertifikat belum tersedia. Bootcamp masih berlangsung.');
             }
 
-            $certificate = Certificate::where('bootcamp_id', $bootcampId)->first();
+            $totalSchedules = $bootcampData->schedules->count();
+            $verifiedAttendances = $enrollment->attendances->where('verified', true)->count();
+
+            if ($verifiedAttendances < $totalSchedules) {
+                return back()->with('error', 'Silakan lengkapi dan verifikasi semua bukti kehadiran terlebih dahulu.');
+            }
+
+            $certificate = Certificate::where('bootcamp_id', $bootcampData->id)->first();
 
             if (!$certificate) {
                 return back()->with('error', 'Sertifikat belum dibuat untuk bootcamp ini.');
@@ -101,10 +163,6 @@ class BootcampController extends Controller
 
             if (!$participant) {
                 return back()->with('error', 'Data participant sertifikat tidak ditemukan.');
-            }
-
-            if (!$this->pdfService) {
-                $this->pdfService = new CertificatePdfService();
             }
 
             $pdf = $this->pdfService->generateParticipantCertificate($participant);
@@ -123,7 +181,7 @@ class BootcampController extends Controller
         try {
             $userId = Auth::id();
 
-            $bootcamp = Invoice::with('bootcampItems.bootcamp')
+            $bootcamp = Invoice::with(['bootcampItems.bootcamp.schedules', 'bootcampItems.attendances'])
                 ->where('user_id', $userId)
                 ->where('status', 'paid')
                 ->whereHas('bootcampItems.bootcamp', function ($query) use ($slug) {
@@ -135,8 +193,8 @@ class BootcampController extends Controller
                 return back()->with('error', 'Bootcamp tidak ditemukan atau Anda belum terdaftar.');
             }
 
-            $bootcampId = $bootcamp->bootcampItems->first()->bootcamp_id;
-            $bootcampData = $bootcamp->bootcampItems->first()->bootcamp;
+            $enrollment = $bootcamp->bootcampItems->first();
+            $bootcampData = $enrollment->bootcamp;
 
             $bootcampEndDate = new \Carbon\Carbon($bootcampData->end_date);
             $bootcampEndDate->setTime(23, 59, 59);
@@ -145,7 +203,14 @@ class BootcampController extends Controller
                 return back()->with('error', 'Sertifikat belum tersedia. Bootcamp masih berlangsung.');
             }
 
-            $certificate = Certificate::where('bootcamp_id', $bootcampId)->first();
+            $totalSchedules = $bootcampData->schedules->count();
+            $verifiedAttendances = $enrollment->attendances->where('verified', true)->count();
+
+            if ($verifiedAttendances < $totalSchedules) {
+                return back()->with('error', 'Silakan lengkapi dan verifikasi semua bukti kehadiran terlebih dahulu.');
+            }
+
+            $certificate = Certificate::where('bootcamp_id', $bootcampData->id)->first();
 
             if (!$certificate) {
                 return back()->with('error', 'Sertifikat belum dibuat untuk bootcamp ini.');
@@ -157,10 +222,6 @@ class BootcampController extends Controller
 
             if (!$participant) {
                 return back()->with('error', 'Data participant sertifikat tidak ditemukan.');
-            }
-
-            if (!$this->pdfService) {
-                $this->pdfService = new CertificatePdfService();
             }
 
             $pdf = $this->pdfService->generateParticipantCertificate($participant);

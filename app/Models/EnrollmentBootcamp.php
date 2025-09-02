@@ -21,6 +21,11 @@ class EnrollmentBootcamp extends Model
         return $this->belongsTo(Bootcamp::class);
     }
 
+    public function attendances()
+    {
+        return $this->hasMany(BootcampAttendance::class);
+    }
+
     public function freeRequirement()
     {
         return $this->hasOne(FreeEnrollmentRequirement::class, 'enrollment_id')

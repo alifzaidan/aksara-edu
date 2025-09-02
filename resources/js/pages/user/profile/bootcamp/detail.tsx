@@ -1,13 +1,33 @@
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import UserLayout from '@/layouts/user-layout';
-import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Award, BadgeCheck, Calendar, CheckCircle, Clock, Download, Eye, Users } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { ArrowLeft, Award, BadgeCheck, Calendar, CheckCircle, Clock, Download, Eye, Upload, Users, X } from 'lucide-react';
 import { useState } from 'react';
 
 interface Category {
     id: string;
     name: string;
+}
+
+interface BootcampSchedule {
+    id: string;
+    schedule_date: string;
+    day: string;
+    start_time: string;
+    end_time: string;
+}
+
+interface BootcampAttendance {
+    id: string;
+    enrollment_bootcamp_id: string;
+    bootcamp_schedule_id: string;
+    attendance_proof: string;
+    verified: boolean;
+    notes?: string;
+    bootcamp_schedule: BootcampSchedule;
 }
 
 interface Bootcamp {
@@ -27,7 +47,7 @@ interface Bootcamp {
     short_description: string | null;
     group_url: string | null;
     status: string;
-    schedules?: { schedule_date: string; day: string; start_time: string; end_time: string }[];
+    schedules: BootcampSchedule[];
     user_id: string;
     created_at: string;
     updated_at: string;
@@ -40,6 +60,7 @@ interface EnrollmentBootcampItem {
     bootcamp: Bootcamp;
     progress: number;
     completed_at: string | null;
+    attendances: BootcampAttendance[];
     created_at: string;
     updated_at: string;
 }
@@ -91,8 +112,66 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
     const curriculumList = parseList(bootcampData.curriculum);
     const [isLoading, setIsLoading] = useState(true);
 
+    // Attendance states
+    const [showUploadForms, setShowUploadForms] = useState<{ [key: string]: boolean }>({});
+    const [selectedFiles, setSelectedFiles] = useState<{ [key: string]: File | null }>({});
+    const [notes, setNotes] = useState<{ [key: string]: string }>({});
+    const [uploading, setUploading] = useState<{ [key: string]: boolean }>({});
+
     const handleIframeLoad = () => {
         setIsLoading(false);
+    };
+
+    const handleFileSelect = (scheduleId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                alert('Format file harus berupa gambar (JPG, PNG, WEBP)');
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Ukuran file maksimal 5MB');
+                return;
+            }
+
+            setSelectedFiles((prev) => ({ ...prev, [scheduleId]: file }));
+        }
+    };
+
+    const handleUploadAttendance = (scheduleId: string) => {
+        const file = selectedFiles[scheduleId];
+        if (!file || !bootcampItem) return;
+
+        setUploading((prev) => ({ ...prev, [scheduleId]: true }));
+
+        const formData = new FormData();
+        formData.append('attendance_proof', file);
+        formData.append('enrollment_id', bootcampItem.id);
+        formData.append('schedule_id', scheduleId);
+        formData.append('notes', notes[scheduleId] || '');
+
+        router.post(route('profile.bootcamp.attendance.upload'), formData, {
+            preserveState: false,
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowUploadForms((prev) => ({ ...prev, [scheduleId]: false }));
+                setSelectedFiles((prev) => ({ ...prev, [scheduleId]: null }));
+                setNotes((prev) => ({ ...prev, [scheduleId]: '' }));
+            },
+            onError: (errors) => {
+                console.error('Upload errors:', errors);
+                alert('Gagal mengupload bukti kehadiran');
+            },
+            onFinish: () => {
+                setUploading((prev) => ({ ...prev, [scheduleId]: false }));
+            },
+        });
+    };
+
+    const getAttendanceForSchedule = (scheduleId: string) => {
+        return bootcampItem?.attendances?.find((att) => att.bootcamp_schedule_id === scheduleId);
     };
 
     if (!bootcampData || !bootcampItem) {
@@ -110,7 +189,12 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
     bootcampEndDate.setHours(23, 59, 59, 999);
     const isCompleted = bootcampEndDate < new Date();
 
-    const hasCertificate = certificate && isCompleted && bootcampInvoiceStatus === 'paid';
+    // Check attendance completion
+    const totalSchedules = bootcampData.schedules?.length || 0;
+    const verifiedAttendances = bootcampItem.attendances?.filter((att) => att.verified).length || 0;
+    const allAttendanceVerified = totalSchedules > 0 && verifiedAttendances === totalSchedules;
+
+    const hasCertificate = certificate && isCompleted && bootcampInvoiceStatus === 'paid' && allAttendanceVerified;
 
     return (
         <UserLayout>
@@ -135,12 +219,18 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                     year: 'numeric',
                                 })}
                             </span>
-                            {hasCertificate ? (
+                            {hasCertificate && (
                                 <span className="mb-4 flex w-fit items-center gap-2 rounded-full border border-green-800 bg-green-100 px-4 py-1 text-sm font-medium text-green-800 shadow-xs">
                                     <Award size={16} />
                                     Sertifikat Tersedia
                                 </span>
-                            ) : null}
+                            )}
+                            {allAttendanceVerified && (
+                                <span className="mb-4 flex w-fit items-center gap-2 rounded-full border border-blue-800 bg-blue-100 px-4 py-1 text-sm font-medium text-blue-800 shadow-xs">
+                                    <CheckCircle size={16} />
+                                    Kehadiran Lengkap
+                                </span>
+                            )}
                         </div>
 
                         <h1 className="mx-auto mb-4 max-w-2xl text-4xl leading-tight font-bold italic sm:text-5xl">{bootcampData.title}</h1>
@@ -155,171 +245,354 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                     </div>
                 </div>
             </section>
+
             <section className="mx-auto mb-12 w-full max-w-7xl px-4">
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                    {isCompleted ? (
-                        <>
-                            <div className="col-span-2 space-y-6">
-                                <div className="rounded-xl border border-green-200 bg-gradient-to-r from-green-50 to-blue-50 p-6 dark:border-green-800 dark:from-green-900/20 dark:to-blue-900/20">
-                                    <div className="mb-4 flex items-center gap-3">
-                                        <Award className="text-green-600" size={24} />
-                                        <h2 className="text-xl font-bold text-green-800 dark:text-green-200">Selamat! Bootcamp Telah Selesai</h2>
+                    <div className="col-span-2 space-y-6">
+                        {isCompleted && hasCertificate && (
+                            <section className="mx-auto mb-8 w-full max-w-7xl px-4">
+                                <div className="border-gradient-to-r rounded-2xl border bg-gradient-to-br from-green-50 via-blue-50 to-blue-200 p-8 shadow-lg dark:border-green-800 dark:from-green-900/20 dark:via-blue-900/20 dark:to-purple-900/20">
+                                    <div>
+                                        <div className="mb-4 flex">
+                                            <div className="flex items-center gap-2 rounded-full bg-gradient-to-r from-green-400 to-blue-500 px-6 py-2 text-white shadow-lg">
+                                                <Award size={24} />
+                                                <span className="font-bold">🎉 Selamat! 🎉</span>
+                                            </div>
+                                        </div>
+
+                                        <h2 className="mb-4 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-2xl font-bold text-transparent">
+                                            Terima Kasih Telah Menyelesaikan Bootcamp!
+                                        </h2>
+
+                                        <div className="mx-auto max-w-3xl space-y-3 text-gray-700 dark:text-gray-300">
+                                            <p className="leading-relaxed">
+                                                🙏 Terima kasih telah berpartisipasi aktif dalam bootcamp "{bootcampData.title}". Dedikasi dan
+                                                konsistensi Anda dalam mengikuti seluruh sesi pembelajaran sungguh luar biasa! Kami berharap ilmu dan
+                                                pengalaman yang telah Anda dapatkan dapat bermanfaat untuk pengembangan karir dan skill Anda ke
+                                                depannya.
+                                            </p>
+                                        </div>
                                     </div>
-                                    <p className="mb-4 text-green-700 dark:text-green-300">
-                                        Terima kasih atas dedikasi dan kerja keras Anda selama program berlangsung. Kami harap ilmu yang Anda peroleh
-                                        menjadi bekal berharga untuk karir Anda di masa depan.
-                                    </p>
-                                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                                        <CheckCircle size={16} />
-                                        <span>
-                                            Selesai pada:{' '}
-                                            {new Date(bootcampData.end_date!).toLocaleDateString('id-ID', {
+                                </div>
+                            </section>
+                        )}
+                        {bootcampInvoiceStatus === 'paid' && bootcampData.schedules && bootcampData.schedules.length > 0 && (
+                            <div className="rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 p-6 dark:border-purple-800 dark:from-purple-900/20 dark:to-pink-900/20">
+                                <div className="mb-4 flex items-center gap-3">
+                                    <Upload className="text-purple-600" size={24} />
+                                    <div>
+                                        <h2 className="text-xl font-bold text-purple-800 dark:text-purple-200">📸 Bukti Kehadiran Per Pertemuan</h2>
+                                        <p className="text-sm text-purple-600 dark:text-purple-400">
+                                            Upload bukti kehadiran untuk setiap pertemuan ({verifiedAttendances}/{totalSchedules} terverifikasi)
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {bootcampData.schedules.map((schedule, idx) => {
+                                        const attendance = getAttendanceForSchedule(schedule.id);
+                                        const showForm = showUploadForms[schedule.id];
+                                        const isUploading = uploading[schedule.id];
+                                        const scheduleDate = new Date(schedule.schedule_date);
+                                        const isPast = scheduleDate < new Date();
+
+                                        return (
+                                            <div
+                                                key={schedule.id}
+                                                className={`rounded-lg border p-4 ${
+                                                    attendance?.verified
+                                                        ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
+                                                        : attendance
+                                                          ? 'border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20'
+                                                          : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
+                                                }`}
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex items-center gap-2">
+                                                                <Calendar size={16} className="text-purple-600" />
+                                                                <span className="font-medium">Pertemuan {idx + 1}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <Clock size={14} className="text-gray-500" />
+                                                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                                                    {scheduleDate.toLocaleDateString('id-ID', {
+                                                                        day: '2-digit',
+                                                                        month: 'short',
+                                                                        year: 'numeric',
+                                                                    })}{' '}
+                                                                    | {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)} WIB
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        {attendance && (
+                                                            <div className="mt-2 flex items-center gap-2">
+                                                                {attendance.verified ? (
+                                                                    <span className="flex items-center gap-1 text-sm text-green-600">
+                                                                        <CheckCircle size={14} />
+                                                                        Terverifikasi
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="flex items-center gap-1 text-sm text-yellow-600">
+                                                                        <Clock size={14} />
+                                                                        Menunggu Verifikasi
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2">
+                                                        {attendance?.verified ? (
+                                                            <Button size="sm" variant="outline" disabled>
+                                                                <CheckCircle size={14} className="mr-1" />
+                                                                Verified
+                                                            </Button>
+                                                        ) : attendance ? (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() =>
+                                                                    setShowUploadForms((prev) => ({
+                                                                        ...prev,
+                                                                        [schedule.id]: !showForm,
+                                                                    }))
+                                                                }
+                                                            >
+                                                                <Upload size={14} className="mr-1" />
+                                                                Edit Bukti
+                                                            </Button>
+                                                        ) : (
+                                                            <Button
+                                                                size="sm"
+                                                                disabled={!isPast}
+                                                                onClick={() =>
+                                                                    setShowUploadForms((prev) => ({
+                                                                        ...prev,
+                                                                        [schedule.id]: !showForm,
+                                                                    }))
+                                                                }
+                                                            >
+                                                                <Upload size={14} className="mr-1" />
+                                                                {isPast ? 'Upload Bukti' : 'Belum Dimulai'}
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Upload Form */}
+                                                {showForm && (
+                                                    <div className="mt-4 space-y-3 rounded border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+                                                        <div className="flex items-center justify-between">
+                                                            <h5 className="font-medium">Upload Bukti Kehadiran</h5>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() =>
+                                                                    setShowUploadForms((prev) => ({
+                                                                        ...prev,
+                                                                        [schedule.id]: false,
+                                                                    }))
+                                                                }
+                                                            >
+                                                                <X size={16} />
+                                                            </Button>
+                                                        </div>
+
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor={`file_${schedule.id}`}>
+                                                                Screenshot/Foto Kehadiran <span className="text-red-500">*</span>
+                                                            </Label>
+                                                            <Input
+                                                                id={`file_${schedule.id}`}
+                                                                type="file"
+                                                                accept="image/*"
+                                                                onChange={(e) => handleFileSelect(schedule.id, e)}
+                                                                className="file:mr-4 file:rounded file:border-0 file:bg-gray-100 file:px-2 file:py-1 file:text-sm file:text-gray-700 hover:file:bg-gray-200"
+                                                            />
+                                                            <p className="text-xs text-gray-500">Format: JPG, PNG, WEBP. Maksimal 5MB.</p>
+                                                        </div>
+
+                                                        {selectedFiles[schedule.id] && (
+                                                            <div className="text-center">
+                                                                <img
+                                                                    src={URL.createObjectURL(selectedFiles[schedule.id]!)}
+                                                                    alt="Preview"
+                                                                    className="mx-auto max-h-32 rounded-lg border shadow-sm"
+                                                                />
+                                                                <p className="mt-2 text-sm text-gray-600">{selectedFiles[schedule.id]?.name}</p>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor={`notes_${schedule.id}`}>Catatan (Opsional)</Label>
+                                                            <textarea
+                                                                id={`notes_${schedule.id}`}
+                                                                value={notes[schedule.id] || ''}
+                                                                onChange={(e) => setNotes((prev) => ({ ...prev, [schedule.id]: e.target.value }))}
+                                                                placeholder="Tambahkan catatan jika diperlukan..."
+                                                                className="w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                                rows={2}
+                                                                maxLength={500}
+                                                            />
+                                                            <p className="text-xs text-gray-500">
+                                                                Maksimal 500 karakter ({(notes[schedule.id] || '').length}/500)
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                variant="outline"
+                                                                onClick={() =>
+                                                                    setShowUploadForms((prev) => ({
+                                                                        ...prev,
+                                                                        [schedule.id]: false,
+                                                                    }))
+                                                                }
+                                                                className="flex-1"
+                                                            >
+                                                                Batal
+                                                            </Button>
+                                                            <Button
+                                                                onClick={() => handleUploadAttendance(schedule.id)}
+                                                                disabled={!selectedFiles[schedule.id] || isUploading}
+                                                                className="flex-1 bg-purple-600 hover:bg-purple-700"
+                                                            >
+                                                                {isUploading ? 'Mengupload...' : 'Upload Bukti'}
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Show existing attendance proof */}
+                                                {attendance && !showForm && (
+                                                    <div className="mt-3">
+                                                        <img
+                                                            src={`/storage/${attendance.attendance_proof}`}
+                                                            alt="Bukti Kehadiran"
+                                                            className="mx-auto max-h-24 rounded border shadow-sm"
+                                                        />
+                                                        {attendance.notes && (
+                                                            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                                                Catatan: {attendance.notes}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {totalSchedules > 0 && (
+                                    <div className="mt-4 rounded-lg bg-purple-100 p-3 dark:bg-purple-800/50">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-medium text-purple-800 dark:text-purple-200">
+                                                Progress Kehadiran: {verifiedAttendances}/{totalSchedules}
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-2 w-32 rounded-full bg-purple-200 dark:bg-purple-700">
+                                                    <div
+                                                        className="h-2 rounded-full bg-purple-600 transition-all"
+                                                        style={{ width: `${(verifiedAttendances / totalSchedules) * 100}%` }}
+                                                    />
+                                                </div>
+                                                <span className="text-sm font-medium text-purple-800 dark:text-purple-200">
+                                                    {Math.round((verifiedAttendances / totalSchedules) * 100)}%
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Period and Schedule Info */}
+                        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+                            <div className="mb-4 flex items-center gap-3">
+                                <Calendar className="text-blue-600" size={20} />
+                                <h3 className="text-lg font-semibold">{isCompleted ? 'Periode Bootcamp' : 'Jadwal Bootcamp'}</h3>
+                            </div>
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+                                    <Calendar size={16} className="text-blue-600" />
+                                    <div>
+                                        <p className="font-medium text-blue-900 dark:text-blue-100">
+                                            {new Date(bootcampData.start_date).toLocaleDateString('id-ID', {
+                                                day: 'numeric',
+                                                month: 'long',
+                                                year: 'numeric',
+                                            })}{' '}
+                                            -{' '}
+                                            {new Date(bootcampData.end_date).toLocaleDateString('id-ID', {
                                                 day: 'numeric',
                                                 month: 'long',
                                                 year: 'numeric',
                                             })}
-                                        </span>
+                                        </p>
+                                        <p className="text-sm text-blue-700 dark:text-blue-300">Durasi Program</p>
                                     </div>
                                 </div>
 
-                                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-                                    <div className="mb-4 flex items-center gap-3">
-                                        <Calendar className="text-blue-600" size={20} />
-                                        <h3 className="text-lg font-semibold">Periode Bootcamp</h3>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-zinc-700">
-                                            <div className="text-blue-600">
-                                                <Calendar size={16} />
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-gray-900 dark:text-white">
-                                                    {new Date(bootcampData.start_date).toLocaleDateString('id-ID', {
+                                {bootcampData.schedules && bootcampData.schedules.length > 0 && (
+                                    <div className="space-y-2">
+                                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Jadwal Sesi:</p>
+                                        {bootcampData.schedules.map((schedule, idx) => (
+                                            <div key={idx} className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-zinc-700">
+                                                <Clock size={16} className="text-green-600" />
+                                                <span className="font-medium text-gray-900 capitalize dark:text-white">{schedule.day},</span>
+                                                <span className="text-gray-600 dark:text-gray-400">
+                                                    {new Date(schedule.schedule_date).toLocaleDateString('id-ID', {
                                                         day: 'numeric',
                                                         month: 'long',
                                                         year: 'numeric',
                                                     })}{' '}
-                                                    -{' '}
-                                                    {new Date(bootcampData.end_date).toLocaleDateString('id-ID', {
-                                                        day: 'numeric',
-                                                        month: 'long',
-                                                        year: 'numeric',
-                                                    })}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {bootcampData.schedules && bootcampData.schedules.length > 0 && (
-                                            <div className="space-y-2">
-                                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Jadwal Sesi:</p>
-                                                {bootcampData.schedules.map((schedule, idx) => (
-                                                    <div key={idx} className="flex items-center gap-3 rounded bg-gray-50 p-2 dark:bg-zinc-700">
-                                                        <Clock size={14} className="text-gray-500" />
-                                                        <span className="text-sm text-gray-600 capitalize dark:text-gray-400">
-                                                            {schedule.day} | {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)} WIB
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            <div className="col-span-2 space-y-6">
-                                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-                                    <div className="mb-4 flex items-center gap-3">
-                                        <Calendar className="text-blue-600" size={20} />
-                                        <h3 className="text-lg font-semibold">Jadwal Bootcamp</h3>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
-                                            <div className="text-blue-600">
-                                                <Calendar size={16} />
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-blue-900 dark:text-blue-100">
-                                                    {new Date(bootcampData.start_date).toLocaleDateString('id-ID', {
-                                                        day: 'numeric',
-                                                        month: 'long',
-                                                        year: 'numeric',
-                                                    })}{' '}
-                                                    -{' '}
-                                                    {new Date(bootcampData.end_date).toLocaleDateString('id-ID', {
-                                                        day: 'numeric',
-                                                        month: 'long',
-                                                        year: 'numeric',
-                                                    })}
-                                                </p>
-                                                <p className="text-sm text-blue-700 dark:text-blue-300">Durasi Program</p>
-                                            </div>
-                                        </div>
-
-                                        {bootcampData.schedules && bootcampData.schedules.length > 0 ? (
-                                            <div className="space-y-2">
-                                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Jadwal Sesi:</p>
-                                                {bootcampData.schedules.map((schedule, idx) => (
-                                                    <div key={idx} className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-zinc-700">
-                                                        <Clock size={16} className="text-green-600" />
-                                                        <span className="font-medium text-gray-900 capitalize dark:text-white">{schedule.day},</span>
-                                                        <span className="text-gray-600 dark:text-gray-400">
-                                                            {new Date(schedule.schedule_date).toLocaleDateString('id-ID', {
-                                                                day: 'numeric',
-                                                                month: 'long',
-                                                                year: 'numeric',
-                                                            })}{' '}
-                                                            | {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)} WIB
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
-                                                <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                                                    Jadwal detail akan diinformasikan melalui grup WhatsApp
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-                                    <div className="mb-4 flex items-center gap-3">
-                                        <BadgeCheck className="text-green-600" size={20} />
-                                        <h3 className="text-lg font-semibold">Fasilitas yang Tersedia</h3>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {benefitList.map((benefit, idx) => (
-                                            <div key={idx} className="flex items-start gap-3 rounded-lg bg-green-50 p-3 dark:bg-green-900/20">
-                                                <BadgeCheck size={18} className="mt-1 min-w-6 text-green-600" />
-                                                <p className="text-gray-700 dark:text-gray-300">{benefit}</p>
+                                                    | {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)} WIB
+                                                </span>
                                             </div>
                                         ))}
                                     </div>
-                                </div>
-
-                                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-                                    <div className="mb-4 flex items-center gap-3">
-                                        <Users className="text-purple-600" size={20} />
-                                        <h3 className="text-lg font-semibold">Kurikulum</h3>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {curriculumList.map((item, idx) => (
-                                            <div key={idx} className="flex items-start gap-3 rounded-lg bg-purple-50 p-3 dark:bg-purple-900/20">
-                                                <div className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-purple-100 text-sm font-semibold text-purple-600 dark:bg-purple-800 dark:text-purple-300">
-                                                    {idx + 1}
-                                                </div>
-                                                <p className="text-gray-700 dark:text-gray-300">{item}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+                                )}
                             </div>
-                        </>
-                    )}
+                        </div>
 
+                        {/* Benefits */}
+                        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+                            <div className="mb-4 flex items-center gap-3">
+                                <BadgeCheck className="text-green-600" size={20} />
+                                <h3 className="text-lg font-semibold">Fasilitas yang Tersedia</h3>
+                            </div>
+                            <div className="space-y-3">
+                                {benefitList.map((benefit, idx) => (
+                                    <div key={idx} className="flex items-start gap-3 rounded-lg bg-green-50 p-3 dark:bg-green-900/20">
+                                        <BadgeCheck size={18} className="mt-1 min-w-6 text-green-600" />
+                                        <p className="text-gray-700 dark:text-gray-300">{benefit}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Curriculum */}
+                        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+                            <div className="mb-4 flex items-center gap-3">
+                                <Users className="text-purple-600" size={20} />
+                                <h3 className="text-lg font-semibold">Kurikulum</h3>
+                            </div>
+                            <div className="space-y-3">
+                                {curriculumList.map((item, idx) => (
+                                    <div key={idx} className="flex items-start gap-3 rounded-lg bg-purple-50 p-3 dark:bg-purple-900/20">
+                                        <div className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-purple-100 text-sm font-semibold text-purple-600 dark:bg-purple-800 dark:text-purple-300">
+                                            {idx + 1}
+                                        </div>
+                                        <p className="text-gray-700 dark:text-gray-300">{item}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Sidebar - Certificate Section */}
                     <div className="col-span-1">
                         {isCompleted ? (
                             <div className="sticky top-6 space-y-4">
@@ -413,7 +686,9 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                     ? 'Sertifikat belum dibuat untuk bootcamp ini.'
                                                     : bootcampInvoiceStatus !== 'paid'
                                                       ? 'Selesaikan pembayaran untuk mendapatkan sertifikat.'
-                                                      : 'Sertifikat akan tersedia setelah bootcamp selesai.'}
+                                                      : !allAttendanceVerified
+                                                        ? `Lengkapi bukti kehadiran (${verifiedAttendances}/${totalSchedules} terverifikasi).`
+                                                        : 'Sertifikat akan tersedia setelah bootcamp selesai.'}
                                             </p>
                                             <Button className="mt-3 w-full" disabled>
                                                 <Download size={16} className="mr-2" />
@@ -421,7 +696,9 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                     ? 'Sertifikat Belum Tersedia'
                                                     : bootcampInvoiceStatus !== 'paid'
                                                       ? 'Selesaikan Pembayaran'
-                                                      : 'Menunggu Bootcamp Selesai'}
+                                                      : !allAttendanceVerified
+                                                        ? 'Lengkapi Kehadiran'
+                                                        : 'Menunggu Bootcamp Selesai'}
                                             </Button>
                                         </>
                                     )}
