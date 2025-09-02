@@ -12,7 +12,7 @@ interface Bootcamp {
     quota: number;
     start_date: string;
     end_date: string;
-    schedules?: { day: string; start_time: string; end_time: string }[];
+    schedules?: { schedule_date: string; day: string; start_time: string; end_time: string }[];
     registration_deadline: string;
     registration_url: string;
     thumbnail?: string | null;
@@ -135,7 +135,13 @@ export default function RegisterSection({ bootcamp }: { bootcamp: Bootcamp }) {
                                 <li key={idx} className="flex items-center gap-2 text-sm">
                                     <Clock size="16" className="text-primary dark:text-secondary" />
                                     <p className="capitalize">
-                                        {schedule.day} | {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)} WIB
+                                        {schedule.day},{' '}
+                                        {new Date(schedule.schedule_date).toLocaleDateString('id-ID', {
+                                            day: 'numeric',
+                                            month: 'long',
+                                            year: 'numeric',
+                                        })}{' '}
+                                        | {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)} WIB
                                     </p>
                                 </li>
                             ))

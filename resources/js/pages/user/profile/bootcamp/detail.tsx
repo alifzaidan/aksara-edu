@@ -27,7 +27,7 @@ interface Bootcamp {
     short_description: string | null;
     group_url: string | null;
     status: string;
-    schedules?: { day: string; start_time: string; end_time: string }[];
+    schedules?: { schedule_date: string; day: string; start_time: string; end_time: string }[];
     user_id: string;
     created_at: string;
     updated_at: string;
@@ -263,9 +263,14 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                 {bootcampData.schedules.map((schedule, idx) => (
                                                     <div key={idx} className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-zinc-700">
                                                         <Clock size={16} className="text-green-600" />
-                                                        <span className="font-medium text-gray-900 capitalize dark:text-white">{schedule.day}</span>
+                                                        <span className="font-medium text-gray-900 capitalize dark:text-white">{schedule.day},</span>
                                                         <span className="text-gray-600 dark:text-gray-400">
-                                                            {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)} WIB
+                                                            {new Date(schedule.schedule_date).toLocaleDateString('id-ID', {
+                                                                day: 'numeric',
+                                                                month: 'long',
+                                                                year: 'numeric',
+                                                            })}{' '}
+                                                            | {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)} WIB
                                                         </span>
                                                     </div>
                                                 ))}
