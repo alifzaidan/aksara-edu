@@ -1,5 +1,4 @@
-import { type SharedData } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
 
 interface AuthLayoutProps {
@@ -8,22 +7,10 @@ interface AuthLayoutProps {
 }
 
 export default function AuthSplitLayout({ children, title, description }: PropsWithChildren<AuthLayoutProps>) {
-    const { quote } = usePage<SharedData>().props;
-
     return (
         <div className="relative grid h-dvh flex-col items-center justify-center px-8 sm:px-0 lg:max-w-none lg:grid-cols-2 lg:px-0">
             <div className="bg-muted relative hidden h-full flex-col overflow-hidden p-0 text-white lg:flex dark:border-r">
                 <img src="/assets/images/login-img.webp" alt="Aksademy" className="absolute inset-0 z-0 h-full w-full object-cover object-center" />
-                <div className="relative z-10 flex h-full w-full flex-col p-10">
-                    {quote && (
-                        <div className="mt-auto">
-                            <blockquote className="space-y-2">
-                                <p className="text-lg">&ldquo;{quote.message}&rdquo;</p>
-                                <footer className="text-sm text-neutral-300">{quote.author}</footer>
-                            </blockquote>
-                        </div>
-                    )}
-                </div>
             </div>
             <div className="w-full lg:p-8">
                 <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
