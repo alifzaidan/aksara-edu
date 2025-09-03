@@ -4,11 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { rupiahFormatter } from '@/lib/utils';
 import { SharedData } from '@/types';
-import { usePage } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { LinkIcon } from 'lucide-react';
-import { useMemo } from 'react';
+import { Edit2, ExternalLink, LinkIcon, Plus, Trash2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 interface Webinar {
@@ -39,6 +39,23 @@ interface Webinar {
 export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
+
+    // State untuk recording management
+    const [isEditingRecording, setIsEditingRecording] = useState(false);
+    const [showAddRecording, setShowAddRecording] = useState(false);
+
+    // Form untuk add/update recording
+    const {
+        data: recordingData,
+        setData: setRecordingData,
+        post: postRecording,
+        processing: recordingProcessing,
+        reset: resetRecording,
+    } = useForm({
+        recording_url: webinar.recording_url || '',
+    });
+
+    const { delete: deleteRecording, processing: deleteProcessing } = useForm();
 
     const affiliateUrls = useMemo(() => {
         const affiliateCode = auth.user.affiliate_code;
@@ -90,6 +107,60 @@ export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
             }
         } catch {
             toast.error('Gagal menyalin link webinar');
+        }
+    };
+
+    // Handle recording management
+    const handleAddRecording = () => {
+        postRecording(route('webinars.recording.add', webinar.id), {
+            onSuccess: () => {
+                toast.success('Link rekaman berhasil ditambahkan!');
+                setShowAddRecording(false);
+                setIsEditingRecording(false);
+                resetRecording();
+            },
+            onError: () => {
+                toast.error('Gagal menambahkan link rekaman');
+            },
+        });
+    };
+
+    const handleUpdateRecording = () => {
+        postRecording(route('webinars.recording.add', webinar.id), {
+            onSuccess: () => {
+                toast.success('Link rekaman berhasil diperbarui!');
+                setIsEditingRecording(false);
+            },
+            onError: () => {
+                toast.error('Gagal memperbarui link rekaman');
+            },
+        });
+    };
+
+    const handleDeleteRecording = () => {
+        if (confirm('Apakah Anda yakin ingin menghapus link rekaman ini?')) {
+            deleteRecording(route('webinars.recording.remove', webinar.id), {
+                onSuccess: () => {
+                    toast.success('Link rekaman berhasil dihapus!');
+                    setIsEditingRecording(false);
+                    resetRecording();
+                },
+                onError: () => {
+                    toast.error('Gagal menghapus link rekaman');
+                },
+            });
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditingRecording(false);
+        setShowAddRecording(false);
+        setRecordingData('recording_url', webinar.recording_url || '');
+    };
+
+    const handleOpenRecording = () => {
+        if (webinar.recording_url) {
+            window.open(webinar.recording_url, '_blank', 'noopener,noreferrer');
         }
     };
 
@@ -265,13 +336,96 @@ export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
                     <TableRow>
                         <TableCell>Link Rekaman</TableCell>
                         <TableCell>
-                            <div>
-                                {webinar.recording_url ? (
-                                    <a href={webinar.recording_url} target="_blank" rel="noopener noreferrer">
-                                        <span className="text-blue-600 hover:underline">{webinar.recording_url}</span>
-                                    </a>
+                            <div className="space-y-3">
+                                {webinar.recording_url && !isEditingRecording && !showAddRecording ? (
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex-1">
+                                            <a
+                                                href={webinar.recording_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-sm break-all text-blue-600 hover:underline"
+                                            >
+                                                {webinar.recording_url}
+                                            </a>
+                                        </div>
+                                        <div className="flex gap-1">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={handleOpenRecording}
+                                                className="p-2"
+                                                title="Buka di tab baru"
+                                            >
+                                                <ExternalLink className="h-3 w-3" />
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    setIsEditingRecording(true);
+                                                    setRecordingData('recording_url', webinar.recording_url || '');
+                                                }}
+                                                className="p-2"
+                                                title="Edit link rekaman"
+                                            >
+                                                <Edit2 className="h-3 w-3" />
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="destructive"
+                                                onClick={handleDeleteRecording}
+                                                disabled={deleteProcessing}
+                                                className="p-2"
+                                                title="Hapus link rekaman"
+                                            >
+                                                <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    </div>
                                 ) : (
-                                    '-'
+                                    !isEditingRecording &&
+                                    !showAddRecording && (
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm text-gray-500">-</span>
+                                            <Button size="sm" variant="outline" onClick={() => setShowAddRecording(true)} className="text-xs">
+                                                <Plus className="mr-1 h-3 w-3" />
+                                                Tambah Link Rekaman
+                                            </Button>
+                                        </div>
+                                    )
+                                )}
+
+                                {/* Edit/Add recording form */}
+                                {(isEditingRecording || showAddRecording) && (
+                                    <div className="space-y-2">
+                                        <Input
+                                            type="url"
+                                            value={recordingData.recording_url}
+                                            onChange={(e) => setRecordingData('recording_url', e.target.value)}
+                                            placeholder="https://example.com/recording"
+                                            className="text-sm"
+                                        />
+                                        <div className="flex gap-2">
+                                            <Button
+                                                size="sm"
+                                                onClick={isEditingRecording ? handleUpdateRecording : handleAddRecording}
+                                                disabled={recordingProcessing || !recordingData.recording_url.trim()}
+                                                className="text-xs"
+                                            >
+                                                {recordingProcessing ? 'Menyimpan...' : isEditingRecording ? 'Update' : 'Simpan'}
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={handleCancelEdit}
+                                                disabled={recordingProcessing}
+                                                className="text-xs"
+                                            >
+                                                Batal
+                                            </Button>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         </TableCell>

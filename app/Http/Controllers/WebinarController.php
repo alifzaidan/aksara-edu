@@ -280,4 +280,18 @@ class WebinarController extends Controller
 
         return back()->with('success', 'Link rekaman berhasil diperbarui.');
     }
+
+    public function removeRecording(string $id)
+    {
+        $webinar = Webinar::findOrFail($id);
+
+        if (!$webinar->recording_url) {
+            return back()->with('error', 'Tidak ada link rekaman untuk dihapus.');
+        }
+
+        $webinar->recording_url = null;
+        $webinar->save();
+
+        return back()->with('success', 'Link rekaman berhasil dihapus.');
+    }
 }
