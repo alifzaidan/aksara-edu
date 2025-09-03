@@ -18,14 +18,21 @@ class CourseController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $isAffiliate = $user->hasRole('affiliate');
+
         $query = Course::with(['category', 'user', 'certificate'])->latest();
 
         if ($user->hasRole('mentor')) {
             $query->where('user_id', $user->id);
+        } elseif ($isAffiliate) {
+            $query->where('status', 'published');
         }
 
         $courses = $query->get();
-        return Inertia::render('admin/courses/index', ['courses' => $courses]);
+
+        return Inertia::render('admin/courses/index', [
+            'courses' => $courses,
+        ]);
     }
 
     public function create()

@@ -6,9 +6,11 @@ use App\Models\Category;
 use App\Models\Certificate;
 use App\Models\Invoice;
 use App\Models\Tool;
+use App\Models\User;
 use App\Models\Webinar;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -18,8 +20,23 @@ class WebinarController extends Controller
 {
     public function index()
     {
-        $webinars = Webinar::with(['category', 'user', 'certificate'])->latest()->get();
-        return Inertia::render('admin/webinars/index', ['webinars' => $webinars]);
+        $user = User::find(Auth::user()->id);
+        $isAffiliate = $user->hasRole('affiliate');
+
+        if ($isAffiliate) {
+            $webinars = Webinar::with(['category', 'user', 'certificate'])
+                ->where('status', 'published')
+                ->latest()
+                ->get();
+        } else {
+            $webinars = Webinar::with(['category', 'user', 'certificate'])
+                ->latest()
+                ->get();
+        }
+
+        return Inertia::render('admin/webinars/index', [
+            'webinars' => $webinars,
+        ]);
     }
 
     public function create()

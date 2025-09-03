@@ -8,8 +8,10 @@ use App\Models\Category;
 use App\Models\Certificate;
 use App\Models\Invoice;
 use App\Models\Tool;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -18,8 +20,23 @@ class BootcampController extends Controller
 {
     public function index()
     {
-        $bootcamps = Bootcamp::with(['category', 'user', 'schedules', 'certificate'])->latest()->get();
-        return Inertia::render('admin/bootcamps/index', ['bootcamps' => $bootcamps]);
+        $user = User::find(Auth::user()->id);
+        $isAffiliate = $user->hasRole('affiliate');
+
+        if ($isAffiliate) {
+            $bootcamps = Bootcamp::with(['category', 'user', 'schedules', 'certificate'])
+                ->where('status', 'published')
+                ->latest()
+                ->get();
+        } else {
+            $bootcamps = Bootcamp::with(['category', 'user', 'schedules', 'certificate'])
+                ->latest()
+                ->get();
+        }
+
+        return Inertia::render('admin/bootcamps/index', [
+            'bootcamps' => $bootcamps,
+        ]);
     }
 
     public function create()

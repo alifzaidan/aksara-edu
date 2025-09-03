@@ -60,19 +60,19 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         title: 'Kelas Online',
         href: '/admin/courses',
         icon: BookText,
-        roles: ['admin', 'mentor'],
+        roles: ['admin', 'mentor', 'affiliate'],
     },
     {
         title: 'Bootcamp',
         href: '/admin/bootcamps',
         icon: Presentation,
-        roles: ['admin'],
+        roles: ['admin', 'affiliate'],
     },
     {
         title: 'Webinar',
         href: '/admin/webinars',
         icon: MonitorPlay,
-        roles: ['admin'],
+        roles: ['admin', 'affiliate'],
     },
     {
         title: 'Sertifikat',

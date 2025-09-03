@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/admin-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { SharedData, type BreadcrumbItem } from '@/types';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
@@ -24,6 +24,9 @@ interface BootcampProps {
 }
 
 export default function Bootcamps({ bootcamps, flash }: BootcampProps) {
+    const { auth } = usePage<SharedData>().props;
+    const isAffiliate = auth.role.includes('affiliate');
+
     useEffect(() => {
         if (flash?.success) {
             toast.success(flash.success);
@@ -42,12 +45,14 @@ export default function Bootcamps({ bootcamps, flash }: BootcampProps) {
                         <h1 className="text-2xl font-semibold">Bootcamp</h1>
                         <p className="text-muted-foreground text-sm">Daftar semua bootcamp.</p>
                     </div>
-                    <Button asChild className="hover:cursor-pointer">
-                        <Link href={route('bootcamps.create')}>
-                            Tambah Bootcamp
-                            <Plus />
-                        </Link>
-                    </Button>
+                    {!isAffiliate && (
+                        <Button asChild className="hover:cursor-pointer">
+                            <Link href={route('bootcamps.create')}>
+                                Tambah Bootcamp
+                                <Plus />
+                            </Link>
+                        </Button>
+                    )}
                 </div>
                 <DataTable columns={columns} data={bootcamps} />
             </div>

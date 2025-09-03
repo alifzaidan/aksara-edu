@@ -162,6 +162,17 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::patch('promotions/{promotion}/toggle-status', [PromotionController::class, 'toggleStatus'])->name('promotions.toggle-status');
     });
 
+    Route::middleware(['role:affiliate'])->group(function () {
+        Route::get('courses', [CourseController::class, 'index'])->name('courses.index');
+        Route::get('courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+
+        Route::get('bootcamps', [BootcampController::class, 'index'])->name('bootcamps.index');
+        Route::get('bootcamps/{bootcamp}', [BootcampController::class, 'show'])->name('bootcamps.show');
+
+        Route::get('webinars', [WebinarController::class, 'index'])->name('webinars.index');
+        Route::get('webinars/{webinar}', [WebinarController::class, 'show'])->name('webinars.show');
+    });
+
     Route::middleware(['role:affiliate|mentor'])->group(function () {
         Route::get('affiliate-earnings', [AffiliateEarningController::class, 'index'])->name('earnings.index');
     });

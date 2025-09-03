@@ -75,6 +75,7 @@ export default function ShowCourse({ course, transactions, ratings, certificate,
     const role = auth.role[0];
     const isAdmin = role === 'admin';
     const isMentor = role === 'mentor';
+    const isAffiliate = role === 'affiliate';
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -135,16 +136,18 @@ export default function ShowCourse({ course, transactions, ratings, certificate,
             <div className="px-4 py-4 md:px-6">
                 <h1 className="mb-4 text-2xl font-semibold">{`Detail ${course.title}`}</h1>
 
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
+                <div className={`${!isAffiliate ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
                     <Tabs defaultValue="detail" className="lg:col-span-2">
                         <TabsList>
                             <TabsTrigger value="detail">Detail</TabsTrigger>
-                            <TabsTrigger value="transaksi">
-                                Transaksi
-                                {transactions.length > 0 && (
-                                    <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{transactions.length}</span>
-                                )}
-                            </TabsTrigger>
+                            {!isAffiliate && (
+                                <TabsTrigger value="transaksi">
+                                    Transaksi
+                                    {transactions.length > 0 && (
+                                        <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{transactions.length}</span>
+                                    )}
+                                </TabsTrigger>
+                            )}
                             {isAdmin && (
                                 <TabsTrigger value="rating">
                                     Rating
@@ -173,120 +176,124 @@ export default function ShowCourse({ course, transactions, ratings, certificate,
                         )}
                     </Tabs>
 
-                    <div>
-                        <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
-                        <div className="space-y-4 rounded-lg border p-4">
-                            {(course.status === 'draft' || course.status === 'archived') && (
-                                <>
-                                    {renderPublishMessage()}
-                                    <Button asChild className="w-full" disabled={!canPublish()}>
-                                        <Link method="post" href={route('courses.publish', { course: course.id })}>
-                                            <Send />
-                                            {course.status === 'draft' ? 'Terbitkan' : 'Aktifkan Kembali'}
+                    {!isAffiliate && (
+                        <div>
+                            <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
+                            <div className="space-y-4 rounded-lg border p-4">
+                                {(course.status === 'draft' || course.status === 'archived') && (
+                                    <>
+                                        {renderPublishMessage()}
+                                        <Button asChild className="w-full" disabled={!canPublish()}>
+                                            <Link method="post" href={route('courses.publish', { course: course.id })}>
+                                                <Send />
+                                                {course.status === 'draft' ? 'Terbitkan' : 'Aktifkan Kembali'}
+                                            </Link>
+                                        </Button>
+                                    </>
+                                )}
+                                {course.status === 'published' && (
+                                    <Button asChild className="w-full">
+                                        <Link method="post" href={route('courses.archive', { course: course.id })}>
+                                            <CircleX />
+                                            Arsipkan
                                         </Link>
                                     </Button>
-                                </>
-                            )}
-                            {course.status === 'published' && (
-                                <Button asChild className="w-full">
-                                    <Link method="post" href={route('courses.archive', { course: course.id })}>
-                                        <CircleX />
-                                        Arsipkan
-                                    </Link>
-                                </Button>
-                            )}
-                            <Separator />
-                            <div className="space-y-2">
-                                <Button asChild className="w-full" variant="secondary">
-                                    <Link href={route('courses.edit', { course: course.id })}>
-                                        <SquarePen /> Edit Kelas
-                                    </Link>
-                                </Button>
-                                <Button asChild className="w-full" variant="secondary">
-                                    <Link method="post" href={route('courses.duplicate', { course: course.id })}>
-                                        <Copy /> Duplicate
-                                    </Link>
-                                </Button>
-                                <Button asChild className="w-full" variant="secondary" disabled={course.status === 'archived'}>
-                                    <Link method="post" href={route('courses.archive', { course: course.id })}>
-                                        <CircleX /> Arsipkan
-                                    </Link>
-                                </Button>
-                                <DeleteConfirmDialog
-                                    trigger={
-                                        <Button variant="destructive" className="w-full">
-                                            <Trash /> Hapus
-                                        </Button>
-                                    }
-                                    title="Apakah Anda yakin ingin menghapus kelas ini?"
-                                    itemName={course.title}
-                                    onConfirm={handleDelete}
-                                />
-                            </div>
-                            {isAdmin && (
-                                <>
-                                    <Separator />
-                                    {certificate ? (
-                                        <Button asChild className="w-full" variant="outline">
-                                            <Link href={route('certificates.show', { certificate: certificate.id })}>
-                                                <Award />
-                                                Lihat Data Sertifikat
-                                            </Link>
-                                        </Button>
-                                    ) : (
-                                        <Button asChild className="w-full" variant="outline">
-                                            <Link
-                                                href={route('certificates.create', {
-                                                    program_type: 'course',
-                                                    course_id: course.id,
-                                                })}
-                                            >
-                                                <Plus />
-                                                Buat Sertifikat
-                                            </Link>
-                                        </Button>
-                                    )}
-                                </>
-                            )}
-                        </div>
-
-                        {isAdmin && (
-                            <div className="mt-4 space-y-4 rounded-lg border p-4">
-                                <h3 className="text-sm font-medium">Informasi Sertifikat</h3>
-                                {certificate ? (
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-muted-foreground">Status:</span>
-                                            <span className="flex items-center gap-1 text-green-600">
-                                                <Award className="h-3 w-3" />
-                                                Tersedia
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-muted-foreground">Judul:</span>
-                                            <span className="font-medium">{certificate.title}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-muted-foreground">Nomor:</span>
-                                            <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">{certificate.certificate_number}</code>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-muted-foreground">Dibuat:</span>
-                                            <span className="text-xs">{format(new Date(certificate.created_at), 'dd MMM yyyy', { locale: id })}</span>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="text-muted-foreground text-center text-sm">
-                                        <Award className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                                        <p>Belum ada sertifikat untuk kelas ini.</p>
-                                        <p className="mt-1 text-xs">
-                                            Buat sertifikat untuk memberikan penghargaan kepada peserta yang menyelesaikan kelas.
-                                        </p>
-                                    </div>
+                                )}
+                                <Separator />
+                                <div className="space-y-2">
+                                    <Button asChild className="w-full" variant="secondary">
+                                        <Link href={route('courses.edit', { course: course.id })}>
+                                            <SquarePen /> Edit Kelas
+                                        </Link>
+                                    </Button>
+                                    <Button asChild className="w-full" variant="secondary">
+                                        <Link method="post" href={route('courses.duplicate', { course: course.id })}>
+                                            <Copy /> Duplicate
+                                        </Link>
+                                    </Button>
+                                    <Button asChild className="w-full" variant="secondary" disabled={course.status === 'archived'}>
+                                        <Link method="post" href={route('courses.archive', { course: course.id })}>
+                                            <CircleX /> Arsipkan
+                                        </Link>
+                                    </Button>
+                                    <DeleteConfirmDialog
+                                        trigger={
+                                            <Button variant="destructive" className="w-full">
+                                                <Trash /> Hapus
+                                            </Button>
+                                        }
+                                        title="Apakah Anda yakin ingin menghapus kelas ini?"
+                                        itemName={course.title}
+                                        onConfirm={handleDelete}
+                                    />
+                                </div>
+                                {isAdmin && (
+                                    <>
+                                        <Separator />
+                                        {certificate ? (
+                                            <Button asChild className="w-full" variant="outline">
+                                                <Link href={route('certificates.show', { certificate: certificate.id })}>
+                                                    <Award />
+                                                    Lihat Data Sertifikat
+                                                </Link>
+                                            </Button>
+                                        ) : (
+                                            <Button asChild className="w-full" variant="outline">
+                                                <Link
+                                                    href={route('certificates.create', {
+                                                        program_type: 'course',
+                                                        course_id: course.id,
+                                                    })}
+                                                >
+                                                    <Plus />
+                                                    Buat Sertifikat
+                                                </Link>
+                                            </Button>
+                                        )}
+                                    </>
                                 )}
                             </div>
-                        )}
-                    </div>
+
+                            {isAdmin && (
+                                <div className="mt-4 space-y-4 rounded-lg border p-4">
+                                    <h3 className="text-sm font-medium">Informasi Sertifikat</h3>
+                                    {certificate ? (
+                                        <div className="space-y-2 text-sm">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-muted-foreground">Status:</span>
+                                                <span className="flex items-center gap-1 text-green-600">
+                                                    <Award className="h-3 w-3" />
+                                                    Tersedia
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-muted-foreground">Judul:</span>
+                                                <span className="font-medium">{certificate.title}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-muted-foreground">Nomor:</span>
+                                                <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">{certificate.certificate_number}</code>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-muted-foreground">Dibuat:</span>
+                                                <span className="text-xs">
+                                                    {format(new Date(certificate.created_at), 'dd MMM yyyy', { locale: id })}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-muted-foreground text-center text-sm">
+                                            <Award className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                                            <p>Belum ada sertifikat untuk kelas ini.</p>
+                                            <p className="mt-1 text-xs">
+                                                Buat sertifikat untuk memberikan penghargaan kepada peserta yang menyelesaikan kelas.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
                 <div className="mt-4 rounded-lg border p-4">
                     <h3 className="text-muted-foreground text-center text-sm">

@@ -4,7 +4,6 @@ import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { rupiahFormatter } from '@/lib/utils';
 import { SharedData } from '@/types';
@@ -104,6 +103,9 @@ function CertificateCell({ row }: { row: Row<Course> }) {
 }
 
 export default function CourseActions({ course }: { course: Course }) {
+    const { auth } = usePage<SharedData>().props;
+    const isAffiliate = auth.role.includes('affiliate');
+
     const handleDelete = () => {
         router.delete(route('courses.destroy', course.id));
     };
@@ -123,26 +125,28 @@ export default function CourseActions({ course }: { course: Course }) {
                     <p>Lihat Kelas</p>
                 </TooltipContent>
             </Tooltip>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div>
-                        <DeleteConfirmDialog
-                            trigger={
-                                <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
-                                    <Trash />
-                                    <span className="sr-only">Hapus Kelas</span>
-                                </Button>
-                            }
-                            title="Apakah Anda yakin ingin menghapus kelas ini?"
-                            itemName={course.title}
-                            onConfirm={handleDelete}
-                        />
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Hapus Kelas</p>
-                </TooltipContent>
-            </Tooltip>
+            {!isAffiliate && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div>
+                            <DeleteConfirmDialog
+                                trigger={
+                                    <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
+                                        <Trash />
+                                        <span className="sr-only">Hapus Kelas</span>
+                                    </Button>
+                                }
+                                title="Apakah Anda yakin ingin menghapus kelas ini?"
+                                itemName={course.title}
+                                onConfirm={handleDelete}
+                            />
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Hapus Kelas</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
         </div>
     );
 }
@@ -174,21 +178,6 @@ export type Course = {
 };
 
 export const columns: ColumnDef<Course>[] = [
-    {
-        id: 'select',
-        header: ({ table }) => (
-            <Checkbox
-                checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-            />
-        ),
-        cell: ({ row }) => (
-            <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-    },
     {
         accessorKey: 'no',
         header: 'No',

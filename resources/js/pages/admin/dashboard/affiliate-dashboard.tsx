@@ -6,21 +6,9 @@ import { SharedData } from '@/types';
 import { router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import {
-    CalendarIcon,
-    ChartNoAxesGantt,
-    ChevronDownIcon,
-    Copy,
-    DollarSign,
-    Euro,
-    Filter,
-    MousePointerClick,
-    TrendingDown,
-    TrendingUp,
-    Users,
-    X,
-} from 'lucide-react';
+import { CalendarIcon, ChartNoAxesGantt, ChevronDownIcon, Copy, DollarSign, Euro, Filter, TrendingDown, TrendingUp, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 interface AffiliateStatsProps {
     user: SharedData['auth']['user'];
@@ -167,6 +155,16 @@ export default function AffiliateDashboard({ user, stats, filters }: AffiliateSt
         }
     }, [filters?.start_date, filters?.end_date]);
 
+    const handleCopyAffiliateLink = async () => {
+        try {
+            const affiliateLink = `https://aksademy.id/register?ref=${user.affiliate_code}`;
+            await navigator.clipboard.writeText(affiliateLink);
+            toast.success('Link afiliasi berhasil disalin!');
+        } catch {
+            toast.error('Gagal menyalin link afiliasi');
+        }
+    };
+
     const topStatsCards = [
         {
             title: 'Total Komisi',
@@ -194,32 +192,18 @@ export default function AffiliateDashboard({ user, stats, filters }: AffiliateSt
             percentage: stats.daily_commission_change,
             comparison: ` kemarin (${formatCurrency(stats.commission_yesterday)})`,
         },
-    ];
-
-    const affiliateStatsCards = [
         {
             title: 'Total Pendaftaran',
             value: stats.total_referrals.toLocaleString('id-ID'),
             icon: <Users className="text-muted-foreground size-5" />,
             color: 'bg-purple-100',
         },
-        {
-            title: 'Total Klik Link',
-            value: stats.total_clicks.toLocaleString('id-ID'),
-            icon: <MousePointerClick className="text-muted-foreground size-5" />,
-            color: 'bg-orange-100',
-        },
-        {
-            title: 'Tingkat Konversi',
-            value: `${stats.conversion_rate}%`,
-            icon: <TrendingUp className="text-muted-foreground size-5" />,
-            color: 'bg-green-100',
-        },
     ];
 
     return (
         <>
             <div className="space-y-6">
+                {/* Filter Section - unchanged */}
                 <div className="bg-card mb-6 rounded-lg border p-4">
                     <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-end">
                         <div className="flex flex-col gap-2">
@@ -305,7 +289,8 @@ export default function AffiliateDashboard({ user, stats, filters }: AffiliateSt
                     </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {/* Komisi Cards */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     {topStatsCards.map((card, index) => (
                         <div key={index} className="border-border bg-card text-card-foreground rounded-xl border p-6 shadow-sm">
                             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -329,25 +314,24 @@ export default function AffiliateDashboard({ user, stats, filters }: AffiliateSt
                     ))}
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {affiliateStatsCards.map((card, index) => (
-                        <div key={index} className="border-border bg-card text-card-foreground rounded-xl border p-6 shadow-sm">
-                            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <h3 className="text-sm font-medium tracking-tight">{card.title}</h3>
-                                <div className={`flex h-10 w-10 items-center justify-center rounded-full ${card.color}`}>{card.icon}</div>
-                            </div>
-                            <div>
-                                <div className="text-2xl font-bold">{card.value}</div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     <div className="border-border bg-card text-card-foreground rounded-xl border p-6 shadow-sm lg:col-span-2">
-                        <h3 className="text-lg font-semibold">Referral Terbaru</h3>
-                        <p className="text-muted-foreground mb-4 text-sm">Pendaftaran baru melalui link afiliasi Anda.</p>
-                        <div className="space-y-6">
+                        <div className="mb-4 flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-semibold">Referral Terbaru</h3>
+                                <p className="text-muted-foreground text-sm">Pendaftaran baru melalui link afiliasi Anda.</p>
+                            </div>
+                            {stats.recent_referrals.length > 0 && (
+                                <div className="text-right">
+                                    <p className="text-muted-foreground text-sm">Total Komisi:</p>
+                                    <p className="font-semibold text-green-600">
+                                        {formatCurrency(stats.recent_referrals.reduce((sum, ref) => sum + ref.amount, 0))}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-4">
                             {stats.recent_referrals.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center gap-4 py-12">
                                     <img src="/assets/images/not-found.webp" alt="Referral Tidak Tersedia" className="w-48" />
@@ -355,34 +339,71 @@ export default function AffiliateDashboard({ user, stats, filters }: AffiliateSt
                                 </div>
                             ) : (
                                 stats.recent_referrals.map((ref) => (
-                                    <div key={ref.id} className="flex items-center">
-                                        <div className="bg-muted flex size-10 items-center justify-center rounded-full">
+                                    <div key={ref.id} className="flex items-center rounded-lg border bg-gray-50 p-4 dark:bg-gray-800">
+                                        <div className="bg-muted flex size-12 items-center justify-center rounded-full">
                                             <span className="font-medium">{ref.invoice.user.name.substring(0, 2).toUpperCase()}</span>
                                         </div>
                                         <div className="ml-4 flex-1 space-y-1">
-                                            <p className="text-sm leading-none font-medium">{ref.invoice.user.name}</p>
+                                            <p className="font-medium">{ref.invoice.user.name}</p>
                                             <p className="text-muted-foreground text-sm">{getInvoiceItemName(ref.invoice)}</p>
                                         </div>
-                                        <div className="font-medium">{formatCurrency(ref.amount)}</div>
+                                        <div className="text-right">
+                                            <div className="font-bold text-green-600">{formatCurrency(ref.amount)}</div>
+                                            <div className="text-muted-foreground text-xs">Komisi {user.commission}%</div>
+                                        </div>
                                     </div>
                                 ))
                             )}
                         </div>
                     </div>
 
-                    <div className="border-border bg-card text-card-foreground rounded-xl border p-6 shadow-sm">
-                        <h3 className="text-lg font-semibold">Link Afiliasi Anda</h3>
-                        <p className="text-muted-foreground mb-4 text-sm">Gunakan link ini untuk promosi.</p>
-                        <div className="bg-muted flex items-center space-x-2 rounded-lg border p-3">
-                            <p className="text-muted-foreground flex-1 overflow-hidden text-sm text-ellipsis whitespace-nowrap">
-                                {`https://aksademy.com/register?ref=${user.affiliate_code}`}
-                            </p>
-                            <button
-                                onClick={() => navigator.clipboard.writeText(`https://aksademy.com/register?ref=${user.affiliate_code}`)}
-                                className="hover:bg-background shrink-0 rounded p-2"
-                            >
-                                <Copy className="size-4" />
-                            </button>
+                    <div className="space-y-6">
+                        <div className="border-border bg-card text-card-foreground rounded-xl border p-6 shadow-sm">
+                            <h3 className="text-lg font-semibold">Link Afiliasi Anda</h3>
+                            <p className="text-muted-foreground mb-4 text-sm">Gunakan link ini untuk promosi.</p>
+                            <div className="bg-muted flex items-center space-x-2 rounded-lg border p-3">
+                                <p className="text-muted-foreground flex-1 overflow-hidden text-sm text-ellipsis whitespace-nowrap">
+                                    {`aksademy.id/register?ref=${user.affiliate_code}`}
+                                </p>
+                                <button
+                                    onClick={handleCopyAffiliateLink}
+                                    className="hover:bg-background shrink-0 rounded p-2 transition-colors hover:cursor-pointer"
+                                    title="Salin link afiliasi"
+                                >
+                                    <Copy className="size-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Affiliate Profile */}
+                        <div className="border-border bg-card text-card-foreground rounded-xl border p-6 shadow-sm">
+                            <h3 className="mb-4 text-lg font-semibold">Profil Afiliasi</h3>
+                            <div className="space-y-3">
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground text-sm">Kode Afiliasi:</span>
+                                    <span className="font-mono text-sm">{user.affiliate_code}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground text-sm">Status:</span>
+                                    <span
+                                        className={`rounded-full px-2 py-1 text-xs font-medium ${
+                                            user.affiliate_status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                        }`}
+                                    >
+                                        {user.affiliate_status}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground text-sm">Rate Komisi:</span>
+                                    <span className="font-semibold text-green-600">{user.commission}%</span>
+                                </div>
+                                <div className="border-t pt-2">
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground text-sm">Total Earning:</span>
+                                        <span className="text-lg font-bold">{formatCurrency(stats.total_commission)}</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

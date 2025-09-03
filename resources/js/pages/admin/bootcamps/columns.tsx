@@ -4,16 +4,19 @@ import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { rupiahFormatter } from '@/lib/utils';
-import { Link, router } from '@inertiajs/react';
+import { SharedData } from '@/types';
+import { Link, router, usePage } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Award, Folder, Trash } from 'lucide-react';
 
 export default function BootcampActions({ bootcamp }: { bootcamp: Bootcamp }) {
+    const { auth } = usePage<SharedData>().props;
+    const isAffiliate = auth.role.includes('affiliate');
+
     const handleDelete = () => {
         router.delete(route('bootcamps.destroy', bootcamp.id));
     };
@@ -33,26 +36,28 @@ export default function BootcampActions({ bootcamp }: { bootcamp: Bootcamp }) {
                     <p>Lihat Bootcamp</p>
                 </TooltipContent>
             </Tooltip>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div>
-                        <DeleteConfirmDialog
-                            trigger={
-                                <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
-                                    <Trash />
-                                    <span className="sr-only">Hapus Bootcamp</span>
-                                </Button>
-                            }
-                            title="Apakah Anda yakin ingin menghapus bootcamp ini?"
-                            itemName={bootcamp.title}
-                            onConfirm={handleDelete}
-                        />
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Hapus Bootcamp</p>
-                </TooltipContent>
-            </Tooltip>
+            {!isAffiliate && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div>
+                            <DeleteConfirmDialog
+                                trigger={
+                                    <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
+                                        <Trash />
+                                        <span className="sr-only">Hapus Bootcamp</span>
+                                    </Button>
+                                }
+                                title="Apakah Anda yakin ingin menghapus bootcamp ini?"
+                                itemName={bootcamp.title}
+                                onConfirm={handleDelete}
+                            />
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Hapus Bootcamp</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
         </div>
     );
 }
@@ -85,21 +90,6 @@ export type Bootcamp = {
 };
 
 export const columns: ColumnDef<Bootcamp>[] = [
-    {
-        id: 'select',
-        header: ({ table }) => (
-            <Checkbox
-                checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-            />
-        ),
-        cell: ({ row }) => (
-            <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-    },
     {
         accessorKey: 'no',
         header: 'No',

@@ -4,16 +4,19 @@ import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { rupiahFormatter } from '@/lib/utils';
-import { Link, router } from '@inertiajs/react';
+import { SharedData } from '@/types';
+import { Link, router, usePage } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Award, Folder, Trash } from 'lucide-react';
 
 export default function WebinarActions({ webinar }: { webinar: Webinar }) {
+    const { auth } = usePage<SharedData>().props;
+    const isAffiliate = auth.role.includes('affiliate');
+
     const handleDelete = () => {
         router.delete(route('webinars.destroy', webinar.id));
     };
@@ -33,26 +36,28 @@ export default function WebinarActions({ webinar }: { webinar: Webinar }) {
                     <p>Lihat Webinar</p>
                 </TooltipContent>
             </Tooltip>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div>
-                        <DeleteConfirmDialog
-                            trigger={
-                                <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
-                                    <Trash />
-                                    <span className="sr-only">Hapus Webinar</span>
-                                </Button>
-                            }
-                            title="Apakah Anda yakin ingin menghapus webinar ini?"
-                            itemName={webinar.title}
-                            onConfirm={handleDelete}
-                        />
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Hapus Webinar</p>
-                </TooltipContent>
-            </Tooltip>
+            {!isAffiliate && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div>
+                            <DeleteConfirmDialog
+                                trigger={
+                                    <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
+                                        <Trash />
+                                        <span className="sr-only">Hapus Webinar</span>
+                                    </Button>
+                                }
+                                title="Apakah Anda yakin ingin menghapus webinar ini?"
+                                itemName={webinar.title}
+                                onConfirm={handleDelete}
+                            />
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Hapus Webinar</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
         </div>
     );
 }
@@ -79,21 +84,6 @@ export type Webinar = {
 };
 
 export const columns: ColumnDef<Webinar>[] = [
-    {
-        id: 'select',
-        header: ({ table }) => (
-            <Checkbox
-                checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-            />
-        ),
-        cell: ({ row }) => (
-            <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-    },
     {
         accessorKey: 'no',
         header: 'No',
