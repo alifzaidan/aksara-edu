@@ -20,6 +20,8 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
     const { auth } = usePage<SharedData>().props;
     const isUser = auth.role.includes('user');
     const isAdmin = auth.role.includes('admin');
+    const isAffiliate = auth.role.includes('affiliate');
+    const isMentor = auth.role.includes('mentor');
 
     return (
         <>
@@ -38,7 +40,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
                         </Link>
                     </DropdownMenuItem>
                 )}
-                {isAdmin && (
+                {(isAdmin || isAffiliate || isMentor) && (
                     <DropdownMenuItem asChild>
                         <Link className="block w-full hover:cursor-pointer" href={route('home')} as="button" prefetch onClick={cleanup}>
                             <AppWindow className="mr-2" />
