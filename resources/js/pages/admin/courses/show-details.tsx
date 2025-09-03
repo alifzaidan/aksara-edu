@@ -3,7 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { rupiahFormatter } from '@/lib/utils';
+import { SharedData } from '@/types';
+import { usePage } from '@inertiajs/react';
 import { LinkIcon, Star } from 'lucide-react';
+import { useMemo } from 'react';
 import { toast } from 'sonner';
 
 interface Course {
@@ -26,49 +29,151 @@ interface Course {
 }
 
 export default function CourseDetail({ course, averageRating }: { course: Course; averageRating?: number }) {
+    const { auth } = usePage<SharedData>().props;
+    const isAffiliate = auth.role.includes('affiliate');
+
+    const affiliateUrls = useMemo(() => {
+        const affiliateCode = auth.user.affiliate_code;
+
+        const appendAffiliateCode = (url: string, code: string) => {
+            try {
+                const urlObj = new URL(url);
+                urlObj.searchParams.set('ref', code);
+                return urlObj.toString();
+            } catch {
+                const separator = url.includes('?') ? '&' : '?';
+                return `${url}${separator}ref=${code}`;
+            }
+        };
+
+        if (isAffiliate && affiliateCode) {
+            return {
+                registrationUrl: appendAffiliateCode(course.registration_url, affiliateCode),
+                courseUrl: appendAffiliateCode(course.course_url, affiliateCode),
+            };
+        }
+
+        return {
+            registrationUrl: course.registration_url,
+            courseUrl: course.course_url,
+        };
+    }, [course.registration_url, course.course_url, auth.user.affiliate_code, isAffiliate]);
+
+    const handleCopyRegistrationLink = async () => {
+        try {
+            await navigator.clipboard.writeText(affiliateUrls.registrationUrl);
+            if (isAffiliate) {
+                toast.success('Link pembelian dengan kode afiliasi berhasil disalin!');
+            } else {
+                toast.success('Link pembelian berhasil disalin!');
+            }
+        } catch {
+            toast.error('Gagal menyalin link pembelian');
+        }
+    };
+
+    const handleCopyCourseLink = async () => {
+        try {
+            await navigator.clipboard.writeText(affiliateUrls.courseUrl);
+            if (isAffiliate) {
+                toast.success('Link kelas dengan kode afiliasi berhasil disalin!');
+            } else {
+                toast.success('Link kelas berhasil disalin!');
+            }
+        } catch {
+            toast.error('Gagal menyalin link kelas');
+        }
+    };
+
     return (
         <div className="space-y-6 rounded-lg border p-4">
-            <h2 className="text-lg font-medium">Share Link untuk Mengakses Kelas</h2>
+            <div className="flex items-center justify-between">
+                <h2 className="text-lg font-medium">Share Link untuk Mengakses Kelas</h2>
+                {isAffiliate && <div className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">Mode Afiliasi</div>}
+            </div>
+
+            {/* Info banner untuk affiliate */}
+            {isAffiliate && (
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+                    <div className="flex items-start gap-3">
+                        <div className="flex-1">
+                            <h4 className="font-medium text-blue-800 dark:text-blue-200">Link Afiliasi Otomatis</h4>
+                            <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
+                                Link di bawah sudah menyertakan kode afiliasi Anda ({auth.user.affiliate_code}). Setiap pembelian melalui link ini
+                                akan memberikan komisi untuk Anda.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex flex-col gap-4 md:flex-row">
                 <div className="flex-1 space-y-2">
-                    <Input type="text" value={course.registration_url} readOnly className="rounded border p-2" placeholder="Link Pembelian" />
+                    <label className="text-sm font-medium text-gray-700">Link Pembelian {isAffiliate && '(dengan kode afiliasi)'}</label>
+                    <Input
+                        type="text"
+                        value={affiliateUrls.registrationUrl}
+                        readOnly
+                        className="rounded border p-2 text-sm"
+                        placeholder="Link Pembelian"
+                    />
                     <Button
                         type="button"
-                        onClick={() => {
-                            navigator.clipboard.writeText(course.registration_url);
-                            toast.success('Link pembelian berhasil disalin!');
-                        }}
+                        onClick={handleCopyRegistrationLink}
                         className="w-full hover:cursor-pointer"
                         disabled={course.status === 'draft' || course.status === 'archived'}
                     >
-                        Salin Link Pembelian <LinkIcon />
+                        {isAffiliate ? 'Salin Link Afiliasi Pembelian' : 'Salin Link Pembelian'} <LinkIcon />
                     </Button>
                 </div>
                 <div className="flex-1 space-y-2">
-                    <Input type="text" value={course.course_url} readOnly className="rounded border p-2" placeholder="Link Kelas" />
+                    <label className="text-sm font-medium text-gray-700">Link Kelas {isAffiliate && '(dengan kode afiliasi)'}</label>
+                    <Input type="text" value={affiliateUrls.courseUrl} readOnly className="rounded border p-2 text-sm" placeholder="Link Kelas" />
                     <Button
                         type="button"
-                        onClick={() => {
-                            navigator.clipboard.writeText(course.course_url);
-                            toast.success('Link kelas berhasil disalin!');
-                        }}
+                        onClick={handleCopyCourseLink}
                         className="w-full hover:cursor-pointer"
                         disabled={course.status === 'draft' || course.status === 'archived'}
                     >
-                        Salin Link Kelas <LinkIcon />
+                        {isAffiliate ? 'Salin Link Afiliasi Kelas' : 'Salin Link Kelas'} <LinkIcon />
                     </Button>
                 </div>
             </div>
+
             {course.status === 'published' ? (
                 <p className="text-muted-foreground text-center text-sm">
-                    Share link diatas ke sosial media, whatsapp, tiktok, landing page, email ataupun channel penjualan lainnya agar peserta dapat
-                    mengakses kelas online ini.
+                    {isAffiliate
+                        ? 'Share link afiliasi diatas ke sosial media, whatsapp, tiktok, landing page, email ataupun channel penjualan lainnya untuk mendapatkan komisi dari setiap pembelian'
+                        : 'Share link diatas ke sosial media, whatsapp, tiktok, landing page, email ataupun channel penjualan lainnya agar peserta dapat mengakses kelas online ini.'}
                 </p>
             ) : (
                 <p className="text-center text-sm text-red-500">
                     Kelas ini belum diterbitkan. Silakan terbitkan kelas terlebih dahulu untuk membagikan link akses kelas.
                 </p>
             )}
+
+            {/* Detail komisi untuk affiliate */}
+            {isAffiliate && course.status === 'published' && (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800">
+                    <h4 className="mb-2 text-sm font-medium">Detail Komisi:</h4>
+                    <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+                        <div>
+                            <span className="font-medium">Harga Kelas:</span> {rupiahFormatter.format(course.price)}
+                        </div>
+                        <div>
+                            <span className="font-medium">Rate Komisi:</span> {auth.user.commission}%
+                        </div>
+                        <div>
+                            <span className="font-medium">Komisi per Penjualan:</span>{' '}
+                            {rupiahFormatter.format(course.price * (auth.user.commission / 100))}
+                        </div>
+                        <div>
+                            <span className="font-medium">Kode Afiliasi:</span> {auth.user.affiliate_code}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <Table>
                 <TableBody>
                     <TableRow>

@@ -48,6 +48,11 @@ interface DiscountData {
     message?: string;
 }
 
+interface ReferralInfo {
+    code?: string;
+    hasActive: boolean;
+}
+
 function getYoutubeId(url: string) {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
@@ -65,10 +70,12 @@ export default function CheckoutCourse({
     course,
     hasAccess,
     pendingInvoiceUrl,
+    referralInfo,
 }: {
     course: Course;
     hasAccess: boolean;
     pendingInvoiceUrl?: string | null;
+    referralInfo: ReferralInfo;
 }) {
     const { auth } = usePage<SharedData>().props;
     const isLoggedIn = !!auth.user;
@@ -90,6 +97,17 @@ export default function CheckoutCourse({
     const discountAmount = discountData?.discount_amount || 0;
     const finalCoursePrice = basePrice - discountAmount;
     const totalPrice = isFree ? 0 : finalCoursePrice + transactionFee;
+
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const refFromUrl = urlParams.get('ref');
+
+        if (refFromUrl) {
+            sessionStorage.setItem('referral_code', refFromUrl);
+        } else if (referralInfo.code) {
+            sessionStorage.setItem('referral_code', referralInfo.code);
+        }
+    }, [referralInfo]);
 
     useEffect(() => {
         if (!promoCode.trim() || isFree) {
@@ -235,6 +253,44 @@ export default function CheckoutCourse({
             setLoading(false);
         }
     };
+
+    if (!isLoggedIn) {
+        const currentUrl = window.location.href;
+        const loginUrl = route('login', { redirect: currentUrl });
+
+        return (
+            <UserLayout>
+                <Head title="Login Required" />
+
+                <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
+                    <div className="mx-auto my-12 w-full max-w-7xl px-4">
+                        <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
+                            Daftar Kelas Online "{course.title}"
+                        </h2>
+                        <p className="text-center text-gray-400">Silakan login terlebih dahulu untuk mendaftar kelas online.</p>
+                    </div>
+                </section>
+                <section className="mx-auto my-4 w-full max-w-7xl px-4">
+                    <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
+                        <User size={64} className="text-blue-500" />
+                        <h2 className="text-xl font-bold">Login Diperlukan</h2>
+                        <p className="text-sm text-gray-500">
+                            Anda perlu login terlebih dahulu untuk mendaftar kelas online ini.
+                            {referralInfo.hasActive && ' Kode referral Anda akan tetap tersimpan.'}
+                        </p>
+                        <div className="flex w-full max-w-md gap-2">
+                            <Button asChild className="flex-1">
+                                <a href={loginUrl}>Login</a>
+                            </Button>
+                            <Button asChild variant="outline" className="flex-1">
+                                <Link href={route('register', referralInfo.code ? { ref: referralInfo.code } : {})}>Daftar</Link>
+                            </Button>
+                        </div>
+                    </div>
+                </section>
+            </UserLayout>
+        );
+    }
 
     if (!isProfileComplete) {
         return (

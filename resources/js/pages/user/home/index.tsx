@@ -1,6 +1,7 @@
 import FakeNotifications from '@/components/fake-notifications';
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
+import { useEffect } from 'react';
 import AboutSection from './about-section';
 import CarouselSection from './carousel-section';
 import CtaSection from './cta-section';
@@ -44,6 +45,11 @@ interface MyProductIds {
     webinars: string[];
 }
 
+interface ReferralInfo {
+    code?: string;
+    hasActive: boolean;
+}
+
 interface HomeProps {
     tools: Tool[];
     latestProducts: Product[];
@@ -54,9 +60,21 @@ interface HomeProps {
         type: 'course' | 'bootcamp' | 'webinar';
         price: number;
     }>;
+    referralInfo: ReferralInfo;
 }
 
-export default function Home({ tools, latestProducts, myProductIds, allProducts }: HomeProps) {
+export default function Home({ tools, latestProducts, myProductIds, allProducts, referralInfo }: HomeProps) {
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const refFromUrl = urlParams.get('ref');
+
+        if (refFromUrl) {
+            sessionStorage.setItem('referral_code', refFromUrl);
+        } else if (referralInfo.code) {
+            sessionStorage.setItem('referral_code', referralInfo.code);
+        }
+    }, [referralInfo]);
+
     return (
         <UserLayout>
             <Head title="Beranda" />

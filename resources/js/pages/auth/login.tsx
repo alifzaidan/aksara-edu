@@ -23,6 +23,8 @@ interface LoginProps {
 
 export default function Login({ status, canResetPassword }: LoginProps) {
     const [showPassword, setShowPassword] = useState(false);
+    const [referralCode, setReferralCode] = useState<string | null>(null);
+
     const { data, setData, post, processing, errors, reset } = useForm<Required<LoginForm>>({
         email: '',
         password: '',
@@ -38,14 +40,63 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     };
 
     useEffect(() => {
-        setData('redirect', new URLSearchParams(window.location.search).get('redirect') ?? '');
-    }, [setData]);
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectUrl = urlParams.get('redirect');
+
+        if (redirectUrl) {
+            try {
+                const redirectUrlObj = new URL(redirectUrl);
+                const refFromRedirect = redirectUrlObj.searchParams.get('ref');
+
+                if (refFromRedirect) {
+                    sessionStorage.setItem('referral_code', refFromRedirect);
+                    setReferralCode(refFromRedirect);
+                }
+            } catch (error) {
+                console.log('Error parsing redirect URL:', error);
+            }
+        }
+
+        const storedReferral = sessionStorage.getItem('referral_code');
+        if (storedReferral && !referralCode) {
+            setReferralCode(storedReferral);
+        }
+
+        setData('redirect', redirectUrl ?? '');
+    }, [setData, referralCode]);
+
+    const getRegisterUrl = () => {
+        const baseUrl = route('register');
+        const storedReferral = sessionStorage.getItem('referral_code');
+
+        if (storedReferral) {
+            return `${baseUrl}?ref=${storedReferral}`;
+        }
+
+        return baseUrl;
+    };
 
     return (
         <AuthLayout title="Masuk ke Aksademy" description="Silahkan masukkan informasi akun kamu.">
             <Head title="Masuk" />
 
             <form className="flex flex-col gap-6" onSubmit={submit}>
+                {/* Tampilkan referral info jika ada */}
+                {referralCode && referralCode !== 'ATM2025' && (
+                    <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+                        <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                            <p className="text-sm text-blue-700 dark:text-blue-300">
+                                🎉 Link referral aktif: <span className="font-mono font-medium">{referralCode}</span>
+                            </p>
+                        </div>
+                        <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">Referral akan otomatis terpakai setelah login</p>
+                    </div>
+                )}
+
+                {/* Hidden input untuk preserve redirect URL dengan referral */}
+                {data.redirect && <input type="hidden" name="redirect" value={data.redirect} />}
+
                 <div className="grid gap-6">
                     <div className="grid gap-2">
                         <Label htmlFor="email">Email</Label>
@@ -149,7 +200,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
                 <div className="text-muted-foreground text-center text-sm">
                     Belum punya akun?{' '}
-                    <TextLink href={route('register')} tabIndex={5}>
+                    <TextLink href={getRegisterUrl()} tabIndex={5}>
                         Daftar
                     </TextLink>
                 </div>

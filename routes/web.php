@@ -48,11 +48,11 @@ Route::get('/webinar', [UserWebinarController::class, 'index'])->name('webinar.i
 Route::get('/webinar/{webinar:slug}', [UserWebinarController::class, 'detail'])->name('webinar.detail');
 Route::get('/certificate/{code}', [CertificateParticipantController::class, 'show'])->name('certificate.participant.detail');
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/course/{course:slug}/checkout', [UserCourseController::class, 'showCheckout'])->name('course.checkout');
-    Route::get('/bootcamp/{bootcamp:slug}/register', [UserBootcampController::class, 'showRegister'])->name('bootcamp.register');
-    Route::get('/webinar/{webinar:slug}/register', [UserWebinarController::class, 'showRegister'])->name('webinar.register');
+Route::get('/course/{course:slug}/checkout', [UserCourseController::class, 'showCheckout'])->name('course.checkout');
+Route::get('/bootcamp/{bootcamp:slug}/register', [UserBootcampController::class, 'showRegister'])->name('bootcamp.register');
+Route::get('/webinar/{webinar:slug}/register', [UserWebinarController::class, 'showRegister'])->name('webinar.register');
 
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/course/checkout/success', [UserCourseController::class, 'showCheckoutSuccess'])->name('course.checkout.success');
     Route::get('/bootcamp/register/success', [UserBootcampController::class, 'showRegisterSuccess'])->name('bootcamp.register.success');
     Route::get('/webinar/register/success', [UserWebinarController::class, 'showRegisterSuccess'])->name('webinar.register.success');
@@ -162,7 +162,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::patch('promotions/{promotion}/toggle-status', [PromotionController::class, 'toggleStatus'])->name('promotions.toggle-status');
     });
 
-    Route::middleware(['role:affiliate'])->group(function () {
+    Route::middleware(['role:affiliate|admin'])->group(function () {
         Route::get('courses', [CourseController::class, 'index'])->name('courses.index');
         Route::get('courses/{course}', [CourseController::class, 'show'])->name('courses.show');
 

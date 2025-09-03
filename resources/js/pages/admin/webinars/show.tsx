@@ -102,7 +102,7 @@ export default function ShowWebinar({ webinar, transactions, certificate, flash 
             <div className="px-4 py-4 md:px-6">
                 <h1 className="mb-4 text-2xl font-semibold">{`Detail ${webinar.title}`}</h1>
 
-                {needsRecording && (
+                {!isAffiliate && needsRecording && (
                     <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
                         <div className="flex items-start gap-3">
                             <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />

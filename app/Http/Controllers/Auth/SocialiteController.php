@@ -14,11 +14,19 @@ class SocialiteController extends Controller
 {
     public function redirectToGoogle()
     {
+        if (request()->has('ref')) {
+            session(['referral_code' => request('ref')]);
+        }
+
         return Socialite::driver('google')->redirect();
     }
 
     public function redirectToGitHub()
     {
+        if (request()->has('ref')) {
+            session(['referral_code' => request('ref')]);
+        }
+
         return Socialite::driver('github')->redirect();
     }
 
@@ -49,7 +57,12 @@ class SocialiteController extends Controller
             $user->avatar = $user->avatar ?? $socialiteUser->getAvatar();
             $user->save();
         } else {
-            $referrer = User::where('affiliate_code', 'ATM2025')->first();
+            $referralCode = session('referral_code', 'ATM2025');
+            $referrer = User::where('affiliate_code', $referralCode)->first();
+
+            if (!$referrer) {
+                $referrer = User::where('affiliate_code', 'ATM2025')->first();
+            }
 
             $user = User::create([
                 $provider_id_column => $socialiteUser->getId(),
@@ -59,6 +72,8 @@ class SocialiteController extends Controller
                 'password' => Hash::make(Str::random(24)),
                 'referred_by_user_id' => $referrer?->id,
             ]);
+
+            session()->forget('referral_code');
         }
 
         if (!$user->hasVerifiedEmail()) {

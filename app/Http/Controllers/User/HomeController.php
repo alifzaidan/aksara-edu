@@ -14,8 +14,14 @@ use Inertia\Inertia;
 
 class HomeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $referralCode = $request->query('ref');
+
+        if ($referralCode) {
+            session(['referral_code' => $referralCode]);
+        }
+
         $tools = Tool::all();
 
         // Ambil data dari ketiga model
@@ -159,6 +165,10 @@ class HomeController extends Controller
             'latestProducts' => $latestProducts,
             'myProductIds' => $myProductIds,
             'allProducts' => $allProducts,
+            'referralInfo' => [
+                'code' => session('referral_code'),
+                'hasActive' => session('referral_code') && session('referral_code') !== 'ATM2025',
+            ],
         ]);
     }
 }

@@ -1,5 +1,6 @@
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
+import { useEffect } from 'react';
 import AboutSection from './about-section';
 import HeroSection from './hero-section';
 import ModulesSection from './modules-section';
@@ -55,15 +56,33 @@ interface RelatedCourse {
     };
 }
 
+interface ReferralInfo {
+    code?: string;
+    hasActive: boolean;
+}
+
 export default function DetailCourse({
     course,
     relatedCourses,
     myCourseIds,
+    referralInfo,
 }: {
     course: Course;
     relatedCourses: RelatedCourse[];
     myCourseIds: string[];
+    referralInfo: ReferralInfo;
 }) {
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const refFromUrl = urlParams.get('ref');
+
+        if (refFromUrl) {
+            sessionStorage.setItem('referral_code', refFromUrl);
+        } else if (referralInfo.code) {
+            sessionStorage.setItem('referral_code', referralInfo.code);
+        }
+    }, [referralInfo]);
+
     return (
         <UserLayout>
             <Head title={`${course.title} - Kelas Online`} />

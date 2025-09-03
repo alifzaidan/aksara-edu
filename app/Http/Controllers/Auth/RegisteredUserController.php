@@ -20,8 +20,16 @@ class RegisteredUserController extends Controller
      */
     public function create(Request $request): Response
     {
+        $referralCode = $request->query('ref');
+
+        if ($referralCode) {
+            session(['referral_code' => $referralCode]);
+        }
+
+        $affiliateCode = $referralCode ?? session('referral_code');
+
         return Inertia::render('auth/register', [
-            'affiliate_code' => $request->query('ref'),
+            'affiliate_code' => $affiliateCode,
         ]);
     }
 
@@ -40,9 +48,13 @@ class RegisteredUserController extends Controller
             'affiliate_code' => 'nullable|string|exists:users,affiliate_code',
         ]);
 
+        $affiliateCode = $request->affiliate_code
+            ?? session('referral_code')
+            ?? 'ATM2025';
+
         $referred_by_user_id = null;
-        if ($request->filled('affiliate_code')) {
-            $affiliateUser = User::where('affiliate_code', $request->affiliate_code)->first();
+        if ($affiliateCode) {
+            $affiliateUser = User::where('affiliate_code', $affiliateCode)->first();
             if ($affiliateUser) {
                 $referred_by_user_id = $affiliateUser->id;
             }
@@ -61,6 +73,8 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         Auth::login($user);
+
+        session()->forget('referral_code');
 
         // return to_route('home');
         return to_route('verification.notice')->with('status', 'Pendaftaran berhasil! Silakan periksa email Anda untuk tautan verifikasi.');

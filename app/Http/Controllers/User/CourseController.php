@@ -37,8 +37,10 @@ class CourseController extends Controller
         return Inertia::render('user/course/dashboard/index', ['categories' => $categories, 'courses' => $courses, 'myCourseIds' => $myCourseIds]);
     }
 
-    public function detail(Course $course)
+    public function detail(Request $request, Course $course)
     {
+        $this->handleReferralCode($request);
+
         $course->load(['category', 'user', 'tools', 'images', 'modules.lessons.quizzes.questions']);
 
         $relatedCourses = Course::with(['category'])
@@ -67,45 +69,52 @@ class CourseController extends Controller
         return Inertia::render('user/course/detail/index', [
             'course' => $course,
             'relatedCourses' => $relatedCourses,
-            'myCourseIds' => $myCourseIds
+            'myCourseIds' => $myCourseIds,
+            'referralInfo' => $this->getReferralInfo(),
         ]);
     }
 
-    public function showCheckout(Course $course)
+    public function showCheckout(Request $request, Course $course)
     {
+        $this->handleReferralCode($request);
+
+        if (!Auth::check()) {
+            $currentUrl = $request->fullUrl();
+            return redirect()->route('login', ['redirect' => $currentUrl]);
+        }
+
         $course->load(['modules.lessons']);
         $hasAccess = false;
         $pendingInvoiceUrl = null;
 
-        if (Auth::check()) {
-            $userId = Auth::id();
+        $userId = Auth::id();
 
-            $hasAccess = Invoice::where('user_id', $userId)
-                ->where('status', 'paid')
+        $hasAccess = Invoice::where('user_id', $userId)
+            ->where('status', 'paid')
+            ->whereHas('courseItems', function ($query) use ($course) {
+                $query->where('course_id', $course->id);
+            })
+            ->exists();
+
+        if (!$hasAccess) {
+            $pendingInvoice = Invoice::where('user_id', $userId)
+                ->where('status', 'pending')
                 ->whereHas('courseItems', function ($query) use ($course) {
                     $query->where('course_id', $course->id);
                 })
-                ->exists();
+                ->latest()
+                ->first();
 
-            if (!$hasAccess) {
-                $pendingInvoice = Invoice::where('user_id', $userId)
-                    ->where('status', 'pending')
-                    ->whereHas('courseItems', function ($query) use ($course) {
-                        $query->where('course_id', $course->id);
-                    })
-                    ->latest()
-                    ->first();
-
-                if ($pendingInvoice && $pendingInvoice->invoice_url) {
-                    $pendingInvoiceUrl = $pendingInvoice->invoice_url;
-                }
+            if ($pendingInvoice && $pendingInvoice->invoice_url) {
+                $pendingInvoiceUrl = $pendingInvoice->invoice_url;
             }
         }
 
         return Inertia::render('user/course/checkout/index', [
             'course' => $course,
             'hasAccess' => $hasAccess,
-            'pendingInvoiceUrl' => $pendingInvoiceUrl
+            'pendingInvoiceUrl' => $pendingInvoiceUrl,
+            'referralInfo' => $this->getReferralInfo(),
         ]);
     }
 
@@ -114,18 +123,28 @@ class CourseController extends Controller
         return Inertia::render('user/checkout/success');
     }
 
-    // public function showCheckoutFailed()
-    // {
-    //     return Inertia::render('user/course/checkout/failed');
-    // }
+    /**
+     * Handle referral code dari URL parameter
+     */
+    private function handleReferralCode(Request $request): void
+    {
+        $referralCode = $request->query('ref');
 
-    // public function showCheckoutPending()
-    // {
-    //     return Inertia::render('user/course/checkout/pending');
-    // }
+        if ($referralCode) {
+            session([
+                'referral_code' => $referralCode,
+            ]);
+        }
+    }
 
-    // public function showCheckoutCancel()
-    // {
-    //     return Inertia::render('user/course/checkout/cancel');
-    // }
+    /**
+     * Get referral info untuk frontend
+     */
+    private function getReferralInfo(): array
+    {
+        return [
+            'code' => session('referral_code'),
+            'hasActive' => session('referral_code') && session('referral_code') !== 'ATM2025',
+        ];
+    }
 }
