@@ -7,7 +7,7 @@ import { BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { AlertTriangle, Award, CircleX, Copy, Plus, Send, SquarePen, Trash } from 'lucide-react';
+import { AlertTriangle, Award, CheckCircle, CircleX, Copy, DollarSign, Plus, Send, SquarePen, Star, Trash, Users } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { Invoice } from './columns-transactions';
@@ -50,6 +50,7 @@ interface Certificate {
     created_at: string;
     updated_at: string;
 }
+
 interface WebinarProps {
     webinar: Webinar;
     transactions: Invoice[];
@@ -89,11 +90,28 @@ export default function ShowWebinar({ webinar, transactions, certificate, flash 
     const isWebinarEnded = new Date() > webinarEndTime;
     const needsRecording = isWebinarEnded && !webinar.recording_url;
 
+    const paidTransactions = transactions.filter((t) => t.status === 'paid');
+    const freeTransactions = transactions.filter((t) => t.amount === 0 && t.status === 'paid');
+    const paidWebinarTransactions = transactions.filter((t) => t.amount > 0 && t.status === 'paid');
+
+    const totalRevenue = paidWebinarTransactions.reduce((sum, t) => sum + t.amount, 0);
+    const verifiedAttendances = paidTransactions.filter((t) => t.webinar_items[0]?.attendance_verified).length;
+
+    const averageRating = (() => {
+        const ratings = paidTransactions
+            .map((t) => t.webinar_items[0]?.rating)
+            .filter((rating): rating is number => typeof rating === 'number' && !isNaN(rating));
+        return ratings.length > 0 ? (ratings.reduce((sum, rating) => sum + (rating ?? 0), 0) / ratings.length).toFixed(1) : '0';
+    })();
+
+    const completedParticipants = paidTransactions.filter((t) => t.webinar_items[0]?.completed_at).length;
+
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title={`Detail Webinar - ${webinar.title}`} />
             <div className="px-4 py-4 md:px-6">
                 <h1 className="mb-4 text-2xl font-semibold">{`Detail ${webinar.title}`}</h1>
+
                 {needsRecording && (
                     <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
                         <div className="flex items-start gap-3">
@@ -109,14 +127,71 @@ export default function ShowWebinar({ webinar, transactions, certificate, flash 
                         </div>
                     </div>
                 )}
+
+                {/* Enhanced Statistics Cards */}
+                <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="rounded-lg border bg-white p-4 dark:bg-gray-800">
+                        <div className="flex items-center gap-2">
+                            <Users className="h-5 w-5 text-blue-600" />
+                            <div>
+                                <p className="text-muted-foreground text-sm">Total Peserta</p>
+                                <p className="text-2xl font-bold">{paidTransactions.length}</p>
+                                <p className="text-muted-foreground text-xs">
+                                    Gratis: {freeTransactions.length} | Berbayar: {paidWebinarTransactions.length}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-lg border bg-white p-4 dark:bg-gray-800">
+                        <div className="flex items-center gap-2">
+                            <DollarSign className="h-5 w-5 text-green-600" />
+                            <div>
+                                <p className="text-muted-foreground text-sm">Total Revenue</p>
+                                <p className="text-2xl font-bold">
+                                    {new Intl.NumberFormat('id-ID', {
+                                        style: 'currency',
+                                        currency: 'IDR',
+                                        minimumFractionDigits: 0,
+                                    }).format(totalRevenue)}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-lg border bg-white p-4 dark:bg-gray-800">
+                        <div className="flex items-center gap-2">
+                            <CheckCircle className="h-5 w-5 text-purple-600" />
+                            <div>
+                                <p className="text-muted-foreground text-sm">Kehadiran Verifikasi</p>
+                                <p className="text-2xl font-bold">{verifiedAttendances}</p>
+                                <p className="text-muted-foreground text-xs">Selesai: {completedParticipants} peserta</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-lg border bg-white p-4 dark:bg-gray-800">
+                        <div className="flex items-center gap-2">
+                            <Star className="h-5 w-5 text-yellow-600" />
+                            <div>
+                                <p className="text-muted-foreground text-sm">Rating Rata-rata</p>
+                                <p className="text-2xl font-bold">{averageRating}</p>
+                                <p className="text-muted-foreground text-xs">
+                                    Dari {paidTransactions.filter((t) => t.webinar_items[0]?.rating).length} review
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
                     <Tabs defaultValue="detail" className="lg:col-span-2">
                         <TabsList>
                             <TabsTrigger value="detail">Detail</TabsTrigger>
                             <TabsTrigger value="transaksi">
-                                Transaksi
+                                Peserta & Transaksi
                                 {transactions.length > 0 && (
-                                    <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{transactions.length}</span>
+                                    <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{paidTransactions.length}</span>
                                 )}
                             </TabsTrigger>
                         </TabsList>
@@ -234,9 +309,9 @@ export default function ShowWebinar({ webinar, transactions, certificate, flash 
                             ) : (
                                 <div className="text-muted-foreground text-center text-sm">
                                     <Award className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                                    <p>Belum ada sertifikat untuk kelas ini.</p>
+                                    <p>Belum ada sertifikat untuk webinar ini.</p>
                                     <p className="mt-1 text-xs">
-                                        Buat sertifikat untuk memberikan penghargaan kepada peserta yang menyelesaikan kelas.
+                                        Buat sertifikat untuk memberikan penghargaan kepada peserta yang mengikuti webinar.
                                     </p>
                                 </div>
                             )}

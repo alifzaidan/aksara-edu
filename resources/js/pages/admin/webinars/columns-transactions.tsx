@@ -4,11 +4,12 @@ import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { FileText, Image } from 'lucide-react';
+import { CheckCircle, Clock, FileText, Image, MessageSquare, Star, User, UserCheck2 } from 'lucide-react';
 
 interface User {
     id: string;
@@ -39,6 +40,12 @@ export interface Invoice {
 export interface WebinarItem {
     id: string;
     webinar_id: string;
+    progress: number;
+    completed_at: string | null;
+    attendance_proof: string | null;
+    attendance_verified: boolean;
+    review: string | null;
+    rating: number | null;
     free_requirement: FreeRequirement | null;
 }
 
@@ -134,6 +141,140 @@ function ProofModal({ requirement, userName }: { requirement: FreeRequirement; u
     );
 }
 
+function AttendanceModal({ webinarItem, userName }: { webinarItem: WebinarItem; userName: string }) {
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <UserCheck2 className="size-4" />
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <User className="size-5" />
+                        Bukti Kehadiran Webinar - {userName}
+                        <span className="text-muted-foreground ml-auto text-sm font-normal">
+                            {webinarItem.attendance_verified ? 'Terverifikasi' : 'Menunggu Verifikasi'}
+                        </span>
+                    </DialogTitle>
+                </DialogHeader>
+
+                <div className="mt-4 space-y-4">
+                    {webinarItem.attendance_proof ? (
+                        <div
+                            className={`rounded-lg border p-4 ${
+                                webinarItem.attendance_verified
+                                    ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
+                                    : 'border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20'
+                            }`}
+                        >
+                            <div className="mb-3 flex items-center gap-2">
+                                {webinarItem.attendance_verified ? (
+                                    <span className="flex items-center gap-1 text-sm text-green-600">
+                                        <CheckCircle className="size-4" />
+                                        Kehadiran Terverifikasi
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center gap-1 text-sm text-yellow-600">
+                                        <Clock className="size-4" />
+                                        Menunggu Verifikasi
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className="mt-3">
+                                <p className="mb-2 text-sm font-medium">Bukti Kehadiran:</p>
+                                <div className="overflow-hidden rounded-lg border">
+                                    <img
+                                        src={`/storage/${webinarItem.attendance_proof}`}
+                                        alt="Bukti Kehadiran Webinar"
+                                        className="h-auto max-h-96 w-full object-contain"
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.src = '/placeholder-image.png';
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="py-8 text-center">
+                            <UserCheck2 className="text-muted-foreground mx-auto mb-4 size-12" />
+                            <p className="text-muted-foreground">Belum ada bukti kehadiran yang diupload</p>
+                        </div>
+                    )}
+                </div>
+
+                <div className="mt-4 rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                        <strong>Status Kehadiran:</strong>{' '}
+                        {webinarItem.attendance_verified
+                            ? '✅ Kehadiran sudah terverifikasi dan peserta dapat mengakses sertifikat.'
+                            : webinarItem.attendance_proof
+                              ? '⏳ Bukti kehadiran sedang dalam proses verifikasi.'
+                              : '❌ Peserta belum mengupload bukti kehadiran.'}
+                    </p>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function ReviewModal({ webinarItem, userName }: { webinarItem: WebinarItem; userName: string }) {
+    const renderStars = (rating: number) => {
+        return Array.from({ length: 5 }, (_, i) => (
+            <Star key={i} className={`size-4 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+        ));
+    };
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <MessageSquare className="size-4" />
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <MessageSquare className="size-5" />
+                        Review & Rating - {userName}
+                    </DialogTitle>
+                </DialogHeader>
+
+                <div className="mt-4 space-y-4">
+                    {/* Rating Section */}
+                    <div className="space-y-2">
+                        <h4 className="text-sm font-semibold">Rating Webinar</h4>
+                        {webinarItem.rating ? (
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">{renderStars(webinarItem.rating)}</div>
+                                <span className="text-muted-foreground text-sm">({webinarItem.rating}/5)</span>
+                            </div>
+                        ) : (
+                            <p className="text-muted-foreground text-sm">Belum memberikan rating</p>
+                        )}
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-2">
+                        <h4 className="text-sm font-semibold">Review Webinar</h4>
+                        {webinarItem.review ? (
+                            <div className="rounded-lg border bg-gray-50 p-4 dark:bg-gray-800">
+                                <p className="text-sm leading-relaxed">{webinarItem.review}</p>
+                            </div>
+                        ) : (
+                            <p className="text-muted-foreground text-sm">Belum memberikan review</p>
+                        )}
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 export const columns: ColumnDef<Invoice>[] = [
     {
         accessorKey: 'user.name',
@@ -162,6 +303,21 @@ export const columns: ColumnDef<Invoice>[] = [
         cell: ({ row }) => <p>{row.original.user.referrer?.name || '-'}</p>,
     },
     {
+        id: 'rating',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Rating" />,
+        cell: ({ row }) => {
+            const webinarItem = row.original.webinar_items[0];
+            if (!webinarItem?.rating) return <div className="text-gray-400">-</div>;
+
+            return (
+                <div className="flex items-center gap-1">
+                    <Star className="size-4 fill-yellow-400 text-yellow-400" />
+                    <span className="text-sm font-medium">{webinarItem.rating}/5</span>
+                </div>
+            );
+        },
+    },
+    {
         accessorKey: 'status',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
         cell: ({ row }) => {
@@ -187,6 +343,10 @@ export const columns: ColumnDef<Invoice>[] = [
         header: () => <div className="text-center">Aksi</div>,
         cell: ({ row }) => {
             const invoice = row.original;
+            const webinarItem = invoice.webinar_items[0];
+
+            if (!webinarItem) return <div>-</div>;
+
             const hasProof =
                 invoice.webinar_items[0].free_requirement &&
                 (invoice.webinar_items[0].free_requirement.ig_follow_proof ||
@@ -222,6 +382,28 @@ export const columns: ColumnDef<Invoice>[] = [
                             </TooltipContent>
                         </Tooltip>
                     )}
+
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div>
+                                <AttendanceModal webinarItem={webinarItem} userName={invoice.user?.name || 'Unknown'} />
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Lihat Bukti Kehadiran</p>
+                        </TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div>
+                                <ReviewModal webinarItem={webinarItem} userName={invoice.user?.name || 'Unknown'} />
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Lihat Review & Rating</p>
+                        </TooltipContent>
+                    </Tooltip>
                 </div>
             );
         },

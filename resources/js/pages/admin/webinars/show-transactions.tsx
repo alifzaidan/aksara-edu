@@ -2,9 +2,15 @@ import { columns, type Invoice } from './columns-transactions';
 import { DataTable } from './data-table-transactions';
 
 export default function WebinarTransaction({ transactions }: { transactions: Invoice[] }) {
+    const paidTransactions = transactions.filter((t) => t.status === 'paid');
+
     return (
         <div className="h-full space-y-6 rounded-lg border p-4">
-            <h2 className="text-lg font-medium">Transaksi</h2>
+            <div className="flex items-center justify-between">
+                <h2 className="text-lg font-medium">Transaksi & Peserta</h2>
+                {transactions.length > 0 && <div className="text-muted-foreground text-sm">Total Peserta: {paidTransactions.length}</div>}
+            </div>
+
             {transactions.length > 0 ? (
                 <DataTable columns={columns} data={transactions} />
             ) : (

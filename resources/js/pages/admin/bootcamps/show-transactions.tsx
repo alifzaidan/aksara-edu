@@ -1,10 +1,23 @@
-import { columns, type Invoice } from './columns-transactions';
+import { createColumns, type Invoice } from './columns-transactions';
 import { DataTable } from './data-table-transactions';
 
-export default function BootcampTransaction({ transactions }: { transactions: Invoice[] }) {
+interface BootcampTransactionProps {
+    transactions: Invoice[];
+    totalSchedules: number;
+}
+
+export default function BootcampTransaction({ transactions, totalSchedules }: BootcampTransactionProps) {
+    const columns = createColumns(totalSchedules);
+
     return (
         <div className="h-full space-y-6 rounded-lg border p-4">
-            <h2 className="text-lg font-medium">Transaksi</h2>
+            <div className="flex items-center justify-between">
+                <h2 className="text-lg font-medium">Transaksi & Peserta</h2>
+                {transactions.length > 0 && (
+                    <div className="text-muted-foreground text-sm">Total Peserta: {transactions.filter((t) => t.status === 'paid').length}</div>
+                )}
+            </div>
+
             {transactions.length > 0 ? (
                 <DataTable columns={columns} data={transactions} />
             ) : (

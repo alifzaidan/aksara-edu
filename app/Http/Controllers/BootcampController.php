@@ -128,7 +128,12 @@ class BootcampController extends Controller
             'user.referrer',
             'bootcampItems' => function ($query) use ($id) {
                 $query->where('bootcamp_id', $id)
-                    ->with('freeRequirement');
+                    ->with([
+                        'freeRequirement',
+                        'attendances.bootcampSchedule' => function ($scheduleQuery) {
+                            $scheduleQuery->orderBy('schedule_date');
+                        }
+                    ]);
             }
         ])
             ->whereHas('bootcampItems', function ($query) use ($id) {
