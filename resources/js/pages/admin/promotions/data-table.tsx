@@ -1,36 +1,104 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Promotion } from './columns';
+'use client';
 
-interface DataTableProps {
-    columns: any[];
-    data: Promotion[];
+import {
+    ColumnDef,
+    ColumnFiltersState,
+    flexRender,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    SortingState,
+    useReactTable,
+    VisibilityState,
+} from '@tanstack/react-table';
+
+import { DataTablePagination } from '@/components/data-table-pagination';
+import { DataTableViewOptions } from '@/components/data-table-view-option';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import React from 'react';
+
+interface DataTableProps<TData, TValue> {
+    columns: ColumnDef<TData, TValue>[];
+    data: TData[];
 }
 
-export function DataTable({ columns, data }: DataTableProps) {
+export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
+    const [sorting, setSorting] = React.useState<SortingState>([]);
+    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+    const [rowSelection, setRowSelection] = React.useState({});
+
+    const table = useReactTable({
+        data,
+        columns,
+        onSortingChange: setSorting,
+        getCoreRowModel: getCoreRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        onColumnFiltersChange: setColumnFilters,
+        getFilteredRowModel: getFilteredRowModel(),
+        onColumnVisibilityChange: setColumnVisibility,
+        onRowSelectionChange: setRowSelection,
+        state: {
+            sorting,
+            columnFilters,
+            columnVisibility,
+            rowSelection,
+        },
+    });
+
     return (
-        <div className="mt-6 rounded-md border">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        {columns.map((col, idx) => (
-                            <TableHead key={idx}>{col.header}</TableHead>
+        <div>
+            <div className="flex items-center justify-between py-4">
+                <div className="flex items-center space-x-2">
+                    <Input
+                        placeholder="Cari nama flyer promosi..."
+                        value={(table.getColumn('promotion_flyer')?.getFilterValue() as string) ?? ''}
+                        onChange={(event) => table.getColumn('promotion_flyer')?.setFilterValue(event.target.value)}
+                        className="max-w-sm"
+                    />
+                </div>
+                <DataTableViewOptions table={table} />
+            </div>
+            <div className="w-[1200px] max-w-full min-w-full overflow-x-auto rounded-md border">
+                <Table>
+                    <TableHeader>
+                        {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id}>
+                                {headerGroup.headers.map((header) => {
+                                    return (
+                                        <TableHead key={header.id}>
+                                            {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                        </TableHead>
+                                    );
+                                })}
+                            </TableRow>
                         ))}
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {data.map((row, i) => (
-                        <TableRow key={row.id}>
-                            {columns.map((col, idx) => (
-                                <TableCell key={idx}>
-                                    {col.cell
-                                        ? col.cell({ row: { original: row, index: i } })
-                                        : (row as any)[col.accessorKey]}
+                    </TableHeader>
+                    <TableBody>
+                        {table.getRowModel().rows?.length ? (
+                            table.getRowModel().rows.map((row) => (
+                                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                                    {row.getVisibleCells().map((cell) => (
+                                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={columns.length} className="h-24 text-center">
+                                    Tidak ada flyer promosi ditemukan.
                                 </TableCell>
-                            ))}
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+            <div className="py-4">
+                <DataTablePagination table={table} />
+            </div>
         </div>
     );
 }

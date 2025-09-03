@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 
 class PromotionController extends Controller
 {
-    public function index() 
+    public function index()
     {
         $promotions = Promotion::orderBy('created_at', 'desc')->get();
         return Inertia::render('admin/promotions/index', [
@@ -99,7 +99,7 @@ class PromotionController extends Controller
                 $oldPath = str_replace('/storage/', '', $promotion->promotion_flyer);
                 Storage::disk('public')->delete($oldPath);
             }
-            
+
             $flyerPath = $request->file('promotion_flyer')->store('promotions', 'public');
             $data['promotion_flyer'] = Storage::url($flyerPath);
         }
@@ -123,5 +123,25 @@ class PromotionController extends Controller
         return redirect()->route('promotions.index')
             ->with('success', 'Flyer promosi berhasil dihapus.');
     }
-}
 
+    public function toggleStatus(Promotion $promotion)
+    {
+        if (!$promotion->is_active) {
+            $activePromotion = Promotion::where('is_active', true)
+                ->where('id', '!=', $promotion->id)
+                ->first();
+
+            if ($activePromotion) {
+                return back()->with('error', 'Hanya boleh ada satu flyer promosi yang aktif. Nonaktifkan flyer yang aktif terlebih dahulu.');
+            }
+        }
+
+        $promotion->update([
+            'is_active' => !$promotion->is_active
+        ]);
+
+        $status = $promotion->is_active ? 'diaktifkan' : 'dinonaktifkan';
+
+        return back()->with('success', "Flyer promosi berhasil {$status}.");
+    }
+}

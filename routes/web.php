@@ -159,7 +159,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::get('transactions', [InvoiceController::class, 'index'])->name('transactions.index');
 
         Route::resource('promotions', PromotionController::class);
-        
+        Route::patch('promotions/{promotion}/toggle-status', [PromotionController::class, 'toggleStatus'])->name('promotions.toggle-status');
     });
 
     Route::middleware(['role:affiliate|mentor'])->group(function () {

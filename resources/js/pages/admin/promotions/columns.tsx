@@ -1,6 +1,8 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
 import ActionCell from './action-cell';
 
 export interface Promotion {
@@ -17,7 +19,7 @@ export const getColumns = (promotions: Promotion[]): ColumnDef<Promotion>[] => [
         id: 'number',
         header: 'No',
         cell: ({ row }) => {
-            return <div className="font-medium ml-4 justify-center">{row.index + 1}</div>;
+            return <div className="ml-4 justify-center font-medium">{row.index + 1}</div>;
         },
     },
     {
@@ -35,9 +37,7 @@ export const getColumns = (promotions: Promotion[]): ColumnDef<Promotion>[] => [
                     }}
                 />
             ) : (
-                <div className="h-16 w-24 rounded border bg-gray-100 flex items-center justify-center text-xs text-gray-400">
-                    No Image
-                </div>
+                <div className="flex h-16 w-24 items-center justify-center rounded border bg-gray-100 text-xs text-gray-400">No Image</div>
             );
         },
     },
@@ -45,16 +45,14 @@ export const getColumns = (promotions: Promotion[]): ColumnDef<Promotion>[] => [
         accessorKey: 'start_date',
         header: 'Mulai',
         cell: ({ row }) => {
-            const date = new Date(row.original.start_date);
-            return isNaN(date.getTime()) ? '-' : date.toLocaleDateString('id-ID');
+            return format(new Date(row.original.start_date), 'dd MMMM yyyy', { locale: id });
         },
     },
     {
         accessorKey: 'end_date',
         header: 'Selesai',
         cell: ({ row }) => {
-            const date = new Date(row.original.end_date);
-            return isNaN(date.getTime()) ? '-' : date.toLocaleDateString('id-ID');
+            return format(new Date(row.original.end_date), 'dd MMMM yyyy', { locale: id });
         },
     },
     {
@@ -73,12 +71,7 @@ export const getColumns = (promotions: Promotion[]): ColumnDef<Promotion>[] => [
         cell: ({ row }) => {
             const url = row.original.url_redirect;
             return url && url.trim() ? (
-                <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 underline hover:text-blue-800"
-                >
+                <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-800">
                     {url.length > 30 ? `${url.substring(0, 30)}...` : url}
                 </a>
             ) : (
