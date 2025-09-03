@@ -21,6 +21,7 @@ use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\QuizSubmissionController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\ToolController;
 use App\Http\Controllers\User\CourseController as UserCourseController;
 use App\Http\Controllers\User\BootcampController as UserBootcampController;
@@ -156,6 +157,9 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
 
         Route::resource('discount-codes', DiscountCodeController::class);
         Route::get('transactions', [InvoiceController::class, 'index'])->name('transactions.index');
+
+        Route::resource('promotions', PromotionController::class);
+        
     });
 
     Route::middleware(['role:affiliate|mentor'])->group(function () {

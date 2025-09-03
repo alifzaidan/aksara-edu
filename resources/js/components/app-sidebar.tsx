@@ -12,6 +12,7 @@ import {
     List,
     MonitorPlay,
     Presentation,
+    Proportions,
     SquareMousePointer,
     User,
     UserCheck,
@@ -83,6 +84,12 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         title: 'Kode Diskon',
         href: '/admin/discount-codes',
         icon: Banknote,
+        roles: ['admin'],
+    },
+    {
+        title: 'Flyer Promosi',
+        href: '/admin/promotions',
+        icon: Proportions,
         roles: ['admin'],
     },
     {
