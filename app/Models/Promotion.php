@@ -22,4 +22,19 @@ class Promotion extends Model
         'end_date' => 'date',
         'is_active' => 'boolean',
     ];
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true)
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now());
+    }
+
+    public function isValidNow(): bool
+    {
+        $now = now();
+        return $this->is_active &&
+            $this->start_date <= $now &&
+            $this->end_date >= $now;
+    }
 }

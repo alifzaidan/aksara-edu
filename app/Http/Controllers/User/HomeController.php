@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Bootcamp;
 use App\Models\Course;
 use App\Models\Invoice;
+use App\Models\Promotion;
 use App\Models\Tool;
 use App\Models\Webinar;
 use Illuminate\Http\Request;
@@ -23,6 +24,13 @@ class HomeController extends Controller
         }
 
         $tools = Tool::all();
+
+        // Ambil promotion yang aktif
+        $activePromotion = Promotion::where('is_active', true)
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now())
+            ->latest()
+            ->first();
 
         // Ambil data dari ketiga model
         $courses = Course::with(['category'])
@@ -165,6 +173,7 @@ class HomeController extends Controller
             'latestProducts' => $latestProducts,
             'myProductIds' => $myProductIds,
             'allProducts' => $allProducts,
+            'activePromotion' => $activePromotion,
             'referralInfo' => [
                 'code' => session('referral_code'),
                 'hasActive' => session('referral_code') && session('referral_code') !== 'ATM2025',

@@ -43,16 +43,14 @@ export const getColumns = (promotions: Promotion[]): ColumnDef<Promotion>[] => [
     },
     {
         accessorKey: 'start_date',
-        header: 'Mulai',
+        header: 'Durasi',
         cell: ({ row }) => {
-            return format(new Date(row.original.start_date), 'dd MMMM yyyy', { locale: id });
-        },
-    },
-    {
-        accessorKey: 'end_date',
-        header: 'Selesai',
-        cell: ({ row }) => {
-            return format(new Date(row.original.end_date), 'dd MMMM yyyy', { locale: id });
+            return (
+                <div className="flex gap-1">
+                    <div className="text-xs">{format(new Date(row.original.start_date), 'dd MMM yyyy', { locale: id })}</div>
+                    <div className="text-xs">s/d {format(new Date(row.original.end_date), 'dd MMM yyyy', { locale: id })}</div>
+                </div>
+            );
         },
     },
     {

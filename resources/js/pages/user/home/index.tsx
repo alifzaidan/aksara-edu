@@ -1,4 +1,5 @@
 import FakeNotifications from '@/components/fake-notifications';
+import PromotionPopup from '@/components/promotion-popup';
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
 import { useEffect } from 'react';
@@ -50,6 +51,15 @@ interface ReferralInfo {
     hasActive: boolean;
 }
 
+interface Promotion {
+    id: string;
+    promotion_flyer: string;
+    start_date: string;
+    end_date: string;
+    url_redirect?: string;
+    is_active: boolean;
+}
+
 interface HomeProps {
     tools: Tool[];
     latestProducts: Product[];
@@ -60,10 +70,11 @@ interface HomeProps {
         type: 'course' | 'bootcamp' | 'webinar';
         price: number;
     }>;
+    activePromotion?: Promotion | null;
     referralInfo: ReferralInfo;
 }
 
-export default function Home({ tools, latestProducts, myProductIds, allProducts, referralInfo }: HomeProps) {
+export default function Home({ tools, latestProducts, myProductIds, allProducts, activePromotion, referralInfo }: HomeProps) {
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const refFromUrl = urlParams.get('ref');
@@ -78,6 +89,8 @@ export default function Home({ tools, latestProducts, myProductIds, allProducts,
     return (
         <UserLayout>
             <Head title="Beranda" />
+
+            {activePromotion && <PromotionPopup promotion={activePromotion} suppressDuration={3} />}
 
             <CarouselSection />
             <AboutSection />
