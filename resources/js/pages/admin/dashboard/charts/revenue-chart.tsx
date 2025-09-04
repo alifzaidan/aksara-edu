@@ -48,6 +48,20 @@ const formatCompactCurrency = (amount: number) => {
 };
 
 export function RevenueChart({ data }: RevenueChartProps) {
+    if (!data || data.length === 0) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Laporan Pendapatan</CardTitle>
+                    <CardDescription>Data belum tersedia</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-muted-foreground text-sm">Tidak ada data untuk ditampilkan.</div>
+                </CardContent>
+            </Card>
+        );
+    }
+
     const currentMonth = data[data.length - 1];
     const previousMonth = data[data.length - 2];
 

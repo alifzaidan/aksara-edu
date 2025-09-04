@@ -20,6 +20,7 @@ import {
     X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { RevenueChart } from './charts/revenue-chart';
 
 interface Enrollment {
     id: number | string;
@@ -39,6 +40,7 @@ interface MentorStatsProps {
         revenue_today: number;
         revenue_yesterday: number;
         revenue_last_month: number;
+        monthly_revenue_data: MonthlyRevenueData[];
         daily_revenue_change: number;
         monthly_revenue_change: number;
         total_students: number;
@@ -54,6 +56,14 @@ interface MentorStatsProps {
         start_date?: string;
         end_date?: string;
     };
+}
+
+interface MonthlyRevenueData {
+    month: string;
+    year: number;
+    month_year: string;
+    total_amount: number;
+    transaction_count: number;
 }
 
 const formatCurrency = (amount: number) => {
@@ -329,7 +339,13 @@ export default function MentorDashboard({ stats, filters }: MentorStatsProps) {
                     ))}
                 </div>
 
-                <div className="border-border bg-card text-card-foreground rounded-xl border p-6 shadow-sm">
+                {/* Two-column section: left chart, right recent enrollments */}
+                <div className="grid gap-6 lg:grid-cols-3">
+                    <div className="lg:col-span-2">
+                        <RevenueChart data={stats.monthly_revenue_data} />
+                    </div>
+
+                    <div className="border-border bg-card text-card-foreground rounded-xl border p-6 shadow-sm">
                     <h3 className="text-lg font-semibold">Pendaftar Terbaru di Kelas Anda</h3>
                     <p className="text-muted-foreground mb-4 text-sm">Siswa yang baru saja mendaftar di kelas Anda.</p>
                     <div className="space-y-6">
@@ -358,6 +374,7 @@ export default function MentorDashboard({ stats, filters }: MentorStatsProps) {
                                 </div>
                             ))
                         )}
+                    </div>
                     </div>
                 </div>
             </div>

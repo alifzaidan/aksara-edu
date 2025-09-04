@@ -163,7 +163,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::patch('promotions/{promotion}/toggle-status', [PromotionController::class, 'toggleStatus'])->name('promotions.toggle-status');
     });
 
-    Route::middleware(['role:affiliate|admin'])->group(function () {
+    Route::middleware(['role:affiliate|admin|mentor'])->group(function () {
         Route::get('courses', [CourseController::class, 'index'])->name('courses.index');
         Route::get('courses/{course}', [CourseController::class, 'show'])->name('courses.show');
 

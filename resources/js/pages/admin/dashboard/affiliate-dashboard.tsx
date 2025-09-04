@@ -9,6 +9,7 @@ import { id } from 'date-fns/locale';
 import { CalendarIcon, ChartNoAxesGantt, ChevronDownIcon, Copy, DollarSign, Euro, Filter, TrendingDown, TrendingUp, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { RevenueChart } from './charts/revenue-chart';
 
 interface AffiliateStatsProps {
     user: SharedData['auth']['user'];
@@ -19,6 +20,8 @@ interface AffiliateStatsProps {
         commission_yesterday: number;
         commission_last_month: number;
         daily_commission_change: number;
+        monthly_revenue_change: number;
+        monthly_revenue_data: MonthlyRevenueData[];
         monthly_commission_change: number;
         total_referrals: number;
         total_clicks: number;
@@ -44,6 +47,14 @@ interface AffiliateStatsProps {
         start_date?: string;
         end_date?: string;
     };
+}
+
+interface MonthlyRevenueData {
+    month: string;
+    year: number;
+    month_year: string;
+    total_amount: number;
+    transaction_count: number;
 }
 
 const formatCurrency = (amount: number) => {
@@ -289,7 +300,6 @@ export default function AffiliateDashboard({ user, stats, filters }: AffiliateSt
                     </div>
                 </div>
 
-                {/* Komisi Cards */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     {topStatsCards.map((card, index) => (
                         <div key={index} className="border-border bg-card text-card-foreground rounded-xl border p-6 shadow-sm">
@@ -314,48 +324,9 @@ export default function AffiliateDashboard({ user, stats, filters }: AffiliateSt
                     ))}
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    <div className="border-border bg-card text-card-foreground rounded-xl border p-6 shadow-sm lg:col-span-2">
-                        <div className="mb-4 flex items-center justify-between">
-                            <div>
-                                <h3 className="text-lg font-semibold">Referral Terbaru</h3>
-                                <p className="text-muted-foreground text-sm">Pendaftaran baru melalui link afiliasi Anda.</p>
-                            </div>
-                            {stats.recent_referrals.length > 0 && (
-                                <div className="text-right">
-                                    <p className="text-muted-foreground text-sm">Total Komisi:</p>
-                                    <p className="font-semibold text-green-600">
-                                        {formatCurrency(stats.recent_referrals.reduce((sum, ref) => sum + ref.amount, 0))}
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="space-y-4">
-                            {stats.recent_referrals.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center gap-4 py-12">
-                                    <img src="/assets/images/not-found.webp" alt="Referral Tidak Tersedia" className="w-48" />
-                                    <div className="text-center text-gray-500">Belum ada referral baru saat ini.</div>
-                                </div>
-                            ) : (
-                                stats.recent_referrals.map((ref) => (
-                                    <div key={ref.id} className="flex items-center rounded-lg border bg-gray-50 p-4 dark:bg-gray-800">
-                                        <div className="bg-muted flex size-12 items-center justify-center rounded-full">
-                                            <span className="font-medium">{ref.invoice.user.name.substring(0, 2).toUpperCase()}</span>
-                                        </div>
-                                        <div className="ml-4 flex-1 space-y-1">
-                                            <p className="font-medium">{ref.invoice.user.name}</p>
-                                            <p className="text-muted-foreground text-sm">{getInvoiceItemName(ref.invoice)}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="font-bold text-green-600">{formatCurrency(ref.amount)}</div>
-                                            <div className="text-muted-foreground text-xs">Komisi {user.commission}%</div>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    
+                    <RevenueChart data={stats.monthly_revenue_data} />
 
                     <div className="space-y-6">
                         <div className="border-border bg-card text-card-foreground rounded-xl border p-6 shadow-sm">
@@ -406,6 +377,51 @@ export default function AffiliateDashboard({ user, stats, filters }: AffiliateSt
                             </div>
                         </div>
                     </div>
+
+                    <div className="border-border bg-card text-card-foreground rounded-xl border p-6 shadow-sm lg:col-span-2">
+                        <div className="mb-4 flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-semibold">Referral Terbaru</h3>
+                                <p className="text-muted-foreground text-sm">Pendaftaran baru melalui link afiliasi Anda.</p>
+                            </div>
+                            {stats.recent_referrals.length > 0 && (
+                                <div className="text-right">
+                                    <p className="text-muted-foreground text-sm">Total Komisi:</p>
+                                    <p className="font-semibold text-green-600">
+                                        {formatCurrency(stats.recent_referrals.reduce((sum, ref) => sum + ref.amount, 0))}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+
+                        <div className="space-y-4">
+                            {stats.recent_referrals.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center gap-4 py-12">
+                                    <img src="/assets/images/not-found.webp" alt="Referral Tidak Tersedia" className="w-48" />
+                                    <div className="text-center text-gray-500">Belum ada referral baru saat ini.</div>
+                                </div>
+                            ) : (
+                                stats.recent_referrals.map((ref) => (
+                                    <div key={ref.id} className="flex items-center rounded-lg border bg-gray-50 p-4 dark:bg-gray-800">
+                                        <div className="bg-muted flex size-12 items-center justify-center rounded-full">
+                                            <span className="font-medium">{ref.invoice.user.name.substring(0, 2).toUpperCase()}</span>
+                                        </div>
+                                        <div className="ml-4 flex-1 space-y-1">
+                                            <p className="font-medium">{ref.invoice.user.name}</p>
+                                            <p className="text-muted-foreground text-sm">{getInvoiceItemName(ref.invoice)}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="font-bold text-green-600">{formatCurrency(ref.amount)}</div>
+                                            <div className="text-muted-foreground text-xs">Komisi {user.commission}%</div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    
                 </div>
             </div>
         </>

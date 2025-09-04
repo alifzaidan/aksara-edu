@@ -104,6 +104,94 @@ class AdminController extends Controller
             });
     }
 
+    private function getAffiliateMonthlyRevenueData(int|string $affiliateUserId)
+    {
+        // Ambil data mentah per bulan untuk 12 bulan terakhir (termasuk bulan berjalan)
+        $raw = AffiliateEarning::where('affiliate_user_id', $affiliateUserId)
+            ->whereDate('created_at', '>=', now()->startOfMonth()->subMonths(11))
+            ->select(
+                DB::raw('YEAR(created_at) as year'),
+                DB::raw('MONTH(created_at) as month'),
+                DB::raw('SUM(amount) as total_amount'),
+                DB::raw('COUNT(*) as transaction_count')
+            )
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'asc')
+            ->orderBy('month', 'asc')
+            ->get()
+            ->keyBy(function ($row) {
+                return $row->year . '-' . $row->month;
+            });
+
+        $monthNames = [
+            1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'Mei', 6 => 'Jun',
+            7 => 'Jul', 8 => 'Ags', 9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des'
+        ];
+
+        $series = collect();
+        // Bangun 12 bulan terakhir secara berurutan (lama ke baru)
+        for ($i = 11; $i >= 0; $i--) {
+            $dt = now()->subMonths($i);
+            $key = $dt->year . '-' . $dt->month;
+            $row = $raw->get($key);
+            $series->push([
+                'month' => $monthNames[$dt->month],
+                'year' => $dt->year,
+                'month_year' => $monthNames[$dt->month] . ' ' . $dt->year,
+                'total_amount' => $row ? (float) $row->total_amount : 0.0,
+                'transaction_count' => $row ? (int) $row->transaction_count : 0,
+            ]);
+        }
+
+        return $series; // collection akan ter-serialize menjadi array oleh Inertia
+    }
+
+    private function getMentorMonthlyRevenueData(User $user, $mentorCourseIds)
+    {
+        $commissionRate = $user->commission / 100;
+
+        $raw = Invoice::where('status', 'paid')
+            ->whereHas('courseItems', function ($q) use ($mentorCourseIds) {
+                $q->whereIn('course_id', $mentorCourseIds);
+            })
+            ->whereDate('created_at', '>=', now()->startOfMonth()->subMonths(11))
+            ->select(
+                DB::raw('YEAR(created_at) as year'),
+                DB::raw('MONTH(created_at) as month'),
+                DB::raw('SUM(nett_amount) as gross_amount'),
+                DB::raw('COUNT(DISTINCT invoices.id) as transaction_count')
+            )
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'asc')
+            ->orderBy('month', 'asc')
+            ->get()
+            ->keyBy(function ($row) {
+                return $row->year . '-' . $row->month;
+            });
+
+        $monthNames = [
+            1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'Mei', 6 => 'Jun',
+            7 => 'Jul', 8 => 'Ags', 9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des'
+        ];
+
+        $series = collect();
+        for ($i = 11; $i >= 0; $i--) {
+            $dt = now()->subMonths($i);
+            $key = $dt->year . '-' . $dt->month;
+            $row = $raw->get($key);
+            $gross = $row ? (float) $row->gross_amount : 0.0;
+            $series->push([
+                'month' => $monthNames[$dt->month],
+                'year' => $dt->year,
+                'month_year' => $monthNames[$dt->month] . ' ' . $dt->year,
+                'total_amount' => $gross * $commissionRate,
+                'transaction_count' => $row ? (int) $row->transaction_count : 0,
+            ]);
+        }
+
+        return $series;
+    }
+
     private function getParticipantData()
     {
         $courseEnrollments = EnrollmentCourse::join('invoices', 'enrollment_courses.invoice_id', '=', 'invoices.id')
@@ -409,6 +497,9 @@ class AdminController extends Controller
             'commission_last_month' => $lastMonthCommission,
             'daily_commission_change' => round($dailyCommissionChange, 1),
             'monthly_commission_change' => round($monthlyCommissionChange, 1),
+            // Alias untuk konsistensi interface frontend yang mengharapkan monthly_revenue_change & monthly_revenue_data
+            'monthly_revenue_change' => round($monthlyCommissionChange, 1),
+            'monthly_revenue_data' => $this->getAffiliateMonthlyRevenueData($user->id),
             'total_referrals' => User::where('referred_by_user_id', $user->id)->count(),
             'conversion_rate' => 0, // Data klik belum ada, jadi kita set 0
             'total_clicks' => 0, // Data klik belum ada, jadi kita set 0
@@ -480,6 +571,9 @@ class AdminController extends Controller
             $monthlyRevenueChange = 100;
         }
 
+    // Monthly revenue series (12 bulan) untuk chart
+    $monthlyRevenueData = $this->getMentorMonthlyRevenueData($user, $mentorCourses);
+
         return [
             'total_revenue' => $mentorRevenue,
             'revenue_this_month' => $monthlyRevenue,
@@ -488,6 +582,7 @@ class AdminController extends Controller
             'revenue_last_month' => $lastMonthRevenue,
             'daily_revenue_change' => round($dailyRevenueChange, 1),
             'monthly_revenue_change' => round($monthlyRevenueChange, 1),
+            'monthly_revenue_data' => $monthlyRevenueData,
             'total_students' => $studentIds->count(),
             'active_courses' => $mentorCourses->count(),
             'average_rating' => $averageRating ? round($averageRating, 1) : 0,
