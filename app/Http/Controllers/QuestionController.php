@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\QuestionImport;
 use App\Models\Question;
+use App\Models\Quiz;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
 
 class QuestionController extends Controller
 {
@@ -88,5 +91,43 @@ class QuestionController extends Controller
         $question->delete();
 
         return redirect()->back()->with('success', 'Pertanyaan berhasil dihapus.');
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'quiz_id' => 'required|exists:quizzes,id',
+            'file' => 'required|mimes:xlsx,csv,xls',
+        ], [
+            'file.required' => 'File Excel harus dipilih.',
+            'file.mimes' => 'File harus berformat Excel (.xlsx, .xls, .csv).',
+        ]);
+
+        $quiz = Quiz::findOrFail($request->quiz_id);
+
+        try {
+            Excel::import(new QuestionImport($quiz->id), $request->file('file'));
+
+            return redirect()
+                ->back()
+                ->with('success', 'Soal berhasil diimport!');
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            $failures = $e->failures();
+            $errorMessages = [];
+
+            foreach ($failures as $failure) {
+                $errorMessages[] = "Baris {$failure->row()}: " . implode(', ', $failure->errors());
+            }
+
+            return redirect()
+                ->back()
+                ->with('error', 'Import gagal! ' . implode(' | ', array_slice($errorMessages, 0, 5)))
+                ->withInput();
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Import gagal! ' . $e->getMessage())
+                ->withInput();
+        }
     }
 }

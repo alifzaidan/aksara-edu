@@ -124,6 +124,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/questions', [QuestionController::class, 'store'])->name('questions.store');
         Route::put('/questions/{question}', [QuestionController::class, 'update'])->name('questions.update');
         Route::delete('/questions/{question}', [QuestionController::class, 'destroy'])->name('questions.destroy');
+        Route::post('/questions/import', [QuestionController::class, 'import'])->name('questions.import');
     });
 
     Route::middleware(['role:admin'])->group(function () {
