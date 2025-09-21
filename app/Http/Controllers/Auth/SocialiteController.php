@@ -48,32 +48,50 @@ class SocialiteController extends Controller
 
     protected function loginOrRegisterUser(SocialiteUser $socialiteUser, string $provider)
     {
-        $user = User::where('email', $socialiteUser->getEmail())->first();
-
         $provider_id_column = "{$provider}_id";
+        $socialiteId = $socialiteUser->getId();
+        $socialiteEmail = $socialiteUser->getEmail();
+
+        // Cari user berdasarkan provider_id terlebih dahulu
+        $user = User::where($provider_id_column, $socialiteId)->first();
 
         if ($user) {
-            $user->{$provider_id_column} = $socialiteUser->getId();
-            $user->avatar = $user->avatar ?? $socialiteUser->getAvatar();
-            $user->save();
-        } else {
-            $referralCode = session('referral_code', 'ATM2025');
-            $referrer = User::where('affiliate_code', $referralCode)->first();
-
-            if (!$referrer) {
-                $referrer = User::where('affiliate_code', 'ATM2025')->first();
+            // User sudah ada berdasarkan provider_id, update data jika perlu
+            if (empty($user->avatar)) {
+                $user->avatar = $socialiteUser->getAvatar();
+                $user->save();
             }
+        } else {
+            $userByEmail = User::where('email', $socialiteEmail)->first();
 
-            $user = User::create([
-                $provider_id_column => $socialiteUser->getId(),
-                'name' => $socialiteUser->getName() ?? $socialiteUser->getNickname(),
-                'email' => $socialiteUser->getEmail(),
-                'avatar' => $socialiteUser->getAvatar(),
-                'password' => Hash::make(Str::random(24)),
-                'referred_by_user_id' => $referrer?->id,
-            ]);
+            if ($userByEmail) {
+                if (empty($userByEmail->{$provider_id_column})) {
+                    $userByEmail->{$provider_id_column} = $socialiteId;
+                    $userByEmail->avatar = $userByEmail->avatar ?? $socialiteUser->getAvatar();
+                    $userByEmail->save();
+                    $user = $userByEmail;
+                } else {
+                    throw new \Exception('Akun dengan provider ini sudah terhubung ke user lain.');
+                }
+            } else {
+                $referralCode = session('referral_code', 'ATM2025');
+                $referrer = User::where('affiliate_code', $referralCode)->first();
 
-            session()->forget('referral_code');
+                if (!$referrer) {
+                    $referrer = User::where('affiliate_code', 'ATM2025')->first();
+                }
+
+                $user = User::create([
+                    $provider_id_column => $socialiteId,
+                    'name' => $socialiteUser->getName() ?? $socialiteUser->getNickname(),
+                    'email' => $socialiteEmail,
+                    'avatar' => $socialiteUser->getAvatar(),
+                    'password' => Hash::make(Str::random(24)),
+                    'referred_by_user_id' => $referrer?->id,
+                ]);
+
+                session()->forget('referral_code');
+            }
         }
 
         if (!$user->hasVerifiedEmail()) {
