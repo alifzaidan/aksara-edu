@@ -34,6 +34,7 @@ class QuestionImport implements ToCollection, WithHeadingRow, SkipsEmptyRows, Wi
                 'quiz_id' => $this->quizId,
                 'question_text' => $row['question'],
                 'type' => 'multiple_choice',
+                'explanation' => $row['explanation'] ?? null,
             ]);
 
             $correctOption = strtoupper($row['correct_option']);
@@ -43,6 +44,7 @@ class QuestionImport implements ToCollection, WithHeadingRow, SkipsEmptyRows, Wi
                 'B' => $row['option_b'] ?? null,
                 'C' => $row['option_c'] ?? null,
                 'D' => $row['option_d'] ?? null,
+                'E' => $row['option_e'] ?? null,
             ];
 
             foreach ($options as $optionKey => $optionText) {
@@ -65,8 +67,30 @@ class QuestionImport implements ToCollection, WithHeadingRow, SkipsEmptyRows, Wi
             'option_b' => 'required|string|max:500',
             'option_c' => 'nullable|string|max:500',
             'option_d' => 'nullable|string|max:500',
-            'correct_option' => ['required', Rule::in(['A', 'B', 'C', 'D', 'a', 'b', 'c', 'd'])],
+            'option_e' => 'nullable|string|max:500',
+            'correct_option' => ['required', Rule::in(['A', 'B', 'C', 'D', 'E', 'a', 'b', 'c', 'd', 'e'])],
+            'explanation' => 'nullable|string|max:2000',
         ];
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $data = $validator->getData();
+            foreach ($data as $index => $row) {
+                if (isset($row['correct_option'])) {
+                    $correctOption = strtoupper($row['correct_option']);
+                    $optionKey = 'option_' . strtolower($correctOption);
+
+                    if (empty($row[$optionKey])) {
+                        $validator->errors()->add(
+                            "$index.correct_option",
+                            "Jawaban benar ($correctOption) tidak boleh kosong pada baris " . ($index + 2)
+                        );
+                    }
+                }
+            }
+        });
     }
 
     public function customValidationMessages()
@@ -75,8 +99,10 @@ class QuestionImport implements ToCollection, WithHeadingRow, SkipsEmptyRows, Wi
             'question.required' => 'Kolom pertanyaan tidak boleh kosong.',
             'option_a.required' => 'Pilihan A tidak boleh kosong.',
             'option_b.required' => 'Pilihan B tidak boleh kosong.',
-            'correct_option.required' => 'Jawaban benar harus diisi (A, B, C, atau D).',
-            'correct_option.in' => 'Jawaban benar harus berupa A, B, C, atau D.',
+            'correct_option.required' => 'Jawaban benar harus diisi (A, B, C, D, atau E).',
+            'correct_option.in' => 'Jawaban benar harus berupa A, B, C, D, atau E.',
+            'explanation.string' => 'Pembahasan harus berupa teks.',
+            'explanation.max' => 'Pembahasan maksimal 2000 karakter.',
         ];
     }
 }

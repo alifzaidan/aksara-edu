@@ -1,9 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Head } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, AlertTriangle, HelpCircle } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
-import { router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
+import { AlertTriangle, CheckCircle, ChevronLeft, ChevronRight, Clock, HelpCircle, XCircle } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 interface QuizOption {
     id: string;
@@ -16,6 +15,7 @@ interface QuizQuestion {
     question_text: string;
     type: 'multiple_choice' | 'true_false';
     options: QuizOption[];
+    explanation?: string;
 }
 
 interface QuizAttempt {
@@ -75,7 +75,7 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
         try {
             if (timeLeft > 0 && !showResults) {
                 const timer = setInterval(() => {
-                    setTimeLeft(prev => {
+                    setTimeLeft((prev) => {
                         if (prev <= 1) {
                             // Auto-submit when time runs out
                             handleConfirmSubmit();
@@ -116,16 +116,16 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
     useEffect(() => {
         if (!quiz?.id) return;
         fetch(`/quiz/get-progress?quiz_id=${quiz.id}`)
-            .then(res => res.json())
-            .then(data => {
+            .then((res) => res.json())
+            .then((data) => {
                 if (data.answers) setAnswers(data.answers);
             });
     }, [quiz?.id]);
 
     const handleAnswerChange = (questionId: string, answerId: string) => {
-        setAnswers(prev => ({
+        setAnswers((prev) => ({
             ...prev,
-            [questionId]: answerId
+            [questionId]: answerId,
         }));
     };
 
@@ -154,7 +154,7 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
 
         console.log('Submitting quiz with data:', {
             quiz_id: quiz?.id,
-            answers: answers
+            answers: answers,
         });
 
         try {
@@ -162,12 +162,12 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
                 body: JSON.stringify({
                     quiz_id: quiz?.id,
-                    answers: answers
-                })
+                    answers: answers,
+                }),
             });
 
             const responseData = await response.json();
@@ -225,14 +225,12 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
 
     if (!quiz) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="bg-background flex min-h-screen items-center justify-center">
                 <div className="text-center">
-                    <HelpCircle className="text-muted-foreground mb-4 h-16 w-16 mx-auto" />
-                    <h3 className="text-lg font-semibold mb-2">Quiz Belum Tersedia</h3>
-                    <p className="text-muted-foreground text-sm mb-4">Quiz untuk materi ini belum tersedia.</p>
-                    <Button onClick={handleBackToCourse}>
-                        Kembali ke Dashboard
-                    </Button>
+                    <HelpCircle className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
+                    <h3 className="mb-2 text-lg font-semibold">Quiz Belum Tersedia</h3>
+                    <p className="text-muted-foreground mb-4 text-sm">Quiz untuk materi ini belum tersedia.</p>
+                    <Button onClick={handleBackToCourse}>Kembali ke Dashboard</Button>
                 </div>
             </div>
         );
@@ -240,14 +238,12 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
 
     if (!quiz.questions || quiz.questions.length === 0) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="bg-background flex min-h-screen items-center justify-center">
                 <div className="text-center">
-                    <HelpCircle className="text-muted-foreground mb-4 h-16 w-16 mx-auto" />
-                    <h3 className="text-lg font-semibold mb-2">Soal Quiz Belum Tersedia</h3>
-                    <p className="text-muted-foreground text-sm mb-4">Belum ada soal untuk quiz ini.</p>
-                    <Button onClick={handleBackToCourse}>
-                        Kembali ke Dashboard
-                    </Button>
+                    <HelpCircle className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
+                    <h3 className="mb-2 text-lg font-semibold">Soal Quiz Belum Tersedia</h3>
+                    <p className="text-muted-foreground mb-4 text-sm">Belum ada soal untuk quiz ini.</p>
+                    <Button onClick={handleBackToCourse}>Kembali ke Dashboard</Button>
                 </div>
             </div>
         );
@@ -255,27 +251,20 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
 
     if (showResults && quizResult) {
         return (
-            <div className="min-h-screen bg-background">
+            <div className="bg-background min-h-screen">
                 <Head title={`Hasil Quiz: ${quiz.title}`} />
-                
+
                 {/* Header */}
-                <div className="border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
+                <div className="bg-card/50 supports-[backdrop-filter]:bg-card/50 border-b backdrop-blur">
                     <div className="container mx-auto px-4 py-4">
                         <div className="flex items-center gap-4">
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={handleBackToCourse}
-                                className="gap-2"
-                            >
+                            <Button variant="ghost" size="sm" onClick={handleBackToCourse} className="gap-2">
                                 <ChevronLeft className="h-4 w-4" />
                                 Kembali ke Dashboard
                             </Button>
                             <div className="flex-1">
                                 <h1 className="text-xl font-semibold">Hasil Quiz: {quiz.title}</h1>
-                                <p className="text-sm text-muted-foreground">
-                                    {lesson.title}
-                                </p>
+                                <p className="text-muted-foreground text-sm">{lesson.title}</p>
                             </div>
                         </div>
                     </div>
@@ -283,73 +272,94 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
 
                 {/* Content */}
                 <div className="container mx-auto px-4 py-6">
-                    <div className="max-w-4xl mx-auto">
-                        <div className="text-center mb-8">
-                            <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${
-                                quizResult.is_passed ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-                            }`}>
-                                {quizResult.is_passed ? <CheckCircle className="w-8 h-8" /> : <XCircle className="w-8 h-8" />}
+                    <div className="mx-auto max-w-4xl">
+                        <div className="mb-8 text-center">
+                            <div
+                                className={`mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full ${
+                                    quizResult.is_passed ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                                }`}
+                            >
+                                {quizResult.is_passed ? <CheckCircle className="h-8 w-8" /> : <XCircle className="h-8 w-8" />}
                             </div>
-                            <h2 className="text-2xl font-bold mb-2">
-                                {quizResult.is_passed ? 'Selamat! Anda Lulus' : 'Belum Lulus'}
-                            </h2>
-                            <div className="flex justify-center gap-6 text-sm text-muted-foreground">
+                            <h2 className="mb-2 text-2xl font-bold">{quizResult.is_passed ? 'Selamat! Anda Lulus' : 'Belum Lulus'}</h2>
+                            <div className="text-muted-foreground flex justify-center gap-6 text-sm">
                                 <span>Skor: {quizResult.score}%</span>
-                                <span>Benar: {quizResult.correct_answers}/{quizResult.total_questions}</span>
-                                <span>Waktu: {Math.floor(quizResult.time_taken / 60)}:{(quizResult.time_taken % 60).toString().padStart(2, '0')}</span>
+                                <span>
+                                    Benar: {quizResult.correct_answers}/{quizResult.total_questions}
+                                </span>
+                                <span>
+                                    Waktu: {Math.floor(quizResult.time_taken / 60)}:{(quizResult.time_taken % 60).toString().padStart(2, '0')}
+                                </span>
                             </div>
-                            
+
                             <div className="mt-6 text-center">
-                                <div className="flex gap-3 justify-center">
-                                    <Button 
-                                        variant="outline"
-                                        onClick={handleBackToCourse}
-                                    >
+                                <div className="flex justify-center gap-3">
+                                    <Button variant="outline" onClick={handleBackToCourse}>
                                         ← Kembali ke Dashboard Quiz
                                     </Button>
-                                    <Button 
-                                        onClick={handleRetakeQuiz}
-                                    >
-                                        🔄 Ulangi Quiz
-                                    </Button>
+                                    <Button onClick={handleRetakeQuiz}>🔄 Ulangi Quiz</Button>
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-6">
                             <h3 className="text-lg font-semibold">Review Jawaban</h3>
-                            {quizResult.answers_summary?.map((answer: any, index: number) => (
-                                <div key={answer.question_id} className="border rounded-lg p-4">
-                                    <div className={`inline-flex items-center gap-2 text-sm font-medium mb-2 ${
-                                        answer.is_correct ? 'text-green-600' : 'text-red-600'
-                                    }`}>
-                                        {answer.is_correct ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                                        Soal {index + 1} - {answer.is_correct ? 'Benar' : 'Salah'}
-                                    </div>
-                                    <p className="font-medium mb-3">{answer.question}</p>
-                                    <div className="space-y-2">
-                                        {answer.options?.map((option: any) => (
-                                            <div key={option.id} className={`p-2 rounded border ${
-                                                option.is_correct ? 'bg-green-50 border-green-200' :
-                                                option.id === answer.selected_option_id ? 'bg-red-50 border-red-200' :
-                                                'bg-gray-50 border-gray-200'
-                                            }`}>
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`w-2 h-2 rounded-full ${
-                                                        option.is_correct ? 'bg-green-500' :
-                                                        option.id === answer.selected_option_id ? 'bg-red-500' :
-                                                        'bg-gray-300'
-                                                    }`}></span>
-                                                    <span>{option.option_text}</span>
-                                                    {option.is_correct && <span className="text-green-600 text-sm">(Jawaban Benar)</span>}
-                                                    {option.id === answer.selected_option_id && !option.is_correct && 
-                                                        <span className="text-red-600 text-sm">(Jawaban Anda)</span>}
+                            {quizResult.answers_summary?.map((answer: any, index: number) => {
+                                const question = quiz.questions.find((q) => q.id === answer.question_id);
+
+                                return (
+                                    <div key={answer.question_id} className="rounded-lg border p-4">
+                                        <div
+                                            className={`mb-2 inline-flex items-center gap-2 text-sm font-medium ${
+                                                answer.is_correct ? 'text-green-600' : 'text-red-600'
+                                            }`}
+                                        >
+                                            {answer.is_correct ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                                            Soal {index + 1} - {answer.is_correct ? 'Benar' : 'Salah'}
+                                        </div>
+                                        <p className="mb-3 font-medium">{answer.question}</p>
+                                        <div className="space-y-2">
+                                            {answer.options?.map((option: any) => (
+                                                <div
+                                                    key={option.id}
+                                                    className={`rounded border p-2 ${
+                                                        option.is_correct
+                                                            ? 'border-green-200 bg-green-50'
+                                                            : option.id === answer.selected_option_id
+                                                              ? 'border-red-200 bg-red-50'
+                                                              : 'border-gray-200 bg-gray-50'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <span
+                                                            className={`h-2 w-2 rounded-full ${
+                                                                option.is_correct
+                                                                    ? 'bg-green-500'
+                                                                    : option.id === answer.selected_option_id
+                                                                      ? 'bg-red-500'
+                                                                      : 'bg-gray-300'
+                                                            }`}
+                                                        ></span>
+                                                        <span>{option.option_text}</span>
+                                                        {option.is_correct && <span className="text-sm text-green-600">(Jawaban Benar)</span>}
+                                                        {option.id === answer.selected_option_id && !option.is_correct && (
+                                                            <span className="text-sm text-red-600">(Jawaban Anda)</span>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            ))}
+                                            {question?.explanation && (
+                                                <div className="mt-3 rounded border border-blue-200 bg-blue-50 p-3">
+                                                    <div className="flex items-start gap-2">
+                                                        <div className="text-sm font-medium text-blue-600">💡 Pembahasan:</div>
+                                                    </div>
+                                                    <p className="mt-1 text-sm text-blue-800">{question.explanation}</p>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -363,53 +373,48 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
 
     if (!currentQuestionData) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="bg-background flex min-h-screen items-center justify-center">
                 <div className="text-center">
-                    <HelpCircle className="text-muted-foreground mb-4 h-16 w-16 mx-auto" />
-                    <h3 className="text-lg font-semibold mb-2">Error Loading Question</h3>
-                    <p className="text-muted-foreground text-sm mb-4">Terjadi kesalahan saat memuat soal.</p>
-                    <Button onClick={handleBackToCourse}>
-                        Kembali ke Dashboard
-                    </Button>
+                    <HelpCircle className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
+                    <h3 className="mb-2 text-lg font-semibold">Error Loading Question</h3>
+                    <p className="text-muted-foreground mb-4 text-sm">Terjadi kesalahan saat memuat soal.</p>
+                    <Button onClick={handleBackToCourse}>Kembali ke Dashboard</Button>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="bg-background min-h-screen">
             <Head title={`Quiz: ${quiz.title}`} />
-            
+
             {/* Header */}
-            <div className="border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
+            <div className="bg-card/50 supports-[backdrop-filter]:bg-card/50 border-b backdrop-blur">
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center gap-4">
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={handleHeaderBack}
-                            className="gap-2"
-                        >
+                        <Button variant="ghost" size="sm" onClick={handleHeaderBack} className="gap-2">
                             <ChevronLeft className="h-4 w-4" />
                             Kembali
                         </Button>
                         <div className="flex-1">
                             <h1 className="text-xl font-semibold">{quiz.title}</h1>
-                            <p className="text-sm text-muted-foreground">
-                                {lesson.title}
-                            </p>
+                            <p className="text-muted-foreground text-sm">{lesson.title}</p>
                         </div>
                         {quiz.time_limit && timeLeft > 0 ? (
-                            <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${
-                                timeLeft <= 60 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
-                            }`}>
-                                <Clock className="w-5 h-5" />
-                                <span className="font-medium text-lg">{formatTime(timeLeft)}</span>
+                            <div
+                                className={`flex items-center gap-2 rounded-full px-4 py-2 ${
+                                    timeLeft <= 60 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                                }`}
+                            >
+                                <Clock className="h-5 w-5" />
+                                <span className="text-lg font-medium">{formatTime(timeLeft)}</span>
                             </div>
-                        ) : quiz.time_limit === 0 && (
-                            <div className="text-red-600 text-sm font-semibold px-4 py-2 border border-red-200 bg-red-50 rounded">
-                                Quiz ini tidak memiliki durasi pengerjaan
-                            </div>
+                        ) : (
+                            quiz.time_limit === 0 && (
+                                <div className="rounded border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600">
+                                    Quiz ini tidak memiliki durasi pengerjaan
+                                </div>
+                            )
                         )}
                     </div>
                 </div>
@@ -417,51 +422,54 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
 
             {/* Content */}
             <div className="container mx-auto px-4 py-6">
-                <div className="max-w-4xl mx-auto">
+                <div className="mx-auto max-w-4xl">
                     {/* Quiz Header */}
-                    <div className="mb-6">                
-                        {quiz.instructions && (
-                            <p className="text-muted-foreground mb-4">{quiz.instructions}</p>
-                        )}
+                    <div className="mb-6">
+                        {quiz.instructions && <p className="text-muted-foreground mb-4">{quiz.instructions}</p>}
 
                         {/* Progress Bar */}
-                        <div className="bg-gray-200 rounded-full h-3 mb-2">
-                            <div 
-                                className="bg-blue-900 h-3 rounded-full transition-all duration-300" 
+                        <div className="mb-2 h-3 rounded-full bg-gray-200">
+                            <div
+                                className="h-3 rounded-full bg-blue-900 transition-all duration-300"
                                 style={{ width: `${((currentQuestion + 1) / totalQuestions) * 100}%` }}
                             ></div>
                         </div>
-                        <div className="flex justify-between text-sm text-muted-foreground">
-                            <span>Soal {currentQuestion + 1} dari {totalQuestions}</span>
+                        <div className="text-muted-foreground flex justify-between text-sm">
+                            <span>
+                                Soal {currentQuestion + 1} dari {totalQuestions}
+                            </span>
                             <span>{answeredCount} jawaban tersimpan</span>
                         </div>
                     </div>
 
-                    <div className="flex gap-6 flex-col md:flex-row">
+                    <div className="flex flex-col gap-6 md:flex-row">
                         {/* Question Content */}
                         <div className="flex-1">
-                            <div className="bg-card border rounded-lg p-6 mb-6">
-                                <h3 className="text-xl font-semibold mb-6">
+                            <div className="bg-card mb-6 rounded-lg border p-6">
+                                <h3 className="mb-6 text-xl font-semibold">
                                     {currentQuestion + 1}. {currentQuestionData.question_text}
                                 </h3>
-                                
+
                                 <div className="space-y-4">
                                     {currentQuestionData.options && currentQuestionData.options.length > 0 ? (
                                         currentQuestionData.options.map((option) => (
-                                            <label key={option.id} className="flex items-center gap-4 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                            <label
+                                                key={option.id}
+                                                className="flex cursor-pointer items-center gap-4 rounded-lg border p-4 transition-colors hover:bg-gray-50"
+                                            >
                                                 <input
                                                     type="radio"
                                                     name={`question-${currentQuestionData.id}`}
                                                     value={option.id}
                                                     checked={answers[currentQuestionData.id] === option.id}
                                                     onChange={() => handleAnswerChange(currentQuestionData.id, option.id)}
-                                                    className="w-5 h-5"
+                                                    className="h-5 w-5"
                                                 />
                                                 <span className="text-base">{option.option_text}</span>
                                             </label>
                                         ))
                                     ) : (
-                                        <div className="text-center p-4 text-muted-foreground">
+                                        <div className="text-muted-foreground p-4 text-center">
                                             <p>Pilihan jawaban belum tersedia untuk soal ini.</p>
                                         </div>
                                     )}
@@ -474,47 +482,43 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
                                     <Button
                                         variant="outline"
                                         size="lg"
-                                        onClick={() => setCurrentQuestion(prev => Math.max(0, prev - 1))}
+                                        onClick={() => setCurrentQuestion((prev) => Math.max(0, prev - 1))}
                                         disabled={currentQuestion === 0}
                                     >
-                                        <ChevronLeft className="w-4 h-4 mr-2" />
+                                        <ChevronLeft className="mr-2 h-4 w-4" />
                                         Sebelumnya
                                     </Button>
 
                                     {currentQuestion === totalQuestions - 1 ? (
-                                        <Button
-                                            size="lg"
-                                            onClick={handleSubmitQuiz}
-                                            disabled={isSubmitting || answeredCount === 0}
-                                        >
+                                        <Button size="lg" onClick={handleSubmitQuiz} disabled={isSubmitting || answeredCount === 0}>
                                             {isSubmitting ? 'Mengirim...' : 'Selesai Quiz'}
                                         </Button>
                                     ) : (
                                         <Button
                                             size="lg"
-                                            onClick={() => setCurrentQuestion(prev => Math.min(totalQuestions - 1, prev + 1))}
+                                            onClick={() => setCurrentQuestion((prev) => Math.min(totalQuestions - 1, prev + 1))}
                                             disabled={currentQuestion === totalQuestions - 1}
                                         >
                                             Selanjutnya
-                                            <ChevronRight className="w-4 h-4 ml-2" />
+                                            <ChevronRight className="ml-2 h-4 w-4" />
                                         </Button>
                                     )}
                                 </div>
                                 {/* Navigasi Soal untuk mobile */}
                                 <div className="block md:hidden">
-                                    <div className="bg-card border rounded-lg p-4 mt-2">
-                                        <h4 className="font-semibold mb-4">Navigasi Soal</h4>
-                                        <div className="grid grid-cols-6 gap-2 mb-4">
+                                    <div className="bg-card mt-2 rounded-lg border p-4">
+                                        <h4 className="mb-4 font-semibold">Navigasi Soal</h4>
+                                        <div className="mb-4 grid grid-cols-6 gap-2">
                                             {quiz.questions.map((_, index) => (
                                                 <button
                                                     key={index}
                                                     onClick={() => setCurrentQuestion(index)}
-                                                    className={`w-10 h-10 rounded text-sm font-medium transition-colors ${
+                                                    className={`h-10 w-10 rounded text-sm font-medium transition-colors ${
                                                         index === currentQuestion
                                                             ? 'bg-blue-900 text-white'
                                                             : answers[quiz.questions[index]?.id]
-                                                            ? 'bg-green-100 text-green-700 border border-green-300'
-                                                            : 'bg-gray-100 hover:bg-gray-200'
+                                                              ? 'border border-green-300 bg-green-100 text-green-700'
+                                                              : 'bg-gray-100 hover:bg-gray-200'
                                                     }`}
                                                 >
                                                     {index + 1}
@@ -526,38 +530,38 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
                             </div>
                         </div>
                         {/* Sidebar with Question Numbers (desktop only) */}
-                        <div className="w-80 hidden md:block">
-                            <div className="bg-card border rounded-lg p-6 sticky top-6">
-                                <h4 className="font-semibold mb-4">Navigasi Soal</h4>
-                                <div className="grid grid-cols-6 gap-2 mb-6">
+                        <div className="hidden w-80 md:block">
+                            <div className="bg-card sticky top-6 rounded-lg border p-6">
+                                <h4 className="mb-4 font-semibold">Navigasi Soal</h4>
+                                <div className="mb-6 grid grid-cols-6 gap-2">
                                     {quiz.questions.map((_, index) => (
                                         <button
                                             key={index}
                                             onClick={() => setCurrentQuestion(index)}
-                                            className={`w-10 h-10 rounded text-sm font-medium transition-colors ${
+                                            className={`h-10 w-10 rounded text-sm font-medium transition-colors ${
                                                 index === currentQuestion
                                                     ? 'bg-blue-900 text-white'
                                                     : answers[quiz.questions[index]?.id]
-                                                    ? 'bg-green-100 text-green-700 border border-green-300'
-                                                    : 'bg-gray-100 hover:bg-gray-200'
+                                                      ? 'border border-green-300 bg-green-100 text-green-700'
+                                                      : 'bg-gray-100 hover:bg-gray-200'
                                             }`}
                                         >
                                             {index + 1}
                                         </button>
                                     ))}
                                 </div>
-                                <div className="pt-4 border-t">
-                                    <div className="text-sm space-y-2">
+                                <div className="border-t pt-4">
+                                    <div className="space-y-2 text-sm">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-4 h-4 bg-blue-900 rounded"></div>
+                                            <div className="h-4 w-4 rounded bg-blue-900"></div>
                                             <span>Soal saat ini</span>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
+                                            <div className="h-4 w-4 rounded border border-green-300 bg-green-100"></div>
                                             <span>Sudah dijawab</span>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <div className="w-4 h-4 bg-gray-100 rounded"></div>
+                                            <div className="h-4 w-4 rounded bg-gray-100"></div>
                                             <span>Belum dijawab</span>
                                         </div>
                                     </div>
@@ -567,7 +571,7 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
                     </div>
                 </div>
             </div>
-            
+
             {/* Confirmation Dialog */}
             <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
                 <DialogContent className="sm:max-w-[425px]">
@@ -576,22 +580,13 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
                             <AlertTriangle className="h-5 w-5 text-amber-500" />
                             Konfirmasi Pengiriman
                         </DialogTitle>
-                        <DialogDescription>
-                            Setelah dikirim, Anda tidak dapat mengubah jawaban lagi.
-                        </DialogDescription>
+                        <DialogDescription>Setelah dikirim, Anda tidak dapat mengubah jawaban lagi.</DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button 
-                            variant="outline" 
-                            onClick={() => setShowConfirmDialog(false)}
-                            disabled={isSubmitting}
-                        >
+                        <Button variant="outline" onClick={() => setShowConfirmDialog(false)} disabled={isSubmitting}>
                             Batal
                         </Button>
-                        <Button 
-                            onClick={handleConfirmSubmit}
-                            disabled={isSubmitting}
-                        >
+                        <Button onClick={handleConfirmSubmit} disabled={isSubmitting}>
                             {isSubmitting ? 'Mengirim...' : 'Ya, Kirim Jawaban'}
                         </Button>
                     </DialogFooter>
@@ -611,14 +606,10 @@ export default function QuizPage({ lesson, courseSlug }: QuizPageProps) {
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button 
-                            variant="outline" 
-                            onClick={() => setShowConfirmExitDialog(false)}
-                            disabled={isSubmitting}
-                        >
+                        <Button variant="outline" onClick={() => setShowConfirmExitDialog(false)} disabled={isSubmitting}>
                             Batal
                         </Button>
-                        <Button 
+                        <Button
                             onClick={() => {
                                 setShowConfirmExitDialog(false);
                                 router.get(`/learn/course/${courseSlug}#quiz-${lesson.id}`);

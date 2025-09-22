@@ -24,6 +24,7 @@ class QuestionController extends Controller
                 'nullable'
             ],
             'options.*.is_correct' => ['required', 'boolean'],
+            'explanation' => ['nullable', 'string'],
         ]);
 
         // Validasi jumlah opsi jawaban
@@ -37,6 +38,7 @@ class QuestionController extends Controller
             'quiz_id' => $validated['quiz_id'],
             'question_text' => $validated['question_text'],
             'type' => $validated['type'],
+            'explanation' => $validated['explanation'] ?? null,
         ]);
 
         // Simpan opsi jawaban
@@ -62,12 +64,14 @@ class QuestionController extends Controller
                 'nullable'
             ],
             'options.*.is_correct' => ['required', 'boolean'],
+            'explanation' => ['nullable', 'string'],
         ]);
 
         $question = Question::findOrFail($id);
         $question->update([
             'question_text' => $validated['question_text'],
             'type' => $validated['type'],
+            'explanation' => $validated['explanation'] ?? null,
         ]);
 
         // Hapus opsi lama

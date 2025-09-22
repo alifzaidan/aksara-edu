@@ -27,6 +27,7 @@ export default function CreateQuestion({ setOpen, quizId }: CreateQuestionProps)
     const { data, setData, post, processing, reset, errors, clearErrors } = useForm({
         question_text: '',
         type: 'multiple_choice',
+        explanation: '',
         quiz_id: quizId,
         options: options as { option_text: string; is_correct: boolean }[],
     });
@@ -73,6 +74,20 @@ export default function CreateQuestion({ setOpen, quizId }: CreateQuestionProps)
                         required
                     />
                     <InputError message={errors.question_text} />
+
+                    <Label htmlFor="explanation" className="mt-2">
+                        Pembahasan (Opsional)
+                    </Label>
+                    <Textarea
+                        id="explanation"
+                        name="explanation"
+                        value={data.explanation}
+                        onChange={(e) => setData('explanation', e.target.value)}
+                        placeholder="Tulis pembahasan jawaban yang benar..."
+                        rows={3}
+                        autoComplete="off"
+                    />
+                    <InputError message={errors.explanation} />
 
                     <Label htmlFor="type" className="mt-2">
                         Tipe Pertanyaan

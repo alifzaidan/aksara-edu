@@ -45,6 +45,7 @@ interface QuizzesProps {
                 option_text: string;
                 is_correct: boolean;
             }>;
+            explanation?: string;
         }>;
     };
     submissions?: Submission[];
@@ -187,28 +188,6 @@ export default function Quizzes({ course, quiz, submissions = [], flash }: Quizz
                                                         <p className="mt-1 text-xs text-green-600">File siap untuk diimport</p>
                                                     </div>
                                                 )}
-
-                                                <div className="rounded-md bg-blue-50 p-3">
-                                                    <div className="flex items-start">
-                                                        <div className="mr-2">
-                                                            <svg className="mt-0.5 h-4 w-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                                                <path
-                                                                    fillRule="evenodd"
-                                                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                                                                    clipRule="evenodd"
-                                                                />
-                                                            </svg>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs font-medium text-blue-800">Format File:</p>
-                                                            <ul className="mt-1 list-inside list-disc text-xs text-blue-700">
-                                                                <li>Kolom: question, option_a, option_b, option_c, option_d, correct_option</li>
-                                                                <li>Correct_option: A, B, C, atau D</li>
-                                                                <li>Option_c dan option_d boleh kosong</li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </div>
                                             </div>
 
                                             <DialogFooter>

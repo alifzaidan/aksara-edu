@@ -20,6 +20,7 @@ type Question = {
     question_text: string;
     type: 'multiple_choice' | 'true_false';
     options?: Option[];
+    explanation?: string;
 };
 
 interface QuizQuestionProps {
@@ -45,6 +46,7 @@ export default function QuizQuestion({ questions }: QuizQuestionProps) {
                             <TableHead className="w-1">No</TableHead>
                             <TableHead>Pertanyaan</TableHead>
                             <TableHead>Opsi Jawaban</TableHead>
+                            <TableHead>Pembahasan</TableHead>
                             <TableHead className="w-1">Aksi</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -99,6 +101,9 @@ export default function QuizQuestion({ questions }: QuizQuestionProps) {
                                             ))
                                         )}
                                     </ul>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="max-w-xs text-sm text-wrap text-gray-600">{q.explanation || '-'}</div>
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex">

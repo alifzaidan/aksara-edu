@@ -21,6 +21,7 @@ interface Question {
     question_text: string;
     type: 'multiple_choice' | 'true_false';
     options: Option[];
+    explanation?: string;
 }
 
 interface EditQuestionProps {
@@ -50,6 +51,7 @@ export default function EditQuestion({ question, setOpen, onSuccess }: EditQuest
         question_text: question.question_text,
         type: question.type,
         options: options as { option_text: string; is_correct: boolean }[],
+        explanation: question.explanation || '',
     });
 
     // Sinkronkan options ke form data
@@ -90,6 +92,20 @@ export default function EditQuestion({ question, setOpen, onSuccess }: EditQuest
                         required
                     />
                     <InputError message={errors.question_text} />
+
+                    <Label htmlFor="explanation" className="mt-2">
+                        Pembahasan (Opsional)
+                    </Label>
+                    <Textarea
+                        id="explanation"
+                        name="explanation"
+                        value={data.explanation}
+                        onChange={(e) => setData('explanation', e.target.value)}
+                        placeholder="Tulis pembahasan jawaban yang benar..."
+                        rows={3}
+                        autoComplete="off"
+                    />
+                    <InputError message={errors.explanation} />
 
                     <Label htmlFor="type" className="mt-2">
                         Tipe Pertanyaan

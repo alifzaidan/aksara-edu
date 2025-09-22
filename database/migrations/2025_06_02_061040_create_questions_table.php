@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignUuid('quiz_id')->constrained('quizzes')->onDelete('cascade');
             $table->string('question_text');
             $table->enum('type', ['multiple_choice', 'true_false'])->default('multiple_choice');
+            $table->text('explanation')->nullable();
             $table->timestamps();
         });
     }
