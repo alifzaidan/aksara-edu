@@ -1,0 +1,1 @@
+import{t as a}from"./format-CNjBDjOL.js";function s(r,u,e){const t=a(r,e==null?void 0:e.in);return t.setHours(u),t}function n(r,u,e){const t=a(r,e==null?void 0:e.in);return t.setMinutes(u),t}function d(r,u,e){const t=a(r,e==null?void 0:e.in);return t.setSeconds(u),t}export{n as a,d as b,s};
