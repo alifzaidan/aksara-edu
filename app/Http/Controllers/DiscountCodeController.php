@@ -49,8 +49,36 @@ class DiscountCodeController extends Controller
     public function create()
     {
         $courses = Course::select('id', 'title', 'price')->where('status', 'published')->get();
-        $bootcamps = Bootcamp::select('id', 'title', 'price')->where('status', 'published')->get();
-        $webinars = Webinar::select('id', 'title', 'price')->where('status', 'published')->get();
+
+        $bootcamps = Bootcamp::select('id', 'title', 'price', 'registration_deadline', 'start_date', 'batch')
+            ->where('status', 'published')
+            ->get()
+            ->map(function ($bootcamp) {
+                return [
+                    'id' => $bootcamp->id,
+                    'title' => $bootcamp->title . ' (Batch ' . $bootcamp->batch . ')',
+                    'original_title' => $bootcamp->title,
+                    'price' => $bootcamp->price,
+                    'registration_deadline' => $bootcamp->registration_deadline,
+                    'start_date' => $bootcamp->start_date,
+                    'batch' => $bootcamp->batch,
+                ];
+            });
+
+        $webinars = Webinar::select('id', 'title', 'price', 'registration_deadline', 'start_time', 'batch')
+            ->where('status', 'published')
+            ->get()
+            ->map(function ($webinar) {
+                return [
+                    'id' => $webinar->id,
+                    'title' => $webinar->title . ' (Batch ' . $webinar->batch . ')',
+                    'original_title' => $webinar->title,
+                    'price' => $webinar->price,
+                    'registration_deadline' => $webinar->registration_deadline,
+                    'event_date' => $webinar->start_time,
+                    'batch' => $webinar->batch,
+                ];
+            });
 
         return Inertia::render('admin/discount-codes/create', [
             'products' => [
@@ -87,6 +115,34 @@ class DiscountCodeController extends Controller
             return back()->withErrors(['value' => 'Persentase tidak boleh lebih dari 100%']);
         }
 
+        if ($request->applicable_products && count($request->applicable_products) > 0) {
+            $startsAt = new \DateTime($request->starts_at);
+
+            foreach ($request->applicable_products as $product) {
+                if ($product['type'] === 'bootcamp') {
+                    $bootcamp = Bootcamp::find($product['id']);
+                    if ($bootcamp && $bootcamp->registration_deadline) {
+                        $registrationEnd = new \DateTime($bootcamp->registration_deadline);
+                        if ($registrationEnd < $startsAt) {
+                            return back()->withErrors([
+                                'applicable_products' => "Bootcamp '{$bootcamp->title} (Batch {$bootcamp->batch})' sudah tutup pendaftaran sebelum tanggal mulai diskon."
+                            ]);
+                        }
+                    }
+                } elseif ($product['type'] === 'webinar') {
+                    $webinar = Webinar::find($product['id']);
+                    if ($webinar && $webinar->registration_deadline) {
+                        $registrationEnd = new \DateTime($webinar->registration_deadline);
+                        if ($registrationEnd < $startsAt) {
+                            return back()->withErrors([
+                                'applicable_products' => "Webinar '{$webinar->title} (Batch {$webinar->batch})' sudah tutup pendaftaran sebelum tanggal mulai diskon."
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
+
         $applicableIds = null;
         if ($request->applicable_products && count($request->applicable_products) > 0) {
             $applicableIds = collect($request->applicable_products)->map(function ($product) {
@@ -107,12 +163,11 @@ class DiscountCodeController extends Controller
     {
         $discountCode->load(['usages.user', 'usages.invoice']);
 
-        // Get specific products if applicable_ids exists
         $applicableProducts = [];
         if ($discountCode->applicable_ids) {
             $courses = Course::select('id', 'title', 'price')->get();
-            $bootcamps = Bootcamp::select('id', 'title', 'price')->get();
-            $webinars = Webinar::select('id', 'title', 'price')->get();
+            $bootcamps = Bootcamp::select('id', 'title', 'price', 'registration_deadline', 'start_date', 'batch')->get();
+            $webinars = Webinar::select('id', 'title', 'price', 'registration_deadline', 'start_time', 'batch')->get();
 
             foreach ($discountCode->applicable_ids as $applicableId) {
                 [$type, $id] = explode(':', $applicableId);
@@ -121,22 +176,49 @@ class DiscountCodeController extends Controller
                 switch ($type) {
                     case 'course':
                         $product = $courses->firstWhere('id', $id);
+                        if ($product) {
+                            $applicableProducts[] = [
+                                'type' => $type,
+                                'id' => $id,
+                                'title' => $product->title,
+                                'price' => $product->price,
+                                'registration_deadline' => null,
+                                'start_date' => null,
+                                'event_date' => null,
+                                'batch' => null,
+                            ];
+                        }
                         break;
                     case 'bootcamp':
                         $product = $bootcamps->firstWhere('id', $id);
+                        if ($product) {
+                            $applicableProducts[] = [
+                                'type' => $type,
+                                'id' => $id,
+                                'title' => $product->title . ' (Batch ' . $product->batch . ')',
+                                'price' => $product->price,
+                                'registration_deadline' => $product->registration_deadline,
+                                'start_date' => $product->start_date,
+                                'event_date' => null,
+                                'batch' => $product->batch,
+                            ];
+                        }
                         break;
                     case 'webinar':
                         $product = $webinars->firstWhere('id', $id);
+                        if ($product) {
+                            $applicableProducts[] = [
+                                'type' => $type,
+                                'id' => $id,
+                                'title' => $product->title . ' (Batch ' . $product->batch . ')',
+                                'price' => $product->price,
+                                'registration_deadline' => $product->registration_deadline,
+                                'start_date' => null,
+                                'event_date' => $product->start_time,
+                                'batch' => $product->batch,
+                            ];
+                        }
                         break;
-                }
-
-                if ($product) {
-                    $applicableProducts[] = [
-                        'type' => $type,
-                        'id' => $id,
-                        'title' => $product->title,
-                        'price' => $product->price,
-                    ];
                 }
             }
         }
@@ -152,8 +234,36 @@ class DiscountCodeController extends Controller
     public function edit(DiscountCode $discountCode)
     {
         $courses = Course::select('id', 'title', 'price')->where('status', 'published')->get();
-        $bootcamps = Bootcamp::select('id', 'title', 'price')->where('status', 'published')->get();
-        $webinars = Webinar::select('id', 'title', 'price')->where('status', 'published')->get();
+
+        $bootcamps = Bootcamp::select('id', 'title', 'price', 'registration_deadline', 'start_date', 'batch')
+            ->where('status', 'published')
+            ->get()
+            ->map(function ($bootcamp) {
+                return [
+                    'id' => $bootcamp->id,
+                    'title' => $bootcamp->title . ' (Batch ' . $bootcamp->batch . ')',
+                    'original_title' => $bootcamp->title,
+                    'price' => $bootcamp->price,
+                    'registration_deadline' => $bootcamp->registration_deadline,
+                    'start_date' => $bootcamp->start_date,
+                    'batch' => $bootcamp->batch,
+                ];
+            });
+
+        $webinars = Webinar::select('id', 'title', 'price', 'registration_deadline', 'start_time', 'batch')
+            ->where('status', 'published')
+            ->get()
+            ->map(function ($webinar) {
+                return [
+                    'id' => $webinar->id,
+                    'title' => $webinar->title . ' (Batch ' . $webinar->batch . ')',
+                    'original_title' => $webinar->title,
+                    'price' => $webinar->price,
+                    'registration_deadline' => $webinar->registration_deadline,
+                    'event_date' => $webinar->start_time,
+                    'batch' => $webinar->batch,
+                ];
+            });
 
         $applicableProducts = [];
         if ($discountCode->applicable_ids) {
@@ -164,22 +274,49 @@ class DiscountCodeController extends Controller
                 switch ($type) {
                     case 'course':
                         $product = $courses->firstWhere('id', $id);
+                        if ($product) {
+                            $applicableProducts[] = [
+                                'type' => $type,
+                                'id' => $id,
+                                'title' => $product->title,
+                                'price' => $product->price,
+                                'registration_deadline' => null,
+                                'start_date' => null,
+                                'event_date' => null,
+                                'batch' => null,
+                            ];
+                        }
                         break;
                     case 'bootcamp':
                         $product = $bootcamps->firstWhere('id', $id);
+                        if ($product) {
+                            $applicableProducts[] = [
+                                'type' => $type,
+                                'id' => $id,
+                                'title' => $product['title'],
+                                'price' => $product['price'],
+                                'registration_deadline' => $product['registration_deadline'],
+                                'start_date' => $product['start_date'],
+                                'event_date' => null,
+                                'batch' => $product['batch'],
+                            ];
+                        }
                         break;
                     case 'webinar':
-                        $product = $webinars->firstWhere('id', $id);
+                        $webinarProduct = $webinars->firstWhere('id', $id);
+                        if ($webinarProduct) {
+                            $applicableProducts[] = [
+                                'type' => $type,
+                                'id' => $id,
+                                'title' => $webinarProduct['title'],
+                                'price' => $webinarProduct['price'],
+                                'registration_deadline' => $webinarProduct['registration_deadline'],
+                                'start_date' => null,
+                                'event_date' => $webinarProduct['event_date'],
+                                'batch' => $webinarProduct['batch'],
+                            ];
+                        }
                         break;
-                }
-
-                if ($product) {
-                    $applicableProducts[] = [
-                        'type' => $type,
-                        'id' => $id,
-                        'title' => $product->title,
-                        'price' => $product->price,
-                    ];
                 }
             }
         }
@@ -222,7 +359,34 @@ class DiscountCodeController extends Controller
             return back()->withErrors(['value' => 'Persentase tidak boleh lebih dari 100%']);
         }
 
-        // Format applicable_ids dari applicable_products
+        if ($request->applicable_products && count($request->applicable_products) > 0) {
+            $startsAt = new \DateTime($request->starts_at);
+
+            foreach ($request->applicable_products as $product) {
+                if ($product['type'] === 'bootcamp') {
+                    $bootcamp = Bootcamp::find($product['id']);
+                    if ($bootcamp && $bootcamp->registration_deadline) {
+                        $registrationEnd = new \DateTime($bootcamp->registration_deadline);
+                        if ($registrationEnd < $startsAt) {
+                            return back()->withErrors([
+                                'applicable_products' => "Bootcamp '{$bootcamp->title} (Batch {$bootcamp->batch})' sudah tutup pendaftaran sebelum tanggal mulai diskon."
+                            ]);
+                        }
+                    }
+                } elseif ($product['type'] === 'webinar') {
+                    $webinar = Webinar::find($product['id']);
+                    if ($webinar && $webinar->registration_deadline) {
+                        $registrationEnd = new \DateTime($webinar->registration_deadline);
+                        if ($registrationEnd < $startsAt) {
+                            return back()->withErrors([
+                                'applicable_products' => "Webinar '{$webinar->title} (Batch {$webinar->batch})' sudah tutup pendaftaran sebelum tanggal mulai diskon."
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
+
         $applicableIds = null;
         if ($request->applicable_products && count($request->applicable_products) > 0) {
             $applicableIds = collect($request->applicable_products)->map(function ($product) {
@@ -247,7 +411,6 @@ class DiscountCodeController extends Controller
             ->with('success', 'Kode diskon berhasil dihapus');
     }
 
-    // API untuk validasi kode diskon
     public function validate(Request $request)
     {
         try {

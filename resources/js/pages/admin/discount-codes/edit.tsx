@@ -14,12 +14,22 @@ import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Head, router } from '@inertiajs/react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { CalendarIcon, ChevronDownIcon, Percent, Plus, Shuffle, Tag, X } from 'lucide-react';
-import { useState } from 'react';
+import { AlertCircle, CalendarIcon, ChevronDownIcon, Percent, Plus, Shuffle, Tag, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+
+interface Product {
+    id: string;
+    title: string;
+    price: number;
+    registration_deadline?: string;
+    start_date?: string;
+    event_date?: string;
+    batch?: number;
+}
 
 interface EditDiscountCodeProps {
     discountCode: {
@@ -41,12 +51,16 @@ interface EditDiscountCodeProps {
             id: string;
             title: string;
             price: number;
+            registration_deadline?: string;
+            start_date?: string;
+            event_date?: string;
+            batch?: number;
         }>;
     };
     products: {
-        courses: Array<{ id: string; title: string; price: number }>;
-        bootcamps: Array<{ id: string; title: string; price: number }>;
-        webinars: Array<{ id: string; title: string; price: number }>;
+        courses: Product[];
+        bootcamps: Product[];
+        webinars: Product[];
     };
 }
 
@@ -92,6 +106,10 @@ const formSchema = z
                     id: z.string(),
                     title: z.string(),
                     price: z.number(),
+                    registration_deadline: z.string().nullable().optional(),
+                    start_date: z.string().nullable().optional(),
+                    event_date: z.string().nullable().optional(),
+                    batch: z.number().nullable().optional(),
                 }),
             )
             .optional(),
@@ -146,8 +164,20 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
     });
 
     const watchType = form.watch('type');
-    const watchApplicableTypes = form.watch('applicable_types') || [];
-    const watchApplicableProducts = form.watch('applicable_products') || [];
+    const watchedApplicableTypes = form.watch('applicable_types');
+    const watchApplicableTypes = useMemo(() => watchedApplicableTypes || [], [watchedApplicableTypes]);
+    const watchedApplicableProducts = form.watch('applicable_products');
+    const watchApplicableProducts = useMemo(() => watchedApplicableProducts || [], [watchedApplicableProducts]);
+    const watchStartsAt = form.watch('starts_at');
+
+    useEffect(() => {
+        if (watchApplicableTypes.length > 0) {
+            const firstAvailableType = watchApplicableTypes[0];
+            if (!watchApplicableTypes.includes(selectedProductType)) {
+                setSelectedProductType(firstAvailableType);
+            }
+        }
+    }, [watchApplicableTypes, selectedProductType]);
 
     const generateCode = () => {
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -161,23 +191,36 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
     const handleApplicableTypeChange = (type: string, checked: boolean) => {
         const currentTypes = watchApplicableTypes;
         if (checked) {
-            form.setValue('applicable_types', [...currentTypes, type]);
+            const newTypes = [...currentTypes, type];
+            form.setValue('applicable_types', newTypes);
+
+            if (newTypes.length === 1) {
+                setSelectedProductType(type);
+            }
         } else {
-            form.setValue(
-                'applicable_types',
-                currentTypes.filter((t) => t !== type),
-            );
-            // Remove products of this type
+            const filteredTypes = currentTypes.filter((t) => t !== type);
+            form.setValue('applicable_types', filteredTypes);
+
             const filteredProducts = watchApplicableProducts.filter((p) => p.type !== type);
             form.setValue('applicable_products', filteredProducts);
+
+            if (selectedProductType === type && filteredTypes.length > 0) {
+                setSelectedProductType(filteredTypes[0]);
+            }
         }
     };
 
-    const handleAddProduct = (product: { id: string; title: string; price: number }, type: string) => {
-        const newProduct = { ...product, type };
+    const handleAddProduct = (product: Product, type: string) => {
+        const newProduct = {
+            ...product,
+            type,
+            registration_deadline: product.registration_deadline || null,
+            start_date: product.start_date || null,
+            event_date: product.event_date || null,
+            batch: product.batch || null,
+        };
         const existingProducts = watchApplicableProducts;
 
-        // Check if product already added
         const isAlreadyAdded = existingProducts.some((p) => p.id === product.id && p.type === type);
         if (!isAlreadyAdded) {
             form.setValue('applicable_products', [...existingProducts, newProduct]);
@@ -190,18 +233,36 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
         form.setValue('applicable_products', filteredProducts);
     };
 
-    const getAvailableProducts = () => {
+    const getAvailableProducts = useMemo(() => {
+        const discountStartDate = watchStartsAt;
+        const selectedProductIds = watchApplicableProducts.filter((p) => p.type === selectedProductType).map((p) => p.id);
+
         switch (selectedProductType) {
             case 'course':
-                return products.courses;
+                return products.courses.filter((course) => !selectedProductIds.includes(course.id));
+
             case 'bootcamp':
-                return products.bootcamps;
+                return products.bootcamps.filter((bootcamp) => {
+                    if (selectedProductIds.includes(bootcamp.id)) return false;
+
+                    if (!bootcamp.registration_deadline || !discountStartDate) return true;
+                    const registrationEnd = parseISO(bootcamp.registration_deadline);
+                    return registrationEnd >= discountStartDate;
+                });
+
             case 'webinar':
-                return products.webinars;
+                return products.webinars.filter((webinar) => {
+                    if (selectedProductIds.includes(webinar.id)) return false;
+
+                    if (!webinar.registration_deadline || !discountStartDate) return true;
+                    const registrationEnd = parseISO(webinar.registration_deadline);
+                    return registrationEnd >= discountStartDate;
+                });
+
             default:
                 return [];
         }
-    };
+    }, [selectedProductType, products, watchStartsAt, watchApplicableProducts]);
 
     const getProductTypeName = (type: string) => {
         switch (type) {
@@ -216,8 +277,29 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
         }
     };
 
+    const getProductStatusInfo = (product: Product, type: string) => {
+        if (type === 'course') {
+            return null;
+        }
+
+        if (!product.registration_deadline) {
+            return null;
+        }
+
+        const registrationEnd = parseISO(product.registration_deadline);
+        const now = new Date();
+        const discountStart = watchStartsAt;
+
+        if (registrationEnd < now) {
+            return { type: 'closed', text: 'Pendaftaran ditutup' };
+        } else if (discountStart && registrationEnd < discountStart) {
+            return { type: 'will-close', text: 'Akan tutup sebelum diskon aktif' };
+        } else {
+            return { type: 'open', text: `Tutup: ${format(registrationEnd, 'dd MMM yyyy', { locale: id })}` };
+        }
+    };
+
     function onSubmit(values: FormData) {
-        // Format data untuk backend
         const formData = {
             ...values,
             description: values.description || null,
@@ -230,7 +312,6 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
             expires_at: values.expires_at.toISOString(),
             _method: 'PUT',
         };
-
         router.post(route('discount-codes.update', discountCode.id), formData);
     }
 
@@ -484,6 +565,7 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
                                                     />
                                                 </PopoverContent>
                                             </Popover>
+                                            <FormDescription>Produk bootcamp dan webinar akan difilter berdasarkan tanggal ini</FormDescription>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -570,6 +652,21 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
                                     </div>
                                 </div>
                                 <p className="text-muted-foreground text-sm">Kosong = berlaku untuk semua produk</p>
+
+                                {(watchApplicableTypes.includes('bootcamp') || watchApplicableTypes.includes('webinar')) && (
+                                    <div className="rounded-md bg-blue-50 p-3">
+                                        <div className="flex items-start">
+                                            <AlertCircle className="mt-0.5 mr-2 h-4 w-4 text-blue-600" />
+                                            <div>
+                                                <p className="text-xs font-medium text-blue-800">Catatan:</p>
+                                                <p className="text-xs text-blue-700">
+                                                    Bootcamp dan webinar yang dapat dipilih hanya yang pendaftarannya masih berlaku setelah tanggal
+                                                    mulai diskon.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {watchApplicableTypes.length > 0 && (
@@ -589,7 +686,7 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
                                                         <FormLabel>Jenis Produk</FormLabel>
                                                         <Select value={selectedProductType} onValueChange={setSelectedProductType}>
                                                             <SelectTrigger>
-                                                                <SelectValue />
+                                                                <SelectValue placeholder="Pilih jenis produk" />
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 {watchApplicableTypes.includes('course') && (
@@ -605,20 +702,52 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
                                                         </Select>
                                                     </div>
                                                     <div className="max-h-40 space-y-2 overflow-y-auto">
-                                                        {getAvailableProducts().map((product) => (
-                                                            <div
-                                                                key={product.id}
-                                                                className="flex cursor-pointer items-center justify-between rounded-lg border p-2 hover:bg-gray-50"
-                                                                onClick={() => handleAddProduct(product, selectedProductType)}
-                                                            >
-                                                                <div className="flex-1">
-                                                                    <p className="text-sm font-medium">{product.title}</p>
-                                                                    <p className="text-muted-foreground text-xs">
-                                                                        Rp {new Intl.NumberFormat('id-ID').format(product.price)}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        ))}
+                                                        {getAvailableProducts.length === 0 ? (
+                                                            <p className="py-4 text-center text-sm text-gray-500">
+                                                                {selectedProductType === 'course'
+                                                                    ? 'Tidak ada kelas yang tersedia atau semua sudah dipilih'
+                                                                    : `Tidak ada ${getProductTypeName(selectedProductType).toLowerCase()} yang tersedia untuk tanggal diskon ini atau semua sudah dipilih`}
+                                                            </p>
+                                                        ) : (
+                                                            getAvailableProducts.map((product) => {
+                                                                const statusInfo = getProductStatusInfo(product, selectedProductType);
+                                                                return (
+                                                                    <div
+                                                                        key={product.id}
+                                                                        className="flex cursor-pointer items-center justify-between rounded-lg border p-2 hover:bg-gray-50"
+                                                                        onClick={() => handleAddProduct(product, selectedProductType)}
+                                                                    >
+                                                                        <div className="flex-1">
+                                                                            <p className="text-sm font-medium">{product.title}</p>
+                                                                            <p className="text-muted-foreground text-xs">
+                                                                                Rp {new Intl.NumberFormat('id-ID').format(product.price)}
+                                                                            </p>
+                                                                            {/* Tampilkan info batch untuk bootcamp dan webinar */}
+                                                                            {(selectedProductType === 'bootcamp' ||
+                                                                                selectedProductType === 'webinar') &&
+                                                                                product.batch && (
+                                                                                    <p className="text-xs font-medium text-blue-600">
+                                                                                        Batch {product.batch}
+                                                                                    </p>
+                                                                                )}
+                                                                            {statusInfo && (
+                                                                                <p
+                                                                                    className={`mt-1 text-xs ${
+                                                                                        statusInfo.type === 'closed'
+                                                                                            ? 'text-red-600'
+                                                                                            : statusInfo.type === 'will-close'
+                                                                                              ? 'text-orange-600'
+                                                                                              : 'text-green-600'
+                                                                                    }`}
+                                                                                >
+                                                                                    {statusInfo.text}
+                                                                                </p>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })
+                                                        )}
                                                     </div>
                                                 </div>
                                             </PopoverContent>
@@ -670,8 +799,8 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
                         </div>
 
                         <div className="lg:col-span-2">
-                            <Button type="submit" className="hover:cursor-pointer">
-                                Simpan Perubahan
+                            <Button type="submit" className="hover:cursor-pointer" disabled={form.formState.isSubmitting}>
+                                {form.formState.isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
                             </Button>
                         </div>
                     </form>
