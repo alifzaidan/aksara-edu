@@ -60,6 +60,31 @@ export interface Invoice {
 
 export const columns: ColumnDef<Invoice>[] = [
     {
+        id: 'payment_type',
+        accessorFn: (row) => (row.amount === 0 ? 'free' : 'paid'),
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        meta: {
+            isVirtual: true,
+        },
+    },
+    {
+        id: 'product_type',
+        accessorFn: (row) => {
+            if (row.course_items && row.course_items.length > 0) return 'course';
+            if (row.bootcamp_items && row.bootcamp_items.length > 0) return 'bootcamp';
+            if (row.webinar_items && row.webinar_items.length > 0) return 'webinar';
+            return 'unknown';
+        },
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        meta: {
+            isVirtual: true,
+        },
+    },
+    {
         accessorKey: 'user.name',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Nama Pembeli" />,
         cell: ({ row }) => <div className="font-medium">{row.original.user?.name || '-'}</div>,

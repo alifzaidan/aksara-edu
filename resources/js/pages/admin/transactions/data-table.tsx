@@ -19,7 +19,7 @@ import { DataTableViewOptions } from '@/components/data-table-view-option';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CheckCircle, Clock, X, XCircle } from 'lucide-react';
+import { BookText, CheckCircle, Clock, DollarSign, Gift, MonitorPlay, Presentation, X, XCircle } from 'lucide-react';
 import React from 'react';
 
 export const status = [
@@ -37,6 +37,37 @@ export const status = [
         value: 'failed',
         label: 'Failed',
         icon: XCircle,
+    },
+];
+
+export const paymentTypes = [
+    {
+        value: 'paid',
+        label: 'Berbayar',
+        icon: DollarSign,
+    },
+    {
+        value: 'free',
+        label: 'Gratis',
+        icon: Gift,
+    },
+];
+
+export const productTypes = [
+    {
+        value: 'course',
+        label: 'Kelas Online',
+        icon: BookText,
+    },
+    {
+        value: 'bootcamp',
+        label: 'Bootcamp',
+        icon: Presentation,
+    },
+    {
+        value: 'webinar',
+        label: 'Webinar',
+        icon: MonitorPlay,
     },
 ];
 
@@ -82,6 +113,12 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
                 />
                 <div className="flex flex-col items-center gap-2 lg:flex-row">
                     {table.getColumn('status') && <DataTableFacetedFilter column={table.getColumn('status')} title="Status" options={status} />}
+                    {table.getColumn('payment_type') && (
+                        <DataTableFacetedFilter column={table.getColumn('payment_type')} title="Jenis Bayar" options={paymentTypes} />
+                    )}
+                    {table.getColumn('product_type') && (
+                        <DataTableFacetedFilter column={table.getColumn('product_type')} title="Jenis Produk" options={productTypes} />
+                    )}
                     {isFiltered && (
                         <Button
                             onClick={() => {
