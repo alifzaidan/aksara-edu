@@ -312,6 +312,7 @@ class BootcampController extends Controller
 
         foreach ($bootcamp->schedules as $schedule) {
             $newBootcamp->schedules()->create([
+                'schedule_date' => $schedule->schedule_date,
                 'day' => $schedule->day,
                 'start_time' => $schedule->start_time,
                 'end_time' => $schedule->end_time,
