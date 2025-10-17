@@ -299,11 +299,11 @@
         @if($invoice->discount_amount > 0)
         <tr>
             <td>Harga Asli:</td>
-            <td class="text-right">Rp {{ number_format($invoice->discount_amount, 0, ',', '.') }}</td>
+            <td class="text-right">Rp {{ number_format($invoice->discount_amount + $subtotal, 0, ',', '.') }}</td>
         </tr>
         <tr>
             <td>Diskon:</td>
-            <td class="text-right" style="color: #dc3545;">-Rp {{ number_format($invoice->discount_amount - $subtotal,
+            <td class="text-right" style="color: #dc3545;">-Rp {{ number_format($invoice->discount_amount,
                 0, ',', '.') }}</td>
         </tr>
         @endif

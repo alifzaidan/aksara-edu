@@ -276,12 +276,14 @@ export default function TransactionShow({ invoice }: Props) {
                                             <>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600 dark:text-gray-400">Harga Asli:</span>
-                                                    <span className="medium">Rp {invoice.discount_amount?.toLocaleString('id-ID')}</span>
+                                                    <span className="medium">
+                                                        Rp {(invoice.discount_amount + invoice.nett_amount)?.toLocaleString('id-ID')}
+                                                    </span>
                                                 </div>
                                                 <div className="flex justify-between">
-                                                    <span className="text-gray-600 dark:text-gray-400">Subtotal:</span>
+                                                    <span className="text-gray-600 dark:text-gray-400">Diskon:</span>
                                                     <span className="text-gray-500 line-through">
-                                                        Rp {(invoice.discount_amount - invoice.nett_amount)?.toLocaleString('id-ID') || '0'}
+                                                        Rp {invoice.discount_amount?.toLocaleString('id-ID') || '0'}
                                                     </span>
                                                 </div>
                                             </>

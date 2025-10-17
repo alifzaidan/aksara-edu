@@ -6,9 +6,10 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UserLayout from '@/layouts/user-layout';
 import { SharedData } from '@/types';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { BadgeCheck, Check, Hourglass, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 interface Webinar {
     id: string;
@@ -76,6 +77,11 @@ export default function RegisterWebinar({
         ig_follow_proof: null as File | null,
         tag_friend_proof: null as File | null,
         tiktok_follow_proof: null as File | null,
+    });
+    const [fileErrors, setFileErrors] = useState({
+        ig_follow_proof: false,
+        tag_friend_proof: false,
+        tiktok_follow_proof: false,
     });
 
     const benefitList = parseList(webinar.benefits);
@@ -152,8 +158,35 @@ export default function RegisterWebinar({
         }
     };
 
-    const handleFreeCheckout = async (e: React.FormEvent) => {
+    const refreshCSRFToken = async (): Promise<string> => {
+        try {
+            const response = await fetch('/csrf-token', {
+                method: 'GET',
+                credentials: 'same-origin',
+            });
+            const data = await response.json();
+
+            // Update meta tag
+            const metaTag = document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement;
+            if (metaTag) {
+                metaTag.content = data.token;
+            }
+
+            return data.token;
+        } catch (error) {
+            console.error('Failed to refresh CSRF token:', error);
+            throw error;
+        }
+    };
+
+    const handleFreeCheckout = (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!isProfileComplete) {
+            alert('Profil Anda belum lengkap! Harap lengkapi nomor telepon terlebih dahulu.');
+            window.location.href = route('profile.edit');
+            return;
+        }
 
         if (!freeFormData.ig_follow_proof || !freeFormData.tag_friend_proof || !freeFormData.tiktok_follow_proof) {
             alert('Harap upload semua bukti follow dan tag yang diperlukan!');
@@ -166,28 +199,17 @@ export default function RegisterWebinar({
         formData.append('type', 'webinar');
         formData.append('id', webinar.id);
         formData.append('ig_follow_proof', freeFormData.ig_follow_proof);
-        formData.append('tag_friend_proof', freeFormData.tag_friend_proof || '');
+        formData.append('tag_friend_proof', freeFormData.tag_friend_proof);
         formData.append('tiktok_follow_proof', freeFormData.tiktok_follow_proof);
 
-        try {
-            const res = await fetch(route('enroll.free'), {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
-                },
-                body: formData,
-            });
-            const data = await res.json();
-            if (res.ok && data.redirect_url) {
-                window.location.href = data.redirect_url;
-            } else {
-                alert(data.message || 'Gagal mendaftar webinar gratis.');
-            }
-        } catch {
-            alert('Terjadi kesalahan saat proses pendaftaran.');
-        } finally {
-            setLoading(false);
-        }
+        router.post(route('enroll.free'), formData, {
+            onError: (errors) => {
+                alert(errors.message || 'Gagal mendaftar webinar gratis.');
+            },
+            onFinish: () => {
+                setLoading(false);
+            },
+        });
     };
 
     const handleCheckout = async (e: React.FormEvent) => {
@@ -203,6 +225,7 @@ export default function RegisterWebinar({
             alert('Anda harus menyetujui syarat dan ketentuan!');
             return;
         }
+
         setLoading(true);
 
         if (isFree) {
@@ -211,11 +234,14 @@ export default function RegisterWebinar({
             return;
         }
 
-        try {
+        const submitPayment = async (retryCount = 0): Promise<void> => {
+            const originalDiscountAmount = webinar.strikethrough_price > 0 ? webinar.strikethrough_price - webinar.price : 0;
+            const promoDiscountAmount = discountData?.discount_amount || 0;
+
             const invoiceData: any = {
                 type: 'webinar',
                 id: webinar.id,
-                discount_amount: webinar.strikethrough_price || 0,
+                discount_amount: originalDiscountAmount + promoDiscountAmount,
                 nett_amount: finalWebinarPrice,
                 transaction_fee: transactionFee,
                 total_amount: totalPrice,
@@ -226,26 +252,103 @@ export default function RegisterWebinar({
                 invoiceData.discount_code_amount = discountData.discount_amount;
             }
 
-            const res = await fetch(route('invoice.store'), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify(invoiceData),
-            });
-            const data = await res.json();
-            if (data.url) {
-                window.location.href = data.url;
-            } else {
-                alert('Gagal membuat invoice.');
+            try {
+                // Get fresh CSRF token
+                const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
+
+                const res = await fetch(route('invoice.store'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || '',
+                        Accept: 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(invoiceData),
+                });
+
+                // Handle 419 error with retry
+                if (res.status === 419 && retryCount < 2) {
+                    console.log(`CSRF token expired, refreshing... (attempt ${retryCount + 1})`);
+                    await refreshCSRFToken();
+                    return submitPayment(retryCount + 1);
+                }
+
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    if (data.payment_url) {
+                        window.location.href = data.payment_url;
+                    } else {
+                        throw new Error('Payment URL not received');
+                    }
+                } else {
+                    throw new Error(data.message || 'Gagal membuat invoice.');
+                }
+            } catch (error) {
+                console.error('Payment error:', error);
+                throw error;
             }
-        } catch {
-            alert('Terjadi kesalahan saat proses pembayaran.');
-        } finally {
+        };
+
+        try {
+            await submitPayment();
+        } catch (error: any) {
+            alert(error.message || 'Terjadi kesalahan saat proses pembayaran.');
             setLoading(false);
         }
+    };
+
+    // Function untuk validasi ukuran file
+    const validateFileSize = (file: File, maxSizeMB: number = 2): boolean => {
+        const maxSizeBytes = maxSizeMB * 1024 * 1024; // Convert MB to bytes
+        return file.size <= maxSizeBytes;
+    };
+
+    // Function untuk handle file input dengan validasi
+    const handleFileChange = (fieldName: keyof typeof freeFormData, file: File | null) => {
+        if (!file) {
+            setFreeFormData((prev) => ({ ...prev, [fieldName]: null }));
+            setFileErrors((prev) => ({ ...prev, [fieldName]: false }));
+            return;
+        }
+
+        // Validasi ukuran file
+        if (!validateFileSize(file, 2)) {
+            // Set error state
+            setFileErrors((prev) => ({ ...prev, [fieldName]: true }));
+
+            // Clear input
+            const input = document.querySelector(`input[data-field="${fieldName}"]`) as HTMLInputElement;
+            if (input) {
+                input.value = '';
+            }
+
+            toast.error('Ukuran file terlalu besar. Maksimal 2MB.');
+
+            return;
+        }
+
+        // Validasi tipe file (hanya image)
+        if (!file.type.startsWith('image/')) {
+            setFileErrors((prev) => ({ ...prev, [fieldName]: true }));
+
+            const input = document.querySelector(`input[data-field="${fieldName}"]`) as HTMLInputElement;
+            if (input) {
+                input.value = '';
+            }
+
+            toast.error('Hanya file gambar (JPG, PNG, GIF, dll) yang diperbolehkan.');
+
+            return;
+        }
+
+        // File valid
+        setFreeFormData((prev) => ({ ...prev, [fieldName]: file }));
+        setFileErrors((prev) => ({ ...prev, [fieldName]: false }));
+
+        // Show success toast
+        toast.success('File berhasil diunggah.');
     };
 
     if (!isLoggedIn) {
@@ -538,65 +641,107 @@ export default function RegisterWebinar({
                         <form onSubmit={handleFreeCheckout}>
                             <h2 className="my-2 text-xl font-bold italic">Upload Bukti Follow</h2>
                             <div className="space-y-4 rounded-lg border p-4">
+                                {/* Bukti Follow Instagram */}
                                 <div>
-                                    <Label>Bukti Follow Instagram</Label>
+                                    <Label htmlFor="ig_follow_proof">Bukti Follow Instagram</Label>
                                     <Input
+                                        id="ig_follow_proof"
+                                        data-field="ig_follow_proof"
                                         type="file"
                                         accept="image/*"
-                                        onChange={(e) =>
-                                            setFreeFormData((prev) => ({
-                                                ...prev,
-                                                ig_follow_proof: e.target.files?.[0] || null,
-                                            }))
-                                        }
+                                        onChange={(e) => handleFileChange('ig_follow_proof', e.target.files?.[0] || null)}
+                                        className={fileErrors.ig_follow_proof ? 'border-red-500 focus:ring-red-500' : ''}
                                         required
                                     />
                                     <p className="mt-1 text-xs text-gray-500">
-                                        Screenshot halaman profil Instagram kami yang menunjukkan Anda sudah follow
+                                        Screenshot halaman profil Instagram kami yang menunjukkan Anda sudah follow (Maks. 2MB)
                                     </p>
+                                    {fileErrors.ig_follow_proof && (
+                                        <p className="mt-1 text-xs text-red-600">
+                                            File tidak valid. Pastikan ukuran tidak melebihi 2MB dan format gambar.
+                                        </p>
+                                    )}
                                 </div>
 
+                                {/* Bukti Follow TikTok */}
                                 <div>
-                                    <Label>Bukti Follow TikTok</Label>
+                                    <Label htmlFor="tiktok_follow_proof">Bukti Follow TikTok</Label>
                                     <Input
+                                        id="tiktok_follow_proof"
+                                        data-field="tiktok_follow_proof"
                                         type="file"
                                         accept="image/*"
-                                        onChange={(e) =>
-                                            setFreeFormData((prev) => ({
-                                                ...prev,
-                                                tiktok_follow_proof: e.target.files?.[0] || null,
-                                            }))
-                                        }
+                                        onChange={(e) => handleFileChange('tiktok_follow_proof', e.target.files?.[0] || null)}
+                                        className={fileErrors.tiktok_follow_proof ? 'border-red-500 focus:ring-red-500' : ''}
                                         required
                                     />
                                     <p className="mt-1 text-xs text-gray-500">
-                                        Screenshot halaman profil TikTok kami yang menunjukkan Anda sudah follow
+                                        Screenshot halaman profil TikTok kami yang menunjukkan Anda sudah follow (Maks. 2MB)
                                     </p>
+                                    {fileErrors.tiktok_follow_proof && (
+                                        <p className="mt-1 text-xs text-red-600">
+                                            File tidak valid. Pastikan ukuran tidak melebihi 2MB dan format gambar.
+                                        </p>
+                                    )}
                                 </div>
 
+                                {/* Bukti Tag 3 Teman */}
                                 <div>
-                                    <Label>Bukti Tag 3 Teman di Instagram</Label>
+                                    <Label htmlFor="tag_friend_proof">Bukti Tag 3 Teman di Instagram</Label>
                                     <Input
+                                        id="tag_friend_proof"
+                                        data-field="tag_friend_proof"
                                         type="file"
                                         accept="image/*"
-                                        onChange={(e) =>
-                                            setFreeFormData((prev) => ({
-                                                ...prev,
-                                                tag_friend_proof: e.target.files?.[0] || null,
-                                            }))
-                                        }
+                                        onChange={(e) => handleFileChange('tag_friend_proof', e.target.files?.[0] || null)}
+                                        className={fileErrors.tag_friend_proof ? 'border-red-500 focus:ring-red-500' : ''}
                                         required
                                     />
                                     <p className="mt-1 text-xs text-gray-500">
-                                        Screenshot postingan Instagram kami yang menunjukkan Anda sudah tag 3 teman di komentar
+                                        Screenshot postingan Instagram kami yang menunjukkan Anda sudah tag 3 teman di komentar (Maks. 2MB)
                                     </p>
+                                    {fileErrors.tag_friend_proof && (
+                                        <p className="mt-1 text-xs text-red-600">
+                                            File tidak valid. Pastikan ukuran tidak melebihi 2MB dan format gambar.
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="flex gap-2">
-                                    <Button type="button" variant="outline" onClick={() => setShowFreeForm(false)} className="flex-1">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            setShowFreeForm(false);
+                                            // Reset file errors ketika kembali
+                                            setFileErrors({
+                                                ig_follow_proof: false,
+                                                tag_friend_proof: false,
+                                                tiktok_follow_proof: false,
+                                            });
+                                            setFreeFormData({
+                                                ig_follow_proof: null,
+                                                tag_friend_proof: null,
+                                                tiktok_follow_proof: null,
+                                            });
+                                        }}
+                                        className="flex-1"
+                                    >
                                         Kembali
                                     </Button>
-                                    <Button type="submit" disabled={loading} className="flex-1">
+                                    <Button
+                                        type="submit"
+                                        disabled={
+                                            loading ||
+                                            !freeFormData.ig_follow_proof ||
+                                            !freeFormData.tag_friend_proof ||
+                                            !freeFormData.tiktok_follow_proof ||
+                                            fileErrors.ig_follow_proof ||
+                                            fileErrors.tag_friend_proof ||
+                                            fileErrors.tiktok_follow_proof
+                                        }
+                                        className="flex-1"
+                                    >
                                         {loading ? 'Memproses...' : 'Dapatkan Akses Gratis'}
                                     </Button>
                                 </div>

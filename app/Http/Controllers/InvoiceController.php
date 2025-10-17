@@ -121,10 +121,6 @@ class InvoiceController extends Controller
                 throw new \Exception('Harga nett tidak sesuai');
             }
 
-            if ($discountAmount > 0 && $discountAmount != $item->strikethrough_price) {
-                throw new \Exception('Discount amount tidak sesuai');
-            }
-
             if ($totalAmount != $expectedTotal) {
                 throw new \Exception('Total amount tidak sesuai');
             }
@@ -141,7 +137,7 @@ class InvoiceController extends Controller
             $items = [
                 [
                     'name' => $item->title,
-                    'price' => $item->price,
+                    'price' => $item->strikethrough_price > 0 ? $item->strikethrough_price : $item->price,
                     'quantity' => 1,
                 ]
             ];
@@ -216,14 +212,23 @@ class InvoiceController extends Controller
             DB::commit();
 
             return response()->json([
-                'url' => $xendit_invoice['invoice_url'],
-                'invoice' => $invoice
+                'success' => true,
+                'payment_url' => $xendit_invoice['invoice_url'],
+                'invoice_id' => $invoice->id,
+                'invoice_code' => $invoice->invoice_code
             ], 200);
-        } catch (\Throwable $th) {
+        } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Invoice creation failed', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+                'request_data' => $request->all()
+            ]);
+
             return response()->json([
-                'message' => $th->getMessage(),
-            ], 500);
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
         }
     }
 
@@ -329,16 +334,18 @@ class InvoiceController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'message' => 'Pendaftaran berhasil!',
-                'redirect_url' => route('invoice.show', ['id' => $invoice->id]),
-                'invoice_code' => $invoice_code
-            ], 200);
+            return redirect()->route('invoice.show', ['id' => $invoice->id])
+                ->with('success', 'Pendaftaran gratis berhasil! Anda akan segera menerima konfirmasi.');
         } catch (\Throwable $th) {
             DB::rollBack();
-            return response()->json([
-                'message' => $th->getMessage(),
-            ], 500);
+            Log::error('Free enrollment failed', [
+                'error' => $th->getMessage(),
+                'user_id' => Auth::id(),
+                'type' => $request->input('type'),
+                'id' => $request->input('id')
+            ]);
+
+            return back()->withErrors(['message' => $th->getMessage()]);
         }
     }
 
