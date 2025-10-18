@@ -20,7 +20,7 @@ function getYoutubeId(url: string) {
 
 export default function AddRecordingDialog({ webinarId, currentRecordingUrl }: AddRecordingDialogProps) {
     const [open, setOpen] = useState(false);
-    const { data, setData, patch, processing, errors, reset } = useForm({
+    const { data, setData, patch, processing, errors } = useForm({
         recording_url: currentRecordingUrl || '',
     });
 
@@ -39,7 +39,6 @@ export default function AddRecordingDialog({ webinarId, currentRecordingUrl }: A
         e.preventDefault();
         patch(route('webinars.add-recording', { webinar: webinarId }), {
             onSuccess: () => {
-                reset();
                 setOpen(false);
             },
         });

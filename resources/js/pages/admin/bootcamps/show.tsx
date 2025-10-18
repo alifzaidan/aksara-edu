@@ -208,15 +208,17 @@ export default function ShowBootcamp({ bootcamp, transactions, certificate, flas
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-muted-foreground">Judul:</span>
-                                                <span className="font-medium">{certificate.title}</span>
+                                                <span className="text-right font-medium">{certificate.title}</span>
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-muted-foreground">Nomor:</span>
-                                                <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">{certificate.certificate_number}</code>
+                                                <code className="rounded bg-gray-100 px-1 py-0.5 text-right text-xs">
+                                                    {certificate.certificate_number}
+                                                </code>
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-muted-foreground">Dibuat:</span>
-                                                <span className="text-xs">
+                                                <span className="text-right text-xs">
                                                     {format(new Date(certificate.created_at), 'dd MMM yyyy', { locale: id })}
                                                 </span>
                                             </div>

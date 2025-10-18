@@ -1,15 +1,17 @@
+import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { rupiahFormatter } from '@/lib/utils';
 import { SharedData } from '@/types';
-import { useForm, usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Edit2, ExternalLink, LinkIcon, Plus, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { LinkIcon, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import AddRecordingDialog from './create-recording-url';
 
 interface Webinar {
     id: string;
@@ -36,26 +38,27 @@ interface Webinar {
     created_at: string | Date;
 }
 
+function getYoutubeId(url: string) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? match[2] : '';
+}
+
 export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
+    const [isDeleting, setIsDeleting] = useState(false);
 
-    // State untuk recording management
-    const [isEditingRecording, setIsEditingRecording] = useState(false);
-    const [showAddRecording, setShowAddRecording] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState('');
 
-    // Form untuk add/update recording
-    const {
-        data: recordingData,
-        setData: setRecordingData,
-        post: postRecording,
-        processing: recordingProcessing,
-        reset: resetRecording,
-    } = useForm({
-        recording_url: webinar.recording_url || '',
-    });
-
-    const { delete: deleteRecording, processing: deleteProcessing } = useForm();
+    useEffect(() => {
+        if (webinar.recording_url) {
+            const videoId = getYoutubeId(webinar.recording_url);
+            setPreviewUrl(videoId ? `https://www.youtube.com/embed/${videoId}` : '');
+        } else {
+            setPreviewUrl('');
+        }
+    }, [webinar.recording_url]);
 
     const affiliateUrls = useMemo(() => {
         const affiliateCode = auth.user.affiliate_code;
@@ -110,58 +113,20 @@ export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
         }
     };
 
-    // Handle recording management
-    const handleAddRecording = () => {
-        postRecording(route('webinars.recording.add', webinar.id), {
-            onSuccess: () => {
-                toast.success('Link rekaman berhasil ditambahkan!');
-                setShowAddRecording(false);
-                setIsEditingRecording(false);
-                resetRecording();
-            },
-            onError: () => {
-                toast.error('Gagal menambahkan link rekaman');
-            },
-        });
-    };
-
-    const handleUpdateRecording = () => {
-        postRecording(route('webinars.recording.add', webinar.id), {
-            onSuccess: () => {
-                toast.success('Link rekaman berhasil diperbarui!');
-                setIsEditingRecording(false);
-            },
-            onError: () => {
-                toast.error('Gagal memperbarui link rekaman');
-            },
-        });
-    };
-
     const handleDeleteRecording = () => {
-        if (confirm('Apakah Anda yakin ingin menghapus link rekaman ini?')) {
-            deleteRecording(route('webinars.recording.remove', webinar.id), {
-                onSuccess: () => {
-                    toast.success('Link rekaman berhasil dihapus!');
-                    setIsEditingRecording(false);
-                    resetRecording();
-                },
-                onError: () => {
-                    toast.error('Gagal menghapus link rekaman');
-                },
-            });
-        }
-    };
+        setIsDeleting(true);
 
-    const handleCancelEdit = () => {
-        setIsEditingRecording(false);
-        setShowAddRecording(false);
-        setRecordingData('recording_url', webinar.recording_url || '');
-    };
-
-    const handleOpenRecording = () => {
-        if (webinar.recording_url) {
-            window.open(webinar.recording_url, '_blank', 'noopener,noreferrer');
-        }
+        router.delete(route('webinars.recording.remove', webinar.id), {
+            onSuccess: () => {
+                toast.success('Link rekaman berhasil dihapus!');
+                setIsDeleting(false);
+            },
+            onError: (errors) => {
+                console.error('Error deleting recording:', errors);
+                toast.error('Gagal menghapus link rekaman');
+                setIsDeleting(false);
+            },
+        });
     };
 
     return (
@@ -337,94 +302,49 @@ export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
                         <TableCell>Link Rekaman</TableCell>
                         <TableCell>
                             <div className="space-y-3">
-                                {webinar.recording_url && !isEditingRecording && !showAddRecording ? (
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex-1">
+                                {webinar.recording_url ? (
+                                    <div className="space-y-2">
+                                        {previewUrl && (
+                                            <div>
+                                                <div className="mt-2 w-full">
+                                                    <iframe
+                                                        className="aspect-video w-2/3 rounded-lg border"
+                                                        src={previewUrl}
+                                                        title="YouTube Preview"
+                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                        allowFullScreen
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="flex items-center gap-2">
                                             <a
                                                 href={webinar.recording_url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="text-sm break-all text-blue-600 hover:underline"
+                                                className="flex-1 text-sm break-all text-blue-600 hover:underline"
                                             >
                                                 {webinar.recording_url}
                                             </a>
                                         </div>
-                                        <div className="flex gap-1">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={handleOpenRecording}
-                                                className="p-2"
-                                                title="Buka di tab baru"
-                                            >
-                                                <ExternalLink className="h-3 w-3" />
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => {
-                                                    setIsEditingRecording(true);
-                                                    setRecordingData('recording_url', webinar.recording_url || '');
-                                                }}
-                                                className="p-2"
-                                                title="Edit link rekaman"
-                                            >
-                                                <Edit2 className="h-3 w-3" />
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="destructive"
-                                                onClick={handleDeleteRecording}
-                                                disabled={deleteProcessing}
-                                                className="p-2"
-                                                title="Hapus link rekaman"
-                                            >
-                                                <Trash2 className="h-3 w-3" />
-                                            </Button>
+                                        <div className="flex gap-2">
+                                            <AddRecordingDialog webinarId={webinar.id} currentRecordingUrl={webinar.recording_url} />
+                                            <DeleteConfirmDialog
+                                                trigger={
+                                                    <Button size="sm" variant="destructive" disabled={isDeleting} className="flex items-center gap-1">
+                                                        <Trash2 className="h-3 w-3" />
+                                                        {isDeleting ? 'Menghapus...' : 'Hapus'}
+                                                    </Button>
+                                                }
+                                                title="Apakah Anda yakin ingin menghapus link rekaman ini?"
+                                                itemName="Link rekaman webinar"
+                                                onConfirm={handleDeleteRecording}
+                                            />
                                         </div>
                                     </div>
                                 ) : (
-                                    !isEditingRecording &&
-                                    !showAddRecording && (
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm text-gray-500">-</span>
-                                            <Button size="sm" variant="outline" onClick={() => setShowAddRecording(true)} className="text-xs">
-                                                <Plus className="mr-1 h-3 w-3" />
-                                                Tambah Link Rekaman
-                                            </Button>
-                                        </div>
-                                    )
-                                )}
-
-                                {/* Edit/Add recording form */}
-                                {(isEditingRecording || showAddRecording) && (
-                                    <div className="space-y-2">
-                                        <Input
-                                            type="url"
-                                            value={recordingData.recording_url}
-                                            onChange={(e) => setRecordingData('recording_url', e.target.value)}
-                                            placeholder="https://example.com/recording"
-                                            className="text-sm"
-                                        />
-                                        <div className="flex gap-2">
-                                            <Button
-                                                size="sm"
-                                                onClick={isEditingRecording ? handleUpdateRecording : handleAddRecording}
-                                                disabled={recordingProcessing || !recordingData.recording_url.trim()}
-                                                className="text-xs"
-                                            >
-                                                {recordingProcessing ? 'Menyimpan...' : isEditingRecording ? 'Update' : 'Simpan'}
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={handleCancelEdit}
-                                                disabled={recordingProcessing}
-                                                className="text-xs"
-                                            >
-                                                Batal
-                                            </Button>
-                                        </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm text-gray-500">Belum ada link rekaman</span>
                                     </div>
                                 )}
                             </div>
