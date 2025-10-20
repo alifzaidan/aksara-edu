@@ -103,17 +103,20 @@ class QuizController extends Controller
                 'instructions' => $quiz->instructions,
                 'time_limit' => $quiz->time_limit,
                 'course' => [
+                    'id' => $quiz->lesson->module->course->id,
                     'slug' => $quiz->lesson->module->course->slug,
                 ],
                 'questions' => $quiz->questions->map(function ($question) {
                     return [
                         'id' => $question->id,
                         'question_text' => $question->question_text,
+                        'question_image' => $question->question_image ? asset('storage/' . $question->question_image) : null,
                         'type' => $question->type,
                         'options' => $question->options->map(function ($option) {
                             return [
                                 'id' => $option->id,
                                 'option_text' => $option->option_text,
+                                'option_image' => $option->option_image ? asset('storage/' . $option->option_image) : null,
                             ];
                         }),
                     ];
@@ -328,12 +331,14 @@ class QuizController extends Controller
                 return [
                     'question_id' => $question->id,
                     'question_text' => $question->question_text,
+                    'question_image' => $question->question_image ? asset('storage/' . $question->question_image) : null, // ✅ Tambahkan ini
                     'type' => $question->type,
                     'explanation' => $question->explanation,
                     'options' => $question->options->map(function ($option) use ($answer) {
                         return [
                             'id' => $option->id,
                             'option_text' => $option->option_text,
+                            'option_image' => $option->option_image ? asset('storage/' . $option->option_image) : null, // ✅ Tambahkan ini
                             'is_correct' => $option->is_correct,
                             'is_selected' => $option->id === $answer->selected_option_id
                         ];
@@ -350,7 +355,12 @@ class QuizController extends Controller
                 'title' => $quiz->title,
                 'passing_score' => $quiz->passing_score,
                 'course' => [
+                    'id' => $quiz->lesson->module->course->id,
                     'slug' => $quiz->lesson->module->course->slug,
+                ],
+                'lesson' => [
+                    'id' => $quiz->lesson->id,
+                    'title' => $quiz->lesson->title ?? 'Unknown Lesson',
                 ],
             ],
             'attempt' => [

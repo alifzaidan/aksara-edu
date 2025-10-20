@@ -1,7 +1,6 @@
 import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
     Pagination,
@@ -13,20 +12,21 @@ import {
     PaginationPrevious,
 } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { Check, ChevronDown, ChevronRight, Edit, FileText, Search, Trash, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import EditQuestion from './edit';
 
 type Option = {
     id: string;
     option_text: string;
+    option_image?: string | null;
     is_correct: boolean;
 };
 
 type Question = {
     id: string;
     question_text: string;
+    question_image?: string | null;
     type: 'multiple_choice' | 'true_false';
     options?: Option[];
     explanation?: string;
@@ -34,10 +34,15 @@ type Question = {
 
 interface QuizQuestionProps {
     questions: Question[];
+    course: {
+        id: string;
+    };
+    quiz: {
+        id: string;
+    };
 }
 
-export default function QuizQuestion({ questions }: QuizQuestionProps) {
-    const [editQuestion, setEditQuestion] = useState<Question | null>(null);
+export default function QuizQuestion({ questions, course, quiz }: QuizQuestionProps) {
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [pageSize, setPageSize] = useState<number>(10);
@@ -145,26 +150,77 @@ export default function QuizQuestion({ questions }: QuizQuestionProps) {
                 </div>
             ) : (
                 <>
-                    {/* Question List with Accordion */}
                     <div className="space-y-4">
                         {paginatedQuestions.map((question, index) => (
                             <div key={question.id} className="overflow-hidden rounded-lg border">
-                                {/* Question Header */}
                                 <div className="p-4 hover:bg-gray-50">
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                            {/* Badges */}
-                                            <div className="mb-2 flex items-center gap-2">
-                                                <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Soal {startIndex + index + 1}</Badge>
-                                                <Badge variant="outline">
-                                                    {question.type === 'multiple_choice' ? 'Pilihan Ganda' : 'Benar/Salah'}
-                                                </Badge>
+                                    <div className="flex flex-col items-start justify-between">
+                                        <div className="w-full">
+                                            <div className="flex items-start justify-between">
+                                                <div className="mb-2 flex items-center gap-2">
+                                                    <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                                                        Soal {startIndex + index + 1}
+                                                    </Badge>
+                                                    <Badge variant="outline">
+                                                        {question.type === 'multiple_choice' ? 'Pilihan Ganda' : 'Benar/Salah'}
+                                                    </Badge>
+                                                </div>
+                                                <div className="ml-4 flex items-center gap-2">
+                                                    <Button
+                                                        asChild
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                                                    >
+                                                        <Link
+                                                            href={route('questions.edit', {
+                                                                course: course.id,
+                                                                quiz: quiz.id,
+                                                                question: question.id,
+                                                            })}
+                                                        >
+                                                            <Edit className="h-4 w-4" />
+                                                            Edit
+                                                        </Link>
+                                                    </Button>
+
+                                                    <DeleteConfirmDialog
+                                                        trigger={
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="border-red-200 text-red-600 hover:bg-red-50"
+                                                            >
+                                                                <Trash className="h-4 w-4" />
+                                                                Hapus
+                                                            </Button>
+                                                        }
+                                                        title="Apakah Anda yakin ingin menghapus pertanyaan ini?"
+                                                        itemName={
+                                                            question.question_text.length > 50
+                                                                ? question.question_text.substring(0, 50) + '...'
+                                                                : question.question_text
+                                                        }
+                                                        onConfirm={() => handleDelete(question.id)}
+                                                    />
+                                                </div>
                                             </div>
 
-                                            {/* Question Text */}
-                                            <h3 className="mb-2 font-medium text-gray-900">{question.question_text}</h3>
+                                            <div
+                                                className="prose dark:prose-invert mb-2 max-w-none"
+                                                dangerouslySetInnerHTML={{ __html: question.question_text }}
+                                            />
 
-                                            {/* Meta Info */}
+                                            {question.question_image && (
+                                                <div className="mb-4">
+                                                    <img
+                                                        src={`/storage/${question.question_image}`}
+                                                        alt="Question"
+                                                        className="max-w-[300px] rounded-lg border object-contain"
+                                                    />
+                                                </div>
+                                            )}
+
                                             <div className="flex items-center gap-4">
                                                 <p className="text-sm text-gray-600">
                                                     {question.type === 'multiple_choice'
@@ -172,7 +228,6 @@ export default function QuizQuestion({ questions }: QuizQuestionProps) {
                                                         : 'Soal Benar/Salah'}
                                                 </p>
 
-                                                {/* Toggle Expand Button */}
                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
@@ -193,55 +248,11 @@ export default function QuizQuestion({ questions }: QuizQuestionProps) {
                                                 </Button>
                                             </div>
                                         </div>
-
-                                        {/* Action Buttons */}
-                                        <div className="ml-4 flex items-center gap-2">
-                                            <Dialog
-                                                open={!!editQuestion && editQuestion.id === question.id}
-                                                onOpenChange={(open) => !open && setEditQuestion(null)}
-                                            >
-                                                <DialogTrigger asChild>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="border-blue-200 text-blue-600 hover:bg-blue-50"
-                                                        onClick={() => setEditQuestion(question)}
-                                                    >
-                                                        <Edit className="h-4 w-4" />
-                                                        Edit
-                                                    </Button>
-                                                </DialogTrigger>
-                                                {editQuestion && editQuestion.id === question.id && (
-                                                    <EditQuestion
-                                                        question={{ ...editQuestion, options: editQuestion.options ?? [] }}
-                                                        setOpen={(open) => !open && setEditQuestion(null)}
-                                                    />
-                                                )}
-                                            </Dialog>
-
-                                            <DeleteConfirmDialog
-                                                trigger={
-                                                    <Button variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50">
-                                                        <Trash className="h-4 w-4" />
-                                                        Hapus
-                                                    </Button>
-                                                }
-                                                title="Apakah Anda yakin ingin menghapus pertanyaan ini?"
-                                                itemName={
-                                                    question.question_text.length > 50
-                                                        ? question.question_text.substring(0, 50) + '...'
-                                                        : question.question_text
-                                                }
-                                                onConfirm={() => handleDelete(question.id)}
-                                            />
-                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Expanded Content - Options/Answers */}
                                 {expandedQuestions.has(question.id) && (
                                     <div className="border-t bg-gray-50 p-4">
-                                        {/* Multiple Choice Options */}
                                         {question.type === 'multiple_choice' && question.options && (
                                             <div>
                                                 <h4 className="mb-3 text-sm font-medium text-gray-700">Pilihan Jawaban:</h4>
@@ -249,24 +260,37 @@ export default function QuizQuestion({ questions }: QuizQuestionProps) {
                                                     {question.options.map((option, optionIndex) => (
                                                         <div
                                                             key={option.id}
-                                                            className={`flex items-start gap-2 rounded p-2 ${
+                                                            className={`flex flex-col gap-2 rounded p-3 ${
                                                                 option.is_correct
                                                                     ? 'border border-green-200 bg-green-100'
                                                                     : 'border border-gray-200 bg-white'
                                                             }`}
                                                         >
-                                                            <span className="mt-0.5 text-sm font-medium text-gray-600">
-                                                                {String.fromCharCode(65 + optionIndex)}.
-                                                            </span>
-                                                            <span
-                                                                className={`text-sm ${
-                                                                    option.is_correct ? 'font-bold text-green-800' : 'text-gray-700'
-                                                                }`}
-                                                            >
-                                                                {option.option_text}
-                                                            </span>
-                                                            {option.is_correct && (
-                                                                <Badge className="ml-auto border-0 bg-green-600 text-white">Jawaban Benar</Badge>
+                                                            <div className="flex items-start gap-2">
+                                                                <span className="mt-0.5 text-sm font-medium text-gray-600">
+                                                                    {String.fromCharCode(65 + optionIndex)}.
+                                                                </span>
+
+                                                                {option.option_text && option.option_text.trim() !== '' && (
+                                                                    <div
+                                                                        className={`prose prose-sm flex-1 ${
+                                                                            option.is_correct ? 'font-bold text-green-800' : 'text-gray-700'
+                                                                        }`}
+                                                                        dangerouslySetInnerHTML={{ __html: option.option_text }}
+                                                                    />
+                                                                )}
+
+                                                                {option.is_correct ? (
+                                                                    <Badge className="ml-auto border-0 bg-green-600 text-white">Jawaban Benar</Badge>
+                                                                ) : null}
+                                                            </div>
+
+                                                            {option.option_image && (
+                                                                <img
+                                                                    src={`/storage/${option.option_image}`}
+                                                                    alt={`Option ${String.fromCharCode(65 + optionIndex)}`}
+                                                                    className="mt-2 max-h-48 rounded border object-contain"
+                                                                />
                                                             )}
                                                         </div>
                                                     ))}
@@ -274,7 +298,6 @@ export default function QuizQuestion({ questions }: QuizQuestionProps) {
                                             </div>
                                         )}
 
-                                        {/* True/False Options */}
                                         {question.type === 'true_false' && question.options && (
                                             <div>
                                                 <h4 className="mb-3 text-sm font-medium text-gray-700">Jawaban:</h4>
@@ -309,11 +332,13 @@ export default function QuizQuestion({ questions }: QuizQuestionProps) {
                                             </div>
                                         )}
 
-                                        {/* Explanation */}
                                         {question.explanation && (
                                             <div className="mt-4 rounded-md border border-blue-200 bg-blue-50 p-3">
                                                 <h4 className="mb-1 text-sm font-medium text-blue-800">Pembahasan:</h4>
-                                                <p className="text-sm text-blue-700">{question.explanation}</p>
+                                                <div
+                                                    className="prose prose-sm dark:prose-invert text-blue-700"
+                                                    dangerouslySetInnerHTML={{ __html: question.explanation }}
+                                                />
                                             </div>
                                         )}
                                     </div>

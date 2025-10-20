@@ -5,6 +5,7 @@ import { Check, ChevronLeft, HelpCircle, X } from 'lucide-react';
 interface QuizOption {
     id: string;
     option_text: string;
+    option_image?: string | null;
     is_correct: boolean;
     is_selected: boolean;
 }
@@ -12,6 +13,7 @@ interface QuizOption {
 interface QuizAnswer {
     question_id: string;
     question_text: string;
+    question_image?: string | null;
     type: 'multiple_choice' | 'true_false';
     explanation?: string;
     options: QuizOption[];
@@ -50,10 +52,6 @@ interface QuizAnswersProps {
 }
 
 export default function QuizAnswers({ quiz, attempt, answers }: QuizAnswersProps) {
-    // const handleBackToResult = () => {
-    //     router.get(`/quiz/${quiz.id}/result`);
-    // };
-
     const handleBackToCourse = () => {
         router.get(`/learn/course/${quiz.course.slug}`);
     };
@@ -68,7 +66,7 @@ export default function QuizAnswers({ quiz, attempt, answers }: QuizAnswersProps
 
             {/* Header */}
             <div className="bg-card/50 border-b backdrop-blur">
-                <div className="container mx-auto px-4 py-4">
+                <div className="mx-auto max-w-7xl px-4 py-4">
                     <div className="flex items-center justify-between gap-4">
                         <Button variant="secondary" size="sm" onClick={handleBackToCourse} className="gap-2">
                             <ChevronLeft className="h-4 w-4" />
@@ -133,16 +131,32 @@ export default function QuizAnswers({ quiz, attempt, answers }: QuizAnswersProps
                                     </div>
                                 </div>
 
-                                <div className="mb-6">
-                                    <p className="font-medium text-gray-900">{answer.question_text}</p>
+                                {/* Question Text - Rich Text */}
+                                <div className="mb-4">
+                                    <div
+                                        className="prose prose-sm dark:prose-invert max-w-none font-medium text-gray-900"
+                                        dangerouslySetInnerHTML={{ __html: answer.question_text }}
+                                    />
                                 </div>
 
+                                {/* Question Image */}
+                                {answer.question_image && (
+                                    <div className="mb-6">
+                                        <img
+                                            src={answer.question_image}
+                                            alt="Question"
+                                            className="max-h-80 w-full rounded-lg border object-contain shadow-sm"
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Options */}
                                 <div className="space-y-3">
-                                    {answer.options.map((option) => {
+                                    {answer.options.map((option, optionIndex) => {
                                         const isUserAnswer = option.is_selected;
                                         const isCorrectAnswer = option.is_correct;
 
-                                        let optionClass = 'flex items-start gap-3 rounded-lg border p-4';
+                                        let optionClass = 'flex flex-col gap-3 rounded-lg border p-4';
                                         let iconColor = 'text-gray-400';
 
                                         if (isCorrectAnswer) {
@@ -157,31 +171,64 @@ export default function QuizAnswers({ quiz, attempt, answers }: QuizAnswersProps
 
                                         return (
                                             <div key={option.id} className={optionClass}>
-                                                <div className="mt-1">
-                                                    {isCorrectAnswer ? (
-                                                        <Check className={`h-5 w-5 ${iconColor}`} />
-                                                    ) : isUserAnswer ? (
-                                                        <X className={`h-5 w-5 ${iconColor}`} />
-                                                    ) : (
-                                                        <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
-                                                    )}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <p className="text-gray-800">{option.option_text}</p>
+                                                <div className="flex items-start gap-3">
+                                                    <div className="mt-1 flex-shrink-0">
+                                                        {isCorrectAnswer ? (
+                                                            <Check className={`h-5 w-5 ${iconColor}`} />
+                                                        ) : isUserAnswer ? (
+                                                            <X className={`h-5 w-5 ${iconColor}`} />
+                                                        ) : (
+                                                            <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="flex items-start gap-2">
+                                                            <span className="flex-shrink-0 font-semibold text-gray-700">
+                                                                {String.fromCharCode(65 + optionIndex)}.
+                                                            </span>
+                                                            {/* Option Text - Rich Text */}
+                                                            {option.option_text && option.option_text.trim() !== '' && (
+                                                                <div
+                                                                    className={`prose prose-sm max-w-none ${
+                                                                        isCorrectAnswer
+                                                                            ? 'font-semibold text-green-800'
+                                                                            : isUserAnswer
+                                                                              ? 'font-medium text-red-700'
+                                                                              : 'text-gray-800'
+                                                                    }`}
+                                                                    dangerouslySetInnerHTML={{ __html: option.option_text }}
+                                                                />
+                                                            )}
+                                                        </div>
+
+                                                        {/* Option Image */}
+                                                        {option.option_image && (
+                                                            <div className="mt-3 ml-6">
+                                                                <img
+                                                                    src={option.option_image}
+                                                                    alt={`Opsi ${String.fromCharCode(65 + optionIndex)}`}
+                                                                    className="max-h-48 rounded-md border object-contain shadow-sm"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
 
-                                {/* Explanation */}
+                                {/* Explanation - Rich Text */}
                                 {answer.explanation && (
                                     <div className="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
                                         <div className="flex items-start gap-3">
                                             <HelpCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
-                                            <div>
-                                                <h4 className="font-medium text-blue-900">Penjelasan</h4>
-                                                <p className="mt-1 text-sm text-blue-800">{answer.explanation}</p>
+                                            <div className="flex-1">
+                                                <h4 className="mb-2 font-medium text-blue-900">Pembahasan</h4>
+                                                <div
+                                                    className="prose prose-sm max-w-none text-blue-800"
+                                                    dangerouslySetInnerHTML={{ __html: answer.explanation }}
+                                                />
                                             </div>
                                         </div>
                                     </div>

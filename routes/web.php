@@ -127,6 +127,8 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/courses/{course}/archive', [CourseController::class, 'archive'])->name('courses.archive');
         Route::post('/courses/{course}/duplicate', [CourseController::class, 'duplicate'])->name('courses.duplicate');
         Route::get('/courses/{course}/{quiz}', [QuizController::class, 'show'])->name('quizzes.show');
+        Route::get('/courses/{course}/quizzes/{quiz}/questions/create', [QuestionController::class, 'create'])->name('questions.create');
+        Route::get('/courses/{course}/quizzes/{quiz}/questions/{question}/edit', [QuestionController::class, 'edit'])->name('questions.edit');
         Route::post('/questions', [QuestionController::class, 'store'])->name('questions.store');
         Route::put('/questions/{question}', [QuestionController::class, 'update'])->name('questions.update');
         Route::delete('/questions/{question}', [QuestionController::class, 'destroy'])->name('questions.destroy');

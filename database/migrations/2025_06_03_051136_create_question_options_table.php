@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('question_options', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('question_id')->constrained('questions')->onDelete('cascade');
-            $table->string('option_text');
+            $table->text('option_text')->nullable();
+            $table->text('option_image')->nullable();
             $table->boolean('is_correct')->default(false);
             $table->timestamps();
         });

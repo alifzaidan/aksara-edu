@@ -19,11 +19,13 @@ import { toast, Toaster } from 'sonner';
 interface QuizOption {
     id: string;
     option_text: string;
+    option_image?: string | null;
 }
 
 interface QuizQuestion {
     id: string;
     question_text: string;
+    question_image?: string | null;
     type: 'multiple_choice' | 'true_false';
     options: QuizOption[];
 }
@@ -369,63 +371,152 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
                 <div className="mx-auto max-w-7xl px-4 pt-30 pb-8 md:pt-24">
                     <div className="grid grid-cols-1 gap-12 lg:grid-cols-4 lg:gap-6">
                         <div className="lg:col-span-3">
-                            <div className="rounded-lg border bg-white">
+                            <div className="rounded-lg border bg-white shadow-sm">
                                 <div className="p-6">
+                                    {/* Header Soal */}
+                                    <div className="mb-4 flex items-center justify-between border-b pb-3">
+                                        <h2 className="text-base font-semibold text-gray-900 md:text-lg">Soal No. {currentQuestion + 1}</h2>
+                                        <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
+                                            {currentQuestionData?.type === 'multiple_choice' ? 'Pilihan Ganda' : 'Benar/Salah'}
+                                        </span>
+                                    </div>
+
+                                    {/* Pertanyaan - Rich Text */}
                                     <div className="mb-4">
-                                        <h2 className="mb-2 text-base font-semibold md:text-lg">Soal No.{currentQuestion + 1}</h2>
+                                        <div
+                                            className="prose prose-sm dark:prose-invert max-w-none"
+                                            dangerouslySetInnerHTML={{ __html: currentQuestionData?.question_text || '' }}
+                                        />
                                     </div>
 
-                                    <div className="mb-6">
-                                        <p className="leading-relaxed">{currentQuestionData?.question_text}</p>
-                                    </div>
+                                    {/* Gambar Pertanyaan */}
+                                    {currentQuestionData?.question_image && (
+                                        <div className="mb-6">
+                                            <img
+                                                src={currentQuestionData.question_image}
+                                                alt="Question"
+                                                className="max-h-96 w-full rounded-lg border object-contain shadow-sm"
+                                            />
+                                        </div>
+                                    )}
 
-                                    <div className="space-y-3">
-                                        {currentQuestionData?.options.map((option) => (
-                                            <label
-                                                key={option.id}
-                                                className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
-                                                    selectedAnswers[currentQuestionData.id] === option.id
-                                                        ? 'border-primary-foreground bg-primary/20'
-                                                        : 'border-gray-200 hover:border-gray-300'
-                                                }`}
-                                            >
-                                                <input
-                                                    type="radio"
-                                                    name={`question-${currentQuestionData.id}`}
-                                                    value={option.id}
-                                                    checked={selectedAnswers[currentQuestionData.id] === option.id}
-                                                    onChange={() => handleAnswerSelect(currentQuestionData.id, option.id)}
-                                                    className="mt-1"
-                                                    disabled={hasTimer && isTimeUp}
-                                                />
-                                                <span className="text-gray-800">{option.option_text}</span>
-                                            </label>
-                                        ))}
+                                    {/* Pilihan Jawaban */}
+                                    <div className="mt-6">
+                                        <h3 className="mb-3 text-sm font-medium text-gray-700">Pilih Jawaban:</h3>
+                                        <div className="space-y-3">
+                                            {currentQuestionData?.options.map((option, optionIndex) => {
+                                                const isSelected = selectedAnswers[currentQuestionData.id] === option.id;
+                                                const hasText = option.option_text && option.option_text.trim() !== '';
+                                                const hasImage = option.option_image;
+
+                                                return (
+                                                    <label
+                                                        key={option.id}
+                                                        className={`flex cursor-pointer flex-col gap-3 rounded-lg border-2 p-4 transition-all ${
+                                                            isSelected
+                                                                ? 'border-primary bg-primary/10 shadow-md'
+                                                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                                        } ${hasTimer && isTimeUp ? 'cursor-not-allowed opacity-50' : ''}`}
+                                                    >
+                                                        <div className="flex items-start gap-3">
+                                                            {/* Radio Button */}
+                                                            <input
+                                                                type="radio"
+                                                                name={`question-${currentQuestionData.id}`}
+                                                                value={option.id}
+                                                                checked={isSelected}
+                                                                onChange={() => handleAnswerSelect(currentQuestionData.id, option.id)}
+                                                                className="text-primary focus:ring-primary mt-1 h-4 w-4 flex-shrink-0 focus:ring-2"
+                                                                disabled={hasTimer && isTimeUp}
+                                                            />
+
+                                                            {/* Label Opsi */}
+                                                            <div className="flex-1">
+                                                                <div className="flex items-start gap-2">
+                                                                    <span className="flex-shrink-0 font-semibold text-gray-700">
+                                                                        {String.fromCharCode(65 + optionIndex)}.
+                                                                    </span>
+                                                                    {hasText && (
+                                                                        <div
+                                                                            className={`prose prose-sm max-w-none ${
+                                                                                isSelected ? 'font-medium text-gray-900' : 'text-gray-800'
+                                                                            }`}
+                                                                            dangerouslySetInnerHTML={{ __html: option.option_text }}
+                                                                        />
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Gambar Opsi */}
+                                                                {hasImage && (
+                                                                    <div className="mt-3">
+                                                                        <img
+                                                                            src={option.option_image || ''}
+                                                                            alt={`Opsi ${String.fromCharCode(65 + optionIndex)}`}
+                                                                            className="max-h-48 rounded-md border object-contain shadow-sm"
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Selected Indicator */}
+                                                            {isSelected && (
+                                                                <div className="flex-shrink-0">
+                                                                    <div className="bg-primary flex h-6 w-6 items-center justify-center rounded-full text-white">
+                                                                        <svg
+                                                                            className="h-4 w-4"
+                                                                            fill="none"
+                                                                            viewBox="0 0 24 24"
+                                                                            stroke="currentColor"
+                                                                        >
+                                                                            <path
+                                                                                strokeLinecap="round"
+                                                                                strokeLinejoin="round"
+                                                                                strokeWidth={2}
+                                                                                d="M5 13l4 4L19 7"
+                                                                            />
+                                                                        </svg>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Navigation Buttons */}
                             <div className="mt-4 flex justify-between">
-                                <Button onClick={goToPreviousQuestion} disabled={currentQuestion === 0 || (hasTimer && isTimeUp)}>
-                                    <MoveLeft /> Sebelumnya
+                                <Button
+                                    onClick={goToPreviousQuestion}
+                                    disabled={currentQuestion === 0 || (hasTimer && isTimeUp)}
+                                    variant="outline"
+                                    className="gap-2"
+                                >
+                                    <MoveLeft className="h-4 w-4" /> Sebelumnya
                                 </Button>
 
                                 {currentQuestion === quiz.questions.length - 1 && getAnsweredCount() === quiz.questions.length ? (
-                                    <Button onClick={handleSubmit} disabled={hasTimer && isTimeUp}>
+                                    <Button onClick={handleSubmit} disabled={hasTimer && isTimeUp} className="gap-2">
                                         Kumpulkan 🚀
                                     </Button>
                                 ) : (
                                     <Button
                                         onClick={goToNextQuestion}
                                         disabled={currentQuestion === quiz.questions.length - 1 || (hasTimer && isTimeUp)}
+                                        className="gap-2"
                                     >
-                                        Selanjutnya <MoveRight />
+                                        Selanjutnya <MoveRight className="h-4 w-4" />
                                     </Button>
                                 )}
                             </div>
                         </div>
 
+                        {/* Sidebar - Question Navigator */}
                         <div className="lg:col-span-1">
-                            <div className="border-primary-foreground bg-accent/80 sticky top-6 rounded-lg border">
+                            <div className="border-primary-foreground bg-accent/80 sticky top-24 rounded-lg border shadow-sm">
                                 <div className="p-6">
                                     <h3 className="mb-4 text-base font-semibold md:text-lg">Nomor Soal</h3>
 

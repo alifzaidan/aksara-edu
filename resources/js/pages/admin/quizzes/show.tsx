@@ -5,13 +5,12 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Download, FileUp, LoaderCircle, Plus, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import CreateQuestion from './create';
 import QuizQuestion from './show-questions';
 import QuizSubmission from './show-submissions';
 
@@ -56,7 +55,6 @@ interface QuizzesProps {
 }
 
 export default function Quizzes({ course, quiz, submissions = [], flash }: QuizzesProps) {
-    const [open, setOpen] = useState(false);
     const [importModalOpen, setImportModalOpen] = useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -119,7 +117,7 @@ export default function Quizzes({ course, quiz, submissions = [], flash }: Quizz
                             <TabsTrigger value="submission">Riwayat Pengerjaan</TabsTrigger>
                         </TabsList>
                         <TabsContent value="question">
-                            <QuizQuestion questions={quiz.questions} />
+                            <QuizQuestion questions={quiz.questions} course={course} quiz={quiz} />
                         </TabsContent>
                         <TabsContent value="submission">
                             <QuizSubmission submissions={submissions} />
@@ -128,15 +126,12 @@ export default function Quizzes({ course, quiz, submissions = [], flash }: Quizz
                     <div className="order-first lg:order-last">
                         <h2 className="my-2 text-lg font-medium">Informasi Quiz</h2>
                         <div className="rounded-lg border p-4">
-                            <Dialog open={open} onOpenChange={setOpen}>
-                                <DialogTrigger asChild>
-                                    <Button className="w-full hover:cursor-pointer">
-                                        Tambah Pertanyaan
-                                        <Plus />
-                                    </Button>
-                                </DialogTrigger>
-                                <CreateQuestion setOpen={setOpen} quizId={quiz.id} />
-                            </Dialog>
+                            <Button asChild className="w-full hover:cursor-pointer">
+                                <Link href={route('questions.create', { course: course.id, quiz: quiz.id })}>
+                                    Tambah Pertanyaan
+                                    <Plus />
+                                </Link>
+                            </Button>
                             <div className="mt-2 flex items-center justify-between gap-2">
                                 <Button
                                     variant="outline"
