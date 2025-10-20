@@ -2,9 +2,10 @@ import ErrorBoundary from '@/components/error-boundary';
 import { Button } from '@/components/ui/button';
 import CourseLayout from '@/layouts/course-layout';
 import { BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { AlertTriangle, CheckCircle, ChevronLeft, ChevronRight, ExternalLink, FileDown, HelpCircle, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 interface Lesson {
     id: string;
@@ -55,6 +56,17 @@ interface Course {
     title: string;
     slug: string;
     modules: Module[];
+}
+
+interface CourseDetailProps {
+    course: Course;
+    auto_select_lesson_id?: string;
+    progress_info?: {
+        has_completed_lessons: boolean;
+        has_incomplete_lessons: boolean;
+        last_completed_lesson_id: string | null;
+        next_incomplete_lesson_id: string | null;
+    };
 }
 
 function getYouTubeEmbedUrl(url: string): string {
@@ -127,6 +139,25 @@ function QuizDashboard({ lesson, onStartQuiz }: { lesson: Lesson; onStartQuiz: (
     const attempts = quiz.attempts || [];
     const hasPassedAttempt = attempts.find((attempt) => attempt.is_passed);
 
+    // Add handler for viewing quiz details
+    const handleViewQuizDetails = () => {
+        router.get(`/quiz/${quiz.id}`);
+    };
+
+    const handleStartQuiz = () => {
+        router.get(`/quiz/${quiz.id}/start`);
+    };
+
+    // Add handler for viewing answers
+    const handleViewAnswers = () => {
+        router.get(`/quiz/${quiz.id}/answers`);
+    };
+
+    // Add handler for viewing history
+    const handleViewHistory = () => {
+        router.get(`/quiz/${quiz.id}/history`);
+    };
+
     return (
         <div className="mx-auto max-w-4xl p-6">
             <div className="mb-8 text-center">
@@ -144,7 +175,7 @@ function QuizDashboard({ lesson, onStartQuiz }: { lesson: Lesson; onStartQuiz: (
                     <div className="bg-card flex min-h-[72px] flex-col items-center justify-center rounded-lg border p-4">
                         {quiz.time_limit === 0 ? (
                             <div className="flex h-full min-h-[48px] items-center justify-center text-sm font-semibold text-red-600">
-                                Quiz ini tidak memiliki batas waktu
+                                Tanpa Batas Waktu
                             </div>
                         ) : (
                             <>
@@ -197,18 +228,24 @@ function QuizDashboard({ lesson, onStartQuiz }: { lesson: Lesson; onStartQuiz: (
                                     </div>
                                     <div className="text-right">
                                         <div className={`text-2xl font-bold ${attempt.is_passed ? 'text-green-600' : 'text-red-600'}`}>
-                                            {attempt.score}
+                                            {Math.round(attempt.score)}%
                                         </div>
                                         <div className="text-muted-foreground text-sm">
                                             {attempt.correct_answers}/{attempt.total_questions} benar
                                         </div>
                                         <div className="text-muted-foreground text-sm">
-                                            Waktu: {Math.floor(attempt.time_taken / 60)}:{(attempt.time_taken % 60).toString().padStart(2, '0')}
+                                            Waktu Pengerjaan: {Math.floor(attempt.time_taken / 60)}:
+                                            {(attempt.time_taken % 60).toString().padStart(2, '0')}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         ))}
+                        {/* {attempts.length > 5 && (
+                            <Button variant="outline" onClick={handleViewHistory} className="w-full">
+                                Lihat Semua Riwayat ({attempts.length} percobaan)
+                            </Button>
+                        )} */}
                     </div>
                 </div>
             )}
@@ -241,38 +278,22 @@ function QuizDashboard({ lesson, onStartQuiz }: { lesson: Lesson; onStartQuiz: (
                     </div>
                 )}
 
-                <Button onClick={onStartQuiz} size="lg">
-                    {attempts.length > 0 ? '🔄 Ulangi Quiz' : '🚀 Mulai Quiz'}
-                </Button>
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+                    <Button onClick={handleStartQuiz} size="lg" className="gap-2">
+                        {attempts.length > 0 ? '🔄 Ulangi Quiz' : '🚀 Mulai Quiz'}
+                    </Button>
+
+                    {attempts.length > 0 && (
+                        <>
+                            <Button onClick={handleViewAnswers} variant="outline" size="lg" className="gap-2">
+                                <HelpCircle className="h-4 w-4" />
+                                Lihat Pembahasan
+                            </Button>
+                        </>
+                    )}
+                </div>
             </div>
-        </div>
-    );
-}
-
-function QuizInterface({
-    lesson,
-    onQuizComplete,
-    onBackToDashboard,
-}: {
-    lesson: Lesson;
-    onQuizComplete?: (lessonId: string) => void;
-    onBackToDashboard?: () => void;
-}) {
-    // This component is kept for backward compatibility but redirects to the dedicated quiz page
-    const quiz = lesson.quizzes?.[0];
-
-    useEffect(() => {
-        // Redirect to dedicated quiz page using Inertia router
-        const courseSlug = window.location.pathname.split('/')[3]; // Extract course slug from URL
-        if (courseSlug) {
-            router.get(`/learn/course/${courseSlug}/quiz/${lesson.id}`);
-        }
-    }, [lesson.id]);
-
-    return (
-        <div className="bg-muted/40 flex h-full flex-col items-center justify-center rounded-lg p-8 text-center">
-            <div className="mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
-            <p className="text-muted-foreground">Mengalihkan ke halaman quiz...</p>
         </div>
     );
 }
@@ -286,9 +307,6 @@ function LessonContent({
     onQuizComplete?: (lessonId: string) => void;
     courseSlug?: string;
 }) {
-    const [showQuizDashboard, setShowQuizDashboard] = useState(true);
-    const [showQuizInterface, setShowQuizInterface] = useState(false);
-
     if (!lesson) {
         return (
             <div className="bg-muted/40 flex h-full items-center justify-center rounded-lg">
@@ -298,20 +316,18 @@ function LessonContent({
     }
 
     const handleStartQuiz = () => {
-        // Navigate to dedicated quiz page using Inertia router
-        if (courseSlug) {
-            router.get(`/learn/course/${courseSlug}/quiz/${lesson.id}`);
+        const quiz = lesson.quizzes?.[0];
+        if (quiz?.id) {
+            router.get(`/quiz/${quiz.id}`);
         } else {
-            // Fallback to in-page quiz
-            setShowQuizDashboard(false);
-            setShowQuizInterface(true);
+            toast.error('Quiz tidak tersedia');
         }
     };
 
-    const handleBackToDashboard = () => {
-        setShowQuizInterface(false);
-        setShowQuizDashboard(true);
-    };
+    // const handleBackToDashboard = () => {
+    //     setShowQuizInterface(false);
+    //     setShowQuizDashboard(true);
+    // };
 
     switch (lesson.type) {
         case 'video':
@@ -322,7 +338,7 @@ function LessonContent({
             );
         case 'text':
             return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: lesson.content || '' }} />;
-        case 'file':
+        case 'file': {
             if (!lesson.attachment) {
                 return (
                     <div className="bg-muted/40 flex h-full flex-col items-center justify-center rounded-lg p-8 text-center">
@@ -333,7 +349,8 @@ function LessonContent({
                 );
             }
             // Cek is_preview: 1/true = hanya preview (no download), 0/false = bisa download
-            const isPreview = (lesson as any).is_preview === true || (lesson as any).is_preview === 1;
+            const lessonWithPreview = lesson as Lesson & { is_preview?: boolean | number };
+            const isPreview = lessonWithPreview.is_preview === true || lessonWithPreview.is_preview === 1;
             const isPdf = lesson.attachment && lesson.attachment.toLowerCase().endsWith('.pdf');
             return (
                 <div className="w-full">
@@ -368,8 +385,8 @@ function LessonContent({
                     </div>
                 </div>
             );
+        }
         case 'quiz':
-            // Only show quiz dashboard, actual quiz will be in separate page
             return (
                 <ErrorBoundary>
                     <QuizDashboard lesson={lesson} onStartQuiz={handleStartQuiz} />
@@ -380,9 +397,33 @@ function LessonContent({
     }
 }
 
-export default function CourseDetail({ course }: { course: Course }) {
+export default function CourseDetail({ course, auto_select_lesson_id, progress_info }: CourseDetailProps) {
     const modules = course.modules && course.modules.length > 0 ? course.modules : [];
-    const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(modules[0]?.lessons[0] || null);
+
+    // Initialize with smart lesson selection
+    const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(() => {
+        // First check if there's a hash navigation (from quiz return)
+        const hash = window.location.hash;
+        if (hash && hash.startsWith('#quiz-')) {
+            const lessonId = hash.replace('#quiz-', '');
+            const foundLesson = modules.flatMap((module) => module.lessons).find((lesson) => lesson.id === lessonId);
+            if (foundLesson) {
+                return foundLesson;
+            }
+        }
+
+        // Then check auto-select from controller
+        if (auto_select_lesson_id) {
+            const autoLesson = modules.flatMap((module) => module.lessons).find((lesson) => lesson.id === auto_select_lesson_id);
+            if (autoLesson) {
+                return autoLesson;
+            }
+        }
+
+        // Fallback to first lesson
+        return modules[0]?.lessons[0] || null;
+    });
+
     const [isQuizFullscreen, setIsQuizFullscreen] = useState(false);
 
     // Initialize completion state from database
@@ -421,6 +462,16 @@ export default function CourseDetail({ course }: { course: Course }) {
             }
         }
     }, [moduleData]);
+
+    useEffect(() => {
+        if (progress_info && selectedLesson) {
+            if (progress_info.has_incomplete_lessons && selectedLesson.id === progress_info.next_incomplete_lesson_id) {
+                toast.success(`Melanjutkan pembelajaran: ${selectedLesson.title}`);
+            } else if (progress_info.has_completed_lessons && selectedLesson.id === progress_info.last_completed_lesson_id) {
+                toast.info('Kembali ke materi terakhir yang diselesaikan');
+            }
+        }
+    }, [progress_info, selectedLesson]);
 
     const handleLessonComplete = async (lessonId: string) => {
         try {
@@ -572,12 +623,11 @@ export default function CourseDetail({ course }: { course: Course }) {
                                     setSelectedLesson(prevLesson);
                                 }
                             }}
-                            disabled={!selectedLesson || (moduleData[0]?.lessons[0]?.id === selectedLesson?.id)}
+                            disabled={!selectedLesson || moduleData[0]?.lessons[0]?.id === selectedLesson?.id}
                             className="gap-2 disabled:cursor-not-allowed"
                         >
                             <ChevronLeft className="h-4 w-4" /> Sebelumnya
                         </Button>
-                        
                     </div>
                     {/* Status untuk quiz atau materi */}
                     {selectedLesson && selectedLesson.type === 'quiz' ? (
@@ -618,11 +668,7 @@ export default function CourseDetail({ course }: { course: Course }) {
                                     }
                                     if (!nextLesson) return null;
                                     return (
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => setSelectedLesson(nextLesson)}
-                                            className="gap-2"
-                                        >
+                                        <Button variant="outline" onClick={() => setSelectedLesson(nextLesson)} className="gap-2">
                                             Selanjutnya <ChevronRight className="h-4 w-4" />
                                         </Button>
                                     );
@@ -634,8 +680,10 @@ export default function CourseDetail({ course }: { course: Course }) {
                                 <span className="font-medium">Selesaikan Quiz untuk Melanjutkan</span>
                             </div>
                         )
-                    ) : selectedLesson && selectedLesson.type !== 'quiz' && (
-                        !moduleData.find((m) => m.lessons.find((l) => l.id === selectedLesson.id))?.lessons.find((l) => l.id === selectedLesson.id)
+                    ) : (
+                        selectedLesson &&
+                        selectedLesson.type !== 'quiz' &&
+                        (!moduleData.find((m) => m.lessons.find((l) => l.id === selectedLesson.id))?.lessons.find((l) => l.id === selectedLesson.id)
                             ?.isCompleted ? (
                             <Button onClick={() => handleLessonComplete(selectedLesson.id)} size="lg">
                                 <CheckCircle className="mr-2 h-4 w-4" />
@@ -677,27 +725,23 @@ export default function CourseDetail({ course }: { course: Course }) {
                                     }
                                     if (!nextLesson) return null;
                                     return (
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => setSelectedLesson(nextLesson)}
-                                            className="gap-2"
-                                        >
+                                        <Button variant="outline" onClick={() => setSelectedLesson(nextLesson)} className="gap-2">
                                             Selanjutnya <ChevronRight className="h-4 w-4" />
                                         </Button>
                                     );
                                 })()}
                             </div>
-                        )
+                        ))
                     )}
                 </div>
 
                 {isAllLessonsCompleted && isLastLesson && (
-                    <div className="mt-4 flex flex-row items-center justify-center gap-4">
-                        <div className="rounded-lg bg-green-100 px-4 py-2 text-center font-medium text-green-700">
+                    <div className="mt-4 flex flex-col items-center justify-center gap-4 md:flex-row">
+                        <div className="rounded-lg bg-green-100 px-4 py-2 text-center text-sm font-medium text-green-700">
                             Anda sudah menyelesaikan kelas silahkan kembali ke halaman awal untuk mendownload sertifikat
                         </div>
                         <Button asChild size="lg">
-                            <a href={`/profile/my-courses/${course.slug}`}>Kembali ke Halaman Kelas &amp; Download Sertifikat</a>
+                            <Link href={`/profile/my-courses/${course.slug}`}>Kembali ke Halaman Kelas &amp; Download Sertifikat</Link>
                         </Button>
                     </div>
                 )}

@@ -28,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'enrollment.check' => \App\Http\Middleware\CheckEnrollment::class,
+            'quiz.access' => \App\Http\Middleware\CheckQuizAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

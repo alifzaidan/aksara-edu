@@ -2,7 +2,6 @@ import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebarCourse } from '@/components/app-sidebar-course';
 import { AppSidebarHeader } from '@/components/app-sidebar-header';
-import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/sonner';
 import { type BreadcrumbItem } from '@/types';
 import { Dispatch, SetStateAction, type ReactNode } from 'react';
@@ -31,16 +30,16 @@ interface CourseLayoutProps {
     onLessonComplete?: (lessonId: string) => void;
 }
 
-export default ({ 
-    children, 
-    breadcrumbs, 
-    courseSlug, 
+export default ({
+    children,
+    breadcrumbs,
+    courseSlug,
     courseTitle,
-    modules, 
-    selectedLesson, 
+    modules,
+    selectedLesson,
     setSelectedLesson,
     onLessonComplete,
-    ...props 
+    ...props
 }: CourseLayoutProps) => {
     const handleLessonComplete = async (lessonId: string) => {
         try {
@@ -48,8 +47,8 @@ export default ({
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                }
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
             });
 
             if (response.ok) {
@@ -62,17 +61,17 @@ export default ({
 
     return (
         <AppShell variant="sidebar" {...props}>
-            <AppSidebarCourse 
-                courseSlug={courseSlug} 
-                modules={modules} 
-                selectedLesson={selectedLesson} 
+            <AppSidebarCourse
+                courseSlug={courseSlug}
+                modules={modules}
+                selectedLesson={selectedLesson}
                 setSelectedLesson={setSelectedLesson}
                 onLessonComplete={handleLessonComplete}
             />
             <AppContent variant="sidebar">
                 <AppSidebarHeader breadcrumbs={breadcrumbs} hideSidebarTrigger={false} courseTitle={courseTitle} />
                 {children}
-                <Toaster />
+                <Toaster position="top-center" richColors />
             </AppContent>
         </AppShell>
     );

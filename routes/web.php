@@ -34,6 +34,7 @@ use App\Http\Controllers\User\Profile\WebinarController as ProfileWebinarControl
 use App\Http\Controllers\User\Profile\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WebinarController;
+use App\Http\Controllers\User\QuizController as UserQuizController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -88,14 +89,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('enrollment.check')
         ->name('learn.course.detail');
 
+    Route::prefix('quiz')->name('quiz.')->middleware(['quiz.access'])->group(function () {
+        Route::get('/{quizId}', [UserQuizController::class, 'show'])->name('show');
+        Route::get('/{quizId}/start', [UserQuizController::class, 'start'])->name('start');
+        Route::post('/{quizId}/submit', [UserQuizController::class, 'submit'])->name('submit');
+        Route::delete('/{quizId}/cancel', [UserQuizController::class, 'cancel'])->name('cancel');
+        Route::get('/{quizId}/result', [UserQuizController::class, 'result'])->name('result');
+        Route::get('/{quizId}/answers', [UserQuizController::class, 'answers'])->name('answers');
+        Route::get('/{quizId}/history', [UserQuizController::class, 'history'])->name('history');
+    });
+
     Route::get('/learn/course/{course:slug}/quiz/{lesson}', [CourseDetailController::class, 'showQuiz'])
         ->middleware('enrollment.check')
         ->name('learn.course.quiz');
-    Route::post('/quiz/submit', [QuizSubmissionController::class, 'submit'])->name('quiz.submit');
-    Route::get('/quiz/{quiz}/attempt', [QuizSubmissionController::class, 'getAttempt'])->name('quiz.attempt');
-    Route::post('/quiz/save-progress', [App\Http\Controllers\QuizProgressController::class, 'save']);
-    Route::get('/quiz/get-progress', [App\Http\Controllers\QuizProgressController::class, 'get']);
-    Route::post('/quiz/clear-progress', [App\Http\Controllers\QuizProgressController::class, 'clear'])->middleware('auth');
     Route::post('/lesson/{lesson}/complete', [App\Http\Controllers\LessonController::class, 'markComplete'])->name('lesson.complete');
 
     Route::post('/enrollment/progress/{courseSlug}', [EnrollmentProgressController::class, 'updateProgress'])->name('enrollment.progress.update');

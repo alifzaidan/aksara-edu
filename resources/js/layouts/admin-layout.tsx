@@ -11,6 +11,6 @@ interface AdminLayoutProps {
 export default ({ children, breadcrumbs, ...props }: AdminLayoutProps) => (
     <AdminLayoutTemplate breadcrumbs={breadcrumbs} {...props}>
         {children}
-        <Toaster />
+        <Toaster position="top-center" richColors />
     </AdminLayoutTemplate>
 );

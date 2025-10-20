@@ -11,6 +11,6 @@ interface UserLayoutProps {
 export default ({ children, breadcrumbs, ...props }: UserLayoutProps) => (
     <UserLayoutTemplate breadcrumbs={breadcrumbs} {...props}>
         {children}
-        <Toaster />
+        <Toaster position="top-center" richColors />
     </UserLayoutTemplate>
 );
