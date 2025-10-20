@@ -57,7 +57,7 @@ export default function CreateQuestion({ setOpen, quizId }: CreateQuestionProps)
     };
 
     return (
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogTitle>Tambah Pertanyaan</DialogTitle>
             <DialogDescription>Masukkan pertanyaan dan opsi jawaban.</DialogDescription>
             <form className="space-y-4" onSubmit={createQuestion}>

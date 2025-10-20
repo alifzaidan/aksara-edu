@@ -75,7 +75,7 @@ export default function EditQuestion({ question, setOpen, onSuccess }: EditQuest
     };
 
     return (
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogTitle>Edit Pertanyaan</DialogTitle>
             <DialogDescription>Ubah pertanyaan dan opsi jawaban.</DialogDescription>
             <form className="space-y-4" onSubmit={updateQuestion}>
