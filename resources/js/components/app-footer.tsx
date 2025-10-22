@@ -15,6 +15,10 @@ const productItems: ProductItem[] = [
         title: 'Webinar',
         href: '/webinar',
     },
+    {
+        title: 'Sertifikasi Kerjasama',
+        href: '/certification',
+    },
 ];
 
 const serviceItems: ServiceItem[] = [

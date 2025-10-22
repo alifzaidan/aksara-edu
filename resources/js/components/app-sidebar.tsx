@@ -13,6 +13,7 @@ import {
     MonitorPlay,
     Presentation,
     Proportions,
+    ShieldCheck,
     SquareMousePointer,
     User,
     UserCheck,
@@ -73,6 +74,12 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         href: '/admin/webinars',
         icon: MonitorPlay,
         roles: ['admin', 'affiliate'],
+    },
+    {
+        title: 'Sertifikasi Kerjasama',
+        href: '/admin/partnership-products',
+        icon: ShieldCheck,
+        roles: ['admin'],
     },
     {
         title: 'Sertifikat',

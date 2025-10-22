@@ -17,6 +17,7 @@ use App\Http\Controllers\DiscountCodeController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\MentorController;
+use App\Http\Controllers\PartnershipProductController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\QuizSubmissionController;
@@ -26,6 +27,7 @@ use App\Http\Controllers\ToolController;
 use App\Http\Controllers\User\CourseController as UserCourseController;
 use App\Http\Controllers\User\BootcampController as UserBootcampController;
 use App\Http\Controllers\User\WebinarController as UserWebinarController;
+use App\Http\Controllers\User\PartnershipProductController as UserPartnershipProductController;
 use App\Http\Controllers\User\HomeController;
 use App\Http\Controllers\User\Profile\BootcampController as ProfileBootcampController;
 use App\Http\Controllers\User\Profile\CourseController as ProfileCourseController;
@@ -47,6 +49,8 @@ Route::get('/bootcamp', [UserBootcampController::class, 'index'])->name('bootcam
 Route::get('/bootcamp/{bootcamp:slug}', [UserBootcampController::class, 'detail'])->name('bootcamp.detail');
 Route::get('/webinar', [UserWebinarController::class, 'index'])->name('webinar.index');
 Route::get('/webinar/{webinar:slug}', [UserWebinarController::class, 'detail'])->name('webinar.detail');
+Route::get('/certification', [UserPartnershipProductController::class, 'index'])->name('partnership-product.index');
+Route::get('/certification/{partnershipProduct:slug}', [UserPartnershipProductController::class, 'detail'])->name('partnership-product.detail');
 Route::get('/certificate/{code}', [CertificateParticipantController::class, 'show'])->name('certificate.participant.detail');
 
 Route::get('/course/{course:slug}/checkout', [UserCourseController::class, 'showCheckout'])->name('course.checkout');
@@ -57,6 +61,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/course/checkout/success', [UserCourseController::class, 'showCheckoutSuccess'])->name('course.checkout.success');
     Route::get('/bootcamp/register/success', [UserBootcampController::class, 'showRegisterSuccess'])->name('bootcamp.register.success');
     Route::get('/webinar/register/success', [UserWebinarController::class, 'showRegisterSuccess'])->name('webinar.register.success');
+    Route::get('/certification/{partnershipProduct:slug}/track-click', [UserPartnershipProductController::class, 'trackClick'])->name('partnership-products.track-click');
+
 
     Route::post('/invoice', [InvoiceController::class, 'store'])->name('invoice.store');
     Route::post('/enroll/free', [InvoiceController::class, 'enrollFree'])->name('enroll.free');
@@ -156,6 +162,13 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/webinars/{webinar}/duplicate', [WebinarController::class, 'duplicate'])->name('webinars.duplicate');
         Route::patch('webinars/{webinar}/add-recording', [WebinarController::class, 'addRecording'])->name('webinars.add-recording');
         Route::delete('/webinars/{id}/recording', [WebinarController::class, 'removeRecording'])->name('webinars.recording.remove');
+
+        Route::resource('partnership-products', PartnershipProductController::class);
+        Route::post('/partnership-products/{id}/publish', [PartnershipProductController::class, 'publish'])->name('partnership-products.publish');
+        Route::post('/partnership-products/{id}/archive', [PartnershipProductController::class, 'archive'])->name('partnership-products.archive');
+        Route::post('/partnership-products/{id}/duplicate', [PartnershipProductController::class, 'duplicate'])->name('partnership-products.duplicate');
+        Route::get('/partnership-products/stats/overview', [PartnershipProductController::class, 'statistics'])->name('partnership-products.statistics');
+        Route::post('/partnership-products/bulk-action', [PartnershipProductController::class, 'bulkAction'])->name('partnership-products.bulk-action');
 
         Route::resource('affiliates', AffiliateController::class);
         Route::post('affiliates/{affiliate}/toggle-status', [AffiliateController::class, 'toggleStatus'])->name('affiliates.toggleStatus');

@@ -4,13 +4,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { NavigationMenu, NavigationMenuItem, NavigationMenuList, navigationMenuTriggerStyle } from '@/components/ui/navigation-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookText, Home, Menu, MonitorPlay, Presentation, Search, User } from 'lucide-react';
+import { Album, BookText, BriefcaseBusiness, Home, Menu, MonitorPlay, Presentation, Search, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SearchCommand } from './search-command';
 
@@ -27,28 +28,30 @@ const mainNavItems: NavItem[] = [
         title: 'Webinar',
         href: '/webinar',
     },
+    {
+        title: 'Sertifikasi',
+        href: '/certification',
+    },
 ];
 
-const mobileNavItems = [
+const serviceItems = [
     {
-        title: 'Beranda',
-        href: '/',
-        icon: Home,
-    },
-    {
-        title: 'Kelas',
+        title: 'Kelas Online',
         href: '/course',
         icon: BookText,
+        description: 'Belajar dengan video pembelajaran terstruktur',
     },
     {
         title: 'Bootcamp',
         href: '/bootcamp',
         icon: Presentation,
+        description: 'Program intensif dengan mentor profesional',
     },
     {
         title: 'Webinar',
         href: '/webinar',
         icon: MonitorPlay,
+        description: 'Seminar online dengan praktisi industri',
     },
 ];
 
@@ -63,6 +66,9 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const { auth } = page.props;
     const getInitials = useInitials();
     const [searchOpen, setSearchOpen] = useState(false);
+    const [servicesOpen, setServicesOpen] = useState(false);
+
+    const isServicesActive = serviceItems.some((item) => page.url.startsWith(item.href));
 
     useEffect(() => {
         const down = (e: KeyboardEvent) => {
@@ -207,41 +213,92 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
             {/* Mobile Navigation Dock */}
             <div className="fixed right-0 bottom-0 left-0 z-50 lg:hidden">
                 <div className="bg-background/95 border-border border-t pb-2 shadow-lg backdrop-blur-md">
-                    <div className={`grid gap-1 px-2 py-2 ${auth.user ? 'grid-cols-5' : 'grid-cols-4'}`}>
-                        {mobileNavItems.map((item) => {
-                            const isActive = item.href === '/' ? page.url === '/' : page.url.startsWith(item.href);
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
+                    <div className={`grid gap-1 px-2 py-2 ${auth.user ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                        <Link
+                            href="/"
+                            className={cn(
+                                'flex flex-col items-center justify-center rounded-lg px-2 py-3 transition-colors duration-200',
+                                page.url === '/' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                            )}
+                        >
+                            <Home className="mb-1 h-5 w-6" />
+                            <span className="text-center text-xs leading-none font-medium">Beranda</span>
+                        </Link>
+
+                        <Popover open={servicesOpen} onOpenChange={setServicesOpen}>
+                            <PopoverTrigger asChild>
+                                <button
                                     className={cn(
                                         'flex flex-col items-center justify-center rounded-lg px-2 py-3 transition-colors duration-200',
-                                        isActive ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                                        isServicesActive
+                                            ? 'text-primary bg-primary/10'
+                                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
                                     )}
                                 >
-                                    <Icon iconNode={item.icon ?? Home} className="mb-1 h-5 w-6" />
-                                    <span className="text-center text-xs leading-none font-medium">{item.title}</span>
-                                </Link>
-                            );
-                        })}
+                                    <Album className="mb-1 h-5 w-6" />
+                                    <span className="text-center text-xs leading-none font-medium">Layanan</span>
+                                </button>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" align="center" className="mb-2 w-80 p-3" sideOffset={8}>
+                                <div className="space-y-1">
+                                    <h4 className="mb-3 px-2 text-sm font-semibold">Layanan Kami</h4>
+                                    {serviceItems.map((service) => {
+                                        const isActive = page.url.startsWith(service.href);
+                                        return (
+                                            <Link
+                                                key={service.href}
+                                                href={service.href}
+                                                onClick={() => setServicesOpen(false)}
+                                                className={cn(
+                                                    'flex items-start gap-3 rounded-lg p-3 transition-colors duration-200',
+                                                    isActive ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50 hover:text-foreground',
+                                                )}
+                                            >
+                                                <Icon
+                                                    iconNode={service.icon}
+                                                    className={cn(
+                                                        'mt-0.5 h-5 w-5 flex-shrink-0',
+                                                        isActive ? 'text-primary' : 'text-muted-foreground',
+                                                    )}
+                                                />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="mb-1 text-sm leading-none font-medium">{service.title}</p>
+                                                    <p className="text-muted-foreground line-clamp-2 text-xs">{service.description}</p>
+                                                </div>
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            </PopoverContent>
+                        </Popover>
 
-                        {auth.user &&
-                            (() => {
-                                const isActive = page.url.startsWith('/profile');
-                                return (
-                                    <Link
-                                        key="/profile"
-                                        href="/profile"
-                                        className={cn(
-                                            'flex flex-col items-center justify-center rounded-lg px-2 py-3 transition-colors duration-200',
-                                            isActive ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
-                                        )}
-                                    >
-                                        <User className="mb-1 h-5 w-6" />
-                                        <span className="text-center text-xs leading-none font-medium">Profil</span>
-                                    </Link>
-                                );
-                            })()}
+                        <Link
+                            href="/certification"
+                            className={cn(
+                                'flex flex-col items-center justify-center rounded-lg px-2 py-3 transition-colors duration-200',
+                                page.url.startsWith('/certification')
+                                    ? 'text-primary bg-primary/10'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                            )}
+                        >
+                            <BriefcaseBusiness className="mb-1 h-5 w-6" />
+                            <span className="text-center text-xs leading-none font-medium">Sertifikasi</span>
+                        </Link>
+
+                        {auth.user && (
+                            <Link
+                                href="/profile"
+                                className={cn(
+                                    'flex flex-col items-center justify-center rounded-lg px-2 py-3 transition-colors duration-200',
+                                    page.url.startsWith('/profile')
+                                        ? 'text-primary bg-primary/10'
+                                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                                )}
+                            >
+                                <User className="mb-1 h-5 w-6" />
+                                <span className="text-center text-xs leading-none font-medium">Profil</span>
+                            </Link>
+                        )}
                     </div>
                 </div>
             </div>
