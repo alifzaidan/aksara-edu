@@ -30,4 +30,16 @@ class Webinar extends Model
     {
         return $this->hasOne(Certificate::class);
     }
+
+    public function bundleItems()
+    {
+        return $this->morphMany(BundleItem::class, 'bundleable');
+    }
+
+    public function isInBundle(): bool
+    {
+        return $this->bundleItems()->whereHas('bundle', function ($q) {
+            $q->where('status', 'published');
+        })->exists();
+    }
 }

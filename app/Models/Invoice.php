@@ -31,6 +31,11 @@ class Invoice extends Model
         return $this->hasMany(EnrollmentWebinar::class);
     }
 
+    public function bundleEnrollments()
+    {
+        return $this->hasMany(EnrollmentBundle::class);
+    }
+
     public function discountUsage()
     {
         return $this->hasOne(DiscountUsage::class);
@@ -46,6 +51,40 @@ class Invoice extends Model
         return [
             'paid_at' => 'datetime',
             'expires_at' => 'datetime',
+        ];
+    }
+
+    public function getInvoiceType(): string
+    {
+        if ($this->hasBundle()) {
+            return 'bundle';
+        }
+
+        if ($this->courseItems->count() > 0) {
+            return 'course';
+        }
+
+        if ($this->bootcampItems->count() > 0) {
+            return 'bootcamp';
+        }
+
+        if ($this->webinarItems->count() > 0) {
+            return 'webinar';
+        }
+
+        return 'unknown';
+    }
+
+    public function getDisplayItems()
+    {
+        if ($this->hasBundle()) {
+            return $this->bundleEnrollments()->with('bundle.bundleItems.bundleable')->get();
+        }
+
+        return [
+            'courses' => $this->courseItems()->with('course')->get(),
+            'bootcamps' => $this->bootcampItems()->with('bootcamp')->get(),
+            'webinars' => $this->webinarItems()->with('webinar')->get(),
         ];
     }
 }

@@ -13,7 +13,7 @@ export default function HeroSection() {
                     <div className="relative flex justify-center">
                         <div className="relative h-[480px] w-[360px]">
                             <motion.img
-                                src="assets/images/animated/4.webp"
+                                src="assets/images/animated/10.webp"
                                 alt="Animasi Partnership 1"
                                 width={360}
                                 className="absolute top-12 left-12 z-10 rotate-3 transform"
@@ -27,7 +27,7 @@ export default function HeroSection() {
                                 }}
                             />
                             <motion.img
-                                src="assets/images/animated/5.webp"
+                                src="assets/images/animated/11.webp"
                                 alt="Animasi Partnership 2"
                                 width={360}
                                 className="absolute top-6 left-4 z-20 scale-110 rotate-3 transform"
@@ -42,7 +42,7 @@ export default function HeroSection() {
                                 }}
                             />
                             <motion.img
-                                src="assets/images/animated/6.webp"
+                                src="assets/images/animated/12.webp"
                                 alt="Animasi Partnership 3"
                                 width={360}
                                 className="absolute top-24 left-0 z-30 rotate-3 transform"

@@ -5,17 +5,17 @@ const items = [
     {
         title: 'Sertifikat Resmi dari Partner Industri',
         subtitle: 'Dapatkan sertifikat yang diakui industri dari lembaga dan perusahaan partner terpercaya.',
-        image: '/assets/images/feature-webinar-1.webp',
+        image: '/assets/images/feature-certification-1.webp',
     },
     {
         title: 'Materi Terupdate',
         subtitle: 'Konten pembelajaran selalu diperbarui mengikuti perkembangan teknologi dan tren industri terkini.',
-        image: '/assets/images/feature-webinar-2.webp',
+        image: '/assets/images/feature-certification-2.webp',
     },
     {
         title: 'Fleksibel & Terjangkau',
         subtitle: 'Jadwal yang fleksibel dengan harga terjangkau. Investasi terbaik untuk pengembangan karirmu.',
-        image: '/assets/images/feature-webinar-3.webp',
+        image: '/assets/images/feature-certification-3.webp',
     },
 ];
 
