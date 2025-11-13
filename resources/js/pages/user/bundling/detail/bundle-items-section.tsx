@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { rupiahFormatter } from '@/lib/utils';
-import { BookOpen, Briefcase, ExternalLink, Video } from 'lucide-react';
+import { BookText, ExternalLink, MonitorPlay, Presentation } from 'lucide-react';
 
 interface Product {
     id: string;
@@ -55,21 +55,21 @@ export default function BundleItemsSection({ bundle, groupedItems, totalOriginal
 
         const config = {
             course: {
-                icon: BookOpen,
+                icon: BookText,
                 label: 'KELAS ONLINE',
                 badgeClass: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400',
                 iconColor: 'text-blue-600 dark:text-blue-400',
                 cardBorder: 'border-blue-200 dark:border-blue-800',
             },
             bootcamp: {
-                icon: Briefcase,
+                icon: Presentation,
                 label: 'BOOTCAMP',
                 badgeClass: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-400',
                 iconColor: 'text-purple-600 dark:text-purple-400',
                 cardBorder: 'border-purple-200 dark:border-purple-800',
             },
             webinar: {
-                icon: Video,
+                icon: MonitorPlay,
                 label: 'WEBINAR',
                 badgeClass: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400',
                 iconColor: 'text-green-600 dark:text-green-400',

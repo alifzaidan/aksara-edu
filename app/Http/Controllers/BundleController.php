@@ -39,26 +39,26 @@ class BundleController extends Controller
         $now = now();
 
         $courses = Course::where('status', 'published')
-            ->where('price', '>', 0)
             ->select('id', 'title', 'price', 'slug')
+            ->orderBy('price', 'desc')
             ->get();
 
         $bootcamps = Bootcamp::where('status', 'published')
-            ->where('price', '>', 0)
             ->where(function ($query) use ($now) {
                 $query->whereNull('registration_deadline')
                     ->orWhere('registration_deadline', '>=', $now);
             })
             ->select('id', 'title', 'price', 'slug', 'registration_deadline')
+            ->orderBy('price', 'desc')
             ->get();
 
         $webinars = Webinar::where('status', 'published')
-            ->where('price', '>', 0)
             ->where(function ($query) use ($now) {
                 $query->whereNull('registration_deadline')
                     ->orWhere('registration_deadline', '>=', $now);
             })
             ->select('id', 'title', 'price', 'slug', 'registration_deadline')
+            ->orderBy('price', 'desc')
             ->get();
 
         return Inertia::render('admin/bundles/create', [
@@ -81,7 +81,26 @@ class BundleController extends Controller
             'items' => 'required|array|min:2',
             'items.*.type' => 'required|in:course,bootcamp,webinar',
             'items.*.id' => 'required|uuid',
+            'items.*.price' => 'required|integer|min:0',
         ]);
+
+        $hasPaidItem = collect($validated['items'])->contains(function ($item) {
+            return $item['price'] > 0;
+        });
+
+        if (!$hasPaidItem) {
+            return back()->withErrors([
+                'items' => 'Minimal harus ada 1 produk berbayar dalam bundle'
+            ])->withInput();
+        }
+
+        $totalOriginalPrice = collect($validated['items'])->sum('price');
+
+        if ($validated['price'] > $totalOriginalPrice) {
+            return back()->withErrors([
+                'price' => 'Harga bundle tidak boleh melebihi total harga normal (' . number_format($totalOriginalPrice, 0, ',', '.') . ')'
+            ])->withInput();
+        }
 
         DB::beginTransaction();
         try {
@@ -186,26 +205,26 @@ class BundleController extends Controller
         $now = now();
 
         $courses = Course::where('status', 'published')
-            ->where('price', '>', 0)
             ->select('id', 'title', 'price', 'slug')
+            ->orderBy('price', 'desc')
             ->get();
 
         $bootcamps = Bootcamp::where('status', 'published')
-            ->where('price', '>', 0)
             ->where(function ($query) use ($now) {
                 $query->whereNull('registration_deadline')
                     ->orWhere('registration_deadline', '>=', $now);
             })
             ->select('id', 'title', 'price', 'slug', 'registration_deadline')
+            ->orderBy('price', 'desc')
             ->get();
 
         $webinars = Webinar::where('status', 'published')
-            ->where('price', '>', 0)
             ->where(function ($query) use ($now) {
                 $query->whereNull('registration_deadline')
                     ->orWhere('registration_deadline', '>=', $now);
             })
             ->select('id', 'title', 'price', 'slug', 'registration_deadline')
+            ->orderBy('price', 'desc')
             ->get();
 
         return Inertia::render('admin/bundles/edit', [
@@ -229,7 +248,26 @@ class BundleController extends Controller
             'items' => 'required|array|min:2',
             'items.*.type' => 'required|in:course,bootcamp,webinar',
             'items.*.id' => 'required|uuid',
+            'items.*.price' => 'required|integer|min:0',
         ]);
+
+        $hasPaidItem = collect($validated['items'])->contains(function ($item) {
+            return $item['price'] > 0;
+        });
+
+        if (!$hasPaidItem) {
+            return back()->withErrors([
+                'items' => 'Minimal harus ada 1 produk berbayar dalam bundle'
+            ])->withInput();
+        }
+
+        $totalOriginalPrice = collect($validated['items'])->sum('price');
+
+        if ($validated['price'] > $totalOriginalPrice) {
+            return back()->withErrors([
+                'price' => 'Harga bundle tidak boleh melebihi total harga normal (' . number_format($totalOriginalPrice, 0, ',', '.') . ')'
+            ])->withInput();
+        }
 
         DB::beginTransaction();
         try {

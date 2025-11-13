@@ -55,7 +55,13 @@ const serviceItems = [
         title: 'Webinar',
         href: '/webinar',
         icon: MonitorPlay,
-        description: 'Seminar online dengan praktisi industri',
+        description: 'Seminar online dengan berbagai topik up to date',
+    },
+    {
+        title: 'Paket Bundling',
+        href: '/bundle',
+        icon: Album,
+        description: 'Paket bundling dengan berbagai produk edukasi',
     },
 ];
 

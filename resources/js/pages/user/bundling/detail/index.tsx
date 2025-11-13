@@ -61,7 +61,6 @@ export default function BundleDetail({
     discountPercentage,
     relatedBundles,
 }: BundleDetailProps) {
-    console.log(bundle);
     return (
         <UserLayout>
             <Head title={`${bundle.title} - Paket Bundling`} />

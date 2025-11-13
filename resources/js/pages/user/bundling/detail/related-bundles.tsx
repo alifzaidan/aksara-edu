@@ -47,7 +47,7 @@ export default function RelatedBundles({ relatedBundles }: RelatedBundlesProps) 
                     return (
                         <Link
                             key={bundle.id}
-                            href={route('bundle.show', bundle.slug)}
+                            href={route('bundle.detail', bundle.slug)}
                             className="group relative overflow-hidden rounded-xl bg-zinc-300/30 p-[2px] transition-all hover:bg-zinc-400/40 dark:bg-zinc-700/30 dark:hover:bg-zinc-600/40"
                         >
                             <Spotlight className="bg-primary blur-2xl" size={284} />

@@ -1,5 +1,6 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -96,6 +97,16 @@ const formSchema = z
             )
             .min(2, 'Minimal 2 item harus dipilih'),
     })
+    .refine(
+        (data) => {
+            const hasPaidItem = data.items.some((item) => item.price > 0);
+            return hasPaidItem;
+        },
+        {
+            message: 'Minimal harus ada 1 produk berbayar dalam bundle',
+            path: ['items'],
+        },
+    )
     .refine(
         (data) => {
             const totalOriginalPrice = data.items.reduce((sum, item) => sum + item.price, 0);
@@ -494,7 +505,14 @@ export default function EditBundle({ bundle, courses, bootcamps, webinars }: Edi
                                             <div key={field.id} className="flex items-center gap-2 rounded-lg border p-3">
                                                 <GripVertical className="text-muted-foreground h-4 w-4 flex-shrink-0" />
                                                 <div className="min-w-0 flex-1">
-                                                    <p className="truncate text-sm font-medium">{field.title}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="truncate text-sm font-medium">{field.title}</p>
+                                                        {field.price === 0 && (
+                                                            <Badge variant="secondary" className="text-xs">
+                                                                Gratis
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                     <div className="flex items-center gap-2">
                                                         <p className="text-muted-foreground text-xs capitalize">
                                                             {field.type === 'course' ? 'Kelas Online' : field.type}
@@ -511,8 +529,10 @@ export default function EditBundle({ bundle, courses, bootcamps, webinars }: Edi
                                                         )}
                                                     </div>
                                                 </div>
-                                                <span className="text-sm font-medium whitespace-nowrap">
-                                                    {rupiahFormatter.format(field.price || 0)}
+                                                <span
+                                                    className={`text-sm font-medium whitespace-nowrap ${field.price === 0 ? 'text-green-600' : ''}`}
+                                                >
+                                                    {field.price === 0 ? 'Gratis' : rupiahFormatter.format(field.price || 0)}
                                                 </span>
                                                 <Button
                                                     type="button"
