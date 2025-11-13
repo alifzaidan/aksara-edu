@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AffiliateController;
 use App\Http\Controllers\AffiliateEarningController;
 use App\Http\Controllers\BootcampController;
+use App\Http\Controllers\BundleController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\CertificateDesignController;
@@ -20,8 +21,6 @@ use App\Http\Controllers\MentorController;
 use App\Http\Controllers\PartnershipProductController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
-use App\Http\Controllers\QuizSubmissionController;
-use App\Http\Controllers\SearchController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\ToolController;
 use App\Http\Controllers\User\CourseController as UserCourseController;
@@ -169,6 +168,11 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/partnership-products/{id}/duplicate', [PartnershipProductController::class, 'duplicate'])->name('partnership-products.duplicate');
         Route::get('/partnership-products/stats/overview', [PartnershipProductController::class, 'statistics'])->name('partnership-products.statistics');
         Route::post('/partnership-products/bulk-action', [PartnershipProductController::class, 'bulkAction'])->name('partnership-products.bulk-action');
+
+        Route::resource('bundles', BundleController::class);
+        Route::post('/bundles/{bundle}/publish', [BundleController::class, 'publish'])->name('bundles.publish');
+        Route::post('/bundles/{bundle}/archive', [BundleController::class, 'archive'])->name('bundles.archive');
+        Route::post('/bundles/{bundle}/duplicate', [BundleController::class, 'duplicate'])->name('bundles.duplicate');
 
         Route::resource('affiliates', AffiliateController::class);
         Route::post('affiliates/{affiliate}/toggle-status', [AffiliateController::class, 'toggleStatus'])->name('affiliates.toggleStatus');

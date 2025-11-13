@@ -86,7 +86,7 @@ class PartnershipProductController extends Controller
             $slug = $originalSlug . '-' . $counter++;
         }
         $validated['slug'] = $slug;
-        $validated['product_url'] = url('/partnership-products/' . $slug);
+        $validated['product_url'] = url('/certification/' . $slug);
 
         // Handle thumbnail
         if ($request->hasFile('thumbnail')) {
@@ -190,7 +190,7 @@ class PartnershipProductController extends Controller
                 $slug = $originalSlug . '-' . $counter++;
             }
             $validated['slug'] = $slug;
-            $validated['product_url'] = url('/partnership-products/' . $slug);
+            $validated['product_url'] = url('/certification/' . $slug);
         }
 
         if ($request->hasFile('thumbnail')) {

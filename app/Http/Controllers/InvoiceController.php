@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\AffiliateEarning;
 use App\Models\Bootcamp;
+use App\Models\Bundle;
 use App\Models\Certificate;
 use App\Models\CertificateParticipant;
 use App\Models\Course;
 use App\Models\DiscountUsage;
 use App\Models\EnrollmentBootcamp;
+use App\Models\EnrollmentBundle;
 use App\Models\EnrollmentCourse;
 use App\Models\EnrollmentWebinar;
 use App\Models\FreeEnrollmentRequirement;
@@ -223,6 +225,125 @@ class InvoiceController extends Controller
                 'error' => $e->getMessage(),
                 'user_id' => Auth::id(),
                 'request_data' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    public function storeBundle(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $userId = Auth::id();
+            $bundleId = $request->input('bundle_id');
+
+            $bundle = Bundle::with('bundleItems.bundleable')->findOrFail($bundleId);
+
+            // Validate bundle availability
+            if (!$bundle->isAvailable()) {
+                throw new \Exception('Bundle tidak tersedia untuk pembelian');
+            }
+
+            // Check if already purchased
+            if ($bundle->isPurchasedByUser($userId)) {
+                throw new \Exception('Anda sudah membeli bundle ini');
+            }
+
+            $transactionFee = 5000;
+            $totalAmount = $bundle->price > 0 ? $bundle->price + $transactionFee : 0;
+
+            $invoice_code = IdGenerator::generate([
+                'table' => 'invoices',
+                'field' => 'invoice_code',
+                'length' => 11,
+                'reset_on_prefix_change' => true,
+                'prefix' => 'AKS-' . date('y')
+            ]);
+
+            $expiresAt = Carbon::now()->addHours(24);
+
+            // Create invoice
+            $invoice = Invoice::create([
+                'user_id' => $userId,
+                'invoice_code' => $invoice_code,
+                'discount_amount' => 0,
+                'amount' => $totalAmount,
+                'nett_amount' => $bundle->price,
+                'expires_at' => $expiresAt,
+            ]);
+
+            // Create bundle enrollment
+            EnrollmentBundle::create([
+                'invoice_id' => $invoice->id,
+                'bundle_id' => $bundle->id,
+                'price' => $bundle->price,
+            ]);
+
+            // Prepare items for Xendit
+            $items = [];
+            $fees = [];
+
+            if ($bundle->strikethrough_price > $bundle->price) {
+                $discountAmount = $bundle->strikethrough_price - $bundle->price;
+                $fees[] = ['type' => 'Diskon Bundle', 'value' => -$discountAmount];
+            }
+
+            foreach ($bundle->bundleItems as $bundleItem) {
+                $items[] = [
+                    'name' => $bundleItem->bundleable->title,
+                    'price' => $bundleItem->price,
+                    'quantity' => 1,
+                ];
+            }
+
+            $fees[] = ['type' => 'Biaya Transaksi', 'value' => $transactionFee];
+
+            // Create Xendit invoice
+            $xendit_create_invoice = new CreateInvoiceRequest([
+                'external_id' => $invoice_code,
+                'customer' => [
+                    'given_names' => Auth::user()->name,
+                    'email' => Auth::user()->email,
+                    'mobile_number' => Auth::user()->phone_number,
+                ],
+                'customer_notification_preference' => [
+                    'invoice_created' => ['email', 'whatsapp'],
+                    'invoice_reminder' => ['email', 'whatsapp'],
+                    'invoice_paid' => ['email'],
+                ],
+                'description' => 'Invoice pembayaran Bundle: ' . $bundle->title,
+                'amount' => $totalAmount,
+                'items' => $items,
+                'fees' => $fees,
+                'failure_redirect_url' => route('invoice.show', ['id' => $invoice->id]),
+                'success_redirect_url' => route('invoice.show', ['id' => $invoice->id]),
+            ]);
+
+            $xendit_api_instance = new InvoiceApi();
+            $xendit_invoice = $xendit_api_instance->createInvoice($xendit_create_invoice);
+
+            $invoice->update([
+                'invoice_url' => $xendit_invoice['invoice_url'],
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'payment_url' => $xendit_invoice['invoice_url'],
+                'invoice_id' => $invoice->id,
+                'invoice_code' => $invoice->invoice_code
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Bundle invoice creation failed', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+                'bundle_id' => $request->input('bundle_id')
             ]);
 
             return response()->json([
@@ -539,6 +660,19 @@ class InvoiceController extends Controller
                 'payment_method' => $request->payment_method,
                 'payment_channel' => $request->payment_channel
             ]);
+
+            if ($invoice->hasBundle()) {
+                foreach ($invoice->bundleEnrollments as $bundleEnrollment) {
+                    $bundleEnrollment->createIndividualEnrollments();
+
+                    // Add to certificate participants for each item
+                    $bundle = $bundleEnrollment->bundle;
+                    foreach ($bundle->bundleItems as $item) {
+                        $type = $item->getTypeSlug();
+                        $this->addToCertificateParticipants($type, $item->bundleable_id, $invoice->user_id);
+                    }
+                }
+            }
 
             $this->recordAffiliateCommission($invoice);
             $this->addEnrollmentToCertificateParticipants($invoice);

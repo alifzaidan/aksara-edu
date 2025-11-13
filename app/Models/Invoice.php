@@ -36,6 +36,11 @@ class Invoice extends Model
         return $this->hasMany(EnrollmentBundle::class);
     }
 
+    public function hasBundle()
+    {
+        return $this->bundleEnrollments()->exists();
+    }
+
     public function discountUsage()
     {
         return $this->hasOne(DiscountUsage::class);

@@ -8,6 +8,7 @@ import {
     BookText,
     Dock,
     DollarSign,
+    Gift,
     LayoutGrid,
     List,
     MonitorPlay,
@@ -74,6 +75,12 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         href: '/admin/webinars',
         icon: MonitorPlay,
         roles: ['admin', 'affiliate'],
+    },
+    {
+        title: 'Paket Bundling',
+        href: '/admin/bundles',
+        icon: Gift,
+        roles: ['admin'],
     },
     {
         title: 'Sertifikasi Kerjasama',

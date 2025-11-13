@@ -20,12 +20,10 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->text('benefits')->nullable();
             $table->string('thumbnail')->nullable();
-            $table->bigInteger('strikethrough_price')->default(0);
             $table->bigInteger('price')->default(0);
             $table->dateTime('registration_deadline')->nullable();
             $table->string('bundle_url')->nullable();
             $table->string('registration_url')->nullable();
-            $table->string('group_url')->nullable();
             $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->timestamps();
         });

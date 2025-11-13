@@ -21,11 +21,44 @@ class EnrollmentBundle extends Model
         return $this->belongsTo(Bundle::class);
     }
 
-    /**
-     * Get user from invoice
-     */
-    public function user()
+    public function createIndividualEnrollments()
     {
-        return $this->invoice->user;
+        $bundle = $this->bundle;
+        $userId = $this->invoice->user_id;
+
+        foreach ($bundle->bundleItems as $item) {
+            $bundleable = $item->bundleable;
+
+            switch ($item->bundleable_type) {
+                case Course::class:
+                    EnrollmentCourse::firstOrCreate([
+                        'invoice_id' => $this->invoice_id,
+                        'course_id' => $bundleable->id,
+                    ], [
+                        'price' => $item->price,
+                        'progress' => 0,
+                    ]);
+                    break;
+
+                case Bootcamp::class:
+                    EnrollmentBootcamp::firstOrCreate([
+                        'invoice_id' => $this->invoice_id,
+                        'bootcamp_id' => $bundleable->id,
+                    ], [
+                        'price' => $item->price,
+                        'progress' => 0,
+                    ]);
+                    break;
+
+                case Webinar::class:
+                    EnrollmentWebinar::firstOrCreate([
+                        'invoice_id' => $this->invoice_id,
+                        'webinar_id' => $bundleable->id,
+                    ], [
+                        'price' => $item->price,
+                    ]);
+                    break;
+            }
+        }
     }
 }
