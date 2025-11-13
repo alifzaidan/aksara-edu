@@ -16,6 +16,8 @@ class Bundle extends Model
         'registration_deadline' => 'datetime',
     ];
 
+    protected $appends = ['bundle_items_count'];
+
     protected static function boot()
     {
         parent::boot();
@@ -50,6 +52,25 @@ class Bundle extends Model
     public function enrollments()
     {
         return $this->hasMany(EnrollmentBundle::class);
+    }
+
+    /**
+     * Get bundle items count attribute
+     */
+    public function getBundleItemsCountAttribute()
+    {
+        // Check if it's already loaded by withCount
+        if (array_key_exists('bundle_items_count', $this->attributes)) {
+            return $this->attributes['bundle_items_count'];
+        }
+
+        // Otherwise, check if relation is loaded
+        if ($this->relationLoaded('bundleItems')) {
+            return $this->bundleItems->count();
+        }
+
+        // Last resort: query the database
+        return $this->bundleItems()->count();
     }
 
     /**

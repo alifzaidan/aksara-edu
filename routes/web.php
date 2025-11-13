@@ -25,6 +25,7 @@ use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\ToolController;
 use App\Http\Controllers\User\CourseController as UserCourseController;
 use App\Http\Controllers\User\BootcampController as UserBootcampController;
+use App\Http\Controllers\User\BundleController as UserBundleController;
 use App\Http\Controllers\User\WebinarController as UserWebinarController;
 use App\Http\Controllers\User\PartnershipProductController as UserPartnershipProductController;
 use App\Http\Controllers\User\HomeController;
@@ -48,6 +49,8 @@ Route::get('/bootcamp', [UserBootcampController::class, 'index'])->name('bootcam
 Route::get('/bootcamp/{bootcamp:slug}', [UserBootcampController::class, 'detail'])->name('bootcamp.detail');
 Route::get('/webinar', [UserWebinarController::class, 'index'])->name('webinar.index');
 Route::get('/webinar/{webinar:slug}', [UserWebinarController::class, 'detail'])->name('webinar.detail');
+Route::get('/bundle', [UserBundleController::class, 'index'])->name('bundle.index');
+Route::get('/bundle/{bundle:slug}', [UserBundleController::class, 'detail'])->name('bundle.detail');
 Route::get('/certification', [UserPartnershipProductController::class, 'index'])->name('partnership-product.index');
 Route::get('/certification/{partnershipProduct:slug}', [UserPartnershipProductController::class, 'detail'])->name('partnership-product.detail');
 Route::get('/certificate/{code}', [CertificateParticipantController::class, 'show'])->name('certificate.participant.detail');

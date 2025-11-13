@@ -29,6 +29,10 @@ const mainNavItems: NavItem[] = [
         href: '/webinar',
     },
     {
+        title: 'Paket Bundling',
+        href: '/bundle',
+    },
+    {
         title: 'Sertifikasi',
         href: '/certification',
     },
