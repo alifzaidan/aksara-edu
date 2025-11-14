@@ -48,6 +48,7 @@ class CertificatePdfService
             $dummyData = [
                 'participant_name' => 'Aksademy',
                 'certificate_code' => 'AKS-25AHBEFJ',
+                'participant_issued_at' => now(),
                 'certificate_number' => '0001',
                 'completion_date' => now()->format('d F Y'),
                 'program_name' => $this->getProgramName($certificate),
@@ -83,6 +84,7 @@ class CertificatePdfService
             $participantData = [
                 'participant_name' => $participant->user->name,
                 'certificate_code' => $participant->certificate_code,
+                'participant_issued_at' => $participant->created_at,
                 'certificate_number' => str_pad($participant->certificate_number, 4, '0', STR_PAD_LEFT),
                 'completion_date' => $participant->created_at->format('d F Y'),
                 'program_name' => $this->getProgramName($certificate),

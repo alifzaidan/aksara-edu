@@ -234,20 +234,20 @@
         <div class="certificate-content">
             {{-- Header --}}
             <div class="header">
-                @if($certificate->header_top)
-                <div class="header-top">{{ $certificate->header_top }}</div>
+                @if ($certificate->header_top)
+                    <div class="header-top">{{ $certificate->header_top }}</div>
                 @endif
 
-                @if($certificate->header_bottom)
-                <div class="header-bottom">{{ $certificate->header_bottom }}</div>
+                @if ($certificate->header_bottom)
+                    <div class="header-bottom">{{ $certificate->header_bottom }}</div>
                 @endif
 
                 <div class="certificate-title">Sertifikat</div>
                 <div class="certificate-subtitle">
-                    @if($certificate->webinar_id)
-                    Partisipasi
+                    @if ($certificate->webinar_id)
+                        Partisipasi
                     @else
-                    Kompetensi Kelulusan
+                        Kompetensi Kelulusan
                     @endif
                 </div>
             </div>
@@ -263,69 +263,69 @@
                 </div>
 
                 <div class="program-description">
-                    @if($certificate->webinar_id)
-                    TELAH BERPARTISIPASI PADA
+                    @if ($certificate->webinar_id)
+                        TELAH BERPARTISIPASI PADA
                     @else
-                    TELAH MENGIKUTI DAN DINYATAKAN LULUS
+                        TELAH MENGIKUTI DAN DINYATAKAN LULUS
                     @endif
                 </div>
 
-                @if($certificate->description)
-                <div class="description">
-                    {{ $certificate->description }}
-                </div>
+                @if ($certificate->description)
+                    <div class="description">
+                        {{ $certificate->description }}
+                    </div>
                 @endif
             </div>
-
             {{-- Footer --}}
             <div class="footer">
                 <div class="signature-container">
-                    <div class="signature-date">{{
-                        \Carbon\Carbon::parse($certificate->issued_date)->locale('id')->translatedFormat('d F Y') }}
+                    <div class="signature-date">
+                        {{ \Carbon\Carbon::parse($data['participant_issued_at'])->locale('id')->translatedFormat('d F Y') }}
                     </div>
                     <div class="signature-space">
-                        @if($certificate->sign && $certificate->sign->image)
-                        <img src="{{ public_path('storage/' . $certificate->sign->image) }}" alt="Tanda Tangan"
-                            class="signature-image">
+                        @if ($certificate->sign && $certificate->sign->image)
+                            <img src="{{ public_path('storage/' . $certificate->sign->image) }}" alt="Tanda Tangan"
+                                class="signature-image">
                         @else
-                        <div style="color: #9ca3af; font-style: italic; font-size: 10px;">Tanda Tangan</div>
+                            <div style="color: #9ca3af; font-style: italic; font-size: 10px;">Tanda Tangan</div>
                         @endif
                     </div>
 
-                    @if($certificate->sign)
-                    <div class="signature-name">{{ $certificate->sign->name }}</div>
-                    <div class="signature-title">
-                        {{ $certificate->sign->position ?? 'Direktur Aksara Digital' }}
-                    </div>
+                    @if ($certificate->sign)
+                        <div class="signature-name">{{ $certificate->sign->name }}</div>
+                        <div class="signature-title">
+                            {{ $certificate->sign->position ?? 'Direktur Aksara Digital' }}
+                        </div>
                     @else
-                    <div class="signature-name">Direktur</div>
-                    <div class="signature-title">Aksara Teknologi Mandiri</div>
+                        <div class="signature-name">Direktur</div>
+                        <div class="signature-title">Aksara Teknologi Mandiri</div>
                     @endif
                 </div>
 
                 <div class="period-section">
                     {{-- QR Code Section --}}
                     <div class="qr-container">
-                        @if($qrCode)
-                        <div class="qr-code">
-                            @if(str_contains($qrCode, 'image/png'))
-                            <img src="{{ $qrCode }}" alt="QR Code"
-                                style="width: 100%; height: 100%; object-fit: contain;">
-                            @else
-                            {!! $qrCode !!}
-                            @endif
-                        </div>
+                        @if ($qrCode)
+                            <div class="qr-code">
+                                @if (str_contains($qrCode, 'image/png'))
+                                    <img src="{{ $qrCode }}" alt="QR Code"
+                                        style="width: 100%; height: 100%; object-fit: contain;">
+                                @else
+                                    {!! $qrCode !!}
+                                @endif
+                            </div>
                         @else
-                        <div class="qr-placeholder">
-                            QR Code<br>Not Available
-                        </div>
+                            <div class="qr-placeholder">
+                                QR Code<br>Not Available
+                            </div>
                         @endif
 
-                        @if($certificateUrl)
-                        <div class="certificate-url">{{ $certificateUrl }}</div>
+                        @if ($certificateUrl)
+                            <div class="certificate-url">{{ $certificateUrl }}</div>
                         @else
-                        <div class="certificate-url">https://aksademy.id/certificate/{{ $data['certificate_code'] }}
-                        </div>
+                            <div class="certificate-url">
+                                https://aksademy.id/certificate/{{ $data['certificate_code'] }}
+                            </div>
                         @endif
                     </div>
 
