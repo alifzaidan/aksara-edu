@@ -58,6 +58,7 @@ Route::get('/certificate/{code}', [CertificateParticipantController::class, 'sho
 Route::get('/course/{course:slug}/checkout', [UserCourseController::class, 'showCheckout'])->name('course.checkout');
 Route::get('/bootcamp/{bootcamp:slug}/register', [UserBootcampController::class, 'showRegister'])->name('bootcamp.register');
 Route::get('/webinar/{webinar:slug}/register', [UserWebinarController::class, 'showRegister'])->name('webinar.register');
+Route::get('/bundle/{bundle:slug}/checkout', [UserBundleController::class, 'showCheckout'])->name('bundle.checkout');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/course/checkout/success', [UserCourseController::class, 'showCheckoutSuccess'])->name('course.checkout.success');
@@ -65,8 +66,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/webinar/register/success', [UserWebinarController::class, 'showRegisterSuccess'])->name('webinar.register.success');
     Route::get('/certification/{partnershipProduct:slug}/track-click', [UserPartnershipProductController::class, 'trackClick'])->name('partnership-products.track-click');
 
-
     Route::post('/invoice', [InvoiceController::class, 'store'])->name('invoice.store');
+    Route::post('/invoice-bundle', [InvoiceController::class, 'storeBundle'])->name('invoice.store.bundle');
     Route::post('/enroll/free', [InvoiceController::class, 'enrollFree'])->name('enroll.free');
     Route::get('/invoice/{id}', [InvoiceController::class, 'show'])->name('invoice.show');
     Route::post('/invoice/{id}/cancel', [InvoiceController::class, 'cancel'])->name('invoice.cancel');

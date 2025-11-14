@@ -92,4 +92,109 @@ class Invoice extends Model
             'webinars' => $this->webinarItems()->with('webinar')->get(),
         ];
     }
+
+    public function getAllEnrollmentItems()
+    {
+        $items = collect();
+
+        // Direct enrollments
+        $items = $items->merge($this->courseItems()->with('course')->get()->map(function ($item) {
+            return [
+                'type' => 'course',
+                'enrollment' => $item,
+                'item' => $item->course,
+            ];
+        }));
+
+        $items = $items->merge($this->bootcampItems()->with('bootcamp')->get()->map(function ($item) {
+            return [
+                'type' => 'bootcamp',
+                'enrollment' => $item,
+                'item' => $item->bootcamp,
+            ];
+        }));
+
+        $items = $items->merge($this->webinarItems()->with('webinar')->get()->map(function ($item) {
+            return [
+                'type' => 'webinar',
+                'enrollment' => $item,
+                'item' => $item->webinar,
+            ];
+        }));
+
+        // Bundle items
+        foreach ($this->bundleEnrollments as $bundleEnrollment) {
+            $bundle = $bundleEnrollment->bundle()->with('bundleItems.bundleable')->first();
+            if ($bundle) {
+                foreach ($bundle->bundleItems as $bundleItem) {
+                    $items->push([
+                        'type' => $bundleItem->getTypeSlug(),
+                        'enrollment' => $bundleEnrollment,
+                        'item' => $bundleItem->bundleable,
+                        'bundle' => $bundle,
+                    ]);
+                }
+            }
+        }
+
+        return $items;
+    }
+
+    public function hasProduct(string $type, string $productId): bool
+    {
+        switch ($type) {
+            case 'course':
+                return $this->courseItems()->where('course_id', $productId)->exists();
+
+            case 'bootcamp':
+                return $this->bootcampItems()->where('bootcamp_id', $productId)->exists();
+
+            case 'webinar':
+                return $this->webinarItems()->where('webinar_id', $productId)->exists();
+
+            case 'bundle':
+                return $this->bundleEnrollments()->where('bundle_id', $productId)->exists();
+
+            default:
+                return false;
+        }
+    }
+
+    public function getTotalItemsCount(): int
+    {
+        $count = 0;
+
+        $count += $this->courseItems->count();
+        $count += $this->bootcampItems->count();
+        $count += $this->webinarItems->count();
+
+        // Count items from bundles
+        foreach ($this->bundleEnrollments as $bundleEnrollment) {
+            if ($bundleEnrollment->bundle) {
+                $count += $bundleEnrollment->bundle->bundleItems->count();
+            }
+        }
+
+        return $count;
+    }
+
+    public function isExpired(): bool
+    {
+        if (!$this->expires_at) {
+            return false;
+        }
+
+        return $this->status === 'pending' && now()->gt($this->expires_at);
+    }
+
+    public function getStatusColor(): string
+    {
+        return match ($this->status) {
+            'paid' => 'green',
+            'pending' => 'yellow',
+            'failed' => 'red',
+            'expired' => 'gray',
+            default => 'gray',
+        };
+    }
 }

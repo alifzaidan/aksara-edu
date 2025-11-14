@@ -23,40 +23,70 @@ class EnrollmentBundle extends Model
 
     public function createIndividualEnrollments()
     {
-        $bundle = $this->bundle;
-        $userId = $this->invoice->user_id;
+        $bundle = $this->bundle()->with('bundleItems.bundleable')->first();
+
+        if (!$bundle) {
+            return;
+        }
+
+        $invoice = $this->invoice;
+        $userId = $invoice->user_id;
 
         foreach ($bundle->bundleItems as $item) {
             $bundleable = $item->bundleable;
 
             switch ($item->bundleable_type) {
                 case Course::class:
-                    EnrollmentCourse::firstOrCreate([
-                        'invoice_id' => $this->invoice_id,
-                        'course_id' => $bundleable->id,
-                    ], [
-                        'price' => $item->price,
-                        'progress' => 0,
-                    ]);
+                    $existingEnrollment = EnrollmentCourse::where('course_id', $bundleable->id)
+                        ->whereHas('invoice', function ($query) use ($userId) {
+                            $query->where('user_id', $userId)
+                                ->where('status', 'paid');
+                        })
+                        ->exists();
+
+                    if (!$existingEnrollment) {
+                        EnrollmentCourse::create([
+                            'invoice_id' => $this->invoice_id,
+                            'course_id' => $bundleable->id,
+                            'price' => $item->price,
+                            'progress' => 0,
+                        ]);
+                    }
                     break;
 
                 case Bootcamp::class:
-                    EnrollmentBootcamp::firstOrCreate([
-                        'invoice_id' => $this->invoice_id,
-                        'bootcamp_id' => $bundleable->id,
-                    ], [
-                        'price' => $item->price,
-                        'progress' => 0,
-                    ]);
+                    $existingEnrollment = EnrollmentBootcamp::where('bootcamp_id', $bundleable->id)
+                        ->whereHas('invoice', function ($query) use ($userId) {
+                            $query->where('user_id', $userId)
+                                ->where('status', 'paid');
+                        })
+                        ->exists();
+
+                    if (!$existingEnrollment) {
+                        EnrollmentBootcamp::create([
+                            'invoice_id' => $this->invoice_id,
+                            'bootcamp_id' => $bundleable->id,
+                            'price' => $item->price,
+                            'progress' => 0,
+                        ]);
+                    }
                     break;
 
                 case Webinar::class:
-                    EnrollmentWebinar::firstOrCreate([
-                        'invoice_id' => $this->invoice_id,
-                        'webinar_id' => $bundleable->id,
-                    ], [
-                        'price' => $item->price,
-                    ]);
+                    $existingEnrollment = EnrollmentWebinar::where('webinar_id', $bundleable->id)
+                        ->whereHas('invoice', function ($query) use ($userId) {
+                            $query->where('user_id', $userId)
+                                ->where('status', 'paid');
+                        })
+                        ->exists();
+
+                    if (!$existingEnrollment) {
+                        EnrollmentWebinar::create([
+                            'invoice_id' => $this->invoice_id,
+                            'webinar_id' => $bundleable->id,
+                            'price' => $item->price,
+                        ]);
+                    }
                     break;
             }
         }

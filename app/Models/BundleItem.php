@@ -46,4 +46,17 @@ class BundleItem extends Model
             default => 'unknown'
         };
     }
+
+    public function isAvailable(): bool
+    {
+        if (!$this->bundleable) {
+            return false;
+        }
+
+        if (property_exists($this->bundleable, 'status') && $this->bundleable->status !== 'published') {
+            return false;
+        }
+
+        return true;
+    }
 }

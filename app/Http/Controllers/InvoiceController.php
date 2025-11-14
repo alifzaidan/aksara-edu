@@ -240,6 +240,10 @@ class InvoiceController extends Controller
         try {
             $userId = Auth::id();
             $bundleId = $request->input('bundle_id');
+            $discountAmount = $request->input('discount_amount', 0);
+            $transactionFee = $request->input('transaction_fee', 5000);
+            $nettAmount = $request->input('nett_amount');
+            $totalAmount = $request->input('total_amount');
 
             $bundle = Bundle::with('bundleItems.bundleable')->findOrFail($bundleId);
 
@@ -248,13 +252,27 @@ class InvoiceController extends Controller
                 throw new \Exception('Bundle tidak tersedia untuk pembelian');
             }
 
+            // Bundle harus berbayar
+            if ($bundle->price === 0) {
+                throw new \Exception('Bundle ini gratis, tidak perlu checkout');
+            }
+
             // Check if already purchased
             if ($bundle->isPurchasedByUser($userId)) {
                 throw new \Exception('Anda sudah membeli bundle ini');
             }
 
-            $transactionFee = 5000;
-            $totalAmount = $bundle->price > 0 ? $bundle->price + $transactionFee : 0;
+            // Validate pricing
+            $expectedNettAmount = $bundle->price;
+            $expectedTotal = $expectedNettAmount + $transactionFee;
+
+            if ($nettAmount != $expectedNettAmount) {
+                throw new \Exception('Harga nett tidak sesuai');
+            }
+
+            if ($totalAmount != $expectedTotal) {
+                throw new \Exception('Total amount tidak sesuai');
+            }
 
             $invoice_code = IdGenerator::generate([
                 'table' => 'invoices',
@@ -270,9 +288,9 @@ class InvoiceController extends Controller
             $invoice = Invoice::create([
                 'user_id' => $userId,
                 'invoice_code' => $invoice_code,
-                'discount_amount' => 0,
+                'discount_amount' => $discountAmount,
                 'amount' => $totalAmount,
-                'nett_amount' => $bundle->price,
+                'nett_amount' => $nettAmount,
                 'expires_at' => $expiresAt,
             ]);
 
@@ -280,16 +298,17 @@ class InvoiceController extends Controller
             EnrollmentBundle::create([
                 'invoice_id' => $invoice->id,
                 'bundle_id' => $bundle->id,
-                'price' => $bundle->price,
+                'price' => $nettAmount,
             ]);
 
             // Prepare items for Xendit
             $items = [];
             $fees = [];
 
-            if ($bundle->strikethrough_price > $bundle->price) {
-                $discountAmount = $bundle->strikethrough_price - $bundle->price;
-                $fees[] = ['type' => 'Diskon Bundle', 'value' => -$discountAmount];
+            $totalOriginalPrice = $bundle->bundleItems->sum('price');
+            if ($totalOriginalPrice > $bundle->price) {
+                $bundleDiscount = $totalOriginalPrice - $bundle->price;
+                $fees[] = ['type' => 'Diskon Bundle', 'value' => -$bundleDiscount];
             }
 
             foreach ($bundle->bundleItems as $bundleItem) {
@@ -315,7 +334,7 @@ class InvoiceController extends Controller
                     'invoice_reminder' => ['email', 'whatsapp'],
                     'invoice_paid' => ['email'],
                 ],
-                'description' => 'Invoice pembayaran Bundle: ' . $bundle->title,
+                'description' => 'Invoice pembayaran Paket Bundling: ' . $bundle->title,
                 'amount' => $totalAmount,
                 'items' => $items,
                 'fees' => $fees,
@@ -639,7 +658,8 @@ class InvoiceController extends Controller
             'user',
             'courseItems.course',
             'bootcampItems.bootcamp',
-            'webinarItems.webinar'
+            'webinarItems.webinar',
+            'bundleEnrollments.bundle.bundleItems.bundleable'
         ])->where('invoice_code', $request->external_id)->first();
 
         if (!$invoice) {
@@ -661,15 +681,31 @@ class InvoiceController extends Controller
                 'payment_channel' => $request->payment_channel
             ]);
 
-            if ($invoice->hasBundle()) {
+            if ($invoice->bundleEnrollments->count() > 0) {
+                Log::info('Processing bundle enrollments', [
+                    'invoice_code' => $invoice->invoice_code,
+                    'bundle_count' => $invoice->bundleEnrollments->count()
+                ]);
+
                 foreach ($invoice->bundleEnrollments as $bundleEnrollment) {
                     $bundleEnrollment->createIndividualEnrollments();
 
-                    // Add to certificate participants for each item
                     $bundle = $bundleEnrollment->bundle;
+
+                    Log::info('Processing bundle items', [
+                        'bundle_id' => $bundle->id,
+                        'items_count' => $bundle->bundleItems->count()
+                    ]);
+
                     foreach ($bundle->bundleItems as $item) {
                         $type = $item->getTypeSlug();
                         $this->addToCertificateParticipants($type, $item->bundleable_id, $invoice->user_id);
+
+                        Log::info('Added to certificate', [
+                            'type' => $type,
+                            'item_id' => $item->bundleable_id,
+                            'user_id' => $invoice->user_id
+                        ]);
                     }
                 }
             }
@@ -801,7 +837,19 @@ class InvoiceController extends Controller
         $itemData = null;
         $typeInfo = null;
 
-        if ($invoice->courseItems->count() > 0) {
+        if ($invoice->bundleEnrollments->count() > 0) {
+            $itemType = 'bundle';
+            $bundleEnrollment = $invoice->bundleEnrollments->first();
+            $bundle = $bundleEnrollment->bundle;
+
+            $typeInfo = [
+                'icon' => '📦',
+                'name' => 'Paket Bundling',
+                'menu' => 'Dashboard',
+                'title' => $bundle->title,
+                'item' => $bundle
+            ];
+        } elseif ($invoice->courseItems->count() > 0) {
             $itemType = 'course';
             $itemData = $invoice->courseItems->first();
             $typeInfo = [
@@ -849,6 +897,11 @@ class InvoiceController extends Controller
         $message .= "🧾 " . ($isFreePurchase ? 'Kode' : 'Invoice') . ": *{$invoice->invoice_code}*\n";
         $message .= "{$typeInfo['icon']} {$typeInfo['name']}: *{$typeInfo['title']}*\n";
 
+        if ($itemType === 'bundle') {
+            $bundle = $typeInfo['item'];
+            $message .= "📦 Berisi: *{$bundle->bundle_items_count} Program*\n";
+        }
+
         if ($isFreePurchase) {
             $message .= "💰 Biaya: *GRATIS* 🎉\n";
         } else {
@@ -864,8 +917,13 @@ class InvoiceController extends Controller
         $message .= "*Cara Mengakses:*\n";
         $message .= "1. Login ke akun Anda: {$loginUrl}\n";
         $message .= "2. Kunjungi dashboard: {$profileUrl}\n";
-        $message .= "3. Pilih menu '{$typeInfo['menu']}'\n";
-        $message .= "4. Mulai belajar dan raih sertifikat! 🎓\n\n";
+        if ($itemType === 'bundle') {
+            $message .= "3. Semua program sudah bisa diakses dari menu masing-masing\n";
+            $message .= "4. Mulai belajar dan raih sertifikat untuk setiap program! 🎓\n\n";
+        } else {
+            $message .= "3. Pilih menu '{$typeInfo['menu']}'\n";
+            $message .= "4. Mulai belajar dan raih sertifikat! 🎓\n\n";
+        }
 
         if ($itemType === 'webinar') {
             $webinar = $typeInfo['item'];

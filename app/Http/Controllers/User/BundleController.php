@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\User;
 
-use App\Http\Controllers\Controller;
-use App\Models\Bundle;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\Bundle;
+use App\Models\Invoice;
+use Illuminate\Http\Request;
+use App\Models\EnrollmentBundle;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class BundleController extends Controller
 {
@@ -36,8 +39,10 @@ class BundleController extends Controller
         ]);
     }
 
-    public function detail(Bundle $bundle)
+    public function detail(Request $request, Bundle $bundle)
     {
+        $this->handleReferralCode($request);
+
         if ($bundle->status !== 'published') {
             abort(404);
         }
@@ -114,5 +119,103 @@ class BundleController extends Controller
             'discountPercentage' => $discountPercentage,
             'relatedBundles' => $relatedBundles,
         ]);
+    }
+
+    public function showCheckout(Request $request, Bundle $bundle)
+    {
+        $this->handleReferralCode($request);
+
+        if (!Auth::check()) {
+            $currentUrl = $request->fullUrl();
+            return redirect()->route('login', ['redirect' => $currentUrl]);
+        }
+
+        if ($bundle->status !== 'published') {
+            abort(404);
+        }
+
+        if ($bundle->registration_deadline && now()->gt($bundle->registration_deadline)) {
+            return redirect()->route('bundle.show', $bundle->slug)
+                ->with('error', 'Pendaftaran untuk bundle ini sudah ditutup.');
+        }
+
+        if ($bundle->price === 0) {
+            return redirect()->route('bundle.show', $bundle->slug)
+                ->with('error', 'Bundle ini gratis, tidak perlu checkout.');
+        }
+
+        $bundle->load([
+            'bundleItems' => function ($query) {
+                $query->orderBy('order');
+            },
+            'bundleItems.bundleable' => function ($query) {
+                $query->select(['id', 'title', 'slug', 'price', 'thumbnail']);
+            }
+        ]);
+
+        $bundle->bundle_items_count = $bundle->bundleItems->count();
+        $totalOriginalPrice = $bundle->bundleItems->sum('price');
+        $bundle->strikethrough_price = $totalOriginalPrice;
+
+        $hasAccess = false;
+        $pendingInvoiceUrl = null;
+        $userId = Auth::id();
+
+        $hasAccess = EnrollmentBundle::whereHas('invoice', function ($query) use ($userId) {
+            $query->where('user_id', $userId)
+                ->where('status', 'paid');
+        })
+            ->where('bundle_id', $bundle->id)
+            ->exists();
+
+        if (!$hasAccess) {
+            $pendingInvoice = Invoice::where('user_id', $userId)
+                ->where('status', 'pending')
+                ->whereHas('bundleEnrollments', function ($query) use ($bundle) {
+                    $query->where('bundle_id', $bundle->id);
+                })
+                ->where(function ($query) {
+                    $query->whereNull('expires_at')
+                        ->orWhere('expires_at', '>', now());
+                })
+                ->latest()
+                ->first();
+
+            if ($pendingInvoice && $pendingInvoice->invoice_url) {
+                $pendingInvoiceUrl = $pendingInvoice->invoice_url;
+            }
+        }
+
+        return Inertia::render('user/bundling/checkout/index', [
+            'bundle' => $bundle,
+            'hasAccess' => $hasAccess,
+            'pendingInvoiceUrl' => $pendingInvoiceUrl,
+            'referralInfo' => $this->getReferralInfo(),
+        ]);
+    }
+
+    /**
+     * Handle referral code dari URL parameter
+     */
+    private function handleReferralCode(Request $request): void
+    {
+        $referralCode = $request->query('ref');
+
+        if ($referralCode) {
+            session([
+                'referral_code' => $referralCode,
+            ]);
+        }
+    }
+
+    /**
+     * Get referral info untuk frontend
+     */
+    private function getReferralInfo(): array
+    {
+        return [
+            'code' => session('referral_code'),
+            'hasActive' => session('referral_code') && session('referral_code') !== 'ATM2025',
+        ];
     }
 }
