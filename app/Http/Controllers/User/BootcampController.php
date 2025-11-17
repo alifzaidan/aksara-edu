@@ -48,7 +48,8 @@ class BootcampController extends Controller
             ->where('status', 'published')
             ->where('category_id', $bootcamp->category_id)
             ->where('id', '!=', $bootcamp->id)
-            ->orderBy('created_at', 'desc')
+            ->where('registration_deadline', '>=', now())
+            ->orderBy('registration_deadline', 'asc')
             ->limit(3)
             ->get();
 
