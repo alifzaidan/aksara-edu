@@ -115,8 +115,18 @@ class DiscountCodeController extends Controller
             return back()->withErrors(['value' => 'Persentase tidak boleh lebih dari 100%']);
         }
 
+        $data = $request->except(['applicable_products']);
+
+        foreach (['starts_at', 'expires_at'] as $field) {
+            if (!empty($data[$field])) {
+                $data[$field] = \Carbon\Carbon::parse($data[$field])
+                    ->setTimezone(config('app.timezone'))
+                    ->format('Y-m-d H:i:s');
+            }
+        }
+
         if ($request->applicable_products && count($request->applicable_products) > 0) {
-            $startsAt = new \DateTime($request->starts_at);
+            $startsAt = new \DateTime($data['starts_at']);
 
             foreach ($request->applicable_products as $product) {
                 if ($product['type'] === 'bootcamp') {
@@ -150,7 +160,6 @@ class DiscountCodeController extends Controller
             })->toArray();
         }
 
-        $data = $request->except(['applicable_products']);
         $data['applicable_ids'] = $applicableIds;
 
         DiscountCode::create($data);
@@ -359,8 +368,18 @@ class DiscountCodeController extends Controller
             return back()->withErrors(['value' => 'Persentase tidak boleh lebih dari 100%']);
         }
 
+        $data = $request->except(['applicable_products']);
+
+        foreach (['starts_at', 'expires_at'] as $field) {
+            if (!empty($data[$field])) {
+                $data[$field] = \Carbon\Carbon::parse($data[$field])
+                    ->setTimezone(config('app.timezone'))
+                    ->format('Y-m-d H:i:s');
+            }
+        }
+
         if ($request->applicable_products && count($request->applicable_products) > 0) {
-            $startsAt = new \DateTime($request->starts_at);
+            $startsAt = new \DateTime($data['starts_at']);
 
             foreach ($request->applicable_products as $product) {
                 if ($product['type'] === 'bootcamp') {
@@ -394,7 +413,6 @@ class DiscountCodeController extends Controller
             })->toArray();
         }
 
-        $data = $request->except(['applicable_products']);
         $data['applicable_ids'] = $applicableIds;
 
         $discountCode->update($data);
