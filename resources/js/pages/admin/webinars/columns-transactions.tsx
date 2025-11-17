@@ -4,12 +4,11 @@ import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { CheckCircle, Clock, FileText, Image, MessageSquare, Star, User, UserCheck2 } from 'lucide-react';
+import { CheckCircle, Clock, FileText, Image, User, UserCheck2 } from 'lucide-react';
 
 interface User {
     id: string;
@@ -44,8 +43,6 @@ export interface WebinarItem {
     completed_at: string | null;
     attendance_proof: string | null;
     attendance_verified: boolean;
-    review: string | null;
-    rating: number | null;
     free_requirement: FreeRequirement | null;
 }
 
@@ -221,60 +218,6 @@ function AttendanceModal({ webinarItem, userName }: { webinarItem: WebinarItem; 
     );
 }
 
-function ReviewModal({ webinarItem, userName }: { webinarItem: WebinarItem; userName: string }) {
-    const renderStars = (rating: number) => {
-        return Array.from({ length: 5 }, (_, i) => (
-            <Star key={i} className={`size-4 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
-        ));
-    };
-
-    return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
-                    <MessageSquare className="size-4" />
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <MessageSquare className="size-5" />
-                        Review & Rating - {userName}
-                    </DialogTitle>
-                </DialogHeader>
-
-                <div className="mt-4 space-y-4">
-                    {/* Rating Section */}
-                    <div className="space-y-2">
-                        <h4 className="text-sm font-semibold">Rating Webinar</h4>
-                        {webinarItem.rating ? (
-                            <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-1">{renderStars(webinarItem.rating)}</div>
-                                <span className="text-muted-foreground text-sm">({webinarItem.rating}/5)</span>
-                            </div>
-                        ) : (
-                            <p className="text-muted-foreground text-sm">Belum memberikan rating</p>
-                        )}
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-2">
-                        <h4 className="text-sm font-semibold">Review Webinar</h4>
-                        {webinarItem.review ? (
-                            <div className="rounded-lg border bg-gray-50 p-4 dark:bg-gray-800">
-                                <p className="text-sm leading-relaxed">{webinarItem.review}</p>
-                            </div>
-                        ) : (
-                            <p className="text-muted-foreground text-sm">Belum memberikan review</p>
-                        )}
-                    </div>
-                </div>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
 export const columns: ColumnDef<Invoice>[] = [
     {
         accessorKey: 'user.name',
@@ -301,21 +244,6 @@ export const columns: ColumnDef<Invoice>[] = [
         accessorKey: 'user.referrer.name',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Afiliasi" />,
         cell: ({ row }) => <p>{row.original.user.referrer?.name || '-'}</p>,
-    },
-    {
-        id: 'rating',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Rating" />,
-        cell: ({ row }) => {
-            const webinarItem = row.original.webinar_items[0];
-            if (!webinarItem?.rating) return <div className="text-gray-400">-</div>;
-
-            return (
-                <div className="flex items-center gap-1">
-                    <Star className="size-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm font-medium">{webinarItem.rating}/5</span>
-                </div>
-            );
-        },
     },
     {
         accessorKey: 'status',
@@ -391,17 +319,6 @@ export const columns: ColumnDef<Invoice>[] = [
                         </TooltipTrigger>
                         <TooltipContent>
                             <p>Lihat Bukti Kehadiran</p>
-                        </TooltipContent>
-                    </Tooltip>
-
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <div>
-                                <ReviewModal webinarItem={webinarItem} userName={invoice.user?.name || 'Unknown'} />
-                            </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Lihat Review & Rating</p>
                         </TooltipContent>
                     </Tooltip>
                 </div>

@@ -10,9 +10,11 @@ import { id } from 'date-fns/locale';
 import { AlertTriangle, Award, CircleX, Copy, Plus, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { WebinarRating } from './columns-ratings';
 import { Invoice } from './columns-transactions';
 import AddRecordingDialog from './create-recording-url';
 import WebinarDetail from './show-details';
+import WebinarRatingComponent from './show-ratings';
 import WebinarTransaction from './show-transactions';
 
 interface Webinar {
@@ -54,6 +56,8 @@ interface Certificate {
 interface WebinarProps {
     webinar: Webinar;
     transactions: Invoice[];
+    ratings: WebinarRating[];
+    averageRating: number;
     certificate?: Certificate | null;
     flash?: {
         success?: string;
@@ -61,7 +65,7 @@ interface WebinarProps {
     };
 }
 
-export default function ShowWebinar({ webinar, transactions, certificate, flash }: WebinarProps) {
+export default function ShowWebinar({ webinar, transactions, ratings, averageRating, certificate, flash }: WebinarProps) {
     const { auth } = usePage<SharedData>().props;
     const role = auth.role[0];
     const isAffiliate = role === 'affiliate';
@@ -123,12 +127,20 @@ export default function ShowWebinar({ webinar, transactions, certificate, flash 
                         <TabsList>
                             <TabsTrigger value="detail">Detail</TabsTrigger>
                             {!isAffiliate && (
-                                <TabsTrigger value="transaksi">
-                                    Peserta & Transaksi
-                                    {transactions.length > 0 && (
-                                        <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{paidTransactions.length}</span>
-                                    )}
-                                </TabsTrigger>
+                                <>
+                                    <TabsTrigger value="transaksi">
+                                        Peserta & Transaksi
+                                        {transactions.length > 0 && (
+                                            <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{paidTransactions.length}</span>
+                                        )}
+                                    </TabsTrigger>
+                                    <TabsTrigger value="rating">
+                                        Rating & Ulasan
+                                        {ratings.length > 0 && (
+                                            <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{ratings.length}</span>
+                                        )}
+                                    </TabsTrigger>
+                                </>
                             )}
                         </TabsList>
                         <TabsContent value="detail">
@@ -136,6 +148,9 @@ export default function ShowWebinar({ webinar, transactions, certificate, flash 
                         </TabsContent>
                         <TabsContent value="transaksi">
                             <WebinarTransaction transactions={transactions} />
+                        </TabsContent>
+                        <TabsContent value="rating">
+                            <WebinarRatingComponent ratings={ratings} averageRating={averageRating} />
                         </TabsContent>
                     </Tabs>
 

@@ -125,9 +125,35 @@ class WebinarController extends Controller
             ->latest()
             ->get();
 
+        $ratings = $transactions->flatMap(function ($invoice) {
+            return $invoice->webinarItems->map(function ($item) use ($invoice) {
+                if ($item->rating && $item->review) {
+                    return [
+                        'id' => $item->id,
+                        'user' => [
+                            'id' => $invoice->user->id,
+                            'name' => $invoice->user->name,
+                        ],
+                        'rating' => $item->rating,
+                        'review' => $item->review,
+                        'created_at' => $item->reviewed_at ?? $item->updated_at,
+                    ];
+                }
+                return null;
+            })->filter();
+        })->values();
+
+        $averageRating = $ratings->avg('rating') ?? 0;
+
         $certificate = Certificate::where('webinar_id', $id)->first();
 
-        return Inertia::render('admin/webinars/show', ['webinar' => $webinar, 'transactions' => $transactions, 'certificate' => $certificate]);
+        return Inertia::render('admin/webinars/show', [
+            'webinar' => $webinar,
+            'transactions' => $transactions,
+            'ratings' => $ratings,
+            'averageRating' => round($averageRating, 1),
+            'certificate' => $certificate
+        ]);
     }
 
     public function edit(string $id)

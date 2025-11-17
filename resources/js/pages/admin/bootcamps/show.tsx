@@ -10,8 +10,10 @@ import { id } from 'date-fns/locale';
 import { Award, CircleX, Copy, Plus, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { BootcampRating } from './columns-ratings';
 import { Invoice } from './columns-transactions';
 import BootcampDetail from './show-details';
+import BootcampRatingComponent from './show-ratings';
 import BootcampTransaction from './show-transactions';
 
 interface BootcampSchedule {
@@ -65,6 +67,8 @@ interface Certificate {
 interface BootcampProps {
     bootcamp: Bootcamp;
     transactions: Invoice[];
+    ratings: BootcampRating[]; // ✅ TAMBAHAN
+    averageRating: number; // ✅ TAMBAHAN
     certificate?: Certificate | null;
     flash?: {
         success?: string;
@@ -72,12 +76,13 @@ interface BootcampProps {
     };
 }
 
-export default function ShowBootcamp({ bootcamp, transactions, certificate, flash }: BootcampProps) {
+export default function ShowBootcamp({ bootcamp, transactions, ratings, averageRating, certificate, flash }: BootcampProps) {
     const { auth } = usePage<SharedData>().props;
     const role = auth.role[0];
     const isAffiliate = role === 'affiliate';
 
     const totalSchedules = bootcamp.schedules?.length || 0;
+    const paidTransactions = transactions.filter((t) => t.status === 'paid');
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -113,12 +118,21 @@ export default function ShowBootcamp({ bootcamp, transactions, certificate, flas
                         <TabsList>
                             <TabsTrigger value="detail">Detail</TabsTrigger>
                             {!isAffiliate && (
-                                <TabsTrigger value="transaksi">
-                                    Peserta & Transaksi
-                                    {transactions.length > 0 && (
-                                        <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{transactions.length}</span>
-                                    )}
-                                </TabsTrigger>
+                                <>
+                                    <TabsTrigger value="transaksi">
+                                        Peserta & Transaksi
+                                        {transactions.length > 0 && (
+                                            <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{paidTransactions.length}</span>
+                                        )}
+                                    </TabsTrigger>
+                                    {/* ✅ TAMBAHAN: Tab Rating */}
+                                    <TabsTrigger value="rating">
+                                        Rating & Ulasan
+                                        {ratings.length > 0 && (
+                                            <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{ratings.length}</span>
+                                        )}
+                                    </TabsTrigger>
+                                </>
                             )}
                         </TabsList>
                         <TabsContent value="detail">
@@ -126,6 +140,9 @@ export default function ShowBootcamp({ bootcamp, transactions, certificate, flas
                         </TabsContent>
                         <TabsContent value="transaksi">
                             <BootcampTransaction transactions={transactions} totalSchedules={totalSchedules} />
+                        </TabsContent>
+                        <TabsContent value="rating">
+                            <BootcampRatingComponent ratings={ratings} averageRating={averageRating} />
                         </TabsContent>
                     </Tabs>
 
@@ -236,9 +253,9 @@ export default function ShowBootcamp({ bootcamp, transactions, certificate, flas
                                     ) : (
                                         <div className="text-muted-foreground text-center text-sm">
                                             <Award className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                                            <p>Belum ada sertifikat untuk kelas ini.</p>
+                                            <p>Belum ada sertifikat untuk bootcamp ini.</p>
                                             <p className="mt-1 text-xs">
-                                                Buat sertifikat untuk memberikan penghargaan kepada peserta yang menyelesaikan kelas.
+                                                Buat sertifikat untuk memberikan penghargaan kepada peserta yang menyelesaikan bootcamp.
                                             </p>
                                         </div>
                                     )}

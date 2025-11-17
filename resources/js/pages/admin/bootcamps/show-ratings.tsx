@@ -1,0 +1,53 @@
+import { Star } from 'lucide-react';
+import { columns, type BootcampRating } from './columns-ratings';
+import { DataTable } from './data-table.ratings';
+
+interface BootcampRatingComponentProps {
+    ratings: BootcampRating[];
+    averageRating?: number;
+}
+
+export default function BootcampRatingComponent({ ratings, averageRating = 0 }: BootcampRatingComponentProps) {
+    return (
+        <div className="h-full space-y-6 rounded-lg border p-4">
+            <div className="flex items-center justify-between">
+                <h2 className="text-lg font-medium">Rating dan Ulasan</h2>
+                <div className="text-sm text-gray-500">Total: {ratings.length} rating</div>
+            </div>
+
+            {ratings.length > 0 ? (
+                <div className="space-y-4">
+                    <div className="rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50 p-6 dark:from-yellow-900/20 dark:to-orange-900/20">
+                        <div className="text-center">
+                            <div className="mb-2 flex items-center justify-center gap-2">
+                                <div className="flex items-center gap-1">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <Star
+                                            key={star}
+                                            size={24}
+                                            className={`${star <= Math.round(averageRating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{averageRating.toFixed(1)}</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">Berdasarkan {ratings.length} ulasan</div>
+                        </div>
+                    </div>
+
+                    <DataTable columns={columns} data={ratings} />
+                </div>
+            ) : (
+                <div className="flex flex-col items-center justify-center gap-4 py-12">
+                    <img src="/assets/images/not-found.webp" alt="Rating dan Ulasan Tidak Tersedia" className="w-48" />
+                    <div className="text-center">
+                        <p className="text-muted-foreground text-sm">Belum ada rating dan ulasan untuk bootcamp ini.</p>
+                        <p className="mt-1 text-xs text-gray-400">
+                            Rating akan muncul setelah peserta menyelesaikan bootcamp dan memberikan penilaian.
+                        </p>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
