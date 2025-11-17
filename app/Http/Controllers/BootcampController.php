@@ -66,6 +66,7 @@ class BootcampController extends Controller
             'quota' => 'required|integer|min:0',
             'batch' => 'nullable|string|max:255',
             'group_url' => 'nullable|string',
+            'has_submission_link' => 'nullable|boolean',
             'tools' => 'nullable|array',
         ]);
 
@@ -192,6 +193,7 @@ class BootcampController extends Controller
             'quota' => 'required|integer|min:0',
             'batch' => 'nullable|string|max:255',
             'group_url' => 'nullable|string',
+            'has_submission_link' => 'nullable|boolean',
             'tools' => 'nullable|array',
         ]);
 
@@ -343,5 +345,39 @@ class BootcampController extends Controller
         $bootcamp->save();
 
         return back()->with('success', 'Bootcamp berhasil ditutup.');
+    }
+
+    public function addScheduleRecording(Request $request, string $bootcampId, string $scheduleId)
+    {
+        $request->validate([
+            'recording_url' => 'required|url|max:255',
+        ]);
+
+        $bootcamp = Bootcamp::findOrFail($bootcampId);
+        $schedule = BootcampSchedule::where('bootcamp_id', $bootcamp->id)
+            ->where('id', $scheduleId)
+            ->firstOrFail();
+
+        $schedule->recording_url = $request->recording_url;
+        $schedule->save();
+
+        return back()->with('success', 'Link rekaman berhasil diperbarui untuk jadwal ini.');
+    }
+
+    public function removeScheduleRecording(string $bootcampId, string $scheduleId)
+    {
+        $bootcamp = Bootcamp::findOrFail($bootcampId);
+        $schedule = BootcampSchedule::where('bootcamp_id', $bootcamp->id)
+            ->where('id', $scheduleId)
+            ->firstOrFail();
+
+        if (!$schedule->recording_url) {
+            return back()->with('error', 'Tidak ada link rekaman untuk dihapus pada jadwal ini.');
+        }
+
+        $schedule->recording_url = null;
+        $schedule->save();
+
+        return back()->with('success', 'Link rekaman berhasil dihapus dari jadwal ini.');
     }
 }

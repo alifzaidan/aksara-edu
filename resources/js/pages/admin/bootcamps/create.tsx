@@ -53,6 +53,7 @@ const formSchema = z
         price: z.number().min(0),
         quota: z.number().min(0),
         group_url: z.string().nullable(),
+        has_submission_link: z.boolean().optional(),
         batch: z.number().min(0),
         tools: z.array(z.string()).optional(),
     })
@@ -119,6 +120,7 @@ export default function CreateBootcamp({ categories, tools }: { categories: { id
             price: 0,
             quota: 0,
             group_url: '',
+            has_submission_link: false,
             batch: 1,
             tools: [],
         },
@@ -816,6 +818,22 @@ export default function CreateBootcamp({ categories, tools }: { categories: { id
                                     </FormItem>
                                 )}
                             />
+                            <div className="flex items-center space-x-2">
+                                <FormField
+                                    control={form.control}
+                                    name="has_submission_link"
+                                    render={({ field }) => (
+                                        <FormItem className="flex items-center space-y-0 space-x-2">
+                                            <FormControl>
+                                                <Switch id="has-submission-link" checked={field.value} onCheckedChange={field.onChange} />
+                                            </FormControl>
+                                            <Label htmlFor="has-submission-link" className="cursor-pointer font-normal">
+                                                Apakah bootcamp ini memiliki link submission?
+                                            </Label>
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
                         </div>
                         <Button type="submit" className="hover:cursor-pointer">
                             Simpan Draft

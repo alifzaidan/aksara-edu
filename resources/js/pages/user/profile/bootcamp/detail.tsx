@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Award, BadgeCheck, Calendar, CheckCircle, Clock, Download, Eye, Upload, Users, X } from 'lucide-react';
+import { ArrowLeft, Award, BadgeCheck, Calendar, CheckCircle, Clock, Download, Eye, LinkIcon, MessageSquare, Upload, Users, X } from 'lucide-react';
 import { useState } from 'react';
 
 interface Category {
@@ -49,6 +49,7 @@ interface Bootcamp {
     status: string;
     schedules: BootcampSchedule[];
     user_id: string;
+    has_submission_link: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -61,6 +62,11 @@ interface EnrollmentBootcampItem {
     progress: number;
     completed_at: string | null;
     attendances: BootcampAttendance[];
+    submission?: string | null;
+    submission_verified: boolean;
+    rating?: number | null;
+    review?: string | null;
+    reviewed_at?: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -104,6 +110,34 @@ function parseList(items?: string | null): string[] {
     return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
 }
 
+const StarRating = ({
+    rating,
+    onRatingChange,
+    readonly = false,
+}: {
+    rating: number;
+    onRatingChange?: (rating: number) => void;
+    readonly?: boolean;
+}) => {
+    return (
+        <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                    key={star}
+                    type="button"
+                    disabled={readonly}
+                    onClick={() => !readonly && onRatingChange?.(star)}
+                    className={`text-2xl transition-colors ${
+                        star <= rating ? 'text-yellow-400' : readonly ? 'text-gray-300' : 'text-gray-300 hover:text-yellow-300'
+                    } ${readonly ? 'cursor-default' : 'cursor-pointer'}`}
+                >
+                    ★
+                </button>
+            ))}
+        </div>
+    );
+};
+
 export default function DetailMyBootcamp({ bootcamp, certificate, certificateParticipant }: DetailBootcampProps) {
     const bootcampItem = bootcamp.bootcamp_items?.[0];
     const bootcampData = bootcampItem?.bootcamp;
@@ -112,11 +146,19 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
     const curriculumList = parseList(bootcampData.curriculum);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Attendance states
     const [showUploadForms, setShowUploadForms] = useState<{ [key: string]: boolean }>({});
     const [selectedFiles, setSelectedFiles] = useState<{ [key: string]: File | null }>({});
     const [notes, setNotes] = useState<{ [key: string]: string }>({});
     const [uploading, setUploading] = useState<{ [key: string]: boolean }>({});
+
+    const [showSubmissionForm, setShowSubmissionForm] = useState(false);
+    const [submissionUrl, setSubmissionUrl] = useState(bootcampItem?.submission || '');
+    const [submittingSubmission, setSubmittingSubmission] = useState(false);
+
+    const [showReviewForm, setShowReviewForm] = useState(false);
+    const [reviewText, setReviewText] = useState(bootcampItem?.review || '');
+    const [rating, setRating] = useState(bootcampItem?.rating || 0);
+    const [submittingReview, setSubmittingReview] = useState(false);
 
     const handleIframeLoad = () => {
         setIsLoading(false);
@@ -174,6 +216,69 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
         return bootcampItem?.attendances?.find((att) => att.bootcamp_schedule_id === scheduleId);
     };
 
+    const handleSubmitSubmission = () => {
+        if (!submissionUrl.trim() || !bootcampItem) {
+            alert('Mohon isi link submission');
+            return;
+        }
+
+        setSubmittingSubmission(true);
+
+        router.post(
+            route('profile.bootcamp.submission.submit'),
+            {
+                submission: submissionUrl,
+                enrollment_id: bootcampItem.id,
+            },
+            {
+                preserveState: false,
+                preserveScroll: true,
+                onSuccess: () => {
+                    setShowSubmissionForm(false);
+                },
+                onError: (errors) => {
+                    console.error('Submit errors:', errors);
+                    alert('Gagal mengirim submission');
+                },
+                onFinish: () => {
+                    setSubmittingSubmission(false);
+                },
+            },
+        );
+    };
+
+    const handleSubmitReview = () => {
+        if (!reviewText.trim() || rating === 0 || !bootcampItem) {
+            alert('Mohon lengkapi rating dan review');
+            return;
+        }
+
+        setSubmittingReview(true);
+
+        router.post(
+            route('profile.bootcamp.review.submit'),
+            {
+                rating: rating,
+                review: reviewText,
+                enrollment_id: bootcampItem.id,
+            },
+            {
+                preserveState: false,
+                preserveScroll: true,
+                onSuccess: () => {
+                    setShowReviewForm(false);
+                },
+                onError: (errors) => {
+                    console.error('Submit errors:', errors);
+                    alert('Gagal mengirim review');
+                },
+                onFinish: () => {
+                    setSubmittingReview(false);
+                },
+            },
+        );
+    };
+
     if (!bootcampData || !bootcampItem) {
         return (
             <UserLayout>
@@ -187,14 +292,21 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
 
     const bootcampEndDate = new Date(bootcampData.end_date);
     bootcampEndDate.setHours(23, 59, 59, 999);
-    const isCompleted = bootcampEndDate < new Date();
+    const lastSchedule = bootcampData.schedules?.[bootcampData.schedules.length - 1];
+    const isCompleted = lastSchedule ? new Date(`${lastSchedule.schedule_date}T${lastSchedule.end_time}`) < new Date() : bootcampEndDate < new Date();
 
     // Check attendance completion
     const totalSchedules = bootcampData.schedules?.length || 0;
     const verifiedAttendances = bootcampItem.attendances?.filter((att) => att.verified).length || 0;
     const allAttendanceVerified = totalSchedules > 0 && verifiedAttendances === totalSchedules;
 
-    const hasCertificate = certificate && isCompleted && bootcampInvoiceStatus === 'paid' && allAttendanceVerified;
+    const needsSubmission = bootcampData.has_submission_link;
+    const hasSubmission = bootcampItem.submission && bootcampItem.submission_verified;
+
+    const hasReview = bootcampItem.rating && bootcampItem.review;
+
+    const hasCertificate =
+        certificate && isCompleted && bootcampInvoiceStatus === 'paid' && allAttendanceVerified && (!needsSubmission || hasSubmission) && hasReview;
 
     return (
         <UserLayout>
@@ -276,6 +388,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                 </div>
                             </section>
                         )}
+
                         {bootcampInvoiceStatus === 'paid' && bootcampData.schedules && bootcampData.schedules.length > 0 && (
                             <div className="rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 p-6 dark:border-purple-800 dark:from-purple-900/20 dark:to-pink-900/20">
                                 <div className="mb-4 flex items-center gap-3">
@@ -508,7 +621,189 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                             </div>
                         )}
 
-                        {/* Period and Schedule Info */}
+                        {bootcampInvoiceStatus === 'paid' && needsSubmission && allAttendanceVerified && isCompleted && (
+                            <div className="rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50 p-6 dark:border-blue-800 dark:from-blue-900/20 dark:to-cyan-900/20">
+                                <div className="mb-4 flex items-center gap-3">
+                                    <LinkIcon className="text-blue-600" size={24} />
+                                    <div>
+                                        <h2 className="text-xl font-bold text-blue-800 dark:text-blue-200">Submission Project</h2>
+                                        <p className="text-sm text-blue-600 dark:text-blue-400">Upload link project akhir Bootcamp.</p>
+                                    </div>
+                                </div>
+
+                                {hasSubmission ? (
+                                    <div className="space-y-4">
+                                        <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
+                                            <div className="mb-2 flex items-center gap-2">
+                                                <CheckCircle size={20} className="text-green-600" />
+                                                <span className="font-medium text-green-800 dark:text-green-200">✅ Submission Terverifikasi</span>
+                                            </div>
+                                            <a
+                                                href={bootcampItem.submission!}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-sm break-all text-blue-600 hover:underline"
+                                            >
+                                                {bootcampItem.submission}
+                                            </a>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="rounded-lg bg-blue-100 p-4 dark:bg-blue-800/50">
+                                            <p className="text-center text-blue-800 dark:text-blue-200">
+                                                📦 Upload link project akhir Bootcamp Anda untuk melanjutkan.
+                                            </p>
+                                        </div>
+
+                                        {!showSubmissionForm ? (
+                                            <Button onClick={() => setShowSubmissionForm(true)} className="w-full bg-blue-600 hover:bg-blue-700">
+                                                <Upload size={16} className="mr-2" />
+                                                Upload Link Project Akhir
+                                            </Button>
+                                        ) : (
+                                            <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                                                <div className="flex items-center justify-between">
+                                                    <h4 className="font-medium">Formulir Submission</h4>
+                                                    <Button variant="ghost" size="sm" onClick={() => setShowSubmissionForm(false)}>
+                                                        <X size={16} />
+                                                    </Button>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="submission_url">
+                                                        Link Project Akhir <span className="text-red-500">*</span>
+                                                    </Label>
+                                                    <Input
+                                                        id="submission_url"
+                                                        type="url"
+                                                        value={submissionUrl}
+                                                        onChange={(e) => setSubmissionUrl(e.target.value)}
+                                                        placeholder="https://link-project-anda"
+                                                        className="w-full"
+                                                    />
+                                                    <p className="text-xs text-gray-500">Pastikan link dapat diakses secara publik</p>
+                                                </div>
+
+                                                <div className="flex gap-2">
+                                                    <Button variant="outline" onClick={() => setShowSubmissionForm(false)} className="flex-1">
+                                                        Batal
+                                                    </Button>
+                                                    <Button
+                                                        onClick={handleSubmitSubmission}
+                                                        disabled={!submissionUrl.trim() || submittingSubmission}
+                                                        className="flex-1 bg-blue-600 hover:bg-blue-700"
+                                                    >
+                                                        {submittingSubmission ? 'Mengirim...' : 'Kirim Submission'}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {bootcampInvoiceStatus === 'paid' &&
+                            allAttendanceVerified &&
+                            (!needsSubmission || hasSubmission) &&
+                            !hasReview &&
+                            isCompleted && (
+                                <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-6 dark:border-amber-800 dark:from-amber-900/20 dark:to-yellow-900/20">
+                                    <div className="mb-4 flex items-center gap-3">
+                                        <MessageSquare className="text-amber-600" size={24} />
+                                        <div>
+                                            <h2 className="text-xl font-bold text-amber-800 dark:text-amber-200">⭐ Rating & Review</h2>
+                                            <p className="text-sm text-amber-600 dark:text-amber-400">
+                                                Berikan penilaian untuk mendapatkan sertifikat
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="rounded-lg bg-amber-100 p-4 dark:bg-amber-800/50">
+                                            <p className="text-center text-amber-800 dark:text-amber-200">
+                                                🎯 Bagikan pengalaman Anda mengikuti bootcamp ini untuk mendapatkan sertifikat!
+                                            </p>
+                                        </div>
+
+                                        {!showReviewForm ? (
+                                            <Button onClick={() => setShowReviewForm(true)} className="w-full bg-amber-600 hover:bg-amber-700">
+                                                <MessageSquare size={16} className="mr-2" />
+                                                Berikan Rating & Review
+                                            </Button>
+                                        ) : (
+                                            <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                                                <div className="flex items-center justify-between">
+                                                    <h4 className="font-medium">Formulir Rating & Review</h4>
+                                                    <Button variant="ghost" size="sm" onClick={() => setShowReviewForm(false)}>
+                                                        <X size={16} />
+                                                    </Button>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label>
+                                                        Rating <span className="text-red-500">*</span>
+                                                    </Label>
+                                                    <StarRating rating={rating} onRatingChange={setRating} />
+                                                    <p className="text-xs text-gray-500">Berikan rating 1-5 bintang untuk bootcamp ini</p>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="review">
+                                                        Review <span className="text-red-500">*</span>
+                                                    </Label>
+                                                    <textarea
+                                                        id="review"
+                                                        value={reviewText}
+                                                        onChange={(e) => setReviewText(e.target.value)}
+                                                        placeholder="Bagikan pengalaman Anda mengikuti bootcamp ini..."
+                                                        className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                        rows={4}
+                                                        maxLength={500}
+                                                    />
+                                                    <p className="text-xs text-gray-500">Maksimal 500 karakter ({reviewText.length}/500)</p>
+                                                </div>
+
+                                                <div className="flex gap-2">
+                                                    <Button variant="outline" onClick={() => setShowReviewForm(false)} className="flex-1">
+                                                        Batal
+                                                    </Button>
+                                                    <Button
+                                                        onClick={handleSubmitReview}
+                                                        disabled={!reviewText.trim() || rating === 0 || submittingReview}
+                                                        className="flex-1 bg-amber-600 hover:bg-amber-700"
+                                                    >
+                                                        {submittingReview ? 'Mengirim...' : 'Kirim Review'}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                        {hasReview && (
+                            <div className="rounded-xl border border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-6 dark:border-green-800 dark:from-green-900/20 dark:to-emerald-900/20">
+                                <div className="mb-4 flex items-center gap-3">
+                                    <CheckCircle className="text-green-600" size={24} />
+                                    <div>
+                                        <h2 className="text-xl font-bold text-green-800 dark:text-green-200">✅ Review Terkirim</h2>
+                                        <p className="text-sm text-green-600 dark:text-green-400">Terima kasih atas review Anda!</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="rounded-lg bg-green-100 p-4 dark:bg-green-800/50">
+                                        <div className="mb-2">
+                                            <StarRating rating={bootcampItem.rating || 0} readonly />
+                                        </div>
+                                        <p className="text-green-800 dark:text-green-200">"{bootcampItem.review}"</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
                             <div className="mb-4 flex items-center gap-3">
                                 <Calendar className="text-blue-600" size={20} />
@@ -688,7 +983,11 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                       ? 'Selesaikan pembayaran untuk mendapatkan sertifikat.'
                                                       : !allAttendanceVerified
                                                         ? `Lengkapi bukti kehadiran (${verifiedAttendances}/${totalSchedules} terverifikasi).`
-                                                        : 'Sertifikat akan tersedia setelah bootcamp selesai.'}
+                                                        : needsSubmission && !hasSubmission
+                                                          ? 'Upload link submission project terlebih dahulu.'
+                                                          : !hasReview
+                                                            ? 'Berikan rating dan review untuk mendapatkan sertifikat.'
+                                                            : 'Sertifikat akan tersedia setelah bootcamp selesai.'}
                                             </p>
                                             <Button className="mt-3 w-full" disabled>
                                                 <Download size={16} className="mr-2" />
@@ -698,7 +997,11 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                       ? 'Selesaikan Pembayaran'
                                                       : !allAttendanceVerified
                                                         ? 'Lengkapi Kehadiran'
-                                                        : 'Menunggu Bootcamp Selesai'}
+                                                        : needsSubmission && !hasSubmission
+                                                          ? 'Upload Submission'
+                                                          : !hasReview
+                                                            ? 'Berikan Review'
+                                                            : 'Menunggu Bootcamp Selesai'}
                                             </Button>
                                         </>
                                     )}

@@ -18,6 +18,11 @@ return new class extends Migration
             $table->bigInteger('price');
             $table->timestamp('completed_at')->nullable();
             $table->integer('progress')->default(0);
+            $table->string('submission')->nullable();
+            $table->boolean('submission_verified')->default(false);
+            $table->integer('rating')->nullable();
+            $table->text('review')->nullable();
+            $table->timestamp('reviewed_at')->nullable();
             $table->timestamps();
         });
     }

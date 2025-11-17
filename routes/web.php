@@ -81,7 +81,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile/my-courses/{course}/certificate/preview', [ProfileCourseController::class, 'previewCertificate'])->name('profile.course.certificate.preview');
     Route::get('/profile/my-bootcamps', [ProfileBootcampController::class, 'index'])->name('profile.bootcamps');
     Route::get('/profile/my-bootcamps/{bootcamp}', [ProfileBootcampController::class, 'detail'])->name('profile.bootcamp.detail');
-    Route::post('/profile/bootcamp/attendance/upload', [ProfileBootcampController::class, 'uploadAttendanceProof'])->name('profile.bootcamp.attendance.upload');
+    Route::post('/profile/my-bootcamps/attendance/upload', [ProfileBootcampController::class, 'uploadAttendanceProof'])->name('profile.bootcamp.attendance.upload');
+    Route::post('/profile/my-bootcamps/submission/submit', [ProfileBootcampController::class, 'submitSubmission'])->name('profile.bootcamp.submission.submit');
+    Route::post('/profile/my-bootcamps/review/submit', [ProfileBootcampController::class, 'submitReview'])->name('profile.bootcamp.review.submit');
     Route::get('/profile/my-bootcamps/{bootcamp}/certificate', [ProfileBootcampController::class, 'downloadCertificate'])->name('profile.bootcamp.certificate');
     Route::get('/profile/my-bootcamps/{bootcamp}/certificate/preview', [ProfileBootcampController::class, 'previewCertificate'])->name('profile.bootcamp.certificate.preview');
     Route::get('/profile/my-webinars', [ProfileWebinarController::class, 'index'])->name('profile.webinars');
@@ -158,6 +160,8 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/bootcamps/{bootcamp}/publish', [BootcampController::class, 'publish'])->name('bootcamps.publish');
         Route::post('/bootcamps/{bootcamp}/archive', [BootcampController::class, 'archive'])->name('bootcamps.archive');
         Route::post('/bootcamps/{bootcamp}/duplicate', [BootcampController::class, 'duplicate'])->name('bootcamps.duplicate');
+        Route::post('/bootcamps/{bootcamp}/schedules/{schedule}/recording', [BootcampController::class, 'addScheduleRecording'])->name('bootcamps.add-recording');
+        Route::delete('/bootcamps/{bootcamp}/schedules/{schedule}/recording', [BootcampController::class, 'removeScheduleRecording'])->name('bootcamps.remove-recording');
 
         Route::resource('webinars', WebinarController::class);
         Route::post('/webinars/{webinar}/publish', [WebinarController::class, 'publish'])->name('webinars.publish');

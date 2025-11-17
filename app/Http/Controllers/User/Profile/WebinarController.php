@@ -96,6 +96,7 @@ class WebinarController extends Controller
             'attendance_verified' => true,
             'review' => $request->review,
             'rating' => $request->rating,
+            'reviewed_at' => now(),
         ]);
 
         return redirect()->back()->with('success', 'Bukti kehadiran dan review berhasil dikirim! Anda sekarang dapat mengunduh sertifikat.');

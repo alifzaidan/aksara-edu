@@ -14,11 +14,20 @@ import { Invoice } from './columns-transactions';
 import BootcampDetail from './show-details';
 import BootcampTransaction from './show-transactions';
 
+interface BootcampSchedule {
+    id: string;
+    schedule_date: string;
+    day: string;
+    start_time: string;
+    end_time: string;
+    recording_url?: string | null;
+}
+
 interface Bootcamp {
     id: string;
     title: string;
     category?: { name: string };
-    schedules?: { schedule_date: string; day: string; start_time: string; end_time: string }[];
+    schedules?: BootcampSchedule[];
     tools?: { name: string; description?: string | null; icon: string | null }[];
     batch?: string | null;
     strikethrough_price: number;
@@ -38,6 +47,7 @@ interface Bootcamp {
     curriculum?: string | null;
     host_name?: string | null;
     host_description?: string | null;
+    has_submission_link?: boolean;
     created_at: string | Date;
 }
 

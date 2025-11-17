@@ -47,6 +47,7 @@ interface Bootcamp {
     group_url?: string | null;
     host_name?: string | null;
     host_description?: string | null;
+    has_submission_link?: boolean;
     created_at: string | Date;
     tools?: { id: string; name: string; description?: string | null }[];
 }
@@ -70,6 +71,7 @@ const formSchema = z
         quota: z.number().min(0),
         group_url: z.string().nullable(),
         batch: z.number().min(0),
+        has_submission_link: z.boolean().optional(),
         tools: z.array(z.string()).optional(),
     })
     .refine(
@@ -140,6 +142,7 @@ export default function EditBootcamp({
             quota: bootcamp.quota ?? 0,
             group_url: bootcamp.group_url ?? '',
             batch: bootcamp.batch ?? 1,
+            has_submission_link: Boolean(bootcamp.has_submission_link),
             tools: bootcamp.tools?.map((tool) => tool.id) ?? [],
         },
     });
@@ -849,6 +852,22 @@ export default function EditBootcamp({
                                     </FormItem>
                                 )}
                             />
+                            <div className="flex items-center space-x-2">
+                                <FormField
+                                    control={form.control}
+                                    name="has_submission_link"
+                                    render={({ field }) => (
+                                        <FormItem className="flex items-center space-y-0 space-x-2">
+                                            <FormControl>
+                                                <Switch id="has-submission-link" checked={field.value} onCheckedChange={field.onChange} />
+                                            </FormControl>
+                                            <Label htmlFor="has-submission-link" className="cursor-pointer font-normal">
+                                                Apakah bootcamp ini memiliki link submission?
+                                            </Label>
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
                         </div>
                         <Button type="submit" className="hover:cursor-pointer">
                             Simpan Perubahan

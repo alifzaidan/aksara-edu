@@ -18,6 +18,7 @@ return new class extends Migration
             $table->enum('day', ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu', 'minggu']);
             $table->time('start_time');
             $table->time('end_time');
+            $table->string('recording_url')->nullable();
             $table->timestamps();
         });
     }

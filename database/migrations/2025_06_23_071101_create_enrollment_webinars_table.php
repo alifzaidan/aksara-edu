@@ -20,7 +20,9 @@ return new class extends Migration
             $table->integer('progress')->default(0);
             $table->string('attendance_proof')->nullable();
             $table->boolean('attendance_verified')->default(false);
+            $table->integer('rating')->nullable();
             $table->text('review')->nullable();
+            $table->timestamp('reviewed_at')->nullable();
             $table->timestamps();
         });
     }

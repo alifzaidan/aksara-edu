@@ -117,6 +117,58 @@ class BootcampController extends Controller
         return redirect()->back()->with('success', 'Bukti kehadiran berhasil diupload dan akan diverifikasi oleh tim kami.');
     }
 
+    public function submitSubmission(Request $request)
+    {
+        $userId = Auth::id();
+
+        $request->validate([
+            'submission' => 'required|url|max:255',
+            'enrollment_id' => 'required|exists:enrollment_bootcamps,id'
+        ]);
+
+        $enrollment = EnrollmentBootcamp::with('bootcamp')->findOrFail($request->enrollment_id);
+
+        if ($enrollment->invoice->user_id !== $userId) {
+            abort(403);
+        }
+
+        if (!$enrollment->bootcamp->has_submission_link) {
+            return back()->with('error', 'Bootcamp ini tidak memerlukan submission.');
+        }
+
+        $enrollment->update([
+            'submission' => $request->submission,
+            'submission_verified' => true
+        ]);
+
+        return redirect()->back()->with('success', 'Link submission berhasil dikirim!');
+    }
+
+    public function submitReview(Request $request)
+    {
+        $userId = Auth::id();
+
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'review' => 'required|string|max:500',
+            'enrollment_id' => 'required|exists:enrollment_bootcamps,id'
+        ]);
+
+        $enrollment = EnrollmentBootcamp::findOrFail($request->enrollment_id);
+
+        if ($enrollment->invoice->user_id !== $userId) {
+            abort(403);
+        }
+
+        $enrollment->update([
+            'rating' => $request->rating,
+            'review' => $request->review,
+            'reviewed_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Rating dan review berhasil dikirim! Anda sekarang dapat mengunduh sertifikat.');
+    }
+
     public function downloadCertificate($slug)
     {
         try {
@@ -144,11 +196,9 @@ class BootcampController extends Controller
                 return back()->with('error', 'Sertifikat belum tersedia. Bootcamp masih berlangsung.');
             }
 
-            $totalSchedules = $bootcampData->schedules->count();
-            $verifiedAttendances = $enrollment->attendances->where('verified', true)->count();
-
-            if ($verifiedAttendances < $totalSchedules) {
-                return back()->with('error', 'Silakan lengkapi dan verifikasi semua bukti kehadiran terlebih dahulu.');
+            if (!$enrollment->canDownloadCertificate()) {
+                $missing = $enrollment->getMissingRequirements();
+                return back()->with('error', 'Persyaratan belum lengkap: ' . implode(', ', $missing));
             }
 
             $certificate = Certificate::where('bootcamp_id', $bootcampData->id)->first();
@@ -199,15 +249,21 @@ class BootcampController extends Controller
             $bootcampEndDate = new \Carbon\Carbon($bootcampData->end_date);
             $bootcampEndDate->setTime(23, 59, 59);
 
-            if ($bootcampEndDate->isFuture()) {
-                return back()->with('error', 'Sertifikat belum tersedia. Bootcamp masih berlangsung.');
+            $schedules = $bootcampData->schedules()->orderBy('schedule_date', 'desc')->orderBy('end_time', 'desc')->first();
+
+            if ($schedules) {
+                $lastScheduleDateTime = new \Carbon\Carbon($schedules->schedule_date . ' ' . $schedules->end_time);
+
+                if ($lastScheduleDateTime->isFuture()) {
+                    return back()->with('error', 'Sertifikat belum tersedia. Bootcamp masih berlangsung.');
+                }
+            } else {
+                return back()->with('error', 'Jadwal bootcamp tidak ditemukan.');
             }
 
-            $totalSchedules = $bootcampData->schedules->count();
-            $verifiedAttendances = $enrollment->attendances->where('verified', true)->count();
-
-            if ($verifiedAttendances < $totalSchedules) {
-                return back()->with('error', 'Silakan lengkapi dan verifikasi semua bukti kehadiran terlebih dahulu.');
+            if (!$enrollment->canDownloadCertificate()) {
+                $missing = $enrollment->getMissingRequirements();
+                return back()->with('error', 'Persyaratan belum lengkap: ' . implode(', ', $missing));
             }
 
             $certificate = Certificate::where('bootcamp_id', $bootcampData->id)->first();

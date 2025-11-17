@@ -34,6 +34,7 @@ return new class extends Migration
             $table->string('bootcamp_url')->nullable();
             $table->string('registration_url')->nullable();
             $table->string('group_url')->nullable();
+            $table->boolean('has_submission_link')->default(false);
             $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->timestamps();
         });

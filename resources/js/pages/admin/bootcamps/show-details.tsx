@@ -1,21 +1,32 @@
+import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { rupiahFormatter } from '@/lib/utils';
 import { SharedData } from '@/types';
-import { usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { LinkIcon } from 'lucide-react';
-import { useMemo } from 'react';
+import { ExternalLink, LinkIcon, Trash2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import AddScheduleRecordingDialog from './create-schedule-recording';
+
+interface BootcampSchedule {
+    id: string;
+    schedule_date: string;
+    day: string;
+    start_time: string;
+    end_time: string;
+    recording_url?: string | null;
+}
 
 interface Bootcamp {
     id: string;
     title: string;
     category?: { name: string };
-    schedules?: { schedule_date: string; day: string; start_time: string; end_time: string }[];
+    schedules?: BootcampSchedule[];
     tools?: { name: string; description?: string | null; icon: string | null }[];
     batch?: string | null;
     strikethrough_price: number;
@@ -35,12 +46,20 @@ interface Bootcamp {
     curriculum?: string | null;
     host_name?: string | null;
     host_description?: string | null;
+    has_submission_link?: boolean;
     created_at: string | Date;
+}
+
+function getYoutubeId(url: string) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? match[2] : '';
 }
 
 export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
+    const [deletingScheduleId, setDeletingScheduleId] = useState<string | null>(null);
 
     const affiliateUrls = useMemo(() => {
         const affiliateCode = auth.user.affiliate_code;
@@ -93,6 +112,19 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
         } catch {
             toast.error('Gagal menyalin link bootcamp');
         }
+    };
+
+    const handleDeleteScheduleRecording = (scheduleId: string) => {
+        setDeletingScheduleId(scheduleId);
+
+        router.delete(route('bootcamps.remove-recording', { bootcamp: bootcamp.id, schedule: scheduleId }), {
+            onSuccess: () => {
+                setDeletingScheduleId(null);
+            },
+            onError: () => {
+                setDeletingScheduleId(null);
+            },
+        });
     };
 
     return (
@@ -271,24 +303,117 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                         </TableCell>
                     </TableRow>
                     <TableRow>
-                        <TableCell>Jadwal</TableCell>
+                        <TableCell>Jadwal & Rekaman</TableCell>
                         <TableCell>
                             {bootcamp.schedules && bootcamp.schedules.length > 0 ? (
-                                <ul className="space-y-1">
-                                    {bootcamp.schedules.map(
-                                        (sch: { schedule_date: string; day: string; start_time: string; end_time: string }, idx: number) => (
-                                            <li key={idx}>
-                                                <span className="inline-block w-30">
-                                                    {format(new Date(sch.schedule_date), 'dd MMM yyyy', { locale: id })}
-                                                </span>
-                                                <span className="inline-block w-20 capitalize">{sch.day}</span>
-                                                <span>
-                                                    {sch.start_time?.slice(0, 5)} - {sch.end_time?.slice(0, 5)}
-                                                </span>
-                                            </li>
-                                        ),
-                                    )}
-                                </ul>
+                                <div className="space-y-4">
+                                    {bootcamp.schedules.map((sch: BootcampSchedule, idx: number) => {
+                                        const scheduleDate = new Date(sch.schedule_date);
+                                        const isPastSchedule = scheduleDate < new Date();
+                                        const videoId = sch.recording_url ? getYoutubeId(sch.recording_url) : '';
+                                        const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+
+                                        return (
+                                            <div key={idx} className="space-y-3 rounded-lg border p-3">
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex-1">
+                                                        <div className="font-medium">Pertemuan {idx + 1}</div>
+                                                        <div className="text-sm text-gray-600">
+                                                            <span className="inline-block">
+                                                                {format(scheduleDate, 'dd MMM yyyy', { locale: id })}
+                                                            </span>
+                                                            {' • '}
+                                                            <span className="inline-block capitalize">{sch.day}</span>
+                                                            {' • '}
+                                                            <span>
+                                                                {sch.start_time?.slice(0, 5)} - {sch.end_time?.slice(0, 5)} WIB
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        {isPastSchedule ? (
+                                                            <Badge variant="secondary" className="text-xs">
+                                                                Selesai
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge className="text-xs">Akan Datang</Badge>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Recording Section */}
+                                                <div className="space-y-2">
+                                                    {sch.recording_url ? (
+                                                        <>
+                                                            {embedUrl && (
+                                                                <div className="w-full">
+                                                                    <iframe
+                                                                        className="aspect-video w-full rounded-lg border"
+                                                                        src={embedUrl}
+                                                                        title={`Recording Pertemuan ${idx + 1}`}
+                                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                                        allowFullScreen
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                            <div className="flex items-center gap-2">
+                                                                <a
+                                                                    href={sch.recording_url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="flex flex-1 items-center gap-1 text-sm text-blue-600 hover:underline"
+                                                                >
+                                                                    <ExternalLink className="h-3 w-3" />
+                                                                    Lihat di YouTube
+                                                                </a>
+                                                            </div>
+                                                            {!isAffiliate && (
+                                                                <div className="flex gap-2">
+                                                                    <AddScheduleRecordingDialog
+                                                                        bootcampId={bootcamp.id}
+                                                                        scheduleId={sch.id}
+                                                                        currentRecordingUrl={sch.recording_url}
+                                                                    />
+                                                                    <DeleteConfirmDialog
+                                                                        trigger={
+                                                                            <Button
+                                                                                size="sm"
+                                                                                variant="destructive"
+                                                                                disabled={deletingScheduleId === sch.id}
+                                                                                className="flex items-center gap-1"
+                                                                            >
+                                                                                <Trash2 className="h-3 w-3" />
+                                                                                {deletingScheduleId === sch.id ? 'Menghapus...' : 'Hapus'}
+                                                                            </Button>
+                                                                        }
+                                                                        title="Apakah Anda yakin ingin menghapus link rekaman ini?"
+                                                                        itemName={`Rekaman Pertemuan ${idx + 1}`}
+                                                                        onConfirm={() => handleDeleteScheduleRecording(sch.id)}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <div className="flex flex-col gap-2">
+                                                            {isPastSchedule && (
+                                                                <div className="rounded-lg bg-amber-50 p-2 text-xs text-amber-700">
+                                                                    Sesi sudah selesai - Link rekaman belum diupload
+                                                                </div>
+                                                            )}
+                                                            {!isAffiliate && (
+                                                                <AddScheduleRecordingDialog
+                                                                    bootcampId={bootcamp.id}
+                                                                    scheduleId={sch.id}
+                                                                    currentRecordingUrl={null}
+                                                                />
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             ) : (
                                 <span className="text-muted-foreground text-sm">Belum ada jadwal.</span>
                             )}
@@ -308,6 +433,10 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                             <div>{bootcamp.host_name ?? '-'}</div>
                             <div className="text-muted-foreground text-xs">{bootcamp.host_description ?? ''}</div>
                         </TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell>Pengumpulan Link Submission</TableCell>
+                        <TableCell>{bootcamp.has_submission_link ? 'Ada' : 'Tidak'}</TableCell>
                     </TableRow>
                 </TableBody>
             </Table>
