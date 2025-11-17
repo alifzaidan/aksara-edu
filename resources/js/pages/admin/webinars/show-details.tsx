@@ -257,13 +257,13 @@ export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
                     <TableRow>
                         <TableCell>Deskripsi</TableCell>
                         <TableCell>
-                            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: webinar.description ?? '-' }} />
+                            <div className="prose prose-sm max-w-md text-wrap" dangerouslySetInnerHTML={{ __html: webinar.description ?? '-' }} />
                         </TableCell>
                     </TableRow>
                     <TableRow>
                         <TableCell>Benefit</TableCell>
                         <TableCell>
-                            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: webinar.benefits ?? '-' }} />
+                            <div className="prose prose-sm max-w-md text-wrap" dangerouslySetInnerHTML={{ __html: webinar.benefits ?? '-' }} />
                         </TableCell>
                     </TableRow>
                     <TableRow>

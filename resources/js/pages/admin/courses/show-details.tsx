@@ -251,19 +251,22 @@ export default function CourseDetail({ course, averageRating }: { course: Course
                     <TableRow>
                         <TableCell>Deskripsi Singkat</TableCell>
                         <TableCell>
-                            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: course.short_description ?? '-' }} />
+                            <div
+                                className="prose prose-sm max-w-md text-wrap"
+                                dangerouslySetInnerHTML={{ __html: course.short_description ?? '-' }}
+                            />
                         </TableCell>
                     </TableRow>
                     <TableRow>
                         <TableCell>Deskripsi Lengkap</TableCell>
                         <TableCell>
-                            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: course.description ?? '-' }} />
+                            <div className="prose prose-sm max-w-md text-wrap" dangerouslySetInnerHTML={{ __html: course.description ?? '-' }} />
                         </TableCell>
                     </TableRow>
                     <TableRow>
                         <TableCell>Poin Utama</TableCell>
                         <TableCell>
-                            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: course.key_points ?? '-' }} />
+                            <div className="prose prose-sm max-w-md text-wrap" dangerouslySetInnerHTML={{ __html: course.key_points ?? '-' }} />
                         </TableCell>
                     </TableRow>
                 </TableBody>

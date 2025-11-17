@@ -265,25 +265,25 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                     <TableRow>
                         <TableCell>Deskripsi</TableCell>
                         <TableCell>
-                            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: bootcamp.description ?? '-' }} />
+                            <div className="prose prose-sm max-w-md text-wrap" dangerouslySetInnerHTML={{ __html: bootcamp.description ?? '-' }} />
                         </TableCell>
                     </TableRow>
                     <TableRow>
                         <TableCell>Persyaratan</TableCell>
                         <TableCell>
-                            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: bootcamp.requirements ?? '-' }} />
+                            <div className="prose prose-sm max-w-md text-wrap" dangerouslySetInnerHTML={{ __html: bootcamp.requirements ?? '-' }} />
                         </TableCell>
                     </TableRow>
                     <TableRow>
                         <TableCell>Benefit</TableCell>
                         <TableCell>
-                            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: bootcamp.benefits ?? '-' }} />
+                            <div className="prose prose-sm max-w-md text-wrap" dangerouslySetInnerHTML={{ __html: bootcamp.benefits ?? '-' }} />
                         </TableCell>
                     </TableRow>
                     <TableRow>
                         <TableCell>Kurikulum</TableCell>
                         <TableCell>
-                            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: bootcamp.curriculum ?? '-' }} />
+                            <div className="prose prose-sm max-w-md text-wrap" dangerouslySetInnerHTML={{ __html: bootcamp.curriculum ?? '-' }} />
                         </TableCell>
                     </TableRow>
                     <TableRow>
