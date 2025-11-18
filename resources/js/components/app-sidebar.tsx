@@ -8,6 +8,7 @@ import {
     BookText,
     Dock,
     DollarSign,
+    FileText,
     Gift,
     LayoutGrid,
     List,
@@ -110,6 +111,12 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         title: 'Transaksi',
         href: '/admin/transactions',
         icon: DollarSign,
+        roles: ['admin'],
+    },
+    {
+        title: 'Artikel',
+        href: '/admin/articles',
+        icon: FileText,
         roles: ['admin'],
     },
     {
