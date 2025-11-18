@@ -47,8 +47,7 @@ class CourseController extends Controller
             ->where('status', 'published')
             ->where('category_id', $course->category_id)
             ->where('id', '!=', $course->id)
-            ->where('registration_deadline', '>=', now())
-            ->orderBy('registration_deadline', 'asc')
+            ->orderBy('created_at', 'desc')
             ->limit(3)
             ->get();
 
