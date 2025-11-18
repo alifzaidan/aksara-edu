@@ -11,7 +11,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Album, BookText, BriefcaseBusiness, Home, Menu, MonitorPlay, Presentation, Search, User } from 'lucide-react';
+import { Album, BookText, BriefcaseBusiness, FileText, Home, Menu, MonitorPlay, Presentation, Search, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SearchCommand } from './search-command';
 
@@ -35,6 +35,10 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Sertifikasi',
         href: '/certification',
+    },
+    {
+        title: 'Artikel',
+        href: '/article',
     },
 ];
 
@@ -62,6 +66,12 @@ const serviceItems = [
         href: '/bundle',
         icon: Album,
         description: 'Paket bundling dengan berbagai produk edukasi',
+    },
+    {
+        title: 'Artikel',
+        href: '/article',
+        icon: FileText,
+        description: 'Baca artikel dan tips seputar pembelajaran',
     },
 ];
 

@@ -29,6 +29,7 @@ use App\Http\Controllers\User\BootcampController as UserBootcampController;
 use App\Http\Controllers\User\BundleController as UserBundleController;
 use App\Http\Controllers\User\WebinarController as UserWebinarController;
 use App\Http\Controllers\User\PartnershipProductController as UserPartnershipProductController;
+use App\Http\Controllers\User\ArticleController as UserArticleController;
 use App\Http\Controllers\User\HomeController;
 use App\Http\Controllers\User\Profile\BootcampController as ProfileBootcampController;
 use App\Http\Controllers\User\Profile\CourseController as ProfileCourseController;
@@ -55,6 +56,8 @@ Route::get('/bundle/{bundle:slug}', [UserBundleController::class, 'detail'])->na
 Route::get('/certification', [UserPartnershipProductController::class, 'index'])->name('partnership-product.index');
 Route::get('/certification/{partnershipProduct:slug}', [UserPartnershipProductController::class, 'detail'])->name('partnership-product.detail');
 Route::get('/certificate/{code}', [CertificateParticipantController::class, 'show'])->name('certificate.participant.detail');
+Route::get('/article', [UserArticleController::class, 'index'])->name('article.index');
+Route::get('/article/{slug}', [UserArticleController::class, 'show'])->name('article.show');
 
 Route::get('/course/{course:slug}/checkout', [UserCourseController::class, 'showCheckout'])->name('course.checkout');
 Route::get('/bootcamp/{bootcamp:slug}/register', [UserBootcampController::class, 'showRegister'])->name('bootcamp.register');

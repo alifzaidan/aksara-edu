@@ -20,4 +20,9 @@ class Category extends Model
     {
         return $this->hasMany(PartnershipProduct::class);
     }
+
+    public function articles()
+    {
+        return $this->hasMany(Article::class);
+    }
 }
