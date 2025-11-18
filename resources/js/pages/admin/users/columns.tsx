@@ -11,7 +11,7 @@ import { Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { BookText, Edit, Folder, MonitorPlay, Presentation, Trash } from 'lucide-react';
+import { BookText, Calendar, Edit, Folder, MonitorPlay, Presentation, ShoppingBag, Trash } from 'lucide-react';
 import { useState } from 'react';
 import EditUser from './edit';
 
@@ -26,6 +26,15 @@ export type User = {
     bootcamps_count: number;
     webinars_count: number;
     total_enrollments: number;
+    program_types: string[];
+    last_purchase_date: string | null;
+    last_purchase_items: Array<{
+        type: 'course' | 'bootcamp' | 'webinar';
+        title: string;
+        price: number;
+    }>;
+    last_purchase_total: number;
+    has_enrollments: boolean;
 };
 
 export const columns: ColumnDef<User>[] = [
@@ -49,7 +58,6 @@ export const columns: ColumnDef<User>[] = [
         header: 'No',
         cell: ({ row }) => {
             const index = row.index + 1;
-
             return <div className="font-medium">{index}</div>;
         },
     },
@@ -58,71 +66,196 @@ export const columns: ColumnDef<User>[] = [
         header: ({ column }) => <DataTableColumnHeader column={column} title="Nama Pengguna" />,
         cell: ({ row }) => {
             return (
-                <Link href={route('users.show', row.original.id)} className="text-primary font-medium hover:underline">
-                    {row.original.name}
-                </Link>
+                <div className="flex flex-col">
+                    <Link href={route('users.show', row.original.id)} className="text-primary font-medium hover:underline">
+                        {row.original.name}
+                    </Link>
+                    <span className="text-xs text-gray-500">{row.original.email}</span>
+                </div>
             );
         },
-    },
-    {
-        accessorKey: 'email',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Email" />,
     },
     {
         accessorKey: 'phone_number',
         header: ({ column }) => <DataTableColumnHeader column={column} title="No. Telepon" />,
         cell: ({ row }) => {
-            return <p>{row.original.phone_number || '-'}</p>;
+            return <p className="text-sm">{row.original.phone_number || '-'}</p>;
         },
     },
     {
         accessorKey: 'total_enrollments',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Program Diikuti" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Program" />,
+        filterFn: (row, id, value) => {
+            if (value.length === 0) return true;
+
+            const programTypes = row.original.program_types || [];
+            return value.some((v: string) => programTypes.includes(v));
+        },
         cell: ({ row }) => {
             const user = row.original;
             const hasAnyEnrollment = user.courses_count > 0 || user.bootcamps_count > 0 || user.webinars_count > 0;
 
             return (
-                <div>
+                <div className="flex flex-wrap gap-1">
                     {hasAnyEnrollment ? (
-                        <div className="flex flex-col gap-1">
+                        <>
                             {user.courses_count > 0 && (
-                                <Badge className="flex items-center gap-1 bg-blue-100 text-xs text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-                                    <BookText className="h-3 w-3" />
-                                    Course: {user.courses_count}
-                                </Badge>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Badge variant="outline" className="flex items-center gap-1 text-xs">
+                                            <BookText className="h-3 w-3 text-blue-600" />
+                                            {user.courses_count}
+                                        </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p className="text-xs">
+                                            <span className="font-semibold">Kelas Online</span>
+                                            <br />
+                                            {user.courses_count} kelas online terdaftar
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
                             )}
                             {user.bootcamps_count > 0 && (
-                                <Badge className="flex items-center gap-1 bg-green-100 text-xs text-green-800 dark:bg-green-900 dark:text-green-300">
-                                    <Presentation className="h-3 w-3" />
-                                    Bootcamp: {user.bootcamps_count}
-                                </Badge>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Badge variant="outline" className="flex items-center gap-1 text-xs">
+                                            <Presentation className="h-3 w-3 text-green-600" />
+                                            {user.bootcamps_count}
+                                        </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p className="text-xs">
+                                            <span className="font-semibold">Bootcamp</span>
+                                            <br />
+                                            {user.bootcamps_count} bootcamp terdaftar
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
                             )}
                             {user.webinars_count > 0 && (
-                                <Badge className="flex items-center gap-1 bg-purple-100 text-xs text-purple-800 dark:bg-purple-900 dark:text-purple-300">
-                                    <MonitorPlay className="h-3 w-3" />
-                                    Webinar: {user.webinars_count}
-                                </Badge>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Badge variant="outline" className="flex items-center gap-1 text-xs">
+                                            <MonitorPlay className="h-3 w-3 text-purple-600" />
+                                            {user.webinars_count}
+                                        </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p className="text-xs">
+                                            <span className="font-semibold">Webinar</span>
+                                            <br />
+                                            {user.webinars_count} webinar terdaftar
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
                             )}
-                        </div>
+                        </>
                     ) : (
-                        '-'
+                        <span className="text-sm text-gray-400">-</span>
                     )}
                 </div>
             );
         },
     },
     {
-        accessorKey: 'email_verified_at',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Email Terverifikasi" />,
-        cell: ({ row }) => (
-            <p>{row.original.email_verified_at ? format(new Date(row.original.email_verified_at), 'dd MMMM yyyy', { locale: id }) : '-'}</p>
-        ),
+        accessorKey: 'last_purchase_date',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Pembelian Terakhir" />,
+        filterFn: (row, id, value) => {
+            const hasPurchase = row.original.last_purchase_date !== null;
+            if (value.length === 0) return true;
+
+            const rowValue = hasPurchase ? 'true' : 'false';
+            return value.includes(rowValue);
+        },
+        cell: ({ row }) => {
+            const lastPurchase = row.original.last_purchase_date;
+            const items = row.original.last_purchase_items || [];
+            const total = row.original.last_purchase_total || 0;
+
+            if (!lastPurchase) {
+                return <span className="text-sm text-gray-400">Belum ada</span>;
+            }
+
+            const formatRupiah = (amount: number) => {
+                return new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    minimumFractionDigits: 0,
+                }).format(amount);
+            };
+
+            const getTypeIcon = (type: string) => {
+                switch (type) {
+                    case 'course':
+                        return <BookText className="h-3 w-3 text-blue-600" />;
+                    case 'bootcamp':
+                        return <Presentation className="h-3 w-3 text-green-600" />;
+                    case 'webinar':
+                        return <MonitorPlay className="h-3 w-3 text-purple-600" />;
+                    default:
+                        return null;
+                }
+            };
+
+            const getTypeLabel = (type: string) => {
+                switch (type) {
+                    case 'course':
+                        return 'Kelas Online';
+                    case 'bootcamp':
+                        return 'Bootcamp';
+                    case 'webinar':
+                        return 'Webinar';
+                    default:
+                        return type;
+                }
+            };
+
+            return (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className="flex items-center gap-2 text-sm">
+                            <ShoppingBag className="h-3 w-3 text-green-600" />
+                            <span>{format(new Date(lastPurchase), 'dd MMM yyyy', { locale: id })}</span>
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                        <div className="space-y-2">
+                            <p className="text-xs font-semibold">Detail Pembelian Terakhir</p>
+                            <div className="space-y-1">
+                                {items.map((item, index) => (
+                                    <div key={index} className="flex items-start gap-2 text-xs">
+                                        <div className="mt-0.5">{getTypeIcon(item.type)}</div>
+                                        <div className="flex-1">
+                                            <p className="font-medium">{item.title}</p>
+                                            <p className="text-muted text-[10px]">
+                                                {getTypeLabel(item.type)} • {formatRupiah(item.price)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="border-t pt-1">
+                                <div className="flex items-center justify-between text-xs font-semibold">
+                                    <span>Total:</span>
+                                    <span className="text-green-500">{formatRupiah(total)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </TooltipContent>
+                </Tooltip>
+            );
+        },
     },
     {
         accessorKey: 'created_at',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Tanggal Bergabung" />,
-        cell: ({ row }) => <p>{row.original.created_at ? format(new Date(row.original.created_at), 'dd MMMM yyyy', { locale: id }) : '-'}</p>,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Bergabung" />,
+        cell: ({ row }) => (
+            <div className="flex items-center gap-2 text-sm">
+                <Calendar className="h-3 w-3 text-gray-500" />
+                <span>{format(new Date(row.original.created_at), 'dd MMM yyyy', { locale: id })}</span>
+            </div>
+        ),
     },
     {
         id: 'actions',
@@ -139,6 +272,7 @@ export const columns: ColumnDef<User>[] = [
                 }
                 whatsappUrl = `https://wa.me/${phoneNumber}`;
             }
+
             const handleDelete = () => {
                 router.delete(route('users.destroy', user.id));
             };

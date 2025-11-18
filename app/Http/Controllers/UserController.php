@@ -33,9 +33,51 @@ class UserController extends Controller
                     });
                 }
             ])
+            ->with(['invoices' => function ($query) {
+                $query->where('status', 'paid')
+                    ->with([
+                        'courseItems.course:id,title,price',
+                        'bootcampItems.bootcamp:id,title,price',
+                        'webinarItems.webinar:id,title,price'
+                    ])
+                    ->latest('paid_at')
+                    ->limit(1);
+            }])
             ->latest()
             ->get()
             ->map(function ($user) {
+                $lastPurchase = $user->invoices->first();
+
+                $purchasedItems = [];
+                if ($lastPurchase) {
+                    foreach ($lastPurchase->courseItems as $item) {
+                        $purchasedItems[] = [
+                            'type' => 'course',
+                            'title' => $item->course->title,
+                            'price' => $item->course->price,
+                        ];
+                    }
+                    foreach ($lastPurchase->bootcampItems as $item) {
+                        $purchasedItems[] = [
+                            'type' => 'bootcamp',
+                            'title' => $item->bootcamp->title,
+                            'price' => $item->bootcamp->price,
+                        ];
+                    }
+                    foreach ($lastPurchase->webinarItems as $item) {
+                        $purchasedItems[] = [
+                            'type' => 'webinar',
+                            'title' => $item->webinar->title,
+                            'price' => $item->webinar->price,
+                        ];
+                    }
+                }
+
+                $programTypes = [];
+                if ($user->courses_count > 0) $programTypes[] = 'course';
+                if ($user->bootcamps_count > 0) $programTypes[] = 'bootcamp';
+                if ($user->webinars_count > 0) $programTypes[] = 'webinar';
+
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -47,6 +89,11 @@ class UserController extends Controller
                     'bootcamps_count' => $user->bootcamps_count,
                     'webinars_count' => $user->webinars_count,
                     'total_enrollments' => $user->courses_count + $user->bootcamps_count + $user->webinars_count,
+                    'program_types' => $programTypes, // ✅ TAMBAHAN
+                    'last_purchase_date' => $lastPurchase?->paid_at,
+                    'last_purchase_items' => $purchasedItems,
+                    'last_purchase_total' => $lastPurchase?->nett_amount,
+                    'has_enrollments' => ($user->courses_count + $user->bootcamps_count + $user->webinars_count) > 0,
                 ];
             });
 

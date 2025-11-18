@@ -179,14 +179,14 @@ export default function ShowPartnershipProduct({ product, clickStats, uniqueClic
                                         </div>
                                         <div className="flex-1 space-y-2">
                                             <label className="text-sm font-medium text-gray-700">
-                                                Link Webinar {isAffiliate && '(dengan kode afiliasi)'}
+                                                Link Sertifikasi Kerjasama {isAffiliate && '(dengan kode afiliasi)'}
                                             </label>
                                             <Input
                                                 type="text"
                                                 value={product.product_url}
                                                 readOnly
                                                 className="rounded border p-2 text-sm"
-                                                placeholder="Link Webinar"
+                                                placeholder="Link Sertifikasi Kerjasama"
                                             />
                                             <Button
                                                 type="button"

@@ -13,11 +13,45 @@ import {
     VisibilityState,
 } from '@tanstack/react-table';
 
+import { DataTableFacetedFilter } from '@/components/data-table-faceted-filter';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { DataTableViewOptions } from '@/components/data-table-view-option';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { BookText, MonitorPlay, Presentation, ShoppingBag, X } from 'lucide-react';
 import React from 'react';
+
+export const programTypes = [
+    {
+        value: 'course',
+        label: 'Kelas Online',
+        icon: BookText,
+    },
+    {
+        value: 'bootcamp',
+        label: 'Bootcamp',
+        icon: Presentation,
+    },
+    {
+        value: 'webinar',
+        label: 'Webinar',
+        icon: MonitorPlay,
+    },
+];
+
+export const purchaseStatus = [
+    {
+        value: 'true',
+        label: 'Pernah Beli',
+        icon: ShoppingBag,
+    },
+    {
+        value: 'false',
+        label: 'Belum Pernah Beli',
+        icon: X,
+    },
+];
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -29,6 +63,7 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
     const [rowSelection, setRowSelection] = React.useState({});
+
     const table = useReactTable({
         data,
         columns,
@@ -48,18 +83,39 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
         },
     });
 
+    const isFiltered = table.getState().columnFilters.length > 0;
+
     return (
         <div>
-            <div className="flex items-center py-4">
+            <div className="flex items-center gap-2 py-4">
                 <Input
                     placeholder="Cari nama pengguna..."
                     value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
                     onChange={(event) => table.getColumn('name')?.setFilterValue(event.target.value)}
                     className="sm:max-w-sm"
                 />
+                <div className="flex flex-col items-center gap-2 lg:flex-row">
+                    {table.getColumn('total_enrollments') && (
+                        <DataTableFacetedFilter column={table.getColumn('total_enrollments')} title="Tipe Program" options={programTypes} />
+                    )}
+                    {table.getColumn('last_purchase_date') && (
+                        <DataTableFacetedFilter column={table.getColumn('last_purchase_date')} title="Riwayat Pembelian" options={purchaseStatus} />
+                    )}
+                    {isFiltered && (
+                        <Button
+                            onClick={() => {
+                                table.resetColumnFilters();
+                            }}
+                            className="h-8 px-2 lg:px-3"
+                        >
+                            Reset
+                            <X />
+                        </Button>
+                    )}
+                </div>
                 <DataTableViewOptions table={table} />
             </div>
-            <div className="rrounded-md border overflow-x-auto max-w-full w-[1000px] min-w-full">
+            <div className="w-[1000px] max-w-full min-w-full overflow-x-auto rounded-md border">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (

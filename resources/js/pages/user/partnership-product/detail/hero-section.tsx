@@ -46,6 +46,9 @@ export default function HeroSection({ partnershipProduct }: { partnershipProduct
                         <a href="https://wa.me/+6285142505794" target="_blank" rel="noopener noreferrer">
                             <Button variant="outline">Hubungi Kami</Button>
                         </a>
+                        <a href="https://ppppmi.id" target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline">Terafiliasi dengan P4MI</Button>
+                        </a>
                     </div>
                 </div>
                 <div className="col-span-1 hidden lg:block">
