@@ -199,8 +199,12 @@ class ArticleController extends Controller
             ->with('success', 'Artikel berhasil diduplikasi. Silakan edit sebelum dipublikasikan.');
     }
 
-    public function publish(string $id)
+    public function publish(Request $request, string $id)
     {
+        if (!$request->user()->hasRole('admin')) {
+            return back()->with('error', 'Anda tidak memiliki izin untuk menerbitkan artikel. Silakan hubungi admin.');
+        }
+
         $article = Article::findOrFail($id);
         $article->status = 'published';
         $article->published_at = now();
@@ -209,8 +213,12 @@ class ArticleController extends Controller
         return back()->with('success', 'Artikel berhasil dipublikasikan.');
     }
 
-    public function archive(string $id)
+    public function archive(Request $request, string $id)
     {
+        if (!$request->user()->hasRole('admin')) {
+            return back()->with('error', 'Anda tidak memiliki izin untuk mengarsipkan artikel. Silakan hubungi admin.');
+        }
+
         $article = Article::findOrFail($id);
         $article->status = 'archived';
         $article->save();

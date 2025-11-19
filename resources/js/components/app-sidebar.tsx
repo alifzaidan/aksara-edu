@@ -117,7 +117,7 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         title: 'Artikel',
         href: '/admin/articles',
         icon: FileText,
-        roles: ['admin'],
+        roles: ['admin', 'mentor'],
     },
     {
         title: 'Pendapatan',

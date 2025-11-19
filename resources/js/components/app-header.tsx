@@ -68,10 +68,10 @@ const serviceItems = [
         description: 'Paket bundling dengan berbagai produk edukasi',
     },
     {
-        title: 'Artikel',
-        href: '/article',
-        icon: FileText,
-        description: 'Baca artikel dan tips seputar pembelajaran',
+        title: 'Sertifikasi',
+        href: '/certification',
+        icon: BriefcaseBusiness,
+        description: 'Tingkatkan kredibilitas dengan sertifikat resmi',
     },
 ];
 
@@ -293,16 +293,16 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                         </Popover>
 
                         <Link
-                            href="/certification"
+                            href="/article"
                             className={cn(
                                 'flex flex-col items-center justify-center rounded-lg px-2 py-3 transition-colors duration-200',
-                                page.url.startsWith('/certification')
+                                page.url.startsWith('/article')
                                     ? 'text-primary bg-primary/10'
                                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
                             )}
                         >
-                            <BriefcaseBusiness className="mb-1 h-5 w-6" />
-                            <span className="text-center text-xs leading-none font-medium">Sertifikasi</span>
+                            <FileText className="mb-1 h-5 w-6" />
+                            <span className="text-center text-xs leading-none font-medium">Artikel</span>
                         </Link>
 
                         {auth.user && (

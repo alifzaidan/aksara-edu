@@ -110,7 +110,7 @@ class ArticleController extends Controller
                 'user' => [
                     'id' => $article->user->id,
                     'name' => $article->user->name,
-                    'email' => $article->user->email,
+                    'bio' => $article->user->bio,
                     'avatar' => $article->user->avatar,
                 ],
                 'read_time' => $article->read_time,

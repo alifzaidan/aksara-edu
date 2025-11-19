@@ -50,7 +50,7 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
 
     return (
         <div>
-            <div className="rounded-md border overflow-x-auto max-w-full w-[1000px] min-w-full">
+            <div className="flex items-center py-4">
                 <Input
                     placeholder="Cari nama tools..."
                     value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}

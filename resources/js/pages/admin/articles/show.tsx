@@ -20,7 +20,7 @@ interface Category {
 interface Author {
     id: string;
     name: string;
-    email: string;
+    bio: string;
 }
 
 interface Article {
@@ -51,6 +51,8 @@ interface ShowProps {
 export default function ShowArticle({ article, flash }: ShowProps) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
+    const isAdmin = auth.role.includes('admin');
+    const isMentor = auth.role.includes('mentor');
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -141,7 +143,7 @@ export default function ShowArticle({ article, flash }: ShowProps) {
                                             Penulis
                                         </div>
                                         <p className="truncate text-sm font-medium">{article.user.name}</p>
-                                        <p className="text-muted-foreground truncate text-xs">{article.user.email}</p>
+                                        <p className="text-muted-foreground truncate text-xs">{article.user.bio}</p>
                                     </div>
                                 </div>
 
@@ -184,7 +186,7 @@ export default function ShowArticle({ article, flash }: ShowProps) {
                         <div>
                             <h2 className="my-2 text-lg font-medium">Aksi & Pengaturan</h2>
                             <div className="space-y-4 rounded-lg border p-4">
-                                {(article.status === 'draft' || article.status === 'archived') && (
+                                {isAdmin && (article.status === 'draft' || article.status === 'archived') && (
                                     <>
                                         {!article.thumbnail && (
                                             <div className="mb-4 rounded-lg bg-red-50 p-3 text-center text-sm text-red-700">
@@ -205,13 +207,19 @@ export default function ShowArticle({ article, flash }: ShowProps) {
                                     </>
                                 )}
 
-                                {article.status === 'published' && (
+                                {isAdmin && article.status === 'published' && (
                                     <Button asChild className="w-full">
                                         <Link method="post" href={route('articles.archive', article.id)}>
                                             <CircleX />
                                             Arsipkan
                                         </Link>
                                     </Button>
+                                )}
+
+                                {isMentor && (article.status === 'draft' || article.status === 'archived') && (
+                                    <div className="rounded-lg bg-blue-50 p-3 text-center text-sm text-blue-700">
+                                        Artikel dalam status <strong>{currentStatus.label}</strong>. Hubungi admin untuk menerbitkan artikel ini.
+                                    </div>
                                 )}
 
                                 <Separator />

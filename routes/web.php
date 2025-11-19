@@ -132,12 +132,14 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
     Route::redirect('/', 'admin/dashboard');
     Route::get('dashboard', [AdminController::class, 'index'])->name('dashboard');
 
+    // dapat diakses oleh admin, mentor, dan affiliate
+    Route::resource('courses', CourseController::class);
+
     Route::middleware(['role:admin|mentor'])->group(function () {
         Route::resource('categories', CategoryController::class);
         Route::resource('tools', ToolController::class);
         Route::post('/tools/{id}', [ToolController::class, 'update'])->name('tools.update');
 
-        Route::resource('courses', CourseController::class);
         Route::post('/courses/{course}/publish', [CourseController::class, 'publish'])->name('courses.publish');
         Route::post('/courses/{course}/archive', [CourseController::class, 'archive'])->name('courses.archive');
         Route::post('/courses/{course}/duplicate', [CourseController::class, 'duplicate'])->name('courses.duplicate');
@@ -148,6 +150,9 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::put('/questions/{question}', [QuestionController::class, 'update'])->name('questions.update');
         Route::delete('/questions/{question}', [QuestionController::class, 'destroy'])->name('questions.destroy');
         Route::post('/questions/import', [QuestionController::class, 'import'])->name('questions.import');
+
+        Route::resource('articles', ArticleController::class);
+        Route::post('/articles/{article}/duplicate', [ArticleController::class, 'duplicate'])->name('articles.duplicate');
     });
 
     Route::middleware(['role:admin'])->group(function () {
@@ -191,8 +196,6 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('affiliate-earnings/{earning}/approve', [AffiliateEarningController::class, 'approveEarning'])->name('earnings.approve');
         Route::post('affiliate-earnings/{earning}/reject', [AffiliateEarningController::class, 'rejectEarning'])->name('earnings.reject');
 
-        Route::resource('articles', ArticleController::class);
-        Route::post('/articles/{article}/duplicate', [ArticleController::class, 'duplicate'])->name('articles.duplicate');
         Route::post('/articles/{article}/publish', [ArticleController::class, 'publish'])->name('articles.publish');
         Route::post('/articles/{article}/archive', [ArticleController::class, 'archive'])->name('articles.archive');
 
@@ -207,9 +210,6 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
     });
 
     Route::middleware(['role:affiliate|admin'])->group(function () {
-        Route::get('courses', [CourseController::class, 'index'])->name('courses.index');
-        Route::get('courses/{course}', [CourseController::class, 'show'])->name('courses.show');
-
         Route::get('bootcamps', [BootcampController::class, 'index'])->name('bootcamps.index');
         Route::get('bootcamps/{bootcamp}', [BootcampController::class, 'show'])->name('bootcamps.show');
 
