@@ -65,6 +65,7 @@ export type Mentor = {
     commission: number;
     created_at: string;
     total_courses: number;
+    total_articles: number; // ✅ ADD: Total articles
     total_earnings: number;
 };
 
@@ -89,7 +90,6 @@ export const columns: ColumnDef<Mentor>[] = [
         header: 'No',
         cell: ({ row }) => {
             const index = row.index + 1;
-
             return <div className="font-medium">{index}</div>;
         },
     },
@@ -125,6 +125,14 @@ export const columns: ColumnDef<Mentor>[] = [
         cell: ({ row }) => {
             const totalCourses = row.original.total_courses || 0;
             return <span className="font-medium text-blue-600">{totalCourses} Kelas</span>;
+        },
+    },
+    {
+        accessorKey: 'total_articles',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Total Artikel" />,
+        cell: ({ row }) => {
+            const totalArticles = row.original.total_articles || 0;
+            return <span className="font-medium text-purple-600">{totalArticles} Artikel</span>;
         },
     },
     {

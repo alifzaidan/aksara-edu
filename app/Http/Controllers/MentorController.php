@@ -15,6 +15,7 @@ class MentorController extends Controller
         $mentors = User::role('mentor')
             ->withSum('affiliateEarnings', 'amount')
             ->withCount('courses as total_courses')
+            ->withCount('articles as total_articles')
             ->latest()
             ->get()
             ->map(function ($mentor) {
