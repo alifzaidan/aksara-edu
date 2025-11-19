@@ -16,7 +16,11 @@ const productItems: ProductItem[] = [
         href: '/webinar',
     },
     {
-        title: 'Sertifikasi Kerjasama',
+        title: 'Bundling',
+        href: '/bundle',
+    },
+    {
+        title: 'Sertifikasi',
         href: '/certification',
     },
 ];
@@ -33,6 +37,10 @@ const serviceItems: ServiceItem[] = [
 ];
 
 const otherItems: OtherItem[] = [
+    {
+        title: 'Artikel & Blog',
+        href: '/article',
+    },
     {
         title: 'Syarat & Ketentuan',
         href: '/terms-and-conditions',
