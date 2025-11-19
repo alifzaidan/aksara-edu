@@ -12,7 +12,7 @@ import VideoSection from './video-section';
 interface Course {
     id: string;
     title: string;
-    user?: { name: string; bio: string | null };
+    user?: { id: string; name: string; bio: string | null };
     category?: { name: string };
     category_id?: string;
     tools?: { name: string; description?: string | null; icon: string | null }[];

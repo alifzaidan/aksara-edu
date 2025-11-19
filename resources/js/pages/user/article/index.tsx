@@ -96,7 +96,7 @@ export default function ArticleIndex({ articles, categories, popularArticles, fi
         <UserLayout>
             <Head title="Artikel" />
 
-            <div className="mx-auto min-h-screen max-w-7xl px-4 py-8 md:px-6">
+            <div className="mx-auto min-h-screen w-full max-w-7xl px-4 py-8 md:px-6">
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text mb-2 text-3xl font-bold italic md:text-4xl">Artikel & Blog</h1>
