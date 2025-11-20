@@ -65,7 +65,7 @@ export const columns: ColumnDef<BootcampRating>[] = [
             const review = row.original.review;
             return (
                 <div className="max-w-md">
-                    <p className="line-clamp-2 text-sm text-gray-600 dark:text-gray-400">{review}</p>
+                    <p className="text-sm text-wrap text-gray-600 dark:text-gray-400">{review}</p>
                 </div>
             );
         },

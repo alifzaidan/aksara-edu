@@ -10,10 +10,12 @@ import { id } from 'date-fns/locale';
 import { AlertTriangle, Award, CircleX, Copy, Plus, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { WebinarParticipant } from './columns-participants';
 import { WebinarRating } from './columns-ratings';
 import { Invoice } from './columns-transactions';
 import AddRecordingDialog from './create-recording-url';
 import WebinarDetail from './show-details';
+import WebinarParticipantSection from './show-participants';
 import WebinarRatingComponent from './show-ratings';
 import WebinarTransaction from './show-transactions';
 
@@ -60,6 +62,7 @@ interface Certificate {
 interface WebinarProps {
     webinar: Webinar;
     transactions: Invoice[];
+    participants: WebinarParticipant[];
     ratings: WebinarRating[];
     averageRating: number;
     certificate?: Certificate | null;
@@ -69,7 +72,7 @@ interface WebinarProps {
     };
 }
 
-export default function ShowWebinar({ webinar, transactions, ratings, averageRating, certificate, flash }: WebinarProps) {
+export default function ShowWebinar({ webinar, transactions, participants, ratings, averageRating, certificate, flash }: WebinarProps) {
     const { auth } = usePage<SharedData>().props;
     const role = auth.role[0];
     const isAffiliate = role === 'affiliate';
@@ -132,8 +135,14 @@ export default function ShowWebinar({ webinar, transactions, ratings, averageRat
                             <TabsTrigger value="detail">Detail</TabsTrigger>
                             {!isAffiliate && (
                                 <>
+                                    <TabsTrigger value="peserta">
+                                        Peserta
+                                        {participants.length > 0 && (
+                                            <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{participants.length}</span>
+                                        )}
+                                    </TabsTrigger>
                                     <TabsTrigger value="transaksi">
-                                        Peserta & Transaksi
+                                        Transaksi
                                         {transactions.length > 0 && (
                                             <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{paidTransactions.length}</span>
                                         )}
@@ -150,6 +159,9 @@ export default function ShowWebinar({ webinar, transactions, ratings, averageRat
                         <TabsContent value="detail">
                             <WebinarDetail webinar={webinar} />
                         </TabsContent>
+                        <TabsContent value="peserta">
+                            <WebinarParticipantSection participants={participants} />
+                        </TabsContent>
                         <TabsContent value="transaksi">
                             <WebinarTransaction transactions={transactions} />
                         </TabsContent>
@@ -158,6 +170,7 @@ export default function ShowWebinar({ webinar, transactions, ratings, averageRat
                         </TabsContent>
                     </Tabs>
 
+                    {/* Sidebar remains the same */}
                     {!isAffiliate && (
                         <div>
                             <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>

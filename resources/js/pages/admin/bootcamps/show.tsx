@@ -10,9 +10,11 @@ import { id } from 'date-fns/locale';
 import { Award, CircleX, Copy, Plus, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { Participant } from './columns-participants';
 import { BootcampRating } from './columns-ratings';
 import { Invoice } from './columns-transactions';
 import BootcampDetail from './show-details';
+import BootcampParticipant from './show-participants';
 import BootcampRatingComponent from './show-ratings';
 import BootcampTransaction from './show-transactions';
 
@@ -71,8 +73,9 @@ interface Certificate {
 interface BootcampProps {
     bootcamp: Bootcamp;
     transactions: Invoice[];
-    ratings: BootcampRating[]; // ✅ TAMBAHAN
-    averageRating: number; // ✅ TAMBAHAN
+    participants: Participant[];
+    ratings: BootcampRating[];
+    averageRating: number;
     certificate?: Certificate | null;
     flash?: {
         success?: string;
@@ -80,7 +83,7 @@ interface BootcampProps {
     };
 }
 
-export default function ShowBootcamp({ bootcamp, transactions, ratings, averageRating, certificate, flash }: BootcampProps) {
+export default function ShowBootcamp({ bootcamp, transactions, participants, ratings, averageRating, certificate, flash }: BootcampProps) {
     const { auth } = usePage<SharedData>().props;
     const role = auth.role[0];
     const isAffiliate = role === 'affiliate';
@@ -123,13 +126,18 @@ export default function ShowBootcamp({ bootcamp, transactions, ratings, averageR
                             <TabsTrigger value="detail">Detail</TabsTrigger>
                             {!isAffiliate && (
                                 <>
+                                    <TabsTrigger value="peserta">
+                                        Peserta
+                                        {participants.length > 0 && (
+                                            <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{participants.length}</span>
+                                        )}
+                                    </TabsTrigger>
                                     <TabsTrigger value="transaksi">
-                                        Peserta & Transaksi
+                                        Transaksi
                                         {transactions.length > 0 && (
                                             <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{paidTransactions.length}</span>
                                         )}
                                     </TabsTrigger>
-                                    {/* ✅ TAMBAHAN: Tab Rating */}
                                     <TabsTrigger value="rating">
                                         Rating & Ulasan
                                         {ratings.length > 0 && (
@@ -139,11 +147,14 @@ export default function ShowBootcamp({ bootcamp, transactions, ratings, averageR
                                 </>
                             )}
                         </TabsList>
+                        <TabsContent value="peserta">
+                            <BootcampParticipant participants={participants} totalSchedules={totalSchedules} />
+                        </TabsContent>
                         <TabsContent value="detail">
                             <BootcampDetail bootcamp={bootcamp} />
                         </TabsContent>
                         <TabsContent value="transaksi">
-                            <BootcampTransaction transactions={transactions} totalSchedules={totalSchedules} />
+                            <BootcampTransaction transactions={transactions} />
                         </TabsContent>
                         <TabsContent value="rating">
                             <BootcampRatingComponent ratings={ratings} averageRating={averageRating} />

@@ -126,6 +126,38 @@ class WebinarController extends Controller
             ->latest()
             ->get();
 
+        $participants = Invoice::with([
+            'user',
+            'webinarItems' => function ($query) use ($id) {
+                $query->where('webinar_id', $id);
+            }
+        ])
+            ->where('status', 'paid')
+            ->whereHas('webinarItems', function ($query) use ($id) {
+                $query->where('webinar_id', $id);
+            })
+            ->latest()
+            ->get()
+            ->map(function ($invoice) {
+                return [
+                    'id' => $invoice->id,
+                    'user' => [
+                        'id' => $invoice->user->id,
+                        'name' => $invoice->user->name,
+                        'email' => $invoice->user->email,
+                        'phone_number' => $invoice->user->phone_number,
+                    ],
+                    'webinar_item' => [
+                        'id' => $invoice->webinarItems[0]->id,
+                        'webinar_id' => $invoice->webinarItems[0]->webinar_id,
+                        'attendance_proof' => $invoice->webinarItems[0]->attendance_proof,
+                        'attendance_verified' => $invoice->webinarItems[0]->attendance_verified,
+                        'progress' => $invoice->webinarItems[0]->progress,
+                        'completed_at' => $invoice->webinarItems[0]->completed_at,
+                    ],
+                ];
+            });
+
         $ratings = $transactions->flatMap(function ($invoice) {
             return $invoice->webinarItems->map(function ($item) use ($invoice) {
                 if ($item->rating && $item->review) {
@@ -151,6 +183,7 @@ class WebinarController extends Controller
         return Inertia::render('admin/webinars/show', [
             'webinar' => $webinar,
             'transactions' => $transactions,
+            'participants' => $participants,
             'ratings' => $ratings,
             'averageRating' => round($averageRating, 1),
             'certificate' => $certificate

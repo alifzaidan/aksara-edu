@@ -147,12 +147,7 @@ class BootcampController extends Controller
             'user.referrer',
             'bootcampItems' => function ($query) use ($id) {
                 $query->where('bootcamp_id', $id)
-                    ->with([
-                        'freeRequirement',
-                        'attendances.bootcampSchedule' => function ($scheduleQuery) {
-                            $scheduleQuery->orderBy('schedule_date');
-                        }
-                    ]);
+                    ->with('freeRequirement');
             }
         ])
             ->whereHas('bootcampItems', function ($query) use ($id) {
@@ -160,6 +155,60 @@ class BootcampController extends Controller
             })
             ->latest()
             ->get();
+
+        $participants = Invoice::with([
+            'user',
+            'bootcampItems' => function ($query) use ($id) {
+                $query->where('bootcamp_id', $id)
+                    ->with([
+                        'attendances.bootcampSchedule' => function ($scheduleQuery) {
+                            $scheduleQuery->orderBy('schedule_date');
+                        }
+                    ]);
+            }
+        ])
+            ->where('status', 'paid')
+            ->whereHas('bootcampItems', function ($query) use ($id) {
+                $query->where('bootcamp_id', $id);
+            })
+            ->latest()
+            ->get()
+            ->map(function ($invoice) {
+                return [
+                    'id' => $invoice->id,
+                    'user' => [
+                        'id' => $invoice->user->id,
+                        'name' => $invoice->user->name,
+                        'email' => $invoice->user->email,
+                        'phone_number' => $invoice->user->phone_number,
+                    ],
+                    'bootcamp_item' => [
+                        'id' => $invoice->bootcampItems[0]->id,
+                        'bootcamp_id' => $invoice->bootcampItems[0]->bootcamp_id,
+                        'submission_link' => $invoice->bootcampItems[0]->submission_link,
+                        'progress' => $invoice->bootcampItems[0]->progress,
+                        'completed_at' => $invoice->bootcampItems[0]->completed_at,
+                        'attendances' => $invoice->bootcampItems[0]->attendances->map(function ($attendance) {
+                            return [
+                                'id' => $attendance->id,
+                                'enrollment_bootcamp_id' => $attendance->enrollment_bootcamp_id,
+                                'bootcamp_schedule_id' => $attendance->bootcamp_schedule_id,
+                                'attendance_proof' => $attendance->attendance_proof,
+                                'verified' => $attendance->verified,
+                                'notes' => $attendance->notes,
+                                'created_at' => $attendance->created_at,
+                                'bootcamp_schedule' => [
+                                    'id' => $attendance->bootcampSchedule->id,
+                                    'schedule_date' => $attendance->bootcampSchedule->schedule_date,
+                                    'day' => $attendance->bootcampSchedule->day,
+                                    'start_time' => $attendance->bootcampSchedule->start_time,
+                                    'end_time' => $attendance->bootcampSchedule->end_time,
+                                ],
+                            ];
+                        }),
+                    ],
+                ];
+            });
 
         $ratings = $transactions->flatMap(function ($invoice) {
             return $invoice->bootcampItems->map(function ($item) use ($invoice) {
@@ -186,6 +235,7 @@ class BootcampController extends Controller
         return Inertia::render('admin/bootcamps/show', [
             'bootcamp' => $bootcamp,
             'transactions' => $transactions,
+            'participants' => $participants,
             'ratings' => $ratings,
             'averageRating' => round($averageRating, 1),
             'certificate' => $certificate
@@ -265,8 +315,6 @@ class BootcampController extends Controller
         $bootcamp->update($data);
 
         if ($request->has('schedules') && is_array($request->schedules)) {
-            $bootcamp->schedules()->delete();
-
             $dayMap = [
                 0 => 'minggu',
                 1 => 'senin',
@@ -277,21 +325,55 @@ class BootcampController extends Controller
                 6 => 'sabtu',
             ];
 
+            // Get existing schedules
+            $existingSchedules = $bootcamp->schedules()->get()->keyBy(function ($schedule) {
+                return $schedule->schedule_date . '|' . $schedule->start_time . '|' . $schedule->end_time;
+            });
+
+            $processedKeys = [];
+
             foreach ($request->schedules as $scheduleData) {
                 if (
-                    !empty($scheduleData['schedule_date']) &&
-                    !empty($scheduleData['start_time']) &&
-                    !empty($scheduleData['end_time'])
+                    empty($scheduleData['schedule_date']) ||
+                    empty($scheduleData['start_time']) ||
+                    empty($scheduleData['end_time'])
                 ) {
-                    $date = Carbon::parse($scheduleData['schedule_date'])->toDateString();
-                    $dayEnum = $dayMap[Carbon::parse($date)->dayOfWeek];
+                    continue;
+                }
 
+                $date = Carbon::parse($scheduleData['schedule_date'])->toDateString();
+                $dayEnum = $dayMap[Carbon::parse($date)->dayOfWeek];
+                $startTime = $scheduleData['start_time'];
+                $endTime = $scheduleData['end_time'];
+
+                $scheduleKey = $date . '|' . $startTime . '|' . $endTime;
+                $processedKeys[] = $scheduleKey;
+
+                if ($existingSchedules->has($scheduleKey)) {
+                    $existingSchedule = $existingSchedules->get($scheduleKey);
+                    if ($existingSchedule->day !== $dayEnum) {
+                        $existingSchedule->update(['day' => $dayEnum]);
+                    }
+                } else {
                     $bootcamp->schedules()->create([
                         'schedule_date' => $date,
                         'day' => $dayEnum,
-                        'start_time' => $scheduleData['start_time'],
-                        'end_time' => $scheduleData['end_time'],
+                        'start_time' => $startTime,
+                        'end_time' => $endTime,
                     ]);
+                }
+            }
+
+            $schedulesToDelete = $existingSchedules->reject(function ($schedule) use ($processedKeys) {
+                $scheduleKey = $schedule->schedule_date . '|' . $schedule->start_time . '|' . $schedule->end_time;
+                return in_array($scheduleKey, $processedKeys);
+            });
+
+            foreach ($schedulesToDelete as $schedule) {
+                $hasAttendances = $schedule->attendances()->exists();
+
+                if (!$hasAttendances) {
+                    $schedule->delete();
                 }
             }
         }
