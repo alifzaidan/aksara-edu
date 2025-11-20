@@ -23,8 +23,6 @@ return new class extends Migration
             $table->dateTime('start_time');
             $table->dateTime('end_time')->nullable();
             $table->dateTime('registration_deadline')->nullable();
-            $table->string('host_name')->nullable();
-            $table->string('host_description')->nullable();
             $table->bigInteger('strikethrough_price')->default(0);
             $table->bigInteger('price')->default(0);
             $table->integer('quota')->default(0);

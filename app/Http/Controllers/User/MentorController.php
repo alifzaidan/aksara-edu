@@ -18,6 +18,12 @@ class MentorController extends Controller
                 },
                 'articles as total_articles' => function ($query) {
                     $query->where('status', 'published');
+                },
+                'webinars as total_webinars' => function ($query) {
+                    $query->where('status', 'published');
+                },
+                'bootcamps as total_bootcamps' => function ($query) {
+                    $query->where('status', 'published');
                 }
             ])
             ->get()
@@ -29,6 +35,8 @@ class MentorController extends Controller
                     'avatar' => $mentor->avatar,
                     'total_courses' => $mentor->total_courses ?? 0,
                     'total_articles' => $mentor->total_articles ?? 0,
+                    'total_webinars' => $mentor->total_webinars ?? 0,
+                    'total_bootcamps' => $mentor->total_bootcamps ?? 0,
                 ];
             });
 
@@ -82,6 +90,49 @@ class MentorController extends Controller
                 ];
             });
 
+        $webinars = $mentor->webinars()
+            ->where('status', 'published')
+            ->with(['category'])
+            ->latest('start_time')
+            ->get()
+            ->map(function ($webinar) {
+                return [
+                    'id' => $webinar->id,
+                    'title' => $webinar->title,
+                    'slug' => $webinar->slug,
+                    'thumbnail' => $webinar->thumbnail,
+                    'category' => $webinar->category,
+                    'price' => $webinar->price,
+                    'strikethrough_price' => $webinar->strikethrough_price,
+                    'start_time' => $webinar->start_time,
+                    'end_time' => $webinar->end_time,
+                    'batch' => $webinar->batch,
+                    'quota' => $webinar->quota,
+                ];
+            });
+
+        $bootcamps = $mentor->bootcamps()
+            ->where('status', 'published')
+            ->with(['category'])
+            ->latest('start_date')
+            ->get()
+            ->map(function ($bootcamp) {
+                return [
+                    'id' => $bootcamp->id,
+                    'title' => $bootcamp->title,
+                    'slug' => $bootcamp->slug,
+                    'thumbnail' => $bootcamp->thumbnail,
+                    'category' => $bootcamp->category,
+                    'price' => $bootcamp->price,
+                    'strikethrough_price' => $bootcamp->strikethrough_price,
+                    'start_date' => $bootcamp->start_date,
+                    'end_date' => $bootcamp->end_date,
+                    'batch' => $bootcamp->batch,
+                    'quota' => $bootcamp->quota,
+                    'duration_weeks' => $bootcamp->duration_weeks,
+                ];
+            });
+
         return Inertia::render('user/mentor/show', [
             'mentor' => [
                 'id' => $mentor->id,
@@ -93,10 +144,13 @@ class MentorController extends Controller
             ],
             'courses' => $courses,
             'articles' => $articles,
+            'webinars' => $webinars,
+            'bootcamps' => $bootcamps,
             'stats' => [
                 'total_courses' => $courses->count(),
                 'total_articles' => $articles->count(),
-                'total_students' => $courses->sum('students_count'),
+                'total_webinars' => $webinars->count(),
+                'total_bootcamps' => $bootcamps->count(),
             ],
         ]);
     }

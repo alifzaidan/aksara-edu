@@ -1,6 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInitials } from '@/hooks/use-initials';
@@ -9,7 +8,22 @@ import { rupiahFormatter } from '@/lib/utils';
 import { Head, Link } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { BookText, Calendar, Clock, Eye, FileText, Mail, Phone, Star, Users } from 'lucide-react';
+import {
+    BookOpen,
+    BookText,
+    Calendar,
+    CalendarDays,
+    Clock,
+    Eye,
+    FileText,
+    Mail,
+    MonitorPlay,
+    Phone,
+    Presentation,
+    Star,
+    Users,
+    Video,
+} from 'lucide-react';
 
 interface Category {
     id: string;
@@ -41,6 +55,35 @@ interface Article {
     published_at: string;
 }
 
+interface Webinar {
+    id: string;
+    title: string;
+    slug: string;
+    thumbnail?: string;
+    category: Category;
+    price: number;
+    strikethrough_price: number;
+    start_time: string;
+    end_time: string;
+    batch?: number;
+    quota: number;
+}
+
+interface Bootcamp {
+    id: string;
+    title: string;
+    slug: string;
+    thumbnail?: string;
+    category: Category;
+    price: number;
+    strikethrough_price: number;
+    start_date: string;
+    end_date: string;
+    batch?: number;
+    quota: number;
+    duration_weeks: number;
+}
+
 interface Mentor {
     id: string;
     name: string;
@@ -53,17 +96,20 @@ interface Mentor {
 interface Stats {
     total_courses: number;
     total_articles: number;
-    total_students: number;
+    total_webinars: number;
+    total_bootcamps: number;
 }
 
 interface MentorShowProps {
     mentor: Mentor;
     courses: Course[];
     articles: Article[];
+    webinars: Webinar[];
+    bootcamps: Bootcamp[];
     stats: Stats;
 }
 
-export default function MentorShow({ mentor, courses, articles, stats }: MentorShowProps) {
+export default function MentorShow({ mentor, courses, articles, webinars, bootcamps, stats }: MentorShowProps) {
     const getInitials = useInitials();
 
     const levelColors: Record<string, string> = {
@@ -118,21 +164,42 @@ export default function MentorShow({ mentor, courses, articles, stats }: MentorS
                                 </div>
 
                                 {/* Stats Cards */}
-                                <div className="grid grid-cols-3 gap-3 md:gap-4">
-                                    <div className="rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 p-3 text-center md:p-4">
-                                        <BookText className="mx-auto mb-1 h-5 w-5 text-blue-600 md:h-6 md:w-6" />
-                                        <p className="text-xl font-bold text-blue-700 md:text-2xl">{stats.total_courses}</p>
-                                        <p className="text-xs text-blue-600">Kelas</p>
+                                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+                                    <div className="flex items-center gap-4 rounded-lg border border-blue-200 bg-gradient-to-r from-blue-50 to-white p-4 shadow-sm transition-all hover:shadow-md">
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+                                            <BookText className="h-6 w-6 text-blue-600" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-2xl font-bold text-blue-700">{stats.total_courses}</p>
+                                            <p className="text-sm text-blue-600">Kelas Online</p>
+                                        </div>
                                     </div>
-                                    <div className="rounded-lg bg-gradient-to-br from-purple-50 to-purple-100 p-3 text-center md:p-4">
-                                        <FileText className="mx-auto mb-1 h-5 w-5 text-purple-600 md:h-6 md:w-6" />
-                                        <p className="text-xl font-bold text-purple-700 md:text-2xl">{stats.total_articles}</p>
-                                        <p className="text-xs text-purple-600">Artikel</p>
+                                    <div className="flex items-center gap-4 rounded-lg border border-green-200 bg-gradient-to-r from-green-50 to-white p-4 shadow-sm transition-all hover:shadow-md">
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                                            <Presentation className="h-6 w-6 text-green-600" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-2xl font-bold text-green-700">{stats.total_bootcamps}</p>
+                                            <p className="text-sm text-green-600">Bootcamp</p>
+                                        </div>
                                     </div>
-                                    <div className="rounded-lg bg-gradient-to-br from-green-50 to-green-100 p-3 text-center md:p-4">
-                                        <Users className="mx-auto mb-1 h-5 w-5 text-green-600 md:h-6 md:w-6" />
-                                        <p className="text-xl font-bold text-green-700 md:text-2xl">{stats.total_students}</p>
-                                        <p className="text-xs text-green-600">Siswa</p>
+                                    <div className="flex items-center gap-4 rounded-lg border border-orange-200 bg-gradient-to-r from-orange-50 to-white p-4 shadow-sm transition-all hover:shadow-md">
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100">
+                                            <MonitorPlay className="h-6 w-6 text-orange-600" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-2xl font-bold text-orange-700">{stats.total_webinars}</p>
+                                            <p className="text-sm text-orange-600">Webinar</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4 rounded-lg border border-purple-200 bg-gradient-to-r from-purple-50 to-white p-4 shadow-sm transition-all hover:shadow-md">
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
+                                            <FileText className="h-6 w-6 text-purple-600" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-2xl font-bold text-purple-700">{stats.total_articles}</p>
+                                            <p className="text-sm text-purple-600">Artikel</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -142,10 +209,18 @@ export default function MentorShow({ mentor, courses, articles, stats }: MentorS
 
                 {/* Tabs Section */}
                 <Tabs defaultValue="courses" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className="grid w-full grid-cols-4">
                         <TabsTrigger value="courses">
                             <BookText className="mr-2 h-4 w-4" />
                             Kelas ({courses.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="bootcamps">
+                            <BookOpen className="mr-2 h-4 w-4" />
+                            Bootcamp ({bootcamps.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="webinars">
+                            <Video className="mr-2 h-4 w-4" />
+                            Webinar ({webinars.length})
                         </TabsTrigger>
                         <TabsTrigger value="articles">
                             <FileText className="mr-2 h-4 w-4" />
@@ -159,7 +234,7 @@ export default function MentorShow({ mentor, courses, articles, stats }: MentorS
                             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                                 {courses.map((course) => (
                                     <Link key={course.id} href={`/course/${course.slug}`} className="group">
-                                        <div className="h-full overflow-hidden transition-all hover:shadow-lg">
+                                        <div className="h-full overflow-hidden rounded-lg border border-gray-200 bg-white transition-all hover:shadow-lg">
                                             <div className="aspect-video overflow-hidden">
                                                 <img
                                                     src={course.thumbnail ? `/storage/${course.thumbnail}` : '/assets/images/placeholder.png'}
@@ -229,13 +304,160 @@ export default function MentorShow({ mentor, courses, articles, stats }: MentorS
                         )}
                     </TabsContent>
 
-                    {/* Articles Tab */}
+                    <TabsContent value="bootcamps" className="mt-6">
+                        {bootcamps.length > 0 ? (
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {bootcamps.map((bootcamp) => (
+                                    <Link key={bootcamp.id} href={`/bootcamp/${bootcamp.slug}`} className="group">
+                                        <div className="h-full overflow-hidden rounded-lg border border-gray-200 bg-white transition-all hover:shadow-lg">
+                                            <div className="aspect-video overflow-hidden">
+                                                <img
+                                                    src={bootcamp.thumbnail ? `/storage/${bootcamp.thumbnail}` : '/assets/images/placeholder.png'}
+                                                    alt={bootcamp.title}
+                                                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                                                />
+                                            </div>
+                                            <div className="p-4">
+                                                <div className="mb-2 flex items-center justify-between">
+                                                    <Badge variant="secondary" className="text-xs">
+                                                        {bootcamp.category.name}
+                                                    </Badge>
+                                                    {bootcamp.batch && (
+                                                        <Badge variant="outline" className="text-xs">
+                                                            Batch {bootcamp.batch}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+
+                                                <h3 className="group-hover:text-primary mb-2 line-clamp-2 font-semibold transition-colors">
+                                                    {bootcamp.title}
+                                                </h3>
+
+                                                <div className="text-muted-foreground mb-3 space-y-1 text-xs">
+                                                    <div className="flex items-center gap-1">
+                                                        <CalendarDays className="h-3 w-3" />
+                                                        {format(new Date(bootcamp.start_date), 'dd MMM', { locale: id })} -{' '}
+                                                        {format(new Date(bootcamp.end_date), 'dd MMM yyyy', { locale: id })}
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <Clock className="h-3 w-3" />
+                                                        Durasi: {bootcamp.duration_weeks} minggu
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <Users className="h-3 w-3" />
+                                                        Kuota: {bootcamp.quota === 0 ? 'Unlimited' : bootcamp.quota}
+                                                    </div>
+                                                </div>
+
+                                                <Separator className="mb-3" />
+
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        {bootcamp.strikethrough_price > 0 && (
+                                                            <p className="text-muted-foreground text-xs line-through">
+                                                                {rupiahFormatter.format(bootcamp.strikethrough_price)}
+                                                            </p>
+                                                        )}
+                                                        <p className="text-primary text-lg font-bold">
+                                                            {bootcamp.price === 0 ? 'Gratis' : rupiahFormatter.format(bootcamp.price)}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="mb-8 rounded-lg border border-gray-200 bg-white shadow-sm">
+                                <div className="flex min-h-[300px] flex-col items-center justify-center gap-2 p-8">
+                                    <img src="/assets/images/not-found.webp" alt="Bootcamp Belum Tersedia" className="w-36" />
+                                    <div className="text-center text-gray-500">Belum ada bootcamp yang pernah diajar.</div>
+                                </div>
+                            </div>
+                        )}
+                    </TabsContent>
+
+                    <TabsContent value="webinars" className="mt-6">
+                        {webinars.length > 0 ? (
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {webinars.map((webinar) => (
+                                    <Link key={webinar.id} href={`/webinar/${webinar.slug}`} className="group">
+                                        <div className="h-full overflow-hidden rounded-lg border border-gray-200 bg-white transition-all hover:shadow-lg">
+                                            <div className="aspect-video overflow-hidden">
+                                                <img
+                                                    src={webinar.thumbnail ? `/storage/${webinar.thumbnail}` : '/assets/images/placeholder.png'}
+                                                    alt={webinar.title}
+                                                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                                                />
+                                            </div>
+                                            <div className="p-4">
+                                                <div className="mb-2 flex items-center justify-between">
+                                                    <Badge variant="secondary" className="text-xs">
+                                                        {webinar.category.name}
+                                                    </Badge>
+                                                    {webinar.batch && (
+                                                        <Badge variant="outline" className="text-xs">
+                                                            Batch {webinar.batch}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+
+                                                <h3 className="group-hover:text-primary mb-2 line-clamp-2 font-semibold transition-colors">
+                                                    {webinar.title}
+                                                </h3>
+
+                                                <div className="text-muted-foreground mb-3 space-y-1 text-xs">
+                                                    <div className="flex items-center gap-1">
+                                                        <CalendarDays className="h-3 w-3" />
+                                                        {format(new Date(webinar.start_time), 'dd MMM yyyy', { locale: id })}
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <Clock className="h-3 w-3" />
+                                                        {format(new Date(webinar.start_time), 'HH:mm', { locale: id })} -{' '}
+                                                        {format(new Date(webinar.end_time), 'HH:mm', { locale: id })} WIB
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <Users className="h-3 w-3" />
+                                                        Kuota: {webinar.quota === 0 ? 'Unlimited' : webinar.quota}
+                                                    </div>
+                                                </div>
+
+                                                <Separator className="mb-3" />
+
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        {webinar.strikethrough_price > 0 && (
+                                                            <p className="text-muted-foreground text-xs line-through">
+                                                                {rupiahFormatter.format(webinar.strikethrough_price)}
+                                                            </p>
+                                                        )}
+                                                        <p className="text-primary text-lg font-bold">
+                                                            {webinar.price === 0 ? 'Gratis' : rupiahFormatter.format(webinar.price)}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="mb-8 rounded-lg border border-gray-200 bg-white shadow-sm">
+                                <div className="flex min-h-[300px] flex-col items-center justify-center gap-2 p-8">
+                                    <img src="/assets/images/not-found.webp" alt="Webinar Belum Tersedia" className="w-36" />
+                                    <div className="text-center text-gray-500">Belum ada webinar yang pernah diajar.</div>
+                                </div>
+                            </div>
+                        )}
+                    </TabsContent>
+
                     <TabsContent value="articles" className="mt-6">
                         {articles.length > 0 ? (
                             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                                 {articles.map((article) => (
                                     <Link key={article.id} href={`/article/${article.slug}`} className="group">
-                                        <Card className="h-full overflow-hidden transition-all hover:shadow-lg">
+                                        <div className="h-full overflow-hidden rounded-lg border border-gray-200 bg-white transition-all hover:shadow-lg">
                                             <div className="aspect-video overflow-hidden">
                                                 <img
                                                     src={article.thumbnail ? `/storage/${article.thumbnail}` : '/assets/images/placeholder.png'}
@@ -243,7 +465,7 @@ export default function MentorShow({ mentor, courses, articles, stats }: MentorS
                                                     className="h-full w-full object-cover transition-transform group-hover:scale-105"
                                                 />
                                             </div>
-                                            <CardContent className="p-4">
+                                            <div className="p-4">
                                                 <Badge variant="secondary" className="mb-2 text-xs">
                                                     {article.category.name}
                                                 </Badge>
@@ -272,8 +494,8 @@ export default function MentorShow({ mentor, courses, articles, stats }: MentorS
                                                         {format(new Date(article.published_at), 'dd MMM', { locale: id })}
                                                     </div>
                                                 </div>
-                                            </CardContent>
-                                        </Card>
+                                            </div>
+                                        </div>
                                     </Link>
                                 ))}
                             </div>

@@ -42,9 +42,9 @@ class WebinarController extends Controller
     {
         $this->handleReferralCode($request);
 
-        $webinar->load(['category', 'tools']);
+        $webinar->load(['category', 'tools', 'user']);
 
-        $relatedWebinars = Webinar::with(['category'])
+        $relatedWebinars = Webinar::with(['category', 'user'])
             ->where('status', 'published')
             ->where('category_id', $webinar->category_id)
             ->where('id', '!=', $webinar->id)
@@ -86,7 +86,7 @@ class WebinarController extends Controller
             return redirect()->route('login', ['redirect' => $currentUrl]);
         }
 
-        $webinar->load(['tools']);
+        $webinar->load(['tools', 'user', 'category']);
         $hasAccess = false;
         $pendingInvoiceUrl = null;
 

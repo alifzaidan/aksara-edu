@@ -43,12 +43,16 @@ class WebinarController extends Controller
     {
         $categories = Category::all();
         $tools = Tool::all();
-        return Inertia::render('admin/webinars/create', ['categories' => $categories, 'tools' => $tools]);
+
+        $mentors = User::role('mentor')->get(['id', 'name', 'bio', 'avatar']);
+
+        return Inertia::render('admin/webinars/create', ['categories' => $categories, 'tools' => $tools, 'mentors' => $mentors]);
     }
 
     public function store(Request $request)
     {
         $request->validate([
+            'user_id' => 'required|exists:users,id',
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
@@ -57,8 +61,6 @@ class WebinarController extends Controller
             'start_time' => 'required|date',
             'end_time' => 'nullable|date|after_or_equal:start_time',
             'registration_deadline' => 'nullable|date',
-            'host_name' => 'nullable|string|max:255',
-            'host_description' => 'nullable|string',
             'strikethrough_price' => 'required|numeric|min:0',
             'price' => 'required|numeric|min:0',
             'quota' => 'required|integer|min:0',
@@ -94,7 +96,6 @@ class WebinarController extends Controller
         } else {
             $data['thumbnail'] = null;
         }
-        $data['user_id'] = $request->user()->id;
         $data['webinar_url'] = url('/webinar/' . $slug);
         $data['registration_url'] = url('/webinar/' . $slug . '/register');
         $data['status'] = 'draft';
@@ -161,12 +162,16 @@ class WebinarController extends Controller
         $webinar = Webinar::with(['tools'])->findOrFail($id);
         $categories = Category::all();
         $tools = Tool::all();
-        return Inertia::render('admin/webinars/edit', ['webinar' => $webinar, 'categories' => $categories, 'tools' => $tools]);
+
+        $mentors = User::role('mentor')->get(['id', 'name', 'bio', 'avatar']);
+
+        return Inertia::render('admin/webinars/edit', ['webinar' => $webinar, 'categories' => $categories, 'tools' => $tools, 'mentors' => $mentors]);
     }
 
     public function update(Request $request, string $id)
     {
         $request->validate([
+            'user_id' => 'required|exists:users,id',
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
@@ -175,8 +180,6 @@ class WebinarController extends Controller
             'start_time' => 'required|date',
             'end_time' => 'nullable|date|after_or_equal:start_time',
             'registration_deadline' => 'nullable|date',
-            'host_name' => 'nullable|string|max:255',
-            'host_description' => 'nullable|string',
             'strikethrough_price' => 'required|numeric|min:0',
             'price' => 'required|numeric|min:0',
             'quota' => 'required|integer|min:0',

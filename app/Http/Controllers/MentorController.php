@@ -16,6 +16,7 @@ class MentorController extends Controller
             ->withSum('affiliateEarnings', 'amount')
             ->withCount('courses as total_courses')
             ->withCount('articles as total_articles')
+            ->withCount('webinars as total_webinars')
             ->latest()
             ->get()
             ->map(function ($mentor) {
@@ -94,6 +95,32 @@ class MentorController extends Controller
             ->latest()
             ->get();
 
+        $articles = $mentor->articles()
+            ->with(['category'])
+            ->withCount(['articleViews as views_count'])
+            ->latest()
+            ->get();
+
+        $webinars = $mentor->webinars()
+            ->with(['category', 'tools'])
+            ->latest()
+            ->get()
+            ->map(function ($webinar) {
+                return [
+                    'id' => $webinar->id,
+                    'title' => $webinar->title,
+                    'slug' => $webinar->slug,
+                    'thumbnail' => $webinar->thumbnail,
+                    'category' => $webinar->category,
+                    'price' => $webinar->price,
+                    'discount_price' => $webinar->discount_price ?? null,
+                    'quota' => $webinar->quota,
+                    'status' => $webinar->status,
+                    'start_time' => $webinar->start_time,
+                    'batch' => $webinar->batch,
+                ];
+            });
+
         $stats = [
             'total_products' => $earnings->count(),
             'total_commission' => $earnings->sum('amount'),
@@ -105,6 +132,8 @@ class MentorController extends Controller
             'mentor' => $mentor,
             'earnings' => $earnings,
             'courses' => $courses,
+            'articles' => $articles,
+            'webinars' => $webinars,
             'stats' => $stats
         ]);
     }

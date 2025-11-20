@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { useInitials } from '@/hooks/use-initials';
 import { rupiahFormatter } from '@/lib/utils';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
@@ -33,9 +34,13 @@ interface Webinar {
     description?: string | null;
     benefits?: string | null;
     group_url?: string | null;
-    host_name?: string | null;
-    host_description?: string | null;
     created_at: string | Date;
+    user?: {
+        id: string;
+        name: string;
+        bio?: string;
+        avatar?: string;
+    };
 }
 
 function getYoutubeId(url: string) {
@@ -48,6 +53,8 @@ export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
     const [isDeleting, setIsDeleting] = useState(false);
+
+    const getInitials = useInitials();
 
     const [previewUrl, setPreviewUrl] = useState('');
 
@@ -294,8 +301,27 @@ export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
                     <TableRow>
                         <TableCell>Pemateri</TableCell>
                         <TableCell>
-                            <div>{webinar.host_name ?? '-'}</div>
-                            <div className="text-muted-foreground text-xs">{webinar.host_description ?? ''}</div>
+                            {webinar.user ? (
+                                <div className="flex items-center gap-3">
+                                    {webinar.user.avatar ? (
+                                        <img
+                                            src={`/storage/${webinar.user.avatar}`}
+                                            alt={webinar.user.name}
+                                            className="h-10 w-10 rounded-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-600">
+                                            {getInitials(webinar.user.name)}
+                                        </div>
+                                    )}
+                                    <div>
+                                        <div className="font-medium">{webinar.user.name}</div>
+                                        <div className="text-sm text-gray-500">{webinar.user.bio ?? 'Tidak ada bio'}</div>
+                                    </div>
+                                </div>
+                            ) : (
+                                '-'
+                            )}
                         </TableCell>
                     </TableRow>
                     <TableRow>

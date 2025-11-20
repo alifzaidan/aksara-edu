@@ -25,4 +25,14 @@ class Category extends Model
     {
         return $this->hasMany(Article::class);
     }
+
+    public function bootcamps()
+    {
+        return $this->hasMany(Bootcamp::class);
+    }
+
+    public function webinars()
+    {
+        return $this->hasMany(Webinar::class);
+    }
 }

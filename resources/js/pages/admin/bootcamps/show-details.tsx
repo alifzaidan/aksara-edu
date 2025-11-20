@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { useInitials } from '@/hooks/use-initials';
 import { rupiahFormatter } from '@/lib/utils';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
@@ -44,8 +45,12 @@ interface Bootcamp {
     group_url?: string | null;
     requirements?: string | null;
     curriculum?: string | null;
-    host_name?: string | null;
-    host_description?: string | null;
+    user?: {
+        id: string;
+        name: string;
+        bio?: string;
+        avatar?: string;
+    };
     has_submission_link?: boolean;
     created_at: string | Date;
 }
@@ -60,6 +65,8 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
     const [deletingScheduleId, setDeletingScheduleId] = useState<string | null>(null);
+
+    const getInitials = useInitials();
 
     const affiliateUrls = useMemo(() => {
         const affiliateCode = auth.user.affiliate_code;
@@ -430,8 +437,27 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                     <TableRow>
                         <TableCell>Pemateri</TableCell>
                         <TableCell>
-                            <div>{bootcamp.host_name ?? '-'}</div>
-                            <div className="text-muted-foreground text-xs">{bootcamp.host_description ?? ''}</div>
+                            {bootcamp.user ? (
+                                <div className="flex items-center gap-3">
+                                    {bootcamp.user.avatar ? (
+                                        <img
+                                            src={`/storage/${bootcamp.user.avatar}`}
+                                            alt={bootcamp.user.name}
+                                            className="h-10 w-10 rounded-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-600">
+                                            {getInitials(bootcamp.user.name)}
+                                        </div>
+                                    )}
+                                    <div>
+                                        <div className="font-medium">{bootcamp.user.name}</div>
+                                        <div className="text-sm text-gray-500">{bootcamp.user.bio ?? 'Tidak ada bio'}</div>
+                                    </div>
+                                </div>
+                            ) : (
+                                '-'
+                            )}
                         </TableCell>
                     </TableRow>
                     <TableRow>

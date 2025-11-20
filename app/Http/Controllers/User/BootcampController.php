@@ -42,9 +42,9 @@ class BootcampController extends Controller
     {
         $this->handleReferralCode($request);
 
-        $bootcamp->load(['category', 'schedules', 'tools']);
+        $bootcamp->load(['category', 'schedules', 'tools', 'user']);
 
-        $relatedBootcamps = Bootcamp::with(['category'])
+        $relatedBootcamps = Bootcamp::with(['category', 'user'])
             ->where('status', 'published')
             ->where('category_id', $bootcamp->category_id)
             ->where('id', '!=', $bootcamp->id)
@@ -85,7 +85,7 @@ class BootcampController extends Controller
             return redirect()->route('login', ['redirect' => $currentUrl]);
         }
 
-        $bootcamp->load(['schedules']);
+        $bootcamp->load(['schedules, tools, user, category']);
         $hasAccess = false;
         $pendingInvoiceUrl = null;
 

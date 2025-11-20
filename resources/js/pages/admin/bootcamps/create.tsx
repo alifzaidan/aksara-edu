@@ -1,5 +1,6 @@
 'use client';
 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -10,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { useInitials } from '@/hooks/use-initials';
 import AdminLayout from '@/layouts/admin-layout';
 import { cn, parseRupiah, rupiahFormatter } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
@@ -17,7 +19,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Head, router } from '@inertiajs/react';
 import { Editor } from '@tinymce/tinymce-react';
 import { addDays, setHours, setMinutes, setSeconds } from 'date-fns';
-import { BookMarked, CalendarFold, Check, ChevronDownIcon, ChevronsUpDown } from 'lucide-react';
+import { BookMarked, CalendarFold, Check, ChevronDownIcon, ChevronsUpDown, UserRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -37,6 +39,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const formSchema = z
     .object({
+        user_id: z.string().nonempty('Mentor harus dipilih'),
         title: z.string().nonempty('Judul harus diisi'),
         category_id: z.string().nonempty('Kategori harus dipilih'),
         description: z.string().nullable(),
@@ -47,8 +50,6 @@ const formSchema = z
         start_date: z.string(),
         end_date: z.string(),
         registration_deadline: z.string(),
-        host_name: z.string().nullable(),
-        host_description: z.string().nullable(),
         strikethrough_price: z.number().min(0),
         price: z.number().min(0),
         quota: z.number().min(0),
@@ -70,8 +71,25 @@ const formSchema = z
         },
     );
 
-export default function CreateBootcamp({ categories, tools }: { categories: { id: string; name: string }[]; tools: { id: string; name: string }[] }) {
+interface Mentor {
+    id: string;
+    name: string;
+    bio?: string;
+    avatar?: string;
+}
+
+export default function CreateBootcamp({
+    categories,
+    tools,
+    mentors,
+}: {
+    categories: { id: string; name: string }[];
+    tools: { id: string; name: string }[];
+    mentors: Mentor[];
+}) {
+    const getInitials = useInitials();
     const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
+    const [isMentorPopoverOpen, setIsMentorPopoverOpen] = useState(false);
     const [openStartCalendar, setOpenStartCalendar] = useState(false);
     const [openEndCalendar, setOpenEndCalendar] = useState(false);
     const [openRegistrationCalendar, setOpenRegistrationCalendar] = useState(false);
@@ -91,6 +109,7 @@ export default function CreateBootcamp({ categories, tools }: { categories: { id
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
+            user_id: '',
             title: '',
             category_id: '',
             description: '',
@@ -114,8 +133,6 @@ export default function CreateBootcamp({ categories, tools }: { categories: { id
             start_date: defaultStart.toISOString(),
             end_date: defaultEnd.toISOString(),
             registration_deadline: defaultRegDeadline.toISOString(),
-            host_name: '',
-            host_description: '',
             strikethrough_price: 0,
             price: 0,
             quota: 0,
@@ -145,6 +162,8 @@ export default function CreateBootcamp({ categories, tools }: { categories: { id
     function onSubmit(values: z.infer<typeof formSchema>) {
         router.post(route('bootcamps.store'), { ...values, schedules }, { forceFormData: true });
     }
+
+    const selectedMentor = mentors.find((m) => m.id === form.watch('user_id'));
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
@@ -706,30 +725,82 @@ export default function CreateBootcamp({ categories, tools }: { categories: { id
                             />
                             <FormField
                                 control={form.control}
-                                name="host_name"
+                                name="user_id"
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Nama Pemateri</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Masukkan nama pemateri" {...field} value={field.value ?? ''} autoComplete="off" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="host_description"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Deskripsi Pemateri</FormLabel>
-                                        <Textarea
-                                            {...field}
-                                            value={field.value ?? ''}
-                                            className="w-full rounded border p-2"
-                                            placeholder="Masukkan deskripsi pemateri"
-                                            autoComplete="off"
-                                        />
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel>
+                                            Mentor / Pemateri <span className="text-red-500">*</span>
+                                        </FormLabel>
+                                        <Popover open={isMentorPopoverOpen} onOpenChange={setIsMentorPopoverOpen}>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button
+                                                        variant="outline"
+                                                        role="combobox"
+                                                        className={cn('justify-between', !field.value && 'text-muted-foreground')}
+                                                    >
+                                                        {selectedMentor ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <Avatar className="h-6 w-6">
+                                                                    <AvatarImage src={selectedMentor.avatar} alt={selectedMentor.name} />
+                                                                    <AvatarFallback className="text-xs">
+                                                                        {getInitials(selectedMentor.name)}
+                                                                    </AvatarFallback>
+                                                                </Avatar>
+                                                                <span>{selectedMentor.name}</span>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="flex items-center gap-2">
+                                                                <UserRound className="h-4 w-4" />
+                                                                Pilih mentor
+                                                            </span>
+                                                        )}
+                                                        <ChevronsUpDown className="opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[400px] p-0">
+                                                <Command>
+                                                    <CommandInput placeholder="Cari mentor..." className="h-9" />
+                                                    <CommandList>
+                                                        <CommandEmpty>Tidak ada mentor ditemukan.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            {mentors.map((mentor) => (
+                                                                <CommandItem
+                                                                    value={mentor.name}
+                                                                    key={mentor.id}
+                                                                    onSelect={() => {
+                                                                        form.setValue('user_id', mentor.id);
+                                                                        setIsMentorPopoverOpen(false);
+                                                                    }}
+                                                                    className="flex items-start gap-2 py-2"
+                                                                >
+                                                                    <Avatar className="mt-0.5 h-8 w-8">
+                                                                        <AvatarImage src={mentor.avatar} alt={mentor.name} />
+                                                                        <AvatarFallback className="text-xs">
+                                                                            {getInitials(mentor.name)}
+                                                                        </AvatarFallback>
+                                                                    </Avatar>
+                                                                    <div className="flex-1">
+                                                                        <p className="font-medium">{mentor.name}</p>
+                                                                        {mentor.bio && (
+                                                                            <p className="text-muted-foreground line-clamp-1 text-xs">{mentor.bio}</p>
+                                                                        )}
+                                                                    </div>
+                                                                    <Check
+                                                                        className={cn(
+                                                                            'mt-1 ml-auto',
+                                                                            mentor.id === field.value ? 'opacity-100' : 'opacity-0',
+                                                                        )}
+                                                                    />
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormDescription>Pilih mentor yang akan menjadi pemateri webinar ini</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}

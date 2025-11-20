@@ -29,8 +29,12 @@ interface Webinar {
     description?: string | null;
     benefits?: string | null;
     instructions?: string | null;
-    host_name?: string | null;
-    host_description?: string | null;
+    user?: {
+        id: string;
+        name: string;
+        bio?: string;
+        avatar?: string;
+    };
     created_at: string | Date;
 }
 

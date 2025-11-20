@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useInitials } from '@/hooks/use-initials';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
-import { BookText, FileText } from 'lucide-react';
+import { BookOpen, BookText, FileText, Video } from 'lucide-react';
 
 interface Mentor {
     id: string;
@@ -13,6 +13,8 @@ interface Mentor {
     avatar?: string;
     total_courses: number;
     total_articles: number;
+    total_webinars: number;
+    total_bootcamps: number;
 }
 
 interface MentorIndexProps {
@@ -57,25 +59,37 @@ export default function MentorIndex({ mentors }: MentorIndexProps) {
                                             </div>
                                         </div>
 
-                                        {/* Stats */}
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="rounded-lg bg-blue-50 p-3 text-center">
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="rounded-lg bg-blue-50 p-2.5 text-center">
                                                 <div className="mb-1 flex items-center justify-center gap-1 text-blue-600">
-                                                    <BookText className="h-4 w-4" />
+                                                    <BookText className="h-3.5 w-3.5" />
                                                 </div>
-                                                <p className="text-xl font-bold text-blue-700">{mentor.total_courses}</p>
-                                                <p className="text-xs text-blue-600">Kelas</p>
+                                                <p className="text-lg font-bold text-blue-700">{mentor.total_courses}</p>
+                                                <p className="text-[10px] text-blue-600">Kelas</p>
                                             </div>
-                                            <div className="rounded-lg bg-purple-50 p-3 text-center">
+                                            <div className="rounded-lg bg-purple-50 p-2.5 text-center">
                                                 <div className="mb-1 flex items-center justify-center gap-1 text-purple-600">
-                                                    <FileText className="h-4 w-4" />
+                                                    <FileText className="h-3.5 w-3.5" />
                                                 </div>
-                                                <p className="text-xl font-bold text-purple-700">{mentor.total_articles}</p>
-                                                <p className="text-xs text-purple-600">Artikel</p>
+                                                <p className="text-lg font-bold text-purple-700">{mentor.total_articles}</p>
+                                                <p className="text-[10px] text-purple-600">Artikel</p>
+                                            </div>
+                                            <div className="rounded-lg bg-green-50 p-2.5 text-center">
+                                                <div className="mb-1 flex items-center justify-center gap-1 text-green-600">
+                                                    <Video className="h-3.5 w-3.5" />
+                                                </div>
+                                                <p className="text-lg font-bold text-green-700">{mentor.total_webinars}</p>
+                                                <p className="text-[10px] text-green-600">Webinar</p>
+                                            </div>
+                                            <div className="rounded-lg bg-orange-50 p-2.5 text-center">
+                                                <div className="mb-1 flex items-center justify-center gap-1 text-orange-600">
+                                                    <BookOpen className="h-3.5 w-3.5" />
+                                                </div>
+                                                <p className="text-lg font-bold text-orange-700">{mentor.total_bootcamps}</p>
+                                                <p className="text-[10px] text-orange-600">Bootcamp</p>
                                             </div>
                                         </div>
 
-                                        {/* CTA Button */}
                                         <Button className="mt-4 w-full" variant="outline">
                                             Lihat Profile
                                         </Button>
