@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -90,12 +91,17 @@ class MentorController extends Controller
                 ];
             });
 
+        $now = Carbon::now();
+
         $webinars = $mentor->webinars()
             ->where('status', 'published')
             ->with(['category'])
             ->latest('start_time')
             ->get()
-            ->map(function ($webinar) {
+            ->map(function ($webinar) use ($now) {
+                $registrationDeadline = Carbon::parse($webinar->registration_deadline);
+                $isRegistrationClosed = $now->greaterThan($registrationDeadline);
+
                 return [
                     'id' => $webinar->id,
                     'title' => $webinar->title,
@@ -107,7 +113,8 @@ class MentorController extends Controller
                     'start_time' => $webinar->start_time,
                     'end_time' => $webinar->end_time,
                     'batch' => $webinar->batch,
-                    'quota' => $webinar->quota,
+                    'registration_deadline' => $webinar->registration_deadline,
+                    'is_registration_closed' => $isRegistrationClosed,
                 ];
             });
 
@@ -116,7 +123,10 @@ class MentorController extends Controller
             ->with(['category'])
             ->latest('start_date')
             ->get()
-            ->map(function ($bootcamp) {
+            ->map(function ($bootcamp) use ($now) {
+                $registrationDeadline = Carbon::parse($bootcamp->registration_deadline);
+                $isRegistrationClosed = $now->greaterThan($registrationDeadline);
+
                 return [
                     'id' => $bootcamp->id,
                     'title' => $bootcamp->title,
@@ -128,8 +138,9 @@ class MentorController extends Controller
                     'start_date' => $bootcamp->start_date,
                     'end_date' => $bootcamp->end_date,
                     'batch' => $bootcamp->batch,
-                    'quota' => $bootcamp->quota,
                     'duration_weeks' => $bootcamp->duration_weeks,
+                    'registration_deadline' => $bootcamp->registration_deadline,
+                    'is_registration_closed' => $isRegistrationClosed,
                 ];
             });
 

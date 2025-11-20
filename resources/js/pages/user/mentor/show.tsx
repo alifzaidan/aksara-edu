@@ -66,7 +66,8 @@ interface Webinar {
     start_time: string;
     end_time: string;
     batch?: number;
-    quota: number;
+    registration_deadline: string;
+    is_registration_closed: boolean;
 }
 
 interface Bootcamp {
@@ -80,7 +81,8 @@ interface Bootcamp {
     start_date: string;
     end_date: string;
     batch?: number;
-    quota: number;
+    registration_deadline: string;
+    is_registration_closed: boolean;
     duration_weeks: number;
 }
 
@@ -307,66 +309,90 @@ export default function MentorShow({ mentor, courses, articles, webinars, bootca
                     <TabsContent value="bootcamps" className="mt-6">
                         {bootcamps.length > 0 ? (
                             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                {bootcamps.map((bootcamp) => (
-                                    <Link key={bootcamp.id} href={`/bootcamp/${bootcamp.slug}`} className="group">
-                                        <div className="h-full overflow-hidden rounded-lg border border-gray-200 bg-white transition-all hover:shadow-lg">
-                                            <div className="aspect-video overflow-hidden">
-                                                <img
-                                                    src={bootcamp.thumbnail ? `/storage/${bootcamp.thumbnail}` : '/assets/images/placeholder.png'}
-                                                    alt={bootcamp.title}
-                                                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                                                />
-                                            </div>
-                                            <div className="p-4">
-                                                <div className="mb-2 flex items-center justify-between">
-                                                    <Badge variant="secondary" className="text-xs">
-                                                        {bootcamp.category.name}
-                                                    </Badge>
-                                                    {bootcamp.batch && (
-                                                        <Badge variant="outline" className="text-xs">
-                                                            Batch {bootcamp.batch}
-                                                        </Badge>
+                                {bootcamps.map((bootcamp) => {
+                                    const isDisabled = bootcamp.is_registration_closed;
+                                    const LinkOrDiv = isDisabled ? 'div' : Link;
+                                    const linkProps = isDisabled ? {} : { href: `/bootcamp/${bootcamp.slug}` };
+
+                                    return (
+                                        <LinkOrDiv key={bootcamp.id} {...linkProps} className={`group ${isDisabled ? 'cursor-not-allowed' : ''}`}>
+                                            <div
+                                                className={`h-full overflow-hidden rounded-lg border border-gray-200 bg-white transition-all ${
+                                                    isDisabled ? 'opacity-60' : 'hover:shadow-lg'
+                                                }`}
+                                            >
+                                                <div className="relative aspect-video overflow-hidden">
+                                                    <img
+                                                        src={bootcamp.thumbnail ? `/storage/${bootcamp.thumbnail}` : '/assets/images/placeholder.png'}
+                                                        alt={bootcamp.title}
+                                                        className={`h-full w-full object-cover ${!isDisabled && 'transition-transform group-hover:scale-105'}`}
+                                                    />
+                                                    {isDisabled && (
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                                                            <Badge variant="destructive" className="px-4 py-2 text-sm font-semibold">
+                                                                Pendaftaran Ditutup
+                                                            </Badge>
+                                                        </div>
                                                     )}
                                                 </div>
-
-                                                <h3 className="group-hover:text-primary mb-2 line-clamp-2 font-semibold transition-colors">
-                                                    {bootcamp.title}
-                                                </h3>
-
-                                                <div className="text-muted-foreground mb-3 space-y-1 text-xs">
-                                                    <div className="flex items-center gap-1">
-                                                        <CalendarDays className="h-3 w-3" />
-                                                        {format(new Date(bootcamp.start_date), 'dd MMM', { locale: id })} -{' '}
-                                                        {format(new Date(bootcamp.end_date), 'dd MMM yyyy', { locale: id })}
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <Clock className="h-3 w-3" />
-                                                        Durasi: {bootcamp.duration_weeks} minggu
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <Users className="h-3 w-3" />
-                                                        Kuota: {bootcamp.quota === 0 ? 'Unlimited' : bootcamp.quota}
-                                                    </div>
-                                                </div>
-
-                                                <Separator className="mb-3" />
-
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        {bootcamp.strikethrough_price > 0 && (
-                                                            <p className="text-muted-foreground text-xs line-through">
-                                                                {rupiahFormatter.format(bootcamp.strikethrough_price)}
-                                                            </p>
+                                                <div className="p-4">
+                                                    <div className="mb-2 flex items-center justify-between">
+                                                        <Badge variant="secondary" className="text-xs">
+                                                            {bootcamp.category.name}
+                                                        </Badge>
+                                                        {bootcamp.batch && (
+                                                            <Badge variant="outline" className="text-xs">
+                                                                Batch {bootcamp.batch}
+                                                            </Badge>
                                                         )}
-                                                        <p className="text-primary text-lg font-bold">
-                                                            {bootcamp.price === 0 ? 'Gratis' : rupiahFormatter.format(bootcamp.price)}
-                                                        </p>
+                                                    </div>
+
+                                                    <h3
+                                                        className={`mb-2 line-clamp-2 font-semibold transition-colors ${
+                                                            !isDisabled && 'group-hover:text-primary'
+                                                        }`}
+                                                    >
+                                                        {bootcamp.title}
+                                                    </h3>
+
+                                                    <div className="text-muted-foreground mb-3 space-y-1 text-xs">
+                                                        <div className="flex items-center gap-1">
+                                                            <CalendarDays className="h-3 w-3" />
+                                                            {format(new Date(bootcamp.start_date), 'dd MMM', { locale: id })} -{' '}
+                                                            {format(new Date(bootcamp.end_date), 'dd MMM yyyy', { locale: id })}
+                                                        </div>
+                                                        <div className="flex items-center gap-1">
+                                                            <Clock className="h-3 w-3" />
+                                                            Durasi: {bootcamp.duration_weeks} minggu
+                                                        </div>
+                                                        {isDisabled && (
+                                                            <div className="flex items-center gap-1 font-medium text-red-600">
+                                                                <Calendar className="h-3 w-3" />
+                                                                Ditutup:{' '}
+                                                                {format(new Date(bootcamp.registration_deadline), 'dd MMM yyyy', { locale: id })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <Separator className="mb-3" />
+
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            {bootcamp.strikethrough_price > 0 && (
+                                                                <p className="text-muted-foreground text-xs line-through">
+                                                                    {rupiahFormatter.format(bootcamp.strikethrough_price)}
+                                                                </p>
+                                                            )}
+                                                            <p className={`text-lg font-bold ${isDisabled ? 'text-gray-500' : 'text-primary'}`}>
+                                                                {bootcamp.price === 0 ? 'Gratis' : rupiahFormatter.format(bootcamp.price)}
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </Link>
-                                ))}
+                                        </LinkOrDiv>
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div className="mb-8 rounded-lg border border-gray-200 bg-white shadow-sm">
@@ -381,66 +407,90 @@ export default function MentorShow({ mentor, courses, articles, webinars, bootca
                     <TabsContent value="webinars" className="mt-6">
                         {webinars.length > 0 ? (
                             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                {webinars.map((webinar) => (
-                                    <Link key={webinar.id} href={`/webinar/${webinar.slug}`} className="group">
-                                        <div className="h-full overflow-hidden rounded-lg border border-gray-200 bg-white transition-all hover:shadow-lg">
-                                            <div className="aspect-video overflow-hidden">
-                                                <img
-                                                    src={webinar.thumbnail ? `/storage/${webinar.thumbnail}` : '/assets/images/placeholder.png'}
-                                                    alt={webinar.title}
-                                                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                                                />
-                                            </div>
-                                            <div className="p-4">
-                                                <div className="mb-2 flex items-center justify-between">
-                                                    <Badge variant="secondary" className="text-xs">
-                                                        {webinar.category.name}
-                                                    </Badge>
-                                                    {webinar.batch && (
-                                                        <Badge variant="outline" className="text-xs">
-                                                            Batch {webinar.batch}
-                                                        </Badge>
+                                {webinars.map((webinar) => {
+                                    const isDisabled = webinar.is_registration_closed;
+                                    const LinkOrDiv = isDisabled ? 'div' : Link;
+                                    const linkProps = isDisabled ? {} : { href: `/webinar/${webinar.slug}` };
+
+                                    return (
+                                        <LinkOrDiv key={webinar.id} {...linkProps} className={`group ${isDisabled ? 'cursor-not-allowed' : ''}`}>
+                                            <div
+                                                className={`h-full overflow-hidden rounded-lg border border-gray-200 bg-white transition-all ${
+                                                    isDisabled ? 'opacity-60' : 'hover:shadow-lg'
+                                                }`}
+                                            >
+                                                <div className="relative aspect-video overflow-hidden">
+                                                    <img
+                                                        src={webinar.thumbnail ? `/storage/${webinar.thumbnail}` : '/assets/images/placeholder.png'}
+                                                        alt={webinar.title}
+                                                        className={`h-full w-full object-cover ${!isDisabled && 'transition-transform group-hover:scale-105'}`}
+                                                    />
+                                                    {isDisabled && (
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                                                            <Badge variant="destructive" className="px-4 py-2 text-sm font-semibold">
+                                                                Pendaftaran Ditutup
+                                                            </Badge>
+                                                        </div>
                                                     )}
                                                 </div>
-
-                                                <h3 className="group-hover:text-primary mb-2 line-clamp-2 font-semibold transition-colors">
-                                                    {webinar.title}
-                                                </h3>
-
-                                                <div className="text-muted-foreground mb-3 space-y-1 text-xs">
-                                                    <div className="flex items-center gap-1">
-                                                        <CalendarDays className="h-3 w-3" />
-                                                        {format(new Date(webinar.start_time), 'dd MMM yyyy', { locale: id })}
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <Clock className="h-3 w-3" />
-                                                        {format(new Date(webinar.start_time), 'HH:mm', { locale: id })} -{' '}
-                                                        {format(new Date(webinar.end_time), 'HH:mm', { locale: id })} WIB
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <Users className="h-3 w-3" />
-                                                        Kuota: {webinar.quota === 0 ? 'Unlimited' : webinar.quota}
-                                                    </div>
-                                                </div>
-
-                                                <Separator className="mb-3" />
-
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        {webinar.strikethrough_price > 0 && (
-                                                            <p className="text-muted-foreground text-xs line-through">
-                                                                {rupiahFormatter.format(webinar.strikethrough_price)}
-                                                            </p>
+                                                <div className="p-4">
+                                                    <div className="mb-2 flex items-center justify-between">
+                                                        <Badge variant="secondary" className="text-xs">
+                                                            {webinar.category.name}
+                                                        </Badge>
+                                                        {webinar.batch && (
+                                                            <Badge variant="outline" className="text-xs">
+                                                                Batch {webinar.batch}
+                                                            </Badge>
                                                         )}
-                                                        <p className="text-primary text-lg font-bold">
-                                                            {webinar.price === 0 ? 'Gratis' : rupiahFormatter.format(webinar.price)}
-                                                        </p>
+                                                    </div>
+
+                                                    <h3
+                                                        className={`mb-2 line-clamp-2 font-semibold transition-colors ${
+                                                            !isDisabled && 'group-hover:text-primary'
+                                                        }`}
+                                                    >
+                                                        {webinar.title}
+                                                    </h3>
+
+                                                    <div className="text-muted-foreground mb-3 space-y-1 text-xs">
+                                                        <div className="flex items-center gap-1">
+                                                            <CalendarDays className="h-3 w-3" />
+                                                            {format(new Date(webinar.start_time), 'dd MMM yyyy', { locale: id })}
+                                                        </div>
+                                                        <div className="flex items-center gap-1">
+                                                            <Clock className="h-3 w-3" />
+                                                            {format(new Date(webinar.start_time), 'HH:mm', { locale: id })} -{' '}
+                                                            {format(new Date(webinar.end_time), 'HH:mm', { locale: id })} WIB
+                                                        </div>
+                                                        {isDisabled && (
+                                                            <div className="flex items-center gap-1 font-medium text-red-600">
+                                                                <Calendar className="h-3 w-3" />
+                                                                Ditutup:{' '}
+                                                                {format(new Date(webinar.registration_deadline), 'dd MMM yyyy', { locale: id })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <Separator className="mb-3" />
+
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            {webinar.strikethrough_price > 0 && (
+                                                                <p className="text-muted-foreground text-xs line-through">
+                                                                    {rupiahFormatter.format(webinar.strikethrough_price)}
+                                                                </p>
+                                                            )}
+                                                            <p className={`text-lg font-bold ${isDisabled ? 'text-gray-500' : 'text-primary'}`}>
+                                                                {webinar.price === 0 ? 'Gratis' : rupiahFormatter.format(webinar.price)}
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </Link>
-                                ))}
+                                        </LinkOrDiv>
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div className="mb-8 rounded-lg border border-gray-200 bg-white shadow-sm">
