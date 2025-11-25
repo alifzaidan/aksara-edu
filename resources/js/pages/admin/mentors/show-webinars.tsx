@@ -82,7 +82,7 @@ export default function ShowWebinars({ webinars }: ShowWebinarsProps) {
                 const statusInfo = getWebinarStatus(webinar.start_time);
                 const hasDiscount = webinar.discount_price && webinar.discount_price < webinar.price;
                 const StatusIcon = statusInfo.icon;
-                const thumbnailUrl = webinar.thumbnail || '/assets/images/placeholder.png';
+                const thumbnailUrl = webinar.thumbnail ? `/storage/${webinar.thumbnail}` : '/assets/images/placeholder.png';
 
                 return (
                     <Card key={webinar.id} className="overflow-hidden transition-shadow hover:shadow-md">

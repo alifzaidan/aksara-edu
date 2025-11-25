@@ -49,7 +49,7 @@ export default function ShowArticles({ articles }: ShowArticlesProps) {
             </div>
 
             {articles.map((article) => {
-                const thumbnailUrl = article.thumbnail || '/assets/images/placeholder.png';
+                const thumbnailUrl = article.thumbnail ? `/storage/${article.thumbnail}` : '/assets/images/placeholder.png';
 
                 return (
                     <Card key={article.id} className="overflow-hidden transition-shadow hover:shadow-md">

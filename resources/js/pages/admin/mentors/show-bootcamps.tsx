@@ -78,7 +78,7 @@ export default function ShowBootcamps({ bootcamps }: ShowBootcampsProps) {
             {bootcamps.map((bootcamp) => {
                 const statusInfo = getStatusColor(bootcamp.start_date, bootcamp.end_date);
                 const hasDiscount = bootcamp.discount_price && bootcamp.discount_price < bootcamp.price;
-                const thumbnailUrl = bootcamp.thumbnail || '/assets/images/placeholder.png';
+                const thumbnailUrl = bootcamp.thumbnail ? `/storage/${bootcamp.thumbnail}` : '/assets/images/placeholder.png';
 
                 return (
                     <Card key={bootcamp.id} className="overflow-hidden transition-shadow hover:shadow-md">
