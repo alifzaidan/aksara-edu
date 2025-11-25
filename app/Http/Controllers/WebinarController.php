@@ -34,8 +34,68 @@ class WebinarController extends Controller
                 ->get();
         }
 
+        $totalWebinars = $webinars->count();
+        $publishedWebinars = $webinars->where('status', 'published')->count();
+        $draftWebinars = $webinars->where('status', 'draft')->count();
+        $archivedWebinars = $webinars->where('status', 'archived')->count();
+
+        $freeWebinars = $webinars->where('price', 0)->count();
+        $paidWebinars = $webinars->where('price', '>', 0)->count();
+
+        $now = Carbon::now();
+        $completedWebinars = $webinars->filter(function ($webinar) use ($now) {
+            return $webinar->end_time && Carbon::parse($webinar->end_time)->isBefore($now);
+        })->count();
+        $upcomingWebinars = $webinars->filter(function ($webinar) use ($now) {
+            return $webinar->start_time && Carbon::parse($webinar->start_time)->isAfter($now);
+        })->count();
+        $ongoingWebinars = $totalWebinars - $completedWebinars - $upcomingWebinars;
+
+        $webinarsWithRecording = $webinars->whereNotNull('recording_url')->count();
+        $webinarsWithoutRecording = $totalWebinars - $webinarsWithRecording;
+
+        $webinarIds = $webinars->pluck('id');
+        $totalParticipants = Invoice::where('status', 'paid')
+            ->whereHas('webinarItems', function ($query) use ($webinarIds) {
+                $query->whereIn('webinar_id', $webinarIds);
+            })
+            ->count();
+
+        $totalRevenue = Invoice::where('status', 'paid')
+            ->whereHas('webinarItems', function ($query) use ($webinarIds) {
+                $query->whereIn('webinar_id', $webinarIds);
+            })
+            ->sum('nett_amount');
+
+        $statistics = [
+            'overview' => [
+                'total_webinars' => $totalWebinars,
+                'published_webinars' => $publishedWebinars,
+                'draft_webinars' => $draftWebinars,
+                'archived_webinars' => $archivedWebinars,
+            ],
+            'pricing' => [
+                'free_webinars' => $freeWebinars,
+                'paid_webinars' => $paidWebinars,
+            ],
+            'completion' => [
+                'completed' => $completedWebinars,
+                'ongoing' => $ongoingWebinars,
+                'upcoming' => $upcomingWebinars,
+            ],
+            'recording' => [
+                'with_recording' => $webinarsWithRecording,
+                'without_recording' => $webinarsWithoutRecording,
+            ],
+            'performance' => [
+                'total_participants' => $totalParticipants,
+                'total_revenue' => $totalRevenue,
+            ],
+        ];
+
         return Inertia::render('admin/webinars/index', [
             'webinars' => $webinars,
+            'statistics' => $statistics,
         ]);
     }
 

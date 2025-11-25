@@ -12,7 +12,11 @@ class CategoryController extends Controller
     {
         $categories = Category::latest()->get();
 
-        return Inertia::render('admin/categories/index', ['categories' => $categories,]);
+        $statistics = [
+            'total_categories' => $categories->count(),
+        ];
+
+        return Inertia::render('admin/categories/index', ['categories' => $categories, 'statistics' => $statistics]);
     }
 
     public function create()

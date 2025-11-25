@@ -6,6 +6,7 @@ use App\Models\Bundle;
 use App\Models\BundleItem;
 use App\Models\Course;
 use App\Models\Bootcamp;
+use App\Models\Invoice;
 use App\Models\Webinar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,8 +30,72 @@ class BundleController extends Controller
                 return $bundle;
             });
 
+        $totalBundles = $bundles->count();
+        $publishedBundles = $bundles->where('status', 'published')->count();
+        $draftBundles = $bundles->where('status', 'draft')->count();
+        $archivedBundles = $bundles->where('status', 'archived')->count();
+
+        $bundlesWithCourses = 0;
+        $bundlesWithBootcamps = 0;
+        $bundlesWithWebinars = 0;
+
+        foreach ($bundles as $bundle) {
+            $items = $bundle->bundleItems;
+            $hasCourse = $items->contains(fn($item) => str_contains($item->bundleable_type, 'Course'));
+            $hasBootcamp = $items->contains(fn($item) => str_contains($item->bundleable_type, 'Bootcamp'));
+            $hasWebinar = $items->contains(fn($item) => str_contains($item->bundleable_type, 'Webinar'));
+
+            if ($hasCourse) $bundlesWithCourses++;
+            if ($hasBootcamp) $bundlesWithBootcamps++;
+            if ($hasWebinar) $bundlesWithWebinars++;
+        }
+
+        $totalItems = 0;
+        foreach ($bundles as $bundle) {
+            $totalItems += $bundle->bundleItems->count();
+        }
+        $averageItemsPerBundle = $totalBundles > 0 ? round($totalItems / $totalBundles, 1) : 0;
+
+        $totalSales = $bundles->sum('enrollments_count');
+
+        $bundleIds = $bundles->pluck('id');
+        $totalRevenue = Invoice::where('status', 'paid')
+            ->whereHas('bundleEnrollments', function ($query) use ($bundleIds) {
+                $query->whereIn('bundle_id', $bundleIds);
+            })
+            ->sum('nett_amount');
+
+        $totalSavings = 0;
+        foreach ($bundles as $bundle) {
+            $originalPrice = $bundle->strikethrough_price;
+            $bundlePrice = $bundle->price;
+            $savings = $originalPrice - $bundlePrice;
+            $totalSavings += ($savings * ($bundle->enrollments_count ?? 0));
+        }
+
+        $statistics = [
+            'overview' => [
+                'total_bundles' => $totalBundles,
+                'published_bundles' => $publishedBundles,
+                'draft_bundles' => $draftBundles,
+                'archived_bundles' => $archivedBundles,
+            ],
+            'content' => [
+                'with_courses' => $bundlesWithCourses,
+                'with_bootcamps' => $bundlesWithBootcamps,
+                'with_webinars' => $bundlesWithWebinars,
+                'average_items' => $averageItemsPerBundle,
+            ],
+            'performance' => [
+                'total_sales' => $totalSales,
+                'total_revenue' => $totalRevenue,
+                'total_savings' => $totalSavings,
+            ],
+        ];
+
         return Inertia::render('admin/bundles/index', [
-            'bundles' => $bundles
+            'bundles' => $bundles,
+            'statistics' => $statistics,
         ]);
     }
 

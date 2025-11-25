@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Article;
 use App\Models\Category;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -26,8 +27,86 @@ class ArticleController extends Controller
 
         $articles = $query->get();
 
+        $totalArticles = $articles->count();
+
+        $draftArticles = $articles->where('status', 'draft')->count();
+        $publishedArticles = $articles->where('status', 'published')->count();
+        $archivedArticles = $articles->where('status', 'archived')->count();
+
+        $featuredArticles = $articles->where('is_featured', true)->count();
+
+        $totalViews = $articles->sum('views');
+        $averageViews = $totalArticles > 0 ? round($totalViews / $totalArticles, 0) : 0;
+
+        $mostViewedArticles = $articles->sortByDesc('views')->take(3)->map(function ($article) {
+            return [
+                'id' => $article->id,
+                'title' => $article->title,
+                'views' => $article->views,
+                'thumbnail' => $article->thumbnail,
+            ];
+        })->values();
+
+        $totalReadTime = $articles->sum('read_time');
+        $averageReadTime = $totalArticles > 0 ? round($totalReadTime / $totalArticles, 1) : 0;
+
+        $categoryDistribution = $articles->groupBy('category_id')->map(function ($group) {
+            return [
+                'category_name' => $group->first()->category->name,
+                'count' => $group->count(),
+            ];
+        })->sortByDesc('count')->take(5)->values();
+
+        $authorStats = $articles->groupBy('user_id')->map(function ($group) {
+            return [
+                'author_name' => $group->first()->user->name,
+                'article_count' => $group->count(),
+                'total_views' => $group->sum('views'),
+            ];
+        })->sortByDesc('article_count')->take(3)->values();
+
+        $recentArticles = $articles->filter(function ($article) {
+            return Carbon::parse($article->created_at)->isAfter(now()->subDays(30));
+        })->count();
+
+        $publishedThisMonth = $articles->filter(function ($article) {
+            return $article->published_at &&
+                Carbon::parse($article->published_at)->isSameMonth(now());
+        })->count();
+
+        $withoutThumbnail = $articles->whereNull('thumbnail')->count();
+
+        $statistics = [
+            'overview' => [
+                'total_articles' => $totalArticles,
+                'draft_articles' => $draftArticles,
+                'published_articles' => $publishedArticles,
+                'archived_articles' => $archivedArticles,
+                'featured_articles' => $featuredArticles,
+                'recent_articles' => $recentArticles,
+            ],
+            'engagement' => [
+                'total_views' => $totalViews,
+                'average_views' => $averageViews,
+                'most_viewed' => $mostViewedArticles,
+            ],
+            'content' => [
+                'total_read_time' => $totalReadTime,
+                'average_read_time' => $averageReadTime,
+                'without_thumbnail' => $withoutThumbnail,
+            ],
+            'distribution' => [
+                'categories' => $categoryDistribution,
+                'authors' => $authorStats,
+            ],
+            'activity' => [
+                'published_this_month' => $publishedThisMonth,
+            ],
+        ];
+
         return Inertia::render('admin/articles/index', [
             'articles' => $articles,
+            'statistics' => $statistics,
         ]);
     }
 

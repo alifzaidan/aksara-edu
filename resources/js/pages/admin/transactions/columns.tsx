@@ -49,7 +49,7 @@ export interface Invoice {
     user: User;
     invoice_code: string;
     invoice_url: string | null;
-    amount: number;
+    nett_amount: number;
     status: 'paid' | 'pending' | 'failed';
     paid_at: string | null;
     course_items: EnrollmentCourse[];
@@ -61,7 +61,7 @@ export interface Invoice {
 export const columns: ColumnDef<Invoice>[] = [
     {
         id: 'payment_type',
-        accessorFn: (row) => (row.amount === 0 ? 'free' : 'paid'),
+        accessorFn: (row) => (row.nett_amount === 0 ? 'free' : 'paid'),
         header: () => null,
         cell: () => null,
         enableHiding: true,
@@ -117,14 +117,14 @@ export const columns: ColumnDef<Invoice>[] = [
         },
     },
     {
-        accessorKey: 'amount',
+        accessorKey: 'nett_amount',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
         cell: ({ row }) => {
             const formatted = new Intl.NumberFormat('id-ID', {
                 style: 'currency',
                 currency: 'IDR',
                 minimumFractionDigits: 0,
-            }).format(row.original.amount);
+            }).format(row.original.nett_amount);
             return <div className="font-medium">{formatted}</div>;
         },
     },

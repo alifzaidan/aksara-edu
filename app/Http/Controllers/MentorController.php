@@ -17,6 +17,7 @@ class MentorController extends Controller
             ->withCount('courses as total_courses')
             ->withCount('articles as total_articles')
             ->withCount('webinars as total_webinars')
+            ->withCount('bootcamps as total_bootcamps')
             ->latest()
             ->get()
             ->map(function ($mentor) {
@@ -25,7 +26,44 @@ class MentorController extends Controller
                 return $mentor;
             });
 
-        return Inertia::render('admin/mentors/index', ['mentors' => $mentors]);
+        $totalMentors = $mentors->count();
+        $activeMentors = $mentors->where('affiliate_status', 'Active')->count();
+        $inactiveMentors = $mentors->where('affiliate_status', 'Not Active')->count();
+
+        $totalCourses = $mentors->sum('total_courses');
+        $totalArticles = $mentors->sum('total_articles');
+        $totalWebinars = $mentors->sum('total_webinars');
+        $totalBootcamps = $mentors->sum('total_bootcamps');
+
+        $totalEarnings = $mentors->sum('total_earnings');
+
+        $allEarnings = AffiliateEarning::whereIn('affiliate_user_id', $mentors->pluck('id'))->get();
+        $paidCommission = $allEarnings->where('status', 'paid')->sum('amount');
+        $pendingCommission = $allEarnings->where('status', 'approved')->sum('amount');
+
+        $statistics = [
+            'overview' => [
+                'total_mentors' => $totalMentors,
+                'active_mentors' => $activeMentors,
+                'inactive_mentors' => $inactiveMentors,
+            ],
+            'content' => [
+                'total_courses' => $totalCourses,
+                'total_articles' => $totalArticles,
+                'total_webinars' => $totalWebinars,
+                'total_bootcamps' => $totalBootcamps,
+            ],
+            'earnings' => [
+                'total_earnings' => $totalEarnings,
+                'paid_commission' => $paidCommission,
+                'pending_commission' => $pendingCommission,
+            ],
+        ];
+
+        return Inertia::render('admin/mentors/index', [
+            'mentors' => $mentors,
+            'statistics' => $statistics,
+        ]);
     }
 
     public function create()

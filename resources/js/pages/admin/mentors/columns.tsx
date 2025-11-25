@@ -10,7 +10,7 @@ import { Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Folder, Trash } from 'lucide-react';
+import { BookText, FileText, Folder, MonitorPlay, Presentation, Trash } from 'lucide-react';
 
 export default function MentorActions({ mentor }: { mentor: Mentor }) {
     const handleDelete = () => {
@@ -65,7 +65,9 @@ export type Mentor = {
     commission: number;
     created_at: string;
     total_courses: number;
-    total_articles: number; // ✅ ADD: Total articles
+    total_articles: number;
+    total_webinars: number;
+    total_bootcamps: number;
     total_earnings: number;
 };
 
@@ -120,20 +122,49 @@ export const columns: ColumnDef<Mentor>[] = [
         header: ({ column }) => <DataTableColumnHeader column={column} title="No. Telepon" />,
     },
     {
-        accessorKey: 'total_courses',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Total Kelas" />,
+        id: 'content',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Total Konten" />,
         cell: ({ row }) => {
-            const totalCourses = row.original.total_courses || 0;
-            return <span className="font-medium text-blue-600">{totalCourses} Kelas</span>;
+            const courses = row.original.total_courses || 0;
+            const webinars = row.original.total_webinars || 0;
+            const bootcamps = row.original.total_bootcamps || 0;
+            const articles = row.original.total_articles || 0;
+
+            const total = courses + webinars + bootcamps + articles;
+
+            return (
+                <div className="space-y-1">
+                    <div className="rounded bg-gray-200 px-2 py-1 font-semibold text-gray-900 dark:bg-gray-800 dark:text-gray-100">{total} Total</div>
+                    <div className="flex flex-wrap gap-2 text-xs">
+                        {courses > 0 && (
+                            <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                                <BookText className="h-3 w-3" />
+                                <span>{courses}</span>
+                            </div>
+                        )}
+                        {bootcamps > 0 && (
+                            <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                                <Presentation className="h-3 w-3" />
+                                <span>{bootcamps}</span>
+                            </div>
+                        )}
+                        {webinars > 0 && (
+                            <div className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
+                                <MonitorPlay className="h-3 w-3" />
+                                <span>{webinars}</span>
+                            </div>
+                        )}
+                        {articles > 0 && (
+                            <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
+                                <FileText className="h-3 w-3" />
+                                <span>{articles}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
         },
-    },
-    {
-        accessorKey: 'total_articles',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Total Artikel" />,
-        cell: ({ row }) => {
-            const totalArticles = row.original.total_articles || 0;
-            return <span className="font-medium text-purple-600">{totalArticles} Artikel</span>;
-        },
+        enableSorting: false,
     },
     {
         accessorKey: 'commission',

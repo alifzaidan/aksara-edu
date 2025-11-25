@@ -53,18 +53,18 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
     return (
         <div>
             <div className="flex items-center justify-between py-4">
-                <div className="flex items-center space-x-2">
+                <div className="flex w-full flex-col items-stretch gap-2 lg:flex-row lg:items-center">
                     <Input
                         placeholder="Cari kode atau nama diskon..."
                         value={(table.getColumn('code')?.getFilterValue() as string) ?? ''}
                         onChange={(event) => table.getColumn('code')?.setFilterValue(event.target.value)}
-                        className="max-w-sm"
+                        className="lg:max-w-sm"
                     />
                     <Select
                         value={(table.getColumn('status')?.getFilterValue() as string) ?? 'all'}
                         onValueChange={(value) => table.getColumn('status')?.setFilterValue(value === 'all' ? '' : value)}
                     >
-                        <SelectTrigger className="w-32">
+                        <SelectTrigger className="w-full lg:w-32">
                             <SelectValue placeholder="Status" />
                         </SelectTrigger>
                         <SelectContent>

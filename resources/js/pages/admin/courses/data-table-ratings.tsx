@@ -50,16 +50,16 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
 
     return (
         <div>
-            <div className="flex items-center py-4">
+            <div className="flex flex-col items-stretch gap-2 py-4 lg:flex-row lg:items-center">
                 <Input
                     placeholder="Cari ulasan..."
                     value={(table.getColumn('review')?.getFilterValue() as string) ?? ''}
                     onChange={(event) => table.getColumn('review')?.setFilterValue(event.target.value)}
-                    className="sm:max-w-sm"
+                    className="lg:max-w-sm"
                 />
                 <DataTableViewOptions table={table} />
             </div>
-            <div className="rounded-md border">
+            <div className="w-[1000px] max-w-full min-w-full overflow-x-auto rounded-md border">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (

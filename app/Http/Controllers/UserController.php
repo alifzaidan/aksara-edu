@@ -7,6 +7,7 @@ use App\Models\EnrollmentCourse;
 use App\Models\EnrollmentWebinar;
 use App\Models\Invoice;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
@@ -44,60 +45,97 @@ class UserController extends Controller
                     ->limit(1);
             }])
             ->latest()
-            ->get()
-            ->map(function ($user) {
-                $lastPurchase = $user->invoices->first();
+            ->get();
 
-                $purchasedItems = [];
-                if ($lastPurchase) {
-                    foreach ($lastPurchase->courseItems as $item) {
-                        $purchasedItems[] = [
-                            'type' => 'course',
-                            'title' => $item->course->title,
-                            'price' => $item->course->price,
-                        ];
-                    }
-                    foreach ($lastPurchase->bootcampItems as $item) {
-                        $purchasedItems[] = [
-                            'type' => 'bootcamp',
-                            'title' => $item->bootcamp->title,
-                            'price' => $item->bootcamp->price,
-                        ];
-                    }
-                    foreach ($lastPurchase->webinarItems as $item) {
-                        $purchasedItems[] = [
-                            'type' => 'webinar',
-                            'title' => $item->webinar->title,
-                            'price' => $item->webinar->price,
-                        ];
-                    }
+        $usersData = $users->map(function ($user) {
+            $lastPurchase = $user->invoices->first();
+
+            $purchasedItems = [];
+            if ($lastPurchase) {
+                foreach ($lastPurchase->courseItems as $item) {
+                    $purchasedItems[] = [
+                        'type' => 'course',
+                        'title' => $item->course->title,
+                        'price' => $item->course->price,
+                    ];
                 }
+                foreach ($lastPurchase->bootcampItems as $item) {
+                    $purchasedItems[] = [
+                        'type' => 'bootcamp',
+                        'title' => $item->bootcamp->title,
+                        'price' => $item->bootcamp->price,
+                    ];
+                }
+                foreach ($lastPurchase->webinarItems as $item) {
+                    $purchasedItems[] = [
+                        'type' => 'webinar',
+                        'title' => $item->webinar->title,
+                        'price' => $item->webinar->price,
+                    ];
+                }
+            }
 
-                $programTypes = [];
-                if ($user->courses_count > 0) $programTypes[] = 'course';
-                if ($user->bootcamps_count > 0) $programTypes[] = 'bootcamp';
-                if ($user->webinars_count > 0) $programTypes[] = 'webinar';
+            $programTypes = [];
+            if ($user->courses_count > 0) $programTypes[] = 'course';
+            if ($user->bootcamps_count > 0) $programTypes[] = 'bootcamp';
+            if ($user->webinars_count > 0) $programTypes[] = 'webinar';
 
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone_number' => $user->phone_number,
-                    'email_verified_at' => $user->email_verified_at,
-                    'created_at' => $user->created_at,
-                    'courses_count' => $user->courses_count,
-                    'bootcamps_count' => $user->bootcamps_count,
-                    'webinars_count' => $user->webinars_count,
-                    'total_enrollments' => $user->courses_count + $user->bootcamps_count + $user->webinars_count,
-                    'program_types' => $programTypes, // ✅ TAMBAHAN
-                    'last_purchase_date' => $lastPurchase?->paid_at,
-                    'last_purchase_items' => $purchasedItems,
-                    'last_purchase_total' => $lastPurchase?->nett_amount,
-                    'has_enrollments' => ($user->courses_count + $user->bootcamps_count + $user->webinars_count) > 0,
-                ];
-            });
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone_number' => $user->phone_number,
+                'email_verified_at' => $user->email_verified_at,
+                'created_at' => $user->created_at,
+                'courses_count' => $user->courses_count,
+                'bootcamps_count' => $user->bootcamps_count,
+                'webinars_count' => $user->webinars_count,
+                'total_enrollments' => $user->courses_count + $user->bootcamps_count + $user->webinars_count,
+                'program_types' => $programTypes,
+                'last_purchase_date' => $lastPurchase?->paid_at,
+                'last_purchase_items' => $purchasedItems,
+                'last_purchase_total' => $lastPurchase?->nett_amount,
+                'has_enrollments' => ($user->courses_count + $user->bootcamps_count + $user->webinars_count) > 0,
+            ];
+        });
 
-        return Inertia::render('admin/users/index', ['users' => $users]);
+        // ✅ Simplified Statistics
+        $totalUsers = $users->count();
+        $verifiedUsers = $users->whereNotNull('email_verified_at')->count();
+        $unverifiedUsers = $users->whereNull('email_verified_at')->count();
+
+        // Active users (have at least one enrollment)
+        $activeUsers = $usersData->where('has_enrollments', true)->count();
+        $inactiveUsers = $totalUsers - $activeUsers;
+
+        // Users with purchases
+        $usersWithPurchases = $usersData->whereNotNull('last_purchase_date')->count();
+
+        // Get all paid invoices for revenue calculation
+        $allInvoices = Invoice::where('status', 'paid')->get();
+        $totalRevenue = $allInvoices->sum('nett_amount');
+        $averageRevenuePerUser = $usersWithPurchases > 0 ? $totalRevenue / $usersWithPurchases : 0;
+
+        $statistics = [
+            'overview' => [
+                'total_users' => $totalUsers,
+                'active_users' => $activeUsers,
+                'inactive_users' => $inactiveUsers,
+                'verified_users' => $verifiedUsers,
+                'unverified_users' => $unverifiedUsers,
+                'activity_rate' => $totalUsers > 0 ? round(($activeUsers / $totalUsers) * 100, 1) : 0,
+            ],
+            'purchases' => [
+                'users_with_purchases' => $usersWithPurchases,
+                'avg_revenue_per_user' => round($averageRevenuePerUser, 0),
+                'conversion_rate' => $totalUsers > 0 ? round(($usersWithPurchases / $totalUsers) * 100, 1) : 0,
+            ],
+        ];
+
+        return Inertia::render('admin/users/index', [
+            'users' => $usersData,
+            'statistics' => $statistics,
+        ]);
     }
 
     public function create()

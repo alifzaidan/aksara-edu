@@ -54,12 +54,12 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
 
     return (
         <div>
-            <div className="flex items-center gap-2 py-4">
+            <div className="flex flex-col items-stretch gap-2 py-4 lg:flex-row lg:items-center">
                 <Input
                     placeholder="Cari nama peserta..."
                     value={(table.getColumn('user_name')?.getFilterValue() as string) ?? ''}
                     onChange={(event) => table.getColumn('user_name')?.setFilterValue(event.target.value)}
-                    className="sm:max-w-sm"
+                    className="lg:max-w-sm"
                 />
                 <div className="flex flex-col items-center gap-2 lg:flex-row">
                     {isFiltered && (

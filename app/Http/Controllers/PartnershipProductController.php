@@ -46,8 +46,82 @@ class PartnershipProductController extends Controller
 
         $products = $query->get();
 
+        // ✅ Calculate Statistics
+        $totalProducts = $products->count();
+        $publishedProducts = $products->where('status', 'published')->count();
+        $draftProducts = $products->where('status', 'draft')->count();
+        $archivedProducts = $products->where('status', 'archived')->count();
+
+        // Price breakdown
+        $freeProducts = $products->where('price', 0)->count();
+        $paidProducts = $products->where('price', '>', 0)->count();
+
+        // Click statistics
+        $totalClicks = $products->sum('clicks_count');
+        $averageClicksPerProduct = $totalProducts > 0 ? round($totalClicks / $totalProducts, 1) : 0;
+
+        // Get unique users who clicked
+        $productIds = $products->pluck('id');
+        $uniqueUsers = PartnershipProductClick::whereIn('partnership_product_id', $productIds)
+            ->whereNotNull('user_id')
+            ->distinct('user_id')
+            ->count('user_id');
+
+        // Time-based click statistics
+        $clicksToday = PartnershipProductClick::whereIn('partnership_product_id', $productIds)
+            ->whereDate('created_at', today())
+            ->count();
+
+        $clicksThisWeek = PartnershipProductClick::whereIn('partnership_product_id', $productIds)
+            ->where('created_at', '>=', now()->startOfWeek())
+            ->count();
+
+        $clicksThisMonth = PartnershipProductClick::whereIn('partnership_product_id', $productIds)
+            ->where('created_at', '>=', now()->startOfMonth())
+            ->count();
+
+        // Calculate potential revenue (strikethrough - price) * clicks
+        $totalPotentialSavings = 0;
+        foreach ($products as $product) {
+            $savings = $product->strikethrough_price - $product->price;
+            $totalPotentialSavings += ($savings * ($product->clicks_count ?? 0));
+        }
+
+        // Top performing products
+        $topProducts = $products->sortByDesc('clicks_count')->take(3);
+
+        $statistics = [
+            'overview' => [
+                'total_products' => $totalProducts,
+                'published_products' => $publishedProducts,
+                'draft_products' => $draftProducts,
+                'archived_products' => $archivedProducts,
+            ],
+            'pricing' => [
+                'free_products' => $freeProducts,
+                'paid_products' => $paidProducts,
+            ],
+            'engagement' => [
+                'total_clicks' => $totalClicks,
+                'unique_users' => $uniqueUsers,
+                'average_clicks' => $averageClicksPerProduct,
+                'clicks_today' => $clicksToday,
+                'clicks_this_week' => $clicksThisWeek,
+                'clicks_this_month' => $clicksThisMonth,
+            ],
+            'performance' => [
+                'total_potential_savings' => $totalPotentialSavings,
+                'top_products' => $topProducts->map(fn($p) => [
+                    'id' => $p->id,
+                    'title' => $p->title,
+                    'clicks_count' => $p->clicks_count ?? 0,
+                ]),
+            ],
+        ];
+
         return Inertia::render('admin/partnership-products/index', [
             'products' => $products,
+            'statistics' => $statistics,
         ]);
     }
 

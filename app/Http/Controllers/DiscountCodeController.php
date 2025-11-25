@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\DiscountCode;
 use App\Models\Course;
 use App\Models\Bootcamp;
+use App\Models\DiscountUsage;
 use App\Models\Webinar;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -41,8 +43,87 @@ class DiscountCodeController extends Controller
                 ];
             });
 
+        $totalCodes = $discountCodes->count();
+
+        $activeCodes = $discountCodes->where('is_active', true)->where('is_valid', true)->count();
+        $inactiveCodes = $discountCodes->where('is_active', false)->count();
+        $expiredCodes = $discountCodes->where('is_valid', false)->where('is_active', true)->count();
+
+        $now = Carbon::now();
+        $upcomingCodes = $discountCodes->filter(function ($code) use ($now) {
+            $startsAt = Carbon::parse($code['starts_at']);
+            return $code['is_active'] && $startsAt->isAfter($now);
+        })->count();
+
+        $percentageCodes = $discountCodes->where('type', 'percentage')->count();
+        $fixedCodes = $discountCodes->where('type', 'fixed')->count();
+
+        $totalUsages = $discountCodes->sum('used_count');
+        $averageUsagePerCode = $totalCodes > 0 ? round($totalUsages / $totalCodes, 1) : 0;
+
+        $discountCodeIds = $discountCodes->pluck('id');
+        $totalDiscountGiven = DiscountUsage::whereIn('discount_code_id', $discountCodeIds)
+            ->whereHas('invoice', function ($query) {
+                $query->where('status', 'paid');
+            })
+            ->sum('discount_amount');
+
+        $usedCodes = $discountCodes->where('used_count', '>', 0)->count();
+        $unusedCodes = $totalCodes - $usedCodes;
+
+        $usagesToday = DiscountUsage::whereIn('discount_code_id', $discountCodeIds)
+            ->whereDate('created_at', today())
+            ->count();
+
+        $usagesThisMonth = DiscountUsage::whereIn('discount_code_id', $discountCodeIds)
+            ->where('created_at', '>=', now()->startOfMonth())
+            ->count();
+
+        $topCodes = $discountCodes->sortByDesc('used_count')->take(3)->map(function ($code) {
+            return [
+                'id' => $code['id'],
+                'code' => $code['code'],
+                'name' => $code['name'],
+                'used_count' => $code['used_count'],
+            ];
+        })->values();
+
+        $codesNearingLimit = $discountCodes->filter(function ($code) {
+            if (!$code['usage_limit']) return false;
+            $usagePercentage = ($code['used_count'] / $code['usage_limit']) * 100;
+            return $usagePercentage >= 80 && $usagePercentage < 100;
+        })->count();
+
+        $statistics = [
+            'overview' => [
+                'total_codes' => $totalCodes,
+                'active_codes' => $activeCodes,
+                'inactive_codes' => $inactiveCodes,
+                'expired_codes' => $expiredCodes,
+                'upcoming_codes' => $upcomingCodes,
+            ],
+            'type' => [
+                'percentage_codes' => $percentageCodes,
+                'fixed_codes' => $fixedCodes,
+            ],
+            'usage' => [
+                'total_usages' => $totalUsages,
+                'average_usage' => $averageUsagePerCode,
+                'used_codes' => $usedCodes,
+                'unused_codes' => $unusedCodes,
+                'usages_today' => $usagesToday,
+                'usages_this_month' => $usagesThisMonth,
+                'codes_nearing_limit' => $codesNearingLimit,
+            ],
+            'performance' => [
+                'total_discount_given' => $totalDiscountGiven,
+                'top_codes' => $topCodes,
+            ],
+        ];
+
         return Inertia::render('admin/discount-codes/index', [
-            'discountCodes' => $discountCodes
+            'discountCodes' => $discountCodes,
+            'statistics' => $statistics,
         ]);
     }
 

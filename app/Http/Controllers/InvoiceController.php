@@ -47,11 +47,110 @@ class InvoiceController extends Controller
             'user.referrer',
             'courseItems.course',
             'bootcampItems.bootcamp',
-            'webinarItems.webinar'
+            'webinarItems.webinar',
+            'bundleEnrollments.bundle'
         ])
             ->orderBy('created_at', 'desc')
             ->get();
-        return Inertia::render('admin/transactions/index', ['invoices' => $invoices]);
+
+        // ✅ Calculate Statistics
+        $totalTransactions = $invoices->count();
+        $paidTransactions = $invoices->where('status', 'paid')->count();
+        $pendingTransactions = $invoices->where('status', 'pending')->count();
+        $failedTransactions = $invoices->where('status', 'failed')->count();
+
+        // Revenue statistics
+        $totalRevenue = $invoices->where('status', 'paid')->sum('nett_amount');
+        $totalGross = $invoices->where('status', 'paid')->sum('amount');
+        $totalDiscount = $invoices->where('status', 'paid')->sum('discount_amount');
+
+        // Free vs Paid
+        $freeEnrollments = $invoices->where('status', 'paid')->where('nett_amount', 0)->count();
+        $paidEnrollments = $invoices->where('status', 'paid')->where('nett_amount', '>', 0)->count();
+
+        // Product Type Breakdown
+        $courseTransactions = $invoices->filter(fn($inv) => $inv->courseItems->count() > 0)->count();
+        $bootcampTransactions = $invoices->filter(fn($inv) => $inv->bootcampItems->count() > 0)->count();
+        $webinarTransactions = $invoices->filter(fn($inv) => $inv->webinarItems->count() > 0)->count();
+        $bundleTransactions = $invoices->filter(fn($inv) => $inv->bundleEnrollments->count() > 0)->count();
+
+        // Affiliate statistics
+        $affiliateTransactions = $invoices->filter(fn($inv) => $inv->user && $inv->user->referrer)->count();
+        $affiliateRevenue = $invoices
+            ->where('status', 'paid')
+            ->filter(fn($inv) => $inv->user && $inv->user->referrer)
+            ->sum('nett_amount');
+
+        // Today's statistics
+        $todayTransactions = $invoices->filter(function ($inv) {
+            return Carbon::parse($inv->created_at)->isToday();
+        })->count();
+
+        $todayRevenue = $invoices
+            ->where('status', 'paid')
+            ->filter(function ($inv) {
+                return Carbon::parse($inv->paid_at)->isToday();
+            })
+            ->sum('nett_amount');
+
+        // This month statistics
+        $thisMonthTransactions = $invoices->filter(function ($inv) {
+            return Carbon::parse($inv->created_at)->isCurrentMonth();
+        })->count();
+
+        $thisMonthRevenue = $invoices
+            ->where('status', 'paid')
+            ->filter(function ($inv) {
+                return Carbon::parse($inv->paid_at)->isCurrentMonth();
+            })
+            ->sum('nett_amount');
+
+        // Average transaction value
+        $averageTransactionValue = $paidEnrollments > 0
+            ? $totalRevenue / $paidEnrollments
+            : 0;
+
+        // Success rate
+        $successRate = $totalTransactions > 0
+            ? ($paidTransactions / $totalTransactions) * 100
+            : 0;
+
+        $statistics = [
+            'overview' => [
+                'total_transactions' => $totalTransactions,
+                'paid_transactions' => $paidTransactions,
+                'pending_transactions' => $pendingTransactions,
+                'failed_transactions' => $failedTransactions,
+                'success_rate' => round($successRate, 1),
+            ],
+            'revenue' => [
+                'total_revenue' => $totalRevenue,
+                'total_gross' => $totalGross,
+                'total_discount' => $totalDiscount,
+                'average_transaction' => round($averageTransactionValue, 0),
+            ],
+            'enrollment_type' => [
+                'free_enrollments' => $freeEnrollments,
+                'paid_enrollments' => $paidEnrollments,
+            ],
+            'product_breakdown' => [
+                'course' => $courseTransactions,
+                'bootcamp' => $bootcampTransactions,
+                'webinar' => $webinarTransactions,
+                'bundle' => $bundleTransactions,
+            ],
+            'period' => [
+                'today_transactions' => $todayTransactions,
+                'today_revenue' => $todayRevenue,
+                'month_transactions' => $thisMonthTransactions,
+                'month_revenue' => $thisMonthRevenue,
+            ],
+        ];
+
+        return Inertia::render('admin/transactions/index', [
+            'invoices' => $invoices,
+            'statistics' => $statistics,
+        ]);
     }
 
     public function store(Request $request)

@@ -34,8 +34,57 @@ class BootcampController extends Controller
                 ->get();
         }
 
+        $totalBootcamps = $bootcamps->count();
+        $publishedBootcamps = $bootcamps->where('status', 'published')->count();
+        $draftBootcamps = $bootcamps->where('status', 'draft')->count();
+        $archivedBootcamps = $bootcamps->where('status', 'archived')->count();
+
+        $freeBootcamps = $bootcamps->where('price', 0)->count();
+        $paidBootcamps = $bootcamps->where('price', '>', 0)->count();
+
+        $now = Carbon::now();
+        $completedBootcamps = $bootcamps->filter(function ($bootcamp) use ($now) {
+            return $bootcamp->end_date && Carbon::parse($bootcamp->end_date)->isBefore($now);
+        })->count();
+        $ongoingBootcamps = $totalBootcamps - $completedBootcamps;
+
+        $bootcampIds = $bootcamps->pluck('id');
+        $totalEnrollments = Invoice::where('status', 'paid')
+            ->whereHas('bootcampItems', function ($query) use ($bootcampIds) {
+                $query->whereIn('bootcamp_id', $bootcampIds);
+            })
+            ->count();
+
+        $totalRevenue = Invoice::where('status', 'paid')
+            ->whereHas('bootcampItems', function ($query) use ($bootcampIds) {
+                $query->whereIn('bootcamp_id', $bootcampIds);
+            })
+            ->sum('nett_amount');
+
+        $statistics = [
+            'overview' => [
+                'total_bootcamps' => $totalBootcamps,
+                'published_bootcamps' => $publishedBootcamps,
+                'draft_bootcamps' => $draftBootcamps,
+                'archived_bootcamps' => $archivedBootcamps,
+            ],
+            'pricing' => [
+                'free_bootcamps' => $freeBootcamps,
+                'paid_bootcamps' => $paidBootcamps,
+            ],
+            'completion' => [
+                'completed' => $completedBootcamps,
+                'ongoing' => $ongoingBootcamps,
+            ],
+            'performance' => [
+                'total_enrollments' => $totalEnrollments,
+                'total_revenue' => $totalRevenue,
+            ],
+        ];
+
         return Inertia::render('admin/bootcamps/index', [
             'bootcamps' => $bootcamps,
+            'statistics' => $statistics,
         ]);
     }
 
@@ -325,7 +374,6 @@ class BootcampController extends Controller
                 6 => 'sabtu',
             ];
 
-            // Get existing schedules
             $existingSchedules = $bootcamp->schedules()->get()->keyBy(function ($schedule) {
                 return $schedule->schedule_date . '|' . $schedule->start_time . '|' . $schedule->end_time;
             });

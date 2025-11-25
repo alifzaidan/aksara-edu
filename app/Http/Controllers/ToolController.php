@@ -13,7 +13,11 @@ class ToolController extends Controller
     {
         $tools = Tool::latest()->get();
 
-        return Inertia::render('admin/tools/index', ['tools' => $tools]);
+        $statistics = [
+            'total_tools' => $tools->count(),
+        ];
+
+        return Inertia::render('admin/tools/index', ['tools' => $tools, 'statistics' => $statistics]);
     }
 
     public function create()

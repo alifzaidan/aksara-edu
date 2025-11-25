@@ -30,8 +30,59 @@ class CourseController extends Controller
 
         $courses = $query->get();
 
+        $totalCourses = $courses->count();
+        $publishedCourses = $courses->where('status', 'published')->count();
+        $draftCourses = $courses->where('status', 'draft')->count();
+        $archivedCourses = $courses->where('status', 'archived')->count();
+
+        $freeCourses = $courses->where('price', 0)->count();
+        $paidCourses = $courses->where('price', '>', 0)->count();
+
+        $beginnerCourses = $courses->where('level', 'beginner')->count();
+        $intermediateCourses = $courses->where('level', 'intermediate')->count();
+        $advancedCourses = $courses->where('level', 'advanced')->count();
+
+        $coursesWithCertificate = $courses->whereNotNull('certificate')->count();
+        $coursesWithoutCertificate = $totalCourses - $coursesWithCertificate;
+
+        $courseIds = $courses->pluck('id');
+        $totalEnrollments = Invoice::where('status', 'paid')
+            ->whereHas('courseItems', function ($query) use ($courseIds) {
+                $query->whereIn('course_id', $courseIds);
+            })
+            ->count();
+
+        $totalRevenue = Invoice::where('status', 'paid')
+            ->whereHas('courseItems', function ($query) use ($courseIds) {
+                $query->whereIn('course_id', $courseIds);
+            })
+            ->sum('nett_amount');
+
+        $statistics = [
+            'overview' => [
+                'total_courses' => $totalCourses,
+                'published_courses' => $publishedCourses,
+                'draft_courses' => $draftCourses,
+                'archived_courses' => $archivedCourses,
+            ],
+            'pricing' => [
+                'free_courses' => $freeCourses,
+                'paid_courses' => $paidCourses,
+            ],
+            'level' => [
+                'beginner' => $beginnerCourses,
+                'intermediate' => $intermediateCourses,
+                'advanced' => $advancedCourses,
+            ],
+            'performance' => [
+                'total_enrollments' => $totalEnrollments,
+                'total_revenue' => $totalRevenue,
+            ],
+        ];
+
         return Inertia::render('admin/courses/index', [
             'courses' => $courses,
+            'statistics' => $statistics,
         ]);
     }
 

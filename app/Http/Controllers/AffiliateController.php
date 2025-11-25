@@ -14,6 +14,13 @@ class AffiliateController extends Controller
     {
         $affiliates = User::role('affiliate')
             ->withSum('affiliateEarnings', 'amount')
+            ->withCount([
+                'affiliateEarnings as total_transactions' => function ($query) {
+                    $query->whereHas('invoice', function ($q) {
+                        $q->where('status', 'paid');
+                    });
+                }
+            ])
             ->latest()
             ->get()
             ->map(function ($affiliate) {
@@ -22,7 +29,37 @@ class AffiliateController extends Controller
                 return $affiliate;
             });
 
-        return Inertia::render('admin/affiliates/index', ['affiliates' => $affiliates]);
+        // Calculate Statistics
+        $totalAffiliates = $affiliates->count();
+        $activeAffiliates = $affiliates->where('affiliate_status', 'Active')->count();
+        $inactiveAffiliates = $affiliates->where('affiliate_status', 'Not Active')->count();
+
+        // Total earnings and transactions
+        $totalEarnings = $affiliates->sum('total_earnings');
+        $totalTransactions = $affiliates->sum('total_transactions');
+
+        $allEarnings = AffiliateEarning::all();
+        $paidCommission = $allEarnings->where('status', 'paid')->sum('amount');
+        $pendingCommission = $allEarnings->where('status', 'approved')->sum('amount');
+
+        $statistics = [
+            'overview' => [
+                'total_affiliates' => $totalAffiliates,
+                'active_affiliates' => $activeAffiliates,
+                'inactive_affiliates' => $inactiveAffiliates,
+            ],
+            'earnings' => [
+                'total_earnings' => $totalEarnings,
+                'paid_commission' => $paidCommission,
+                'pending_commission' => $pendingCommission,
+                'total_transactions' => $totalTransactions,
+            ],
+        ];
+
+        return Inertia::render('admin/affiliates/index', [
+            'affiliates' => $affiliates,
+            'statistics' => $statistics,
+        ]);
     }
 
     public function create()

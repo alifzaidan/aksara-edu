@@ -51,7 +51,7 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
 
     return (
         <div>
-            <div className="flex items-center justify-between py-4">
+            <div className="flex flex-col items-stretch gap-2 py-4 lg:flex-row lg:items-center">
                 <div className="flex items-center space-x-2">
                     <Input
                         placeholder="Cari nama flyer promosi..."
