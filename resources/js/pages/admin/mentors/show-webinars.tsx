@@ -95,8 +95,8 @@ export default function ShowWebinars({ webinars }: ShowWebinarsProps) {
                                 <div className="relative h-48 w-full flex-shrink-0 overflow-hidden rounded-lg md:h-32 md:w-48">
                                     <img src={thumbnailUrl} alt={webinar.title} className="h-full w-full object-cover" />
                                     <div className="absolute top-2 left-2">
-                                        <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
-                                            {webinar.batch}
+                                        <Badge variant="secondary" className="text-primary bg-white/90 backdrop-blur-sm">
+                                            #{webinar.batch}
                                         </Badge>
                                     </div>
                                     {/* Live Indicator for Today's Webinar */}

@@ -85,7 +85,7 @@ class BootcampController extends Controller
             return redirect()->route('login', ['redirect' => $currentUrl]);
         }
 
-        $bootcamp->load(['schedules, tools, user, category']);
+        $bootcamp->load(['schedules', 'tools', 'user', 'category']);
         $hasAccess = false;
         $pendingInvoiceUrl = null;
 
