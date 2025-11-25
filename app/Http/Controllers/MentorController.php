@@ -131,13 +131,44 @@ class MentorController extends Controller
             ->with(['category', 'tools'])
             ->withCount(['enrollmentCourses as students_count'])
             ->latest()
-            ->get();
+            ->get()
+            ->map(function ($course) {
+                return [
+                    'id' => $course->id,
+                    'title' => $course->title,
+                    'description' => $course->short_description ?? $course->description,
+                    'thumbnail' => $course->thumbnail,
+                    'price' => $course->price,
+                    'status' => $course->status,
+                    'level' => $course->level,
+                    'category' => $course->category,
+                    'duration' => $course->duration,
+                    'students_count' => $course->students_count,
+                    'created_at' => $course->created_at,
+                ];
+            });
 
         $articles = $mentor->articles()
             ->with(['category'])
-            ->withCount(['articleViews as views_count'])
+            ->select('articles.*')
             ->latest()
-            ->get();
+            ->get()
+            ->map(function ($article) {
+                return [
+                    'id' => $article->id,
+                    'title' => $article->title,
+                    'slug' => $article->slug,
+                    'thumbnail' => $article->thumbnail,
+                    'category' => $article->category,
+                    'excerpt' => $article->excerpt,
+                    'status' => $article->status,
+                    'views' => $article->views ?? 0,
+                    'read_time' => $article->read_time,
+                    'is_featured' => $article->is_featured,
+                    'published_at' => $article->published_at,
+                    'created_at' => $article->created_at,
+                ];
+            });
 
         $webinars = $mentor->webinars()
             ->with(['category', 'tools'])
@@ -159,6 +190,26 @@ class MentorController extends Controller
                 ];
             });
 
+        $bootcamps = $mentor->bootcamps()
+            ->with(['category', 'tools'])
+            ->latest()
+            ->get()
+            ->map(function ($bootcamp) {
+                return [
+                    'id' => $bootcamp->id,
+                    'title' => $bootcamp->title,
+                    'slug' => $bootcamp->slug,
+                    'thumbnail' => $bootcamp->thumbnail,
+                    'category' => $bootcamp->category,
+                    'price' => $bootcamp->price,
+                    'discount_price' => $bootcamp->discount_price ?? null,
+                    'batch' => $bootcamp->batch,
+                    'status' => $bootcamp->status,
+                    'start_date' => $bootcamp->start_date,
+                    'end_date' => $bootcamp->end_date,
+                ];
+            });
+
         $stats = [
             'total_products' => $earnings->count(),
             'total_commission' => $earnings->sum('amount'),
@@ -172,6 +223,7 @@ class MentorController extends Controller
             'courses' => $courses,
             'articles' => $articles,
             'webinars' => $webinars,
+            'bootcamps' => $bootcamps,
             'stats' => $stats
         ]);
     }

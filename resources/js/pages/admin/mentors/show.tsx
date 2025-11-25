@@ -13,14 +13,18 @@ import { toast } from 'sonner';
 import { Earning } from '../earnings/columns';
 import { Mentor } from './columns';
 import EditAffiliate from './edit';
-import ShowCourse from './show-course';
+import ShowArticles from './show-articles';
+import ShowBootcamps from './show-bootcamps';
+import ShowCourse from './show-courses';
 import MentorDetail from './show-details';
 import AffiliateEarnings from './show-earnings';
+import ShowWebinars from './show-webinars';
 
 interface Course {
     id: number;
     title: string;
     description: string;
+    thumbnail: string | null;
     price: number;
     status: string;
     level: string;
@@ -30,6 +34,55 @@ interface Course {
     duration: number;
     students_count: number;
     created_at: string;
+}
+
+interface Article {
+    id: number;
+    title: string;
+    slug: string;
+    thumbnail: string | null;
+    category: {
+        name: string;
+    };
+    excerpt: string;
+    status: string;
+    views: number;
+    read_time: number;
+    is_featured: boolean;
+    published_at: string | null;
+    created_at: string;
+}
+
+interface Webinar {
+    id: number;
+    title: string;
+    slug: string;
+    thumbnail: string;
+    category: {
+        name: string;
+    };
+    price: number;
+    discount_price: number | null;
+    quota: number;
+    status: string;
+    start_time: string;
+    batch: string;
+}
+
+interface Bootcamp {
+    id: number;
+    title: string;
+    slug: string;
+    thumbnail: string;
+    category: {
+        name: string;
+    };
+    price: number;
+    discount_price: number | null;
+    batch: string;
+    status: string;
+    start_date: string;
+    end_date: string;
 }
 
 interface Stats {
@@ -43,6 +96,9 @@ interface MentorProps {
     mentor: Mentor;
     earnings?: Earning[];
     courses?: Course[];
+    articles?: Article[];
+    webinars?: Webinar[];
+    bootcamps?: Bootcamp[];
     stats: Stats;
     flash?: {
         success?: string;
@@ -50,7 +106,7 @@ interface MentorProps {
     };
 }
 
-export default function ShowMentor({ mentor, earnings, courses, stats, flash }: MentorProps) {
+export default function ShowMentor({ mentor, earnings, courses, articles, webinars, bootcamps, stats, flash }: MentorProps) {
     const [open, setOpen] = useState(false);
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -84,7 +140,7 @@ export default function ShowMentor({ mentor, earnings, courses, stats, flash }: 
                 <h1 className="mb-4 text-2xl font-semibold">{`Detail ${mentor.name}`}</h1>
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
                     <Tabs defaultValue="detail" className="lg:col-span-2">
-                        <TabsList>
+                        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
                             <TabsTrigger value="detail">Detail</TabsTrigger>
                             <TabsTrigger value="courses">
                                 Kelas
@@ -92,10 +148,28 @@ export default function ShowMentor({ mentor, earnings, courses, stats, flash }: 
                                     <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{courses.length}</span>
                                 )}
                             </TabsTrigger>
+                            <TabsTrigger value="bootcamps">
+                                Bootcamp
+                                {bootcamps && bootcamps.length > 0 && (
+                                    <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{bootcamps.length}</span>
+                                )}
+                            </TabsTrigger>
+                            <TabsTrigger value="webinars">
+                                Webinar
+                                {webinars && webinars.length > 0 && (
+                                    <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{webinars.length}</span>
+                                )}
+                            </TabsTrigger>
+                            <TabsTrigger value="articles">
+                                Artikel
+                                {articles && articles.length > 0 && (
+                                    <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{articles.length}</span>
+                                )}
+                            </TabsTrigger>
                             <TabsTrigger value="transaksi">
                                 Transaksi
-                                {earnings!.length > 0 && (
-                                    <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{earnings!.length}</span>
+                                {earnings && earnings.length > 0 && (
+                                    <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{earnings.length}</span>
                                 )}
                             </TabsTrigger>
                         </TabsList>
@@ -104,6 +178,15 @@ export default function ShowMentor({ mentor, earnings, courses, stats, flash }: 
                         </TabsContent>
                         <TabsContent value="courses">
                             <ShowCourse courses={courses ?? []} />
+                        </TabsContent>
+                        <TabsContent value="bootcamps">
+                            <ShowBootcamps bootcamps={bootcamps ?? []} />
+                        </TabsContent>
+                        <TabsContent value="webinars">
+                            <ShowWebinars webinars={webinars ?? []} />
+                        </TabsContent>
+                        <TabsContent value="articles">
+                            <ShowArticles articles={articles ?? []} />
                         </TabsContent>
                         <TabsContent value="transaksi">
                             <AffiliateEarnings earnings={earnings ?? []} stats={stats} />
