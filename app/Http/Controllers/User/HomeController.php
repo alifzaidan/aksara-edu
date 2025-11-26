@@ -4,8 +4,10 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bootcamp;
+use App\Models\Bundle;
 use App\Models\Course;
 use App\Models\Invoice;
+use App\Models\PartnershipProduct;
 use App\Models\Promotion;
 use App\Models\Tool;
 use App\Models\Webinar;
@@ -96,20 +98,75 @@ class HomeController extends Controller
                 ];
             });
 
+        // ✅ Add Bundles - Filter expired registration deadlines
+        $bundles = Bundle::with(['user', 'bundleItems'])
+            ->where('status', 'published')
+            ->where(function ($query) {
+                $query->whereNull('registration_deadline')
+                    ->orWhere('registration_deadline', '>=', now());
+            })
+            ->orderBy('created_at', 'desc')
+            ->take(6)
+            ->get()
+            ->map(function ($bundle) {
+                // Calculate total price from bundle items
+                $totalItemsPrice = $bundle->bundleItems->sum('price');
+
+                return [
+                    'id' => $bundle->id,
+                    'title' => $bundle->title,
+                    'thumbnail' => $bundle->thumbnail,
+                    'slug' => $bundle->slug,
+                    // ✅ Use manual strikethrough if > 0, else use total items price
+                    'strikethrough_price' => ($bundle->strikethrough_price > 0)
+                        ? $bundle->strikethrough_price
+                        : $totalItemsPrice,
+                    'price' => $bundle->price,
+                    'registration_deadline' => $bundle->registration_deadline,
+                    'type' => 'bundle',
+                    'created_at' => $bundle->created_at,
+                ];
+            });
+
+        // ✅ Add Partnership Products
+        $partnershipProducts = PartnershipProduct::with(['category'])
+            ->where('status', 'published')
+            ->orderBy('created_at', 'desc')
+            ->take(6)
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'title' => $product->title,
+                    'thumbnail' => $product->thumbnail,
+                    'slug' => $product->slug,
+                    'strikethrough_price' => $product->strikethrough_price,
+                    'price' => $product->price,
+                    'registration_deadline' => $product->registration_deadline,
+                    'duration_days' => $product->duration_days,
+                    'category' => $product->category,
+                    'type' => 'partnership',
+                    'created_at' => $product->created_at,
+                ];
+            });
+
         // Gabungkan semua produk dan urutkan berdasarkan tanggal terbaru
         $latestProducts = collect()
             ->merge($courses)
             ->merge($bootcamps)
             ->merge($webinars)
+            ->merge($bundles)
+            ->merge($partnershipProducts)
             ->sortByDesc('created_at')
             ->take(6)
             ->values();
 
-        // Ambil semua produk untuk fake notifications (tidak hanya 6 teratas)
         $allProducts = collect()
             ->merge($courses)
             ->merge($bootcamps)
             ->merge($webinars)
+            ->merge($bundles)
+            ->merge($partnershipProducts)
             ->map(function ($product) {
                 return [
                     'id' => $product['id'],
@@ -123,6 +180,8 @@ class HomeController extends Controller
             'courses' => [],
             'bootcamps' => [],
             'webinars' => [],
+            'bundles' => [],
+            'partnerships' => [],
         ];
 
         if (Auth::check()) {
@@ -161,10 +220,25 @@ class HomeController extends Controller
                 ->values()
                 ->all();
 
+            $myBundleIds = Invoice::with('bundleEnrollments')
+                ->where('user_id', $userId)
+                ->where('status', 'paid')
+                ->get()
+                ->flatMap(function ($invoice) {
+                    return $invoice->bundleEnrollments->pluck('bundle_id');
+                })
+                ->unique()
+                ->values()
+                ->all();
+
+            $myPartnershipIds = [];
+
             $myProductIds = [
                 'courses' => $myCourseIds,
                 'bootcamps' => $myBootcampIds,
                 'webinars' => $myWebinarIds,
+                'bundles' => $myBundleIds,
+                'partnerships' => $myPartnershipIds,
             ];
         }
 

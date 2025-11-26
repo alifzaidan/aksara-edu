@@ -35,8 +35,11 @@ interface Product {
     start_date?: string;
     end_date?: string;
     start_time?: string;
-    category: Category;
-    type: 'course' | 'bootcamp' | 'webinar';
+    registration_deadline?: string;
+    duration_days?: number;
+    bundle_url?: string;
+    category?: Category;
+    type: 'course' | 'bootcamp' | 'webinar' | 'bundle' | 'partnership';
     created_at: string;
 }
 
@@ -44,6 +47,8 @@ interface MyProductIds {
     courses: string[];
     bootcamps: string[];
     webinars: string[];
+    bundles: string[];
+    partnerships: string[];
 }
 
 interface ReferralInfo {
