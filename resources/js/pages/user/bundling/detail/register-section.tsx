@@ -1,3 +1,4 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -6,7 +7,7 @@ import { SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Calendar, Check, Package, Sparkles } from 'lucide-react';
+import { AlertTriangle, Calendar, Check, Package, Sparkles } from 'lucide-react';
 
 interface Bundle {
     id: string;
@@ -19,14 +20,29 @@ interface Bundle {
     bundle_items_count: number;
 }
 
+interface OwnedItem {
+    id: string;
+    title: string;
+    type: string;
+}
+
 interface RegisterSectionProps {
     bundle: Bundle;
     totalOriginalPrice: number;
     discountAmount: number;
     discountPercentage: number;
+    hasOwnedItems: boolean;
+    ownedItems: OwnedItem[];
 }
 
-export default function RegisterSection({ bundle, totalOriginalPrice, discountAmount, discountPercentage }: RegisterSectionProps) {
+export default function RegisterSection({
+    bundle,
+    totalOriginalPrice,
+    discountAmount,
+    discountPercentage,
+    hasOwnedItems,
+    ownedItems,
+}: RegisterSectionProps) {
     const { auth } = usePage<SharedData>().props;
 
     const deadline = bundle.registration_deadline ? new Date(bundle.registration_deadline) : null;
@@ -37,8 +53,14 @@ export default function RegisterSection({ bundle, totalOriginalPrice, discountAm
     let registrationUrl: string;
     let buttonText: string;
     let warningMessage: string | null = null;
+    let isDisabled = false;
 
-    if (!isLoggedIn) {
+    if (hasOwnedItems) {
+        registrationUrl = '#';
+        buttonText = 'Tidak Dapat Mendaftar';
+        warningMessage = 'Anda sudah memiliki beberapa produk dalam bundle ini!';
+        isDisabled = true;
+    } else if (!isLoggedIn) {
         registrationUrl = bundle.registration_url;
         buttonText = 'Login untuk Mendaftar';
         warningMessage = 'Anda harus login terlebih dahulu!';
@@ -60,6 +82,24 @@ export default function RegisterSection({ bundle, totalOriginalPrice, discountAm
             <p className="mb-8 text-center text-gray-600 dark:text-gray-400">
                 Daftar sekarang dan dapatkan akses ke semua program pembelajaran dalam paket bundling ini.
             </p>
+
+            {/* ✅ Warning if user already owns items */}
+            {hasOwnedItems && (
+                <Alert variant="destructive" className="mb-6">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                        <p className="mb-2 font-semibold">Anda sudah memiliki produk berikut dalam bundle ini:</p>
+                        <ul className="ml-4 list-disc space-y-1">
+                            {ownedItems.map((item) => (
+                                <li key={item.id}>
+                                    <span className="font-medium">{item.type}:</span> {item.title}
+                                </li>
+                            ))}
+                        </ul>
+                        <p className="mt-2 text-sm">Untuk menghindari duplikasi, Anda tidak dapat membeli bundle ini.</p>
+                    </AlertDescription>
+                </Alert>
+            )}
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {/* Left Column - Image & Benefits */}
@@ -150,9 +190,13 @@ export default function RegisterSection({ bundle, totalOriginalPrice, discountAm
                     </ul>
 
                     <div className="mt-auto">
-                        {warningMessage && <p className="mb-2 text-center text-sm text-red-500">{warningMessage}</p>}
-                        <Button className="w-full" asChild>
-                            <Link href={registrationUrl}>{buttonText}</Link>
+                        {warningMessage && (
+                            <p className={`mb-2 text-center text-sm ${hasOwnedItems ? 'font-semibold text-red-600' : 'text-red-500'}`}>
+                                {warningMessage}
+                            </p>
+                        )}
+                        <Button className="w-full" asChild={!isDisabled} disabled={isDisabled}>
+                            {isDisabled ? <span>{buttonText}</span> : <Link href={registrationUrl}>{buttonText}</Link>}
                         </Button>
                     </div>
                 </div>

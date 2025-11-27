@@ -89,6 +89,65 @@ class BundleController extends Controller
             ? round(($discountAmount / $totalOriginalPrice) * 100)
             : 0;
 
+        // Check if user already owns any items in the bundle
+        $ownedItems = [];
+        $hasOwnedItems = false;
+
+        if (Auth::check()) {
+            $userId = Auth::id();
+
+            $ownedCourseIds = Invoice::with('courseItems')
+                ->where('user_id', $userId)
+                ->where('status', 'paid')
+                ->get()
+                ->flatMap(fn($invoice) => $invoice->courseItems->pluck('course_id'))
+                ->unique()
+                ->toArray();
+
+            $ownedBootcampIds = Invoice::with('bootcampItems')
+                ->where('user_id', $userId)
+                ->where('status', 'paid')
+                ->get()
+                ->flatMap(fn($invoice) => $invoice->bootcampItems->pluck('bootcamp_id'))
+                ->unique()
+                ->toArray();
+
+            $ownedWebinarIds = Invoice::with('webinarItems')
+                ->where('user_id', $userId)
+                ->where('status', 'paid')
+                ->get()
+                ->flatMap(fn($invoice) => $invoice->webinarItems->pluck('webinar_id'))
+                ->unique()
+                ->toArray();
+
+            foreach ($bundle->bundleItems as $item) {
+                if (!$item->bundleable) continue;
+
+                $isOwned = false;
+                $itemType = '';
+
+                if (str_contains($item->bundleable_type, 'Course') && in_array($item->bundleable_id, $ownedCourseIds)) {
+                    $isOwned = true;
+                    $itemType = 'Kelas';
+                } elseif (str_contains($item->bundleable_type, 'Bootcamp') && in_array($item->bundleable_id, $ownedBootcampIds)) {
+                    $isOwned = true;
+                    $itemType = 'Bootcamp';
+                } elseif (str_contains($item->bundleable_type, 'Webinar') && in_array($item->bundleable_id, $ownedWebinarIds)) {
+                    $isOwned = true;
+                    $itemType = 'Webinar';
+                }
+
+                if ($isOwned) {
+                    $hasOwnedItems = true;
+                    $ownedItems[] = [
+                        'id' => $item->bundleable_id,
+                        'title' => $item->bundleable->title,
+                        'type' => $itemType,
+                    ];
+                }
+            }
+        }
+
         $relatedBundles = Bundle::with(['bundleItems.bundleable'])
             ->where('status', 'published')
             ->where('id', '!=', $bundle->id)
@@ -118,6 +177,8 @@ class BundleController extends Controller
             'discountAmount' => $discountAmount,
             'discountPercentage' => $discountPercentage,
             'relatedBundles' => $relatedBundles,
+            'hasOwnedItems' => $hasOwnedItems,
+            'ownedItems' => $ownedItems,
         ]);
     }
 

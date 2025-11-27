@@ -39,6 +39,7 @@ interface Bundle {
     price: number;
     strikethrough_price: number;
     registration_deadline?: string | null;
+    registration_url: string;
     status: string;
     bundle_items: BundleItem[];
     bundle_items_count: number;
@@ -51,6 +52,12 @@ interface BundleDetailProps {
     discountAmount: number;
     discountPercentage: number;
     relatedBundles: Bundle[];
+    hasOwnedItems: boolean;
+    ownedItems: Array<{
+        id: string;
+        title: string;
+        type: string;
+    }>;
 }
 
 export default function BundleDetail({
@@ -60,6 +67,8 @@ export default function BundleDetail({
     discountAmount,
     discountPercentage,
     relatedBundles,
+    hasOwnedItems,
+    ownedItems,
 }: BundleDetailProps) {
     return (
         <UserLayout>
@@ -73,6 +82,8 @@ export default function BundleDetail({
                 totalOriginalPrice={totalOriginalPrice}
                 discountAmount={discountAmount}
                 discountPercentage={discountPercentage}
+                hasOwnedItems={hasOwnedItems}
+                ownedItems={ownedItems}
             />
             <RelatedBundles relatedBundles={relatedBundles} />
         </UserLayout>
