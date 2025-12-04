@@ -103,6 +103,7 @@ class AffiliateController extends Controller
             'invoice.courseItems.course',
             'invoice.bootcampItems.bootcamp',
             'invoice.webinarItems.webinar',
+            'invoice.bundleEnrollments.bundle',
         ])
             ->where('affiliate_user_id', $affiliate->id)
             ->orderBy('created_at', 'desc')
@@ -159,5 +160,42 @@ class AffiliateController extends Controller
 
         return redirect()->route('affiliates.index')
             ->with('success', 'Status afiliasi berhasil diubah menjadi ' . $affiliate->affiliate_status . '.');
+    }
+
+    public function withdrawCommission(Request $request, string $id)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:1',
+        ]);
+
+        $affiliate = User::findOrFail($id);
+        $withdrawAmount = (int) $request->amount;
+
+        $availableCommission = AffiliateEarning::where('affiliate_user_id', $affiliate->id)
+            ->where('status', 'approved')
+            ->sum('amount');
+
+        if ($withdrawAmount > $availableCommission) {
+            return back()->with('error', 'Nominal penarikan melebihi komisi yang tersedia.');
+        }
+
+        $remainingAmount = $withdrawAmount;
+        $approvedEarnings = AffiliateEarning::where('affiliate_user_id', $affiliate->id)
+            ->where('status', 'approved')
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        foreach ($approvedEarnings as $earning) {
+            if ($remainingAmount <= 0) break;
+
+            if ($earning->amount <= $remainingAmount) {
+                $earning->update(['status' => 'paid']);
+                $remainingAmount -= $earning->amount;
+            } else {
+                break;
+            }
+        }
+
+        return back()->with('success', "Berhasil menarik komisi sebesar Rp " . number_format($withdrawAmount, 0, ',', '.') . " untuk {$affiliate->name}.");
     }
 }

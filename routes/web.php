@@ -198,6 +198,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('affiliates/{affiliate}/toggle-status', [AffiliateController::class, 'toggleStatus'])->name('affiliates.toggleStatus');
         Route::post('affiliate-earnings/{earning}/approve', [AffiliateEarningController::class, 'approveEarning'])->name('earnings.approve');
         Route::post('affiliate-earnings/{earning}/reject', [AffiliateEarningController::class, 'rejectEarning'])->name('earnings.reject');
+        Route::post('affiliates/{affiliate}/withdraw', [AffiliateController::class, 'withdrawCommission'])->name('affiliates.withdraw');
 
         Route::post('/articles/{article}/publish', [ArticleController::class, 'publish'])->name('articles.publish');
         Route::post('/articles/{article}/archive', [ArticleController::class, 'archive'])->name('articles.archive');
