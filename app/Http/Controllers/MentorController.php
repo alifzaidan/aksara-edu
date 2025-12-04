@@ -256,4 +256,41 @@ class MentorController extends Controller
         $mentor->delete();
         return redirect()->route('mentors.index')->with('success', 'Mentor berhasil dihapus.');
     }
+
+    public function withdrawCommission(Request $request, string $id)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:1',
+        ]);
+
+        $mentor = User::findOrFail($id);
+        $withdrawAmount = (int) $request->amount;
+
+        $availableCommission = AffiliateEarning::where('affiliate_user_id', $mentor->id)
+            ->where('status', 'approved')
+            ->sum('amount');
+
+        if ($withdrawAmount > $availableCommission) {
+            return back()->with('error', 'Nominal penarikan melebihi komisi yang tersedia.');
+        }
+
+        $remainingAmount = $withdrawAmount;
+        $approvedEarnings = AffiliateEarning::where('affiliate_user_id', $mentor->id)
+            ->where('status', 'approved')
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        foreach ($approvedEarnings as $earning) {
+            if ($remainingAmount <= 0) break;
+
+            if ($earning->amount <= $remainingAmount) {
+                $earning->update(['status' => 'paid']);
+                $remainingAmount -= $earning->amount;
+            } else {
+                break;
+            }
+        }
+
+        return back()->with('success', "Berhasil menarik komisi sebesar Rp " . number_format($withdrawAmount, 0, ',', '.') . " untuk {$mentor->name}.");
+    }
 }

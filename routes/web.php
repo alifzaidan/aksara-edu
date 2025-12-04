@@ -159,7 +159,6 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
     });
 
     Route::middleware(['role:admin'])->group(function () {
-        Route::resource('mentors', MentorController::class);
         Route::resource('users', UserController::class);
         Route::resource('certificates', CertificateController::class);
         Route::get('/{certificate}/preview', [CertificateController::class, 'preview'])->name('certificates.preview');
@@ -199,6 +198,9 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('affiliate-earnings/{earning}/approve', [AffiliateEarningController::class, 'approveEarning'])->name('earnings.approve');
         Route::post('affiliate-earnings/{earning}/reject', [AffiliateEarningController::class, 'rejectEarning'])->name('earnings.reject');
         Route::post('affiliates/{affiliate}/withdraw', [AffiliateController::class, 'withdrawCommission'])->name('affiliates.withdraw');
+
+        Route::resource('mentors', MentorController::class);
+        Route::post('/mentors/{mentor}/withdraw', [MentorController::class, 'withdrawCommission'])->name('mentors.withdraw');
 
         Route::post('/articles/{article}/publish', [ArticleController::class, 'publish'])->name('articles.publish');
         Route::post('/articles/{article}/archive', [ArticleController::class, 'archive'])->name('articles.archive');
