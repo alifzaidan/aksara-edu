@@ -142,7 +142,7 @@ export default function ShowAffiliate({ affiliate, earnings, stats, flash }: Aff
                                 <>
                                     <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
                                         <DialogTrigger asChild>
-                                            <Button className="w-full bg-green-600 hover:bg-green-700">
+                                            <Button className="w-full border-green-700 bg-green-600 hover:bg-green-700">
                                                 <Banknote />
                                                 Tarik Komisi
                                             </Button>
