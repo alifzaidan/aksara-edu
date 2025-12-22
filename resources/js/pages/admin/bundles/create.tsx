@@ -572,6 +572,7 @@ export default function CreateBundle({ courses, bootcamps, webinars }: CreatePro
                                                             mode="single"
                                                             selected={field.value ? new Date(field.value) : undefined}
                                                             captionLayout="dropdown"
+                                                            endMonth={new Date(new Date().getFullYear() + 10, 11)}
                                                             onSelect={(date) => {
                                                                 const prev = field.value ? new Date(field.value) : new Date();
                                                                 const time = prev.toTimeString().split(' ')[0];

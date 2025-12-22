@@ -458,6 +458,7 @@ export default function CreateWebinar({
                                                             mode="single"
                                                             selected={field.value ? new Date(field.value) : undefined}
                                                             captionLayout="dropdown"
+                                                            endMonth={new Date(new Date().getFullYear() + 10, 11)}
                                                             onSelect={(date) => {
                                                                 if (!date) return;
                                                                 const prev = field.value ? new Date(field.value) : new Date();
@@ -523,6 +524,7 @@ export default function CreateWebinar({
                                                             mode="single"
                                                             selected={field.value ? new Date(field.value) : undefined}
                                                             captionLayout="dropdown"
+                                                            endMonth={new Date(new Date().getFullYear() + 10, 11)}
                                                             onSelect={(date) => {
                                                                 const prev = field.value ? new Date(field.value) : new Date();
                                                                 const time = prev.toTimeString().split(' ')[0];
@@ -589,6 +591,7 @@ export default function CreateWebinar({
                                                             mode="single"
                                                             selected={field.value ? new Date(field.value) : undefined}
                                                             captionLayout="dropdown"
+                                                            endMonth={new Date(new Date().getFullYear() + 10, 11)}
                                                             onSelect={(date) => {
                                                                 const prev = field.value ? new Date(field.value) : new Date();
                                                                 const time = prev.toTimeString().split(' ')[0];
