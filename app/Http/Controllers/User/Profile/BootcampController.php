@@ -36,30 +36,40 @@ class BootcampController extends Controller
     public function detail($slug)
     {
         $userId = Auth::id();
+
         $bootcamp = Invoice::with([
+            'bootcampItems' => function ($query) use ($slug) {
+                $query->whereHas('bootcamp', function ($q) use ($slug) {
+                    $q->where('slug', $slug);
+                });
+            },
             'bootcampItems.bootcamp.category',
             'bootcampItems.bootcamp.schedules',
             'bootcampItems.attendances.bootcampSchedule'
         ])
             ->where('user_id', $userId)
+            ->where('status', 'paid')
             ->whereHas('bootcampItems.bootcamp', function ($query) use ($slug) {
                 $query->where('slug', $slug);
             })
+            ->orderBy('created_at', 'desc')
             ->first();
+
+        if (!$bootcamp || $bootcamp->bootcampItems->isEmpty()) {
+            abort(404, 'Bootcamp tidak ditemukan atau Anda belum terdaftar.');
+        }
 
         $certificate = null;
         $certificateParticipant = null;
 
-        if ($bootcamp && $bootcamp->bootcampItems->isNotEmpty()) {
-            $bootcampId = $bootcamp->bootcampItems->first()->bootcamp_id;
+        $bootcampId = $bootcamp->bootcampItems->first()->bootcamp_id;
 
-            $certificate = Certificate::where('bootcamp_id', $bootcampId)->first();
+        $certificate = Certificate::where('bootcamp_id', $bootcampId)->first();
 
-            if ($certificate) {
-                $certificateParticipant = CertificateParticipant::where('certificate_id', $certificate->id)
-                    ->where('user_id', $userId)
-                    ->first();
-            }
+        if ($certificate) {
+            $certificateParticipant = CertificateParticipant::where('certificate_id', $certificate->id)
+                ->where('user_id', $userId)
+                ->first();
         }
 
         return Inertia::render('user/profile/bootcamp/detail', [

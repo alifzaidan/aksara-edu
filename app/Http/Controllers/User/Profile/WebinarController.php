@@ -36,26 +36,38 @@ class WebinarController extends Controller
     public function detail($slug)
     {
         $userId = Auth::id();
-        $webinar = Invoice::with('webinarItems.webinar.category')
+
+        $webinar = Invoice::with([
+            'webinarItems' => function ($query) use ($slug) {
+                $query->whereHas('webinar', function ($q) use ($slug) {
+                    $q->where('slug', $slug);
+                });
+            },
+            'webinarItems.webinar.category'
+        ])
             ->where('user_id', $userId)
+            ->where('status', 'paid')
             ->whereHas('webinarItems.webinar', function ($query) use ($slug) {
                 $query->where('slug', $slug);
             })
+            ->orderBy('created_at', 'desc')
             ->first();
+
+        if (!$webinar || $webinar->webinarItems->isEmpty()) {
+            abort(404, 'Webinar tidak ditemukan atau Anda belum terdaftar.');
+        }
 
         $certificate = null;
         $certificateParticipant = null;
 
-        if ($webinar && $webinar->webinarItems->isNotEmpty()) {
-            $webinarId = $webinar->webinarItems->first()->webinar_id;
+        $webinarId = $webinar->webinarItems->first()->webinar_id;
 
-            $certificate = Certificate::where('webinar_id', $webinarId)->first();
+        $certificate = Certificate::where('webinar_id', $webinarId)->first();
 
-            if ($certificate) {
-                $certificateParticipant = CertificateParticipant::where('certificate_id', $certificate->id)
-                    ->where('user_id', $userId)
-                    ->first();
-            }
+        if ($certificate) {
+            $certificateParticipant = CertificateParticipant::where('certificate_id', $certificate->id)
+                ->where('user_id', $userId)
+                ->first();
         }
 
         return Inertia::render('user/profile/webinar/detail', [

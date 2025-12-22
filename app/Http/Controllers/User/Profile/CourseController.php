@@ -35,33 +35,41 @@ class CourseController extends Controller
     public function detail($slug)
     {
         $userId = Auth::id();
-        $course = Invoice::with('courseItems.course.category')
+
+        $course = Invoice::with(['courseItems' => function ($query) use ($slug) {
+            $query->whereHas('course', function ($q) use ($slug) {
+                $q->where('slug', $slug);
+            })->with('course.category');
+        }])
             ->where('user_id', $userId)
+            ->where('status', 'paid')
             ->whereHas('courseItems.course', function ($query) use ($slug) {
                 $query->where('slug', $slug);
             })
-            ->orderByRaw("CASE WHEN status = 'paid' THEN 0 ELSE 1 END")
             ->orderBy('created_at', 'desc')
             ->first();
+
+        if (!$course || $course->courseItems->isEmpty()) {
+            abort(404, 'Kelas tidak ditemukan atau Anda belum terdaftar.');
+        }
 
         $courseRating = null;
         $certificate = null;
         $certificateParticipant = null;
 
-        if ($course && $course->courseItems->isNotEmpty()) {
-            $courseId = $course->courseItems->first()->course_id;
+        $courseItem = $course->courseItems->first();
+        $courseId = $courseItem->course_id;
 
-            $courseRating = CourseRating::where('user_id', $userId)
-                ->where('course_id', $courseId)
+        $courseRating = CourseRating::where('user_id', $userId)
+            ->where('course_id', $courseId)
+            ->first();
+
+        $certificate = Certificate::where('course_id', $courseId)->first();
+
+        if ($certificate) {
+            $certificateParticipant = CertificateParticipant::where('certificate_id', $certificate->id)
+                ->where('user_id', $userId)
                 ->first();
-
-            $certificate = Certificate::where('course_id', $courseId)->first();
-
-            if ($certificate) {
-                $certificateParticipant = CertificateParticipant::where('certificate_id', $certificate->id)
-                    ->where('user_id', $userId)
-                    ->first();
-            }
         }
 
         return Inertia::render('user/profile/course/detail', [

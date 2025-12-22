@@ -335,7 +335,7 @@ class AdminController extends Controller
             'total_courses' => Course::count(),
             'total_bootcamps' => Bootcamp::count(),
             'total_webinars' => Webinar::count(),
-            'recent_sales' => Invoice::with(['user', 'courseItems.course', 'bootcampItems.bootcamp', 'webinarItems.webinar'])
+            'recent_sales' => Invoice::with(['user', 'courseItems.course', 'bootcampItems.bootcamp', 'webinarItems.webinar', 'bundleEnrollments.bundle'])
                 ->where('status', 'paid')->latest()->take(5)->get(),
             'revenue_data' => $this->getRevenueData(),
             'monthly_revenue_data' => $this->getMonthlyRevenueData(),

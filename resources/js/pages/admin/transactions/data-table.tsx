@@ -69,6 +69,11 @@ export const productTypes = [
         label: 'Webinar',
         icon: MonitorPlay,
     },
+    {
+        value: 'bundle',
+        label: 'Bundle',
+        icon: Gift,
+    },
 ];
 
 interface DataTableProps<TData, TValue> {

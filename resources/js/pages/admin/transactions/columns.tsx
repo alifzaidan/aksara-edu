@@ -34,6 +34,11 @@ interface Webinar {
     title: string;
 }
 
+interface Bundle {
+    id: string;
+    title: string;
+}
+
 interface EnrollmentCourse {
     course: Course;
 }
@@ -42,6 +47,10 @@ interface EnrollmentBootcamp {
 }
 interface EnrollmentWebinar {
     webinar: Webinar;
+}
+
+interface BundleEnrollment {
+    bundle: Bundle;
 }
 
 export interface Invoice {
@@ -55,6 +64,7 @@ export interface Invoice {
     course_items: EnrollmentCourse[];
     bootcamp_items: EnrollmentBootcamp[];
     webinar_items: EnrollmentWebinar[];
+    bundle_enrollments: BundleEnrollment[];
     created_at: string;
 }
 
@@ -75,6 +85,7 @@ export const columns: ColumnDef<Invoice>[] = [
             if (row.course_items && row.course_items.length > 0) return 'course';
             if (row.bootcamp_items && row.bootcamp_items.length > 0) return 'bootcamp';
             if (row.webinar_items && row.webinar_items.length > 0) return 'webinar';
+            if (row.bundle_enrollments && row.bundle_enrollments.length > 0) return 'bundle';
             return 'unknown';
         },
         header: () => null,
@@ -101,7 +112,9 @@ export const columns: ColumnDef<Invoice>[] = [
             const courseTitles = invoice.course_items?.map((item) => item.course.title) || [];
             const bootcampTitles = invoice.bootcamp_items?.map((item) => item.bootcamp.title) || [];
             const webinarTitles = invoice.webinar_items?.map((item) => item.webinar.title) || [];
-            const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles];
+            const bundleTitles = invoice.bundle_enrollments?.map((item) => item.bundle.title) || [];
+
+            const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles];
             const fullTitleString = allTitles.join(', ');
 
             return (
