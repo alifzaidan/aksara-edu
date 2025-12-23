@@ -147,6 +147,7 @@ export default function BootcampScheduleInput({ value, onChange, startDate, endD
                                     mode="single"
                                     selected={selectedDate}
                                     defaultMonth={selectedDate || startDateObj}
+                                    endMonth={new Date(new Date().getFullYear() + 10, 11)}
                                     captionLayout="dropdown"
                                     disabled={(date) => {
                                         if (!startDateObj || !endDateObj) return true;

@@ -553,6 +553,7 @@ export default function CreateBootcamp({
                                                                     mode="single"
                                                                     selected={field.value ? new Date(field.value) : undefined}
                                                                     defaultMonth={field.value ? new Date(field.value) : undefined}
+                                                                    endMonth={new Date(new Date().getFullYear() + 10, 11)}
                                                                     disabled={(date) =>
                                                                         !!endDateObj &&
                                                                         date >
@@ -621,6 +622,7 @@ export default function CreateBootcamp({
                                                                     mode="single"
                                                                     selected={field.value ? new Date(field.value) : undefined}
                                                                     captionLayout="dropdown"
+                                                                    endMonth={new Date(new Date().getFullYear() + 10, 11)}
                                                                     disabled={(date) =>
                                                                         !!startDateObj &&
                                                                         date <
