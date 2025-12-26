@@ -503,6 +503,7 @@ export default function EditCertificate({
                                                 <Calendar
                                                     mode="single"
                                                     selected={field.value ? new Date(field.value) : undefined}
+                                                    endMonth={new Date(new Date().getFullYear() + 10, 11)}
                                                     onSelect={(date) => {
                                                         if (date) {
                                                             field.onChange(format(date, 'yyyy-MM-dd'));

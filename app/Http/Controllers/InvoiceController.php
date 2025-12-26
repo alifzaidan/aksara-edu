@@ -601,11 +601,17 @@ class InvoiceController extends Controller
     {
         DB::beginTransaction();
         try {
-            $invoice = Invoice::with('discountUsage.discountCode')
+            $isAdmin = Auth::user() && Auth::user()->hasRole('admin');
+
+            $query = Invoice::with('discountUsage.discountCode')
                 ->where('id', $id)
-                ->where('user_id', Auth::id())
-                ->where('status', 'pending')
-                ->firstOrFail();
+                ->where('status', 'pending');
+
+            if (!$isAdmin) {
+                $query->where('user_id', Auth::id());
+            }
+
+            $invoice = $query->firstOrFail();
 
             $this->expireInvoiceInXendit($invoice->invoice_code);
 
@@ -689,10 +695,7 @@ class InvoiceController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'message' => 'Invoice berhasil dibatalkan.',
-                'success' => true
-            ], 200);
+            return redirect()->back()->with('success', 'Invoice berhasil dibatalkan.');
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -1166,7 +1169,7 @@ class InvoiceController extends Controller
                     'invoice_id' => $invoice->id,
                     'amount' => $commissionAmount,
                     'rate' => $affiliate->commission,
-                    'status' => 'pending',
+                    'status' => 'approved',
                 ]);
             }
         }
@@ -1196,7 +1199,7 @@ class InvoiceController extends Controller
                     'invoice_id' => $invoice->id,
                     'amount' => $commissionAmount,
                     'rate' => $mentor->commission,
-                    'status' => 'pending',
+                    'status' => 'approved',
                     'type' => 'mentor_course',
                     'course_id' => $course->id,
                 ]);

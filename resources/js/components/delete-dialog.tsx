@@ -30,9 +30,12 @@ export default function DeleteConfirmDialog({
     confirmText = 'Ya, Hapus',
     cancelText = 'Batal',
 }: DeleteConfirmDialogProps) {
-    const finalDescription = itemName
-        ? `Tindakan ini tidak dapat dibatalkan. "${itemName}" akan dihapus secara permanen dari sistem dan semua data terkait akan hilang.`
-        : description;
+    const finalDescription =
+        description !== undefined
+            ? description
+            : itemName
+              ? `Tindakan ini tidak dapat dibatalkan. "${itemName}" akan dihapus secara permanen dari sistem dan semua data terkait akan hilang.`
+              : undefined;
 
     return (
         <AlertDialog>

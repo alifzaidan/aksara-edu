@@ -27,6 +27,9 @@ export interface Certificate {
     };
     created_at: string;
     updated_at: string;
+    course?: { id: string; title: string };
+    bootcamp?: { id: string; title: string };
+    webinar?: { id: string; title: string };
 }
 
 const CertificateActions = ({ certificate }: { certificate: Certificate }) => {
@@ -90,6 +93,50 @@ export const columns: ColumnDef<Certificate>[] = [
                     {row.original.title}
                 </Link>
             );
+        },
+    },
+    {
+        id: 'program',
+        header: 'Program',
+        cell: ({ row }) => {
+            const certificate = row.original as Certificate;
+            if (certificate.course) {
+                return (
+                    <Link
+                        href={route('courses.show', certificate.course.id)}
+                        className="text-blue-600 hover:underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        {certificate.course.title} <span className="text-xs text-gray-500">(Kelas Online)</span>
+                    </Link>
+                );
+            }
+            if (certificate.bootcamp) {
+                return (
+                    <Link
+                        href={route('bootcamps.show', certificate.bootcamp.id)}
+                        className="text-green-600 hover:underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        {certificate.bootcamp.title} <span className="text-xs text-gray-500">(Bootcamp)</span>
+                    </Link>
+                );
+            }
+            if (certificate.webinar) {
+                return (
+                    <Link
+                        href={route('webinars.show', certificate.webinar.id)}
+                        className="text-purple-600 hover:underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        {certificate.webinar.title} <span className="text-xs text-gray-500">(Webinar)</span>
+                    </Link>
+                );
+            }
+            return <span className="text-gray-400 italic">-</span>;
         },
     },
     {
