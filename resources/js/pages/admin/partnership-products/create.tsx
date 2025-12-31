@@ -423,8 +423,10 @@ export default function CreatePartnershipProduct({ categories }: { categories: {
                                                     <CalendarComponent
                                                         mode="single"
                                                         selected={field.value}
+                                                        captionLayout="dropdown"
+                                                        endMonth={new Date(new Date().getFullYear() + 10, 11)}
                                                         onSelect={(date) => {
-                                                            field.onChange(date);
+                                                            if (date) field.onChange(date);
                                                             setOpenIssuedCalendar(false);
                                                         }}
                                                         disabled={(date) => {
@@ -433,7 +435,6 @@ export default function CreatePartnershipProduct({ categories }: { categories: {
                                                             return date < today;
                                                         }}
                                                         initialFocus
-                                                        locale={id}
                                                     />
                                                 </PopoverContent>
                                             </Popover>

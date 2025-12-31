@@ -1,10 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { SharedData } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { BadgeCheck, Calendar, CalendarDays, Clock, LogIn } from 'lucide-react';
+import { BadgeCheck, Calendar, CalendarDays, Clock } from 'lucide-react';
 
 interface PartnershipProduct {
     id: string;
@@ -19,12 +17,9 @@ interface PartnershipProduct {
 }
 
 export default function RegisterSection({ partnershipProduct }: { partnershipProduct: PartnershipProduct }) {
-    const { auth } = usePage<SharedData>().props;
-    const isAuthenticated = !!auth.user;
-
     const deadline = new Date(partnershipProduct.registration_deadline);
     const isRegistrationOpen = new Date() < deadline;
-    const canRegister = isAuthenticated && isRegistrationOpen;
+    const canRegister = isRegistrationOpen;
 
     const formatRupiah = (amount: number) => {
         return new Intl.NumberFormat('id-ID', {
@@ -139,33 +134,12 @@ export default function RegisterSection({ partnershipProduct }: { partnershipPro
                             </div>
                         )}
 
-                        {!isAuthenticated && isRegistrationOpen && (
-                            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-center dark:border-amber-800 dark:bg-amber-900/20">
-                                <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                                    🔒 Anda harus login terlebih dahulu untuk mendaftar
-                                </p>
-                            </div>
-                        )}
-
                         {/* Registration Button */}
-                        {!isAuthenticated ? (
-                            <Button className="w-full" asChild>
-                                <Link href={route('login')}>
-                                    <LogIn className="mr-2 h-4 w-4" />
-                                    Login untuk Mendaftar
-                                </Link>
-                            </Button>
-                        ) : (
-                            <Button className="w-full" onClick={handleRegister} disabled={!canRegister}>
-                                {canRegister ? 'Daftar Sekarang' : 'Pendaftaran Ditutup'}
-                            </Button>
-                        )}
+                        <Button className="w-full" onClick={handleRegister} disabled={!canRegister}>
+                            {canRegister ? 'Daftar Sekarang' : 'Pendaftaran Ditutup'}
+                        </Button>
 
-                        <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-                            {isAuthenticated
-                                ? 'Anda akan diarahkan ke halaman pendaftaran partner'
-                                : 'Login terlebih dahulu untuk melanjutkan pendaftaran'}
-                        </p>
+                        <p className="text-center text-xs text-gray-500 dark:text-gray-400">Anda akan diarahkan ke halaman pendaftaran partner</p>
                     </div>
                 </div>
             </div>

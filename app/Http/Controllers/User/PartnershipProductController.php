@@ -50,10 +50,6 @@ class PartnershipProductController extends Controller
     {
         $product = PartnershipProduct::findOrFail($id);
 
-        if (!Auth::check()) {
-            return redirect()->route('login')->with('error', 'Anda harus login terlebih dahulu untuk mendaftar.');
-        }
-
         $deadline = new \DateTime($product->registration_deadline);
         $now = new \DateTime();
 
@@ -63,7 +59,7 @@ class PartnershipProductController extends Controller
 
         PartnershipProductClick::create([
             'partnership_product_id' => $product->id,
-            'user_id' => Auth::id(),
+            'user_id' => Auth::id(), // Akan null jika guest
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'referrer' => $request->header('referer'),

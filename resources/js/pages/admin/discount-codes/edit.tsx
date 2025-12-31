@@ -556,6 +556,7 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
                                                         mode="single"
                                                         selected={field.value}
                                                         captionLayout="dropdown"
+                                                        endMonth={new Date(new Date().getFullYear() + 10, 11)}
                                                         onSelect={(date) => {
                                                             if (date) field.onChange(date);
                                                             setStartDateOpen(false);
@@ -602,6 +603,7 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
                                                         mode="single"
                                                         selected={field.value}
                                                         captionLayout="dropdown"
+                                                        endMonth={new Date(new Date().getFullYear() + 10, 11)}
                                                         onSelect={(date) => {
                                                             if (date) field.onChange(date);
                                                             setEndDateOpen(false);
