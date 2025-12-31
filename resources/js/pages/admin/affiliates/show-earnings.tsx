@@ -37,7 +37,7 @@ export default function AffiliateEarnings({ earnings, stats }: { earnings: Earni
                             <Package className="text-muted-foreground h-4 w-4" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stats.total_products}</div>
+                            <div className="text-lg font-bold md:text-xl">{stats.total_products}</div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -46,7 +46,7 @@ export default function AffiliateEarnings({ earnings, stats }: { earnings: Earni
                             <Wallet className="text-muted-foreground h-4 w-4" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(stats.total_commission)}</div>
+                            <div className="text-lg font-bold md:text-xl">{formatCurrency(stats.total_commission)}</div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -55,7 +55,7 @@ export default function AffiliateEarnings({ earnings, stats }: { earnings: Earni
                             <Banknote className="text-muted-foreground h-4 w-4" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(stats.available_commission)}</div>
+                            <div className="text-lg font-bold md:text-xl">{formatCurrency(stats.available_commission)}</div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -64,7 +64,7 @@ export default function AffiliateEarnings({ earnings, stats }: { earnings: Earni
                             <CheckCircle className="text-muted-foreground h-4 w-4" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(stats.paid_commission)}</div>
+                            <div className="text-lg font-bold md:text-xl">{formatCurrency(stats.paid_commission)}</div>
                         </CardContent>
                     </Card>
                 </div>
