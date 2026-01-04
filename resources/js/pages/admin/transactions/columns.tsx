@@ -22,7 +22,6 @@ interface User {
     id: string;
     name: string;
     phone_number: string | null;
-    referrer: Referrer | null;
 }
 
 interface Course {
@@ -60,6 +59,7 @@ interface BundleEnrollment {
 export interface Invoice {
     id: string;
     user: User;
+    referrer: Referrer | null;
     invoice_code: string;
     invoice_url: string | null;
     nett_amount: number;
@@ -235,9 +235,9 @@ export const columns: ColumnDef<Invoice>[] = [
         },
     },
     {
-        accessorKey: 'user.referrer.name',
+        accessorKey: 'referrer.name',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Afiliasi" />,
-        cell: ({ row }) => <p>{row.original.user.referrer?.name || '-'}</p>,
+        cell: ({ row }) => <p>{row.original.referrer?.name || '-'}</p>,
     },
     {
         accessorKey: 'status',
