@@ -1254,7 +1254,7 @@ class InvoiceController extends Controller
      */
     private function addEnrollmentToCertificateParticipants(Invoice $invoice)
     {
-        $invoice->load(['courseItems', 'bootcampItems', 'webinarItems']);
+        $invoice->load(['courseItems', 'bootcampItems', 'webinarItems', 'bundleEnrollments.bundle.bundleItems.bundleable']);
 
         foreach ($invoice->courseItems as $courseItem) {
             $this->addToCertificateParticipants('course', $courseItem->course_id, $invoice->user_id);
@@ -1266,6 +1266,34 @@ class InvoiceController extends Controller
 
         foreach ($invoice->webinarItems as $webinarItem) {
             $this->addToCertificateParticipants('webinar', $webinarItem->webinar_id, $invoice->user_id);
+        }
+
+        foreach ($invoice->bundleEnrollments as $bundleEnrollment) {
+            $bundle = $bundleEnrollment->bundle;
+
+            if (!$bundle) {
+                continue;
+            }
+
+            foreach ($bundle->bundleItems as $bundleItem) {
+                $type = null;
+                $itemId = null;
+
+                if ($bundleItem->bundleable_type === 'App\\Models\\Course') {
+                    $type = 'course';
+                    $itemId = $bundleItem->bundleable_id;
+                } elseif ($bundleItem->bundleable_type === 'App\\Models\\Bootcamp') {
+                    $type = 'bootcamp';
+                    $itemId = $bundleItem->bundleable_id;
+                } elseif ($bundleItem->bundleable_type === 'App\\Models\\Webinar') {
+                    $type = 'webinar';
+                    $itemId = $bundleItem->bundleable_id;
+                }
+
+                if ($type && $itemId) {
+                    $this->addToCertificateParticipants($type, $itemId, $invoice->user_id);
+                }
+            }
         }
     }
 

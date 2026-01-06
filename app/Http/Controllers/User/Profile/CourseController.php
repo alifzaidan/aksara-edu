@@ -5,7 +5,9 @@ namespace App\Http\Controllers\User\Profile;
 use App\Http\Controllers\Controller;
 use App\Models\Certificate;
 use App\Models\CertificateParticipant;
+use App\Models\Course;
 use App\Models\CourseRating;
+use App\Models\EnrollmentCourse;
 use App\Models\Invoice;
 use App\Services\CertificatePdfService;
 use Illuminate\Http\Request;
@@ -36,35 +38,62 @@ class CourseController extends Controller
     {
         $userId = Auth::id();
 
-        $course = Invoice::with(['courseItems' => function ($query) use ($slug) {
-            $query->whereHas('course', function ($q) use ($slug) {
-                $q->where('slug', $slug);
-            })->with('course.category');
-        }])
-            ->where('user_id', $userId)
+        $courseData = \App\Models\Course::where('slug', $slug)->firstOrFail();
+        $courseId = $courseData->id;
+
+        $invoice = Invoice::where('user_id', $userId)
             ->where('status', 'paid')
-            ->whereHas('courseItems.course', function ($query) use ($slug) {
-                $query->where('slug', $slug);
+            ->where(function ($query) use ($courseId) {
+                $query->whereHas('courseItems', function ($q) use ($courseId) {
+                    $q->where('course_id', $courseId);
+                })
+                    ->orWhereHas('bundleEnrollments.bundle.bundleItems', function ($q) use ($courseId) {
+                        $q->where('bundleable_type', 'App\\Models\\Course')
+                            ->where('bundleable_id', $courseId);
+                    });
             })
+            ->with(['courseItems.course.category'])
             ->orderBy('created_at', 'desc')
             ->first();
 
-        if (!$course || $course->courseItems->isEmpty()) {
+        if (!$invoice) {
             abort(404, 'Kelas tidak ditemukan atau Anda belum terdaftar.');
         }
 
-        $courseRating = null;
-        $certificate = null;
-        $certificateParticipant = null;
+        $enrollmentCourse = \App\Models\EnrollmentCourse::where('user_id', $userId)
+            ->where('course_id', $courseId)
+            ->first();
 
-        $courseItem = $course->courseItems->first();
-        $courseId = $courseItem->course_id;
+        if (!$enrollmentCourse) {
+            abort(404, 'Enrollment tidak ditemukan.');
+        }
+
+        $courseItem = $invoice->courseItems->where('course_id', $courseId)->first();
+
+        if (!$courseItem) {
+            $courseItem = (object)[
+                'id' => $enrollmentCourse->id,
+                'invoice_id' => $invoice->id,
+                'course_id' => $courseId,
+                'course' => $courseData->load('category'),
+                'progress' => $enrollmentCourse->progress,
+                'completed_at' => $enrollmentCourse->completed_at,
+                'created_at' => $enrollmentCourse->created_at,
+                'updated_at' => $enrollmentCourse->updated_at,
+            ];
+
+            $invoice->setRelation('courseItems', collect([$courseItem]));
+        } else {
+            $courseItem->progress = $enrollmentCourse->progress;
+            $courseItem->completed_at = $enrollmentCourse->completed_at;
+        }
 
         $courseRating = CourseRating::where('user_id', $userId)
             ->where('course_id', $courseId)
             ->first();
 
         $certificate = Certificate::where('course_id', $courseId)->first();
+        $certificateParticipant = null;
 
         if ($certificate) {
             $certificateParticipant = CertificateParticipant::where('certificate_id', $certificate->id)
@@ -73,7 +102,8 @@ class CourseController extends Controller
         }
 
         return Inertia::render('user/profile/course/detail', [
-            'course' => $course,
+            'course' => $invoice,
+            'enrollmentCourse' => $enrollmentCourse,
             'courseRating' => $courseRating,
             'certificate' => $certificate,
             'certificateParticipant' => $certificateParticipant
@@ -85,35 +115,30 @@ class CourseController extends Controller
         try {
             $userId = Auth::id();
 
-            $course = Invoice::with('courseItems.course')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
-                ->whereHas('courseItems.course', function ($query) use ($slug) {
-                    $query->where('slug', $slug);
-                })
-                ->orderBy('created_at', 'desc')
+            $courseData = \App\Models\Course::where('slug', $slug)->firstOrFail();
+            $courseId = $courseData->id;
+
+            $enrollmentCourse = \App\Models\EnrollmentCourse::where('user_id', $userId)
+                ->where('course_id', $courseId)
                 ->first();
 
-            if (!$course) {
-                return back()->with('error', 'Course tidak ditemukan atau Anda belum terdaftar.');
+            if (!$enrollmentCourse) {
+                return back()->with('error', 'Anda belum terdaftar di course ini.');
             }
 
-            $courseItem = $course->courseItems->first();
-            $courseData = $courseItem->course;
-
-            if ($courseItem->progress < 100) {
+            if ($enrollmentCourse->progress < 100) {
                 return back()->with('error', 'Sertifikat belum tersedia. Selesaikan seluruh materi course terlebih dahulu.');
             }
 
             $courseRating = CourseRating::where('user_id', $userId)
-                ->where('course_id', $courseData->id)
+                ->where('course_id', $courseId)
                 ->first();
 
             if (!$courseRating) {
                 return back()->with('error', 'Berikan rating dan review terlebih dahulu untuk mendapatkan sertifikat.');
             }
 
-            $certificate = Certificate::where('course_id', $courseData->id)->first();
+            $certificate = Certificate::where('course_id', $courseId)->first();
 
             if (!$certificate) {
                 return back()->with('error', 'Sertifikat belum dibuat untuk course ini.');
@@ -143,35 +168,30 @@ class CourseController extends Controller
         try {
             $userId = Auth::id();
 
-            $course = Invoice::with('courseItems.course')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
-                ->whereHas('courseItems.course', function ($query) use ($slug) {
-                    $query->where('slug', $slug);
-                })
-                ->orderBy('created_at', 'desc')
+            $courseData = \App\Models\Course::where('slug', $slug)->firstOrFail();
+            $courseId = $courseData->id;
+
+            $enrollmentCourse = \App\Models\EnrollmentCourse::where('user_id', $userId)
+                ->where('course_id', $courseId)
                 ->first();
 
-            if (!$course) {
-                return back()->with('error', 'Course tidak ditemukan atau Anda belum terdaftar.');
+            if (!$enrollmentCourse) {
+                return back()->with('error', 'Anda belum terdaftar di course ini.');
             }
 
-            $courseItem = $course->courseItems->first();
-            $courseData = $courseItem->course;
-
-            if ($courseItem->progress < 100) {
+            if ($enrollmentCourse->progress < 100) {
                 return back()->with('error', 'Sertifikat belum tersedia. Selesaikan seluruh materi course terlebih dahulu.');
             }
 
             $courseRating = CourseRating::where('user_id', $userId)
-                ->where('course_id', $courseData->id)
+                ->where('course_id', $courseId)
                 ->first();
 
             if (!$courseRating) {
                 return back()->with('error', 'Berikan rating dan review terlebih dahulu untuk mendapatkan sertifikat.');
             }
 
-            $certificate = Certificate::where('course_id', $courseData->id)->first();
+            $certificate = Certificate::where('course_id', $courseId)->first();
 
             if (!$certificate) {
                 return back()->with('error', 'Sertifikat belum dibuat untuk course ini.');
