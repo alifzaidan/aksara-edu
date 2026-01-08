@@ -38,7 +38,7 @@ class CourseController extends Controller
     {
         $userId = Auth::id();
 
-        $courseData = \App\Models\Course::where('slug', $slug)->firstOrFail();
+        $courseData = Course::where('slug', $slug)->firstOrFail();
         $courseId = $courseData->id;
 
         $invoice = Invoice::where('user_id', $userId)
@@ -60,7 +60,9 @@ class CourseController extends Controller
             abort(404, 'Kelas tidak ditemukan atau Anda belum terdaftar.');
         }
 
-        $enrollmentCourse = \App\Models\EnrollmentCourse::where('user_id', $userId)
+        $enrollmentCourse = EnrollmentCourse::whereHas('invoice', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        })
             ->where('course_id', $courseId)
             ->first();
 
@@ -115,10 +117,12 @@ class CourseController extends Controller
         try {
             $userId = Auth::id();
 
-            $courseData = \App\Models\Course::where('slug', $slug)->firstOrFail();
+            $courseData = Course::where('slug', $slug)->firstOrFail();
             $courseId = $courseData->id;
 
-            $enrollmentCourse = \App\Models\EnrollmentCourse::where('user_id', $userId)
+            $enrollmentCourse = EnrollmentCourse::whereHas('invoice', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            })
                 ->where('course_id', $courseId)
                 ->first();
 
@@ -168,10 +172,12 @@ class CourseController extends Controller
         try {
             $userId = Auth::id();
 
-            $courseData = \App\Models\Course::where('slug', $slug)->firstOrFail();
+            $courseData = Course::where('slug', $slug)->firstOrFail();
             $courseId = $courseData->id;
 
-            $enrollmentCourse = \App\Models\EnrollmentCourse::where('user_id', $userId)
+            $enrollmentCourse = EnrollmentCourse::whereHas('invoice', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            })
                 ->where('course_id', $courseId)
                 ->first();
 
