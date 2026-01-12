@@ -23,6 +23,7 @@ interface PartnershipProduct {
     product_url: string;
     registration_url: string;
     status: string;
+    type: 'regular' | 'scholarship';
     created_at: string | Date;
 }
 

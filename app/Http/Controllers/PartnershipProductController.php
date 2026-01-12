@@ -44,24 +44,43 @@ class PartnershipProductController extends Controller
             });
         }
 
-        $products = $query->get();
+        // Simpan collection asli untuk statistik
+        $originalProducts = $query->get();
 
-        // ✅ Calculate Statistics
-        $totalProducts = $products->count();
-        $publishedProducts = $products->where('status', 'published')->count();
-        $draftProducts = $products->where('status', 'draft')->count();
-        $archivedProducts = $products->where('status', 'archived')->count();
+        // Transform data untuk frontend
+        $products = $originalProducts->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'title' => $product->title,
+                'category_id' => $product->category_id,
+                'category_relation' => $product->category,
+                'thumbnail' => $product->thumbnail,
+                'price' => $product->price,
+                'strikethrough_price' => $product->strikethrough_price,
+                'registration_url' => $product->registration_url,
+                'status' => $product->status,
+                'type' => $product->type,
+                'clicks_count' => $product->clicks_count,
+                'created_at' => $product->created_at,
+            ];
+        });
+
+        // ✅ Calculate Statistics menggunakan originalProducts
+        $totalProducts = $originalProducts->count();
+        $publishedProducts = $originalProducts->where('status', 'published')->count();
+        $draftProducts = $originalProducts->where('status', 'draft')->count();
+        $archivedProducts = $originalProducts->where('status', 'archived')->count();
 
         // Price breakdown
-        $freeProducts = $products->where('price', 0)->count();
-        $paidProducts = $products->where('price', '>', 0)->count();
+        $freeProducts = $originalProducts->where('price', 0)->count();
+        $paidProducts = $originalProducts->where('price', '>', 0)->count();
 
         // Click statistics
-        $totalClicks = $products->sum('clicks_count');
+        $totalClicks = $originalProducts->sum('clicks_count');
         $averageClicksPerProduct = $totalProducts > 0 ? round($totalClicks / $totalProducts, 1) : 0;
 
         // Get unique users who clicked
-        $productIds = $products->pluck('id');
+        $productIds = $originalProducts->pluck('id');
         $uniqueUsers = PartnershipProductClick::whereIn('partnership_product_id', $productIds)
             ->whereNotNull('user_id')
             ->distinct('user_id')
@@ -82,13 +101,17 @@ class PartnershipProductController extends Controller
 
         // Calculate potential revenue (strikethrough - price) * clicks
         $totalPotentialSavings = 0;
-        foreach ($products as $product) {
+        foreach ($originalProducts as $product) {
             $savings = $product->strikethrough_price - $product->price;
             $totalPotentialSavings += ($savings * ($product->clicks_count ?? 0));
         }
 
         // Top performing products
-        $topProducts = $products->sortByDesc('clicks_count')->take(3);
+        $topProducts = $originalProducts->sortByDesc('clicks_count')->take(3)->map(fn($p) => [
+            'id' => $p->id,
+            'title' => $p->title,
+            'clicks_count' => $p->clicks_count ?? 0,
+        ]);
 
         $statistics = [
             'overview' => [
@@ -111,11 +134,7 @@ class PartnershipProductController extends Controller
             ],
             'performance' => [
                 'total_potential_savings' => $totalPotentialSavings,
-                'top_products' => $topProducts->map(fn($p) => [
-                    'id' => $p->id,
-                    'title' => $p->title,
-                    'clicks_count' => $p->clicks_count ?? 0,
-                ]),
+                'top_products' => $topProducts,
             ],
         ];
 
@@ -150,6 +169,8 @@ class PartnershipProductController extends Controller
             'strikethrough_price' => 'required|numeric|min:0',
             'price' => 'required|numeric|min:0',
             'registration_url' => 'required|url|max:500',
+            'type' => 'required|in:regular,scholarship',
+            'scholarship_group_link' => 'nullable|url|max:500',
         ]);
 
         // Generate slug
@@ -243,6 +264,8 @@ class PartnershipProductController extends Controller
             'strikethrough_price' => 'required|numeric|min:0',
             'price' => 'required|numeric|min:0',
             'registration_url' => 'required|url|max:500',
+            'type' => 'required|in:regular,scholarship',
+            'scholarship_group_link' => 'nullable|url|max:500',
         ], [
             'title.required' => 'Judul produk harus diisi.',
             'category_id.required' => 'Kategori harus dipilih.',

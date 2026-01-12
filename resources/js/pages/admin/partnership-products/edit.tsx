@@ -8,6 +8,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/layouts/admin-layout';
@@ -28,7 +29,7 @@ interface PartnershipProduct {
     id: string;
     title: string;
     category_id: string;
-    category?: { name: string };
+    category_relation?: { name: string };
     short_description?: string | null;
     description?: string | null;
     key_points?: string | null;
@@ -41,6 +42,8 @@ interface PartnershipProduct {
     product_url?: string | null;
     registration_url: string;
     status: 'draft' | 'published' | 'archived';
+    type: 'regular' | 'scholarship';
+    scholarship_group_link?: string | null;
 }
 
 const DAYS_OF_WEEK = [
@@ -70,6 +73,10 @@ const formSchema = z
         strikethrough_price: z.number().min(0, 'Harga tidak boleh negatif'),
         price: z.number().min(0, 'Harga tidak boleh negatif'),
         registration_url: z.string().url('URL pendaftaran harus valid').nonempty('URL pendaftaran harus diisi'),
+        type: z.enum(['regular', 'scholarship'], {
+            required_error: 'Tipe kategori harus dipilih',
+        }),
+        scholarship_group_link: z.string().url('Link grup harus berupa URL yang valid').nullable(),
     })
     .refine(
         (data) => {
@@ -81,6 +88,18 @@ const formSchema = z
         {
             message: 'Harga coret harus lebih besar dari harga normal.',
             path: ['strikethrough_price'],
+        },
+    )
+    .refine(
+        (data) => {
+            if (data.type === 'scholarship') {
+                return data.scholarship_group_link && data.scholarship_group_link.trim() !== '';
+            }
+            return true;
+        },
+        {
+            message: 'Link grup WhatsApp/Telegram harus diisi untuk tipe Beasiswa',
+            path: ['scholarship_group_link'],
         },
     );
 
@@ -121,6 +140,8 @@ export default function EditPartnershipProduct({ product, categories }: { produc
             strikethrough_price: product.strikethrough_price ?? 0,
             price: product.price ?? 0,
             registration_url: product.registration_url ?? '',
+            type: product.type ?? 'regular',
+            scholarship_group_link: product.scholarship_group_link ?? '',
         },
     });
 
@@ -418,6 +439,60 @@ export default function EditPartnershipProduct({ product, categories }: { produc
                                     </FormItem>
                                 )}
                             />
+
+                            <FormField
+                                control={form.control}
+                                name="type"
+                                render={({ field }) => (
+                                    <FormItem className="space-y-3">
+                                        <FormLabel>
+                                            Tipe Kategori <span className="text-red-500">*</span>
+                                        </FormLabel>
+                                        <FormControl>
+                                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
+                                                <FormItem className="flex items-center space-y-0 space-x-3">
+                                                    <FormControl>
+                                                        <RadioGroupItem value="regular" />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal">Reguler</FormLabel>
+                                                </FormItem>
+                                                <FormItem className="flex items-center space-y-0 space-x-3">
+                                                    <FormControl>
+                                                        <RadioGroupItem value="scholarship" />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal">Beasiswa</FormLabel>
+                                                </FormItem>
+                                            </RadioGroup>
+                                        </FormControl>
+                                        <FormDescription>Pilih apakah produk ini termasuk program reguler atau beasiswa.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            {form.watch('type') === 'scholarship' && (
+                                <FormField
+                                    control={form.control}
+                                    name="scholarship_group_link"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>
+                                                Link Grup WhatsApp/Telegram <span className="text-red-500">*</span>
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    {...field}
+                                                    type="url"
+                                                    placeholder="https://chat.whatsapp.com/xxxxx atau https://t.me/xxxxx"
+                                                    value={field.value ?? ''}
+                                                />
+                                            </FormControl>
+                                            <FormDescription>Link grup WhatsApp atau Telegram untuk peserta beasiswa yang diterima.</FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
 
                             <div className="space-y-4 rounded-md border border-gray-200 p-4">
                                 <div className="flex items-center gap-2">

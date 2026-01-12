@@ -14,7 +14,7 @@ import { ExternalLink, Folder, Trash } from 'lucide-react';
 export type PartnershipProduct = {
     id: string;
     title: string;
-    category?: { id: string; name: string };
+    category_relation?: { id: string; name: string };
     thumbnail?: string | null;
     price: number;
     strikethrough_price: number;
@@ -23,6 +23,7 @@ export type PartnershipProduct = {
     level: 'beginner' | 'intermediate' | 'advanced';
     clicks_count?: number;
     created_at: string;
+    type: 'regular' | 'scholarship';
 };
 
 function PartnershipProductActions({ product }: { product: PartnershipProduct }) {
@@ -92,7 +93,7 @@ export const columns: ColumnDef<PartnershipProduct>[] = [
                     <Link href={route('partnership-products.show', row.original.id)} className="text-primary font-medium hover:underline">
                         {row.original.title}
                     </Link>
-                    {row.original.category && <span className="text-muted-foreground text-xs">{row.original.category.name}</span>}
+                    {row.original.category_relation && <span className="text-muted-foreground text-xs">{row.original.category_relation.name}</span>}
                 </div>
             );
         },
@@ -153,6 +154,19 @@ export const columns: ColumnDef<PartnershipProduct>[] = [
                     <span className="font-medium">{clicks}</span>
                 </div>
             );
+        },
+    },
+    {
+        accessorKey: 'type',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Tipe Kategori" />,
+        cell: ({ row }) => {
+            const type = row.original.type;
+            const typeMap = {
+                regular: { label: 'Reguler', color: 'bg-blue-100 text-blue-700' },
+                scholarship: { label: 'Beasiswa', color: 'bg-purple-100 text-purple-700' },
+            };
+            const typeInfo = typeMap[type];
+            return <Badge className={`${typeInfo.color} border-0`}>{typeInfo.label}</Badge>;
         },
     },
     {

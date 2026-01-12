@@ -31,6 +31,8 @@ interface PartnershipProduct {
     product_url: string;
     registration_url: string;
     status: 'draft' | 'published' | 'archived';
+    type: 'regular' | 'scholarship';
+    scholarship_group_link?: string | null;
     clicks_count?: number;
     created_at: string | Date;
     updated_at: string | Date;
@@ -222,6 +224,34 @@ export default function ShowPartnershipProduct({ product, clickStats, uniqueClic
                                             <span className="text-3xl font-bold">{formatRupiah(product.price)}</span>
                                         </div>
                                         <p className="text-muted-foreground mt-2 text-xs">*Harga produk, tidak untuk transaksi di platform</p>
+                                    </div>
+
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <div className="rounded-lg border p-4">
+                                            <h3 className="mb-3 text-sm font-medium">Tipe Kategori</h3>
+                                            <Badge
+                                                className={`${
+                                                    product.type === 'scholarship' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                                                } border-0 text-base`}
+                                            >
+                                                {product.type === 'scholarship' ? 'Beasiswa' : 'Reguler'}
+                                            </Badge>
+                                        </div>
+
+                                        {product.type === 'scholarship' && product.scholarship_group_link && (
+                                            <div className="rounded-lg border p-4">
+                                                <h3 className="mb-3 text-sm font-medium">Grup WhatsApp/Telegram</h3>
+                                                <a
+                                                    href={product.scholarship_group_link}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-2 rounded-lg bg-green-50 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-green-100"
+                                                >
+                                                    <img src="/assets/images/icon-wa.svg" alt="WhatsApp" className="h-8 w-8 md:h-12 md:w-12" />
+                                                    Buka Grup
+                                                </a>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div>

@@ -7,6 +7,7 @@ import { BadgeCheck, Calendar, CalendarDays, Clock } from 'lucide-react';
 interface PartnershipProduct {
     id: string;
     title: string;
+    slug: string;
     strikethrough_price: number;
     price: number;
     registration_deadline: string;
@@ -14,6 +15,7 @@ interface PartnershipProduct {
     thumbnail?: string | null;
     schedule_days: string[];
     duration_days: number;
+    type: 'regular' | 'scholarship';
 }
 
 export default function RegisterSection({ partnershipProduct }: { partnershipProduct: PartnershipProduct }) {
@@ -30,7 +32,11 @@ export default function RegisterSection({ partnershipProduct }: { partnershipPro
     };
 
     const handleRegister = () => {
-        window.open(route('partnership-products.track-click', partnershipProduct.id), '_blank');
+        if (partnershipProduct.type === 'scholarship') {
+            window.location.href = route('partnership-products.scholarship-apply', partnershipProduct.slug);
+        } else {
+            window.open(route('partnership-products.track-click', partnershipProduct.id), '_blank');
+        }
     };
 
     return (

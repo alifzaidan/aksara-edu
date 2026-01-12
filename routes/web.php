@@ -67,6 +67,9 @@ Route::get('/bootcamp/{bootcamp:slug}/register', [UserBootcampController::class,
 Route::get('/webinar/{webinar:slug}/register', [UserWebinarController::class, 'showRegister'])->name('webinar.register');
 Route::get('/bundle/{bundle:slug}/checkout', [UserBundleController::class, 'showCheckout'])->name('bundle.checkout');
 Route::get('/certification/{partnershipProduct:slug}/track-click', [UserPartnershipProductController::class, 'trackClick'])->name('partnership-products.track-click');
+Route::get('/certification/{partnershipProduct:slug}/scholarship-apply', [UserPartnershipProductController::class, 'scholarshipApply'])->name('partnership-products.scholarship-apply');
+Route::post('/certification/{partnershipProduct:slug}/scholarship-store', [UserPartnershipProductController::class, 'scholarshipStore'])->name('partnership-products.scholarship-store');
+Route::get('/certification/{partnershipProduct:slug}/scholarship-success', [UserPartnershipProductController::class, 'scholarshipSuccess'])->name('partnership-products.scholarship-success');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/course/checkout/success', [UserCourseController::class, 'showCheckoutSuccess'])->name('course.checkout.success');
