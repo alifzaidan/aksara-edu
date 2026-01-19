@@ -44,6 +44,7 @@ export default function ScholarshipApplicationSuccess({ partnershipProduct }: Su
                         <CardContent className="space-y-4 pt-6">
                             <div className="space-y-4">
                                 {/* Step 1 */}
+                                {/* Step 1 */}
                                 <div className="flex gap-4 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/30">
                                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
                                         1
@@ -51,8 +52,7 @@ export default function ScholarshipApplicationSuccess({ partnershipProduct }: Su
                                     <div>
                                         <h3 className="font-semibold text-gray-900 dark:text-gray-100">Bergabung dengan Grup Komunitas</h3>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                                            Segera bergabung dengan grup komunitas untuk mendapatkan informasi terbaru, update program, dan materi
-                                            pembelajaran.
+                                            Segera bergabung dengan grup komunitas untuk mendapatkan informasi terbaru dan panduan selanjutnya.
                                         </p>
                                     </div>
                                 </div>
@@ -63,10 +63,10 @@ export default function ScholarshipApplicationSuccess({ partnershipProduct }: Su
                                         2
                                     </div>
                                     <div>
-                                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Tunggu Pengumuman Seleksi</h3>
+                                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Ikuti Sosialisasi dan Ujian Tulis</h3>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                                            Tim kami akan meninjau data Anda dalam 3-5 hari kerja. Pengumuman hasil seleksi akan diinformasikan
-                                            melalui grup komunitas.
+                                            Kami akan menyelenggarakan sosialisasi program, kemudian dilanjutkan dengan ujian tulis untuk tahap
+                                            seleksi peserta.
                                         </p>
                                     </div>
                                 </div>
@@ -77,10 +77,10 @@ export default function ScholarshipApplicationSuccess({ partnershipProduct }: Su
                                         3
                                     </div>
                                     <div>
-                                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Ikuti Update di Grup</h3>
+                                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Tunggu Pengumuman Hasil Seleksi</h3>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                                            Pastikan Anda aktif di grup untuk tidak melewatkan informasi penting, pengumuman, dan kesempatan sharing
-                                            dengan peserta lain.
+                                            Hasil seleksi akan diumumkan melalui WhatsApp pribadi oleh admin kami. Pastikan nomor WhatsApp Anda aktif
+                                            dan terdaftar.
                                         </p>
                                     </div>
                                 </div>
@@ -120,10 +120,6 @@ export default function ScholarshipApplicationSuccess({ partnershipProduct }: Su
                                         Buka Grup Sekarang
                                     </a>
                                 </Button>
-
-                                <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-xs text-green-800 dark:border-green-900 dark:bg-green-950/30 dark:text-green-200">
-                                    💡 Link grup juga bisa diakses melalui panel profil Anda nanti
-                                </div>
                             </div>
                         </div>
                     )}
@@ -137,16 +133,16 @@ export default function ScholarshipApplicationSuccess({ partnershipProduct }: Su
                             <div>
                                 <h4 className="font-semibold text-gray-900 dark:text-gray-100">Berapa lama proses seleksi?</h4>
                                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                                    Proses seleksi membutuhkan waktu 3-5 hari kerja. Kami akan menghubungi Anda melalui email atau telepon dengan
-                                    hasil seleksi.
+                                    Proses seleksi membutuhkan waktu 3-5 hari kerja setelah ujian tulis selesai. Hasil akan diumumkan melalui WhatsApp
+                                    pribadi oleh admin kami.
                                 </p>
                             </div>
 
                             <div className="border-t border-gray-200 pt-4 dark:border-zinc-700">
                                 <h4 className="font-semibold text-gray-900 dark:text-gray-100">Bagaimana jika saya tidak diterima?</h4>
                                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                                    Anda tetap dapat mengikuti program reguler dengan harga normal. Tim kami mungkin juga menawarkan alternative
-                                    beasiswa di periode berikutnya.
+                                    Anda tetap dapat mengikuti program reguler dengan harga normal. Kami juga akan memberikan informasi mengenai
+                                    kesempatan beasiswa di program lain atau periode berikutnya melalui grup komunitas.
                                 </p>
                             </div>
 
@@ -154,7 +150,7 @@ export default function ScholarshipApplicationSuccess({ partnershipProduct }: Su
                                 <h4 className="font-semibold text-gray-900 dark:text-gray-100">Apakah data saya aman?</h4>
                                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                                     Ya, data Anda dijaga dengan keamanan tingkat enterprise. Kami hanya menggunakan data Anda untuk keperluan
-                                    pendaftaran beasiswa.
+                                    pendaftaran dan seleksi beasiswa {partnershipProduct.title}.
                                 </p>
                             </div>
                         </CardContent>
@@ -174,7 +170,10 @@ export default function ScholarshipApplicationSuccess({ partnershipProduct }: Su
                     <div className="mt-8 rounded-lg border border-blue-200 bg-blue-50 p-4 text-center dark:border-blue-900 dark:bg-blue-950/30">
                         <p className="text-sm text-gray-700 dark:text-gray-300">
                             Ada pertanyaan atau butuh bantuan?{' '}
-                            <a href="mailto:info@aksademy.id" className="font-semibold text-blue-600 hover:underline dark:text-blue-400">
+                            <a
+                                href="mailto:aksarateknologimandiri@gmail.com"
+                                className="font-semibold text-blue-600 hover:underline dark:text-blue-400"
+                            >
                                 Hubungi kami
                             </a>
                         </p>

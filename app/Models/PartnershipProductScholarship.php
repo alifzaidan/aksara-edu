@@ -9,12 +9,12 @@ class PartnershipProductScholarship extends Model
 {
     use HasUuids;
 
-    public $timestamps = false;
-
     protected $guarded = ['created_at', 'updated_at'];
 
     protected $casts = [
         'created_at' => 'datetime',
+        'accepted_at' => 'datetime',
+        'is_accepted' => 'boolean',
     ];
 
     public function partnershipProduct()

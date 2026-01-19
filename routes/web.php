@@ -190,6 +190,10 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/partnership-products/{id}/duplicate', [PartnershipProductController::class, 'duplicate'])->name('partnership-products.duplicate');
         Route::get('/partnership-products/stats/overview', [PartnershipProductController::class, 'statistics'])->name('partnership-products.statistics');
         Route::post('/partnership-products/bulk-action', [PartnershipProductController::class, 'bulkAction'])->name('partnership-products.bulk-action');
+        Route::post(
+            '/partnership-products/{id}/scholarship-participants/{scholarshipId}/accept',
+            [PartnershipProductController::class, 'acceptScholarshipParticipant']
+        )->name('partnership-products.scholarship-participants.accept');
 
         Route::resource('bundles', BundleController::class);
         Route::post('/bundles/{bundle}/publish', [BundleController::class, 'publish'])->name('bundles.publish');

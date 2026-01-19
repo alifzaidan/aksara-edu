@@ -10,9 +10,11 @@ import { BreadcrumbItem, SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { format, isPast } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { BarChart3, Calendar, CircleX, Clock, Copy, Eye, LinkIcon, Send, SquarePen, Trash, TrendingUp } from 'lucide-react';
+import { Calendar, CircleX, Clock, Copy, LinkIcon, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import ShowPartnershipProductAnalytics from './show-analytics';
+import ShowScholarshipParticipants from './show-scholarship-participants';
 
 interface PartnershipProduct {
     id: string;
@@ -24,6 +26,8 @@ interface PartnershipProduct {
     key_points?: string | null;
     thumbnail?: string | null;
     registration_deadline: string;
+    event_deadline?: string | null;
+    payment_code?: string | null;
     duration_days: number;
     schedule_days: string[];
     strikethrough_price: number;
@@ -50,18 +54,46 @@ interface RecentClick {
     created_at: string;
 }
 
+interface ScholarshipParticipant {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    nim: string;
+    university: string;
+    major: string;
+    semester: number;
+    ktm_photo: string;
+    transcript_photo: string;
+    instagram_proof_photo: string;
+    instagram_tag_proof_photo: string;
+    is_accepted?: boolean;
+    accepted_at?: string | null;
+    created_at?: string | null;
+}
+
 interface ShowProps {
     product: PartnershipProduct;
     clickStats: ClickStats[];
     uniqueClicks: number;
     recentClicks: RecentClick[];
+    scholarshipParticipants?: ScholarshipParticipant[];
+    scholarshipParticipantsCount?: number;
     flash?: {
         success?: string;
         error?: string;
     };
 }
 
-export default function ShowPartnershipProduct({ product, clickStats, uniqueClicks, recentClicks, flash }: ShowProps) {
+export default function ShowPartnershipProduct({
+    product,
+    clickStats,
+    uniqueClicks,
+    recentClicks,
+    scholarshipParticipants,
+    scholarshipParticipantsCount,
+    flash,
+}: ShowProps) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
 
@@ -125,6 +157,9 @@ export default function ShowPartnershipProduct({ product, clickStats, uniqueClic
     const deadlineDate = new Date(product.registration_deadline);
     const isDeadlinePassed = isPast(deadlineDate);
 
+    const eventDeadlineDate = product.event_deadline ? new Date(product.event_deadline) : null;
+    const isEventDeadlinePassed = eventDeadlineDate ? isPast(eventDeadlineDate) : false;
+
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title={`Detail - ${product.title}`} />
@@ -139,6 +174,16 @@ export default function ShowPartnershipProduct({ product, clickStats, uniqueClic
                                 <TabsTrigger value="analytics">
                                     Analitik
                                     {totalClicks > 0 && <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{totalClicks}</span>}
+                                </TabsTrigger>
+                            )}
+                            {!isAffiliate && product.type === 'scholarship' && (
+                                <TabsTrigger value="participants">
+                                    Peserta Beasiswa
+                                    {(scholarshipParticipantsCount ?? scholarshipParticipants?.length ?? 0) > 0 && (
+                                        <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">
+                                            {scholarshipParticipantsCount ?? scholarshipParticipants?.length ?? 0}
+                                        </span>
+                                    )}
                                 </TabsTrigger>
                             )}
                         </TabsList>
@@ -238,6 +283,38 @@ export default function ShowPartnershipProduct({ product, clickStats, uniqueClic
                                             </Badge>
                                         </div>
 
+                                        {product.type === 'scholarship' && (product.event_deadline || product.payment_code) && (
+                                            <div className="rounded-lg border p-4">
+                                                <h3 className="mb-3 text-sm font-medium">Info Beasiswa</h3>
+
+                                                {eventDeadlineDate && (
+                                                    <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                                        <div className="mb-1 flex items-center gap-2 text-xs font-medium text-gray-600">
+                                                            <Calendar className="h-3 w-3" />
+                                                            Batas Event
+                                                        </div>
+                                                        <p
+                                                            className={`text-sm font-medium ${isEventDeadlinePassed ? 'text-red-600' : 'text-gray-900'}`}
+                                                        >
+                                                            {format(eventDeadlineDate, 'dd MMMM yyyy', { locale: id })}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500">
+                                                            Pukul {format(eventDeadlineDate, 'HH:mm', { locale: id })} WIB
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {product.payment_code && (
+                                                    <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                                        <span className="text-xs font-medium text-gray-600">Payment Code</span>
+                                                        <code className="text-primary rounded bg-gray-100 px-1.5 py-0.5 text-xs">
+                                                            {product.payment_code}
+                                                        </code>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
                                         {product.type === 'scholarship' && product.scholarship_group_link && (
                                             <div className="rounded-lg border p-4">
                                                 <h3 className="mb-3 text-sm font-medium">Grup WhatsApp/Telegram</h3>
@@ -290,95 +367,18 @@ export default function ShowPartnershipProduct({ product, clickStats, uniqueClic
                         {/* Analytics Tab */}
                         {!isAffiliate && (
                             <TabsContent value="analytics">
-                                <div className="space-y-4">
-                                    {/* Stats Cards */}
-                                    <div className="grid gap-4 md:grid-cols-3">
-                                        <Card>
-                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                                <CardTitle className="text-sm font-medium">Total Klik</CardTitle>
-                                                <Eye className="text-muted-foreground h-4 w-4" />
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="text-2xl font-bold">{totalClicks}</div>
-                                                <p className="text-muted-foreground text-xs">Semua waktu</p>
-                                            </CardContent>
-                                        </Card>
+                                <ShowPartnershipProductAnalytics
+                                    totalClicks={totalClicks}
+                                    uniqueClicks={uniqueClicks}
+                                    clickStats={clickStats}
+                                    recentClicks={recentClicks}
+                                />
+                            </TabsContent>
+                        )}
 
-                                        <Card>
-                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                                <CardTitle className="text-sm font-medium">User Unik</CardTitle>
-                                                <TrendingUp className="text-muted-foreground h-4 w-4" />
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="text-2xl font-bold">{uniqueClicks}</div>
-                                                <p className="text-muted-foreground text-xs">User yang login</p>
-                                            </CardContent>
-                                        </Card>
-
-                                        <Card>
-                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                                <CardTitle className="text-sm font-medium">Klik (30 Hari)</CardTitle>
-                                                <BarChart3 className="text-muted-foreground h-4 w-4" />
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="text-2xl font-bold">{clickStats.reduce((sum, stat) => sum + stat.clicks, 0)}</div>
-                                                <p className="text-muted-foreground text-xs">Bulan ini</p>
-                                            </CardContent>
-                                        </Card>
-                                    </div>
-
-                                    {/* Click History */}
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle>Riwayat Klik (30 Hari Terakhir)</CardTitle>
-                                            <CardDescription>Grafik klik produk dalam 30 hari terakhir</CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            {clickStats.length > 0 ? (
-                                                <div className="space-y-2">
-                                                    {clickStats.map((stat, index) => (
-                                                        <div key={index} className="flex items-center justify-between text-sm">
-                                                            <span className="text-muted-foreground">
-                                                                {format(new Date(stat.date), 'dd MMM yyyy', { locale: id })}
-                                                            </span>
-                                                            <span className="font-medium">{stat.clicks} klik</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <p className="text-muted-foreground text-center text-sm">Belum ada data klik</p>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-
-                                    {/* Recent Clicks */}
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle>Klik Terbaru</CardTitle>
-                                            <CardDescription>10 klik terakhir ke produk ini</CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            {recentClicks.length > 0 ? (
-                                                <div className="space-y-3">
-                                                    {recentClicks.map((click) => (
-                                                        <div key={click.id} className="flex items-start justify-between border-b pb-2 last:border-0">
-                                                            <div>
-                                                                <p className="text-sm font-medium">
-                                                                    {click.user?.name || 'Guest'} {!click.user && `(${click.ip_address})`}
-                                                                </p>
-                                                                <p className="text-muted-foreground text-xs">
-                                                                    {format(new Date(click.created_at), 'dd MMM yyyy HH:mm', { locale: id })}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <p className="text-muted-foreground text-center text-sm">Belum ada klik</p>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                </div>
+                        {!isAffiliate && product.type === 'scholarship' && (
+                            <TabsContent value="participants">
+                                <ShowScholarshipParticipants partnershipProductId={product.id} participants={scholarshipParticipants ?? []} />
                             </TabsContent>
                         )}
                     </Tabs>
@@ -468,6 +468,26 @@ export default function ShowPartnershipProduct({ product, clickStats, uniqueClic
                                                 {format(deadlineDate, 'dd MMMM yyyy', { locale: id })}
                                             </p>
                                             <p className="text-xs text-gray-500">Pukul {format(deadlineDate, 'HH:mm', { locale: id })} WIB</p>
+                                        </div>
+                                    )}
+
+                                    {product.type === 'scholarship' && eventDeadlineDate && (
+                                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                            <div className="mb-1 flex items-center gap-2 text-xs font-medium text-gray-600">
+                                                <Calendar className="h-3 w-3" />
+                                                Batas Event
+                                            </div>
+                                            <p className={`text-sm font-medium ${isEventDeadlinePassed ? 'text-red-600' : 'text-gray-900'}`}>
+                                                {format(eventDeadlineDate, 'dd MMMM yyyy', { locale: id })}
+                                            </p>
+                                            <p className="text-xs text-gray-500">Pukul {format(eventDeadlineDate, 'HH:mm', { locale: id })} WIB</p>
+                                        </div>
+                                    )}
+
+                                    {product.type === 'scholarship' && product.payment_code && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground text-xs">Payment Code:</span>
+                                            <code className="text-primary rounded bg-gray-100 px-1.5 py-0.5 text-xs">{product.payment_code}</code>
                                         </div>
                                     )}
 

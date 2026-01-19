@@ -298,8 +298,7 @@ export default function PrivacyPolicy() {
                                         <p>
                                             <strong>CV. Aksara Teknologi Mandiri</strong>
                                         </p>
-                                        <p>Email: privacy@aksademy.co.id</p>
-                                        <p>Email umum: info@aksademy.co.id</p>
+                                        <p>Email: aksarateknologimandiri@gmail.com</p>
                                         <p>WhatsApp: +6285142505794</p>
                                         <p>
                                             Alamat: Perumahan Permata Permadani, Blok B1

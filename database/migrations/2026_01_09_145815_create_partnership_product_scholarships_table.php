@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email');
             $table->string('phone');
+            $table->string('nim');
             $table->string('university');
             $table->string('major');
             $table->integer('semester');
@@ -24,6 +25,8 @@ return new class extends Migration
             $table->string('transcript_photo');
             $table->string('instagram_proof_photo');
             $table->string('instagram_tag_proof_photo');
+            $table->boolean('is_accepted')->default(false);
+            $table->timestamp('accepted_at')->nullable();
             $table->timestamps();
         });
     }

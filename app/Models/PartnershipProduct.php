@@ -13,6 +13,7 @@ class PartnershipProduct extends Model
 
     protected $casts = [
         'registration_deadline' => 'datetime',
+        'event_deadline' => 'datetime',
         'schedule_days' => 'array',
         'strikethrough_price' => 'integer',
         'price' => 'integer',

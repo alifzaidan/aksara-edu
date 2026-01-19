@@ -29,6 +29,8 @@ return new class extends Migration
             $table->string('registration_url')->nullable();
             $table->enum('type', ['regular', 'scholarship'])->default('regular');
             $table->string('scholarship_group_link')->nullable();
+            $table->dateTime('event_deadline')->nullable();
+            $table->string('payment_code')->nullable();
             $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->timestamps();
         });

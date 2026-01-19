@@ -25,6 +25,7 @@ const formSchema = z.object({
     name: z.string().nonempty('Nama lengkap harus diisi'),
     email: z.string().email('Email tidak valid'),
     phone: z.string().nonempty('Nomor telepon harus diisi'),
+    nim: z.string().nonempty('NIM harus diisi'),
     university: z.string().nonempty('Nama universitas harus diisi'),
     major: z.string().nonempty('Program studi harus diisi'),
     semester: z.string().nonempty('Semester harus dipilih'),
@@ -47,6 +48,7 @@ export default function ScholarshipApplicationForm({ partnershipProduct }: { par
             name: '',
             email: '',
             phone: '',
+            nim: '',
             university: '',
             major: '',
             semester: '',
@@ -60,6 +62,7 @@ export default function ScholarshipApplicationForm({ partnershipProduct }: { par
         formData.append('name', values.name);
         formData.append('email', values.email);
         formData.append('phone', values.phone);
+        formData.append('nim', values.nim);
         formData.append('university', values.university);
         formData.append('major', values.major);
         formData.append('semester', values.semester);
@@ -77,7 +80,7 @@ export default function ScholarshipApplicationForm({ partnershipProduct }: { par
             formData.append('instagram_tag_proof_photo', values.instagram_tag_proof_photo);
         }
 
-        router.post(route('partnership-products.scholarship-store', partnershipProduct.slug), formData as any, {
+        router.post(route('partnership-products.scholarship-store', partnershipProduct.slug), formData, {
             onSuccess: () => {
                 toast.success('Pendaftaran beasiswa berhasil dikirim!');
                 setIsLoading(false);
@@ -209,10 +212,10 @@ export default function ScholarshipApplicationForm({ partnershipProduct }: { par
                             <p className="mb-3 text-xs font-semibold md:text-sm">📞 Untuk informasi lebih lanjut, silakan hubungi:</p>
                             <div className="space-y-1">
                                 <p className="text-sm">
-                                    📧 <span className="font-medium">info@aksademy.id</span>
+                                    📧 <span className="font-medium">aksarateknologimandiri@gmail.com</span>
                                 </p>
                                 <p className="text-sm">
-                                    💬 <span className="font-medium">+62 812-XXXX-XXXX</span>
+                                    💬 <span className="font-medium">+6285142505794</span>
                                 </p>
                             </div>
                         </div>
@@ -340,6 +343,20 @@ export default function ScholarshipApplicationForm({ partnershipProduct }: { par
                                                 </FormItem>
                                             )}
                                         />
+
+                                        <FormField
+                                            control={form.control}
+                                            name="nim"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>NIM *</FormLabel>
+                                                    <FormControl>
+                                                        <Input {...field} placeholder="Masukkan NIM Anda" autoComplete="off" />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
                                     </div>
 
                                     {/* Documents */}
@@ -353,180 +370,192 @@ export default function ScholarshipApplicationForm({ partnershipProduct }: { par
                                         <FormField
                                             control={form.control}
                                             name="ktm_photo"
-                                            render={({ field: { onChange, value, ...field } }) => (
-                                                <FormItem>
-                                                    <FormLabel className="flex items-center gap-2">
-                                                        <span>📋</span>
-                                                        Foto KTM *
-                                                    </FormLabel>
-                                                    <FormControl>
-                                                        <div className="space-y-3">
-                                                            {ktmPreview && (
-                                                                <div className="relative overflow-hidden rounded-lg border-2 border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 p-2 dark:from-green-950/30 dark:to-emerald-950/30">
-                                                                    <img
-                                                                        src={ktmPreview}
-                                                                        alt="KTM Preview"
-                                                                        className="h-40 w-full rounded object-contain"
-                                                                    />
-                                                                    <div className="absolute top-2 right-2 rounded-full bg-green-500 px-2 py-1 text-xs font-semibold text-white">
-                                                                        ✓ Terpilih
+                                            render={({ field: { onChange, value, ...field } }) => {
+                                                void value;
+                                                return (
+                                                    <FormItem>
+                                                        <FormLabel className="flex items-center gap-2">
+                                                            <span>📋</span>
+                                                            Foto KTM *
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <div className="space-y-3">
+                                                                {ktmPreview && (
+                                                                    <div className="relative overflow-hidden rounded-lg border-2 border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 p-2 dark:from-green-950/30 dark:to-emerald-950/30">
+                                                                        <img
+                                                                            src={ktmPreview}
+                                                                            alt="KTM Preview"
+                                                                            className="h-40 w-full rounded object-contain"
+                                                                        />
+                                                                        <div className="absolute top-2 right-2 rounded-full bg-green-500 px-2 py-1 text-xs font-semibold text-white">
+                                                                            ✓ Terpilih
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            )}
-                                                            <Input
-                                                                type="file"
-                                                                accept="image/*"
-                                                                onChange={(e) => {
-                                                                    const file = e.target.files?.[0];
-                                                                    if (file) {
-                                                                        onChange(file);
-                                                                        handleFilePreview(e, setKtmPreview);
-                                                                    }
-                                                                }}
-                                                                className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-green-400 dark:border-zinc-600"
-                                                                {...field}
-                                                            />
-                                                        </div>
-                                                    </FormControl>
-                                                    <FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
+                                                                )}
+                                                                <Input
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    onChange={(e) => {
+                                                                        const file = e.target.files?.[0];
+                                                                        if (file) {
+                                                                            onChange(file);
+                                                                            handleFilePreview(e, setKtmPreview);
+                                                                        }
+                                                                    }}
+                                                                    className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-green-400 dark:border-zinc-600"
+                                                                    {...field}
+                                                                />
+                                                            </div>
+                                                        </FormControl>
+                                                        <FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                );
+                                            }}
                                         />
 
                                         {/* Transcript Photo */}
                                         <FormField
                                             control={form.control}
                                             name="transcript_photo"
-                                            render={({ field: { onChange, value, ...field } }) => (
-                                                <FormItem>
-                                                    <FormLabel className="flex items-center gap-2">
-                                                        <span>📊</span>
-                                                        Foto Transkrip Nilai *
-                                                    </FormLabel>
-                                                    <FormControl>
-                                                        <div className="space-y-3">
-                                                            {transcriptPreview && (
-                                                                <div className="relative overflow-hidden rounded-lg border-2 border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50 p-2 dark:from-blue-950/30 dark:to-indigo-950/30">
-                                                                    <img
-                                                                        src={transcriptPreview}
-                                                                        alt="Transcript Preview"
-                                                                        className="h-40 w-full rounded object-contain"
-                                                                    />
-                                                                    <div className="absolute top-2 right-2 rounded-full bg-blue-500 px-2 py-1 text-xs font-semibold text-white">
-                                                                        ✓ Terpilih
+                                            render={({ field: { onChange, value, ...field } }) => {
+                                                void value;
+                                                return (
+                                                    <FormItem>
+                                                        <FormLabel className="flex items-center gap-2">
+                                                            <span>📊</span>
+                                                            Foto Transkrip Nilai *
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <div className="space-y-3">
+                                                                {transcriptPreview && (
+                                                                    <div className="relative overflow-hidden rounded-lg border-2 border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50 p-2 dark:from-blue-950/30 dark:to-indigo-950/30">
+                                                                        <img
+                                                                            src={transcriptPreview}
+                                                                            alt="Transcript Preview"
+                                                                            className="h-40 w-full rounded object-contain"
+                                                                        />
+                                                                        <div className="absolute top-2 right-2 rounded-full bg-blue-500 px-2 py-1 text-xs font-semibold text-white">
+                                                                            ✓ Terpilih
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            )}
-                                                            <Input
-                                                                type="file"
-                                                                accept="image/*"
-                                                                onChange={(e) => {
-                                                                    const file = e.target.files?.[0];
-                                                                    if (file) {
-                                                                        onChange(file);
-                                                                        handleFilePreview(e, setTranscriptPreview);
-                                                                    }
-                                                                }}
-                                                                className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-blue-400 dark:border-zinc-600"
-                                                                {...field}
-                                                            />
-                                                        </div>
-                                                    </FormControl>
-                                                    <FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
+                                                                )}
+                                                                <Input
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    onChange={(e) => {
+                                                                        const file = e.target.files?.[0];
+                                                                        if (file) {
+                                                                            onChange(file);
+                                                                            handleFilePreview(e, setTranscriptPreview);
+                                                                        }
+                                                                    }}
+                                                                    className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-blue-400 dark:border-zinc-600"
+                                                                    {...field}
+                                                                />
+                                                            </div>
+                                                        </FormControl>
+                                                        <FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                );
+                                            }}
                                         />
 
                                         {/* Instagram Follow Proof */}
                                         <FormField
                                             control={form.control}
                                             name="instagram_proof_photo"
-                                            render={({ field: { onChange, value, ...field } }) => (
-                                                <FormItem>
-                                                    <FormLabel className="flex items-center gap-2">
-                                                        <span>📱</span>
-                                                        Foto Bukti Follow Instagram @aksademy *
-                                                    </FormLabel>
-                                                    <FormControl>
-                                                        <div className="space-y-3">
-                                                            {instagramProofPreview && (
-                                                                <div className="relative overflow-hidden rounded-lg border-2 border-pink-300 bg-gradient-to-br from-pink-50 to-rose-50 p-2 dark:from-pink-950/30 dark:to-rose-950/30">
-                                                                    <img
-                                                                        src={instagramProofPreview}
-                                                                        alt="Instagram Proof Preview"
-                                                                        className="h-40 w-full rounded object-contain"
-                                                                    />
-                                                                    <div className="absolute top-2 right-2 rounded-full bg-pink-500 px-2 py-1 text-xs font-semibold text-white">
-                                                                        ✓ Terpilih
+                                            render={({ field: { onChange, value, ...field } }) => {
+                                                void value;
+                                                return (
+                                                    <FormItem>
+                                                        <FormLabel className="flex items-center gap-2">
+                                                            <span>📱</span>
+                                                            Foto Bukti Follow Instagram @aksademy *
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <div className="space-y-3">
+                                                                {instagramProofPreview && (
+                                                                    <div className="relative overflow-hidden rounded-lg border-2 border-pink-300 bg-gradient-to-br from-pink-50 to-rose-50 p-2 dark:from-pink-950/30 dark:to-rose-950/30">
+                                                                        <img
+                                                                            src={instagramProofPreview}
+                                                                            alt="Instagram Proof Preview"
+                                                                            className="h-40 w-full rounded object-contain"
+                                                                        />
+                                                                        <div className="absolute top-2 right-2 rounded-full bg-pink-500 px-2 py-1 text-xs font-semibold text-white">
+                                                                            ✓ Terpilih
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            )}
-                                                            <Input
-                                                                type="file"
-                                                                accept="image/*"
-                                                                onChange={(e) => {
-                                                                    const file = e.target.files?.[0];
-                                                                    if (file) {
-                                                                        onChange(file);
-                                                                        handleFilePreview(e, setInstagramProofPreview);
-                                                                    }
-                                                                }}
-                                                                className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-pink-400 dark:border-zinc-600"
-                                                                {...field}
-                                                            />
-                                                        </div>
-                                                    </FormControl>
-                                                    <FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
+                                                                )}
+                                                                <Input
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    onChange={(e) => {
+                                                                        const file = e.target.files?.[0];
+                                                                        if (file) {
+                                                                            onChange(file);
+                                                                            handleFilePreview(e, setInstagramProofPreview);
+                                                                        }
+                                                                    }}
+                                                                    className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-pink-400 dark:border-zinc-600"
+                                                                    {...field}
+                                                                />
+                                                            </div>
+                                                        </FormControl>
+                                                        <FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                );
+                                            }}
                                         />
 
                                         {/* Instagram Tag Proof */}
                                         <FormField
                                             control={form.control}
                                             name="instagram_tag_proof_photo"
-                                            render={({ field: { onChange, value, ...field } }) => (
-                                                <FormItem>
-                                                    <FormLabel className="flex items-center gap-2">
-                                                        <span>👥</span>
-                                                        Foto Bukti Tag 3 Teman di Instagram @aksademy *
-                                                    </FormLabel>
-                                                    <FormControl>
-                                                        <div className="space-y-3">
-                                                            {instagramTagProofPreview && (
-                                                                <div className="relative overflow-hidden rounded-lg border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-violet-50 p-2 dark:from-purple-950/30 dark:to-violet-950/30">
-                                                                    <img
-                                                                        src={instagramTagProofPreview}
-                                                                        alt="Instagram Tag Proof Preview"
-                                                                        className="h-40 w-full rounded object-contain"
-                                                                    />
-                                                                    <div className="absolute top-2 right-2 rounded-full bg-purple-500 px-2 py-1 text-xs font-semibold text-white">
-                                                                        ✓ Terpilih
+                                            render={({ field: { onChange, value, ...field } }) => {
+                                                void value;
+                                                return (
+                                                    <FormItem>
+                                                        <FormLabel className="flex items-center gap-2">
+                                                            <span>👥</span>
+                                                            Foto Bukti Tag 3 Teman di Instagram @aksademy *
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <div className="space-y-3">
+                                                                {instagramTagProofPreview && (
+                                                                    <div className="relative overflow-hidden rounded-lg border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-violet-50 p-2 dark:from-purple-950/30 dark:to-violet-950/30">
+                                                                        <img
+                                                                            src={instagramTagProofPreview}
+                                                                            alt="Instagram Tag Proof Preview"
+                                                                            className="h-40 w-full rounded object-contain"
+                                                                        />
+                                                                        <div className="absolute top-2 right-2 rounded-full bg-purple-500 px-2 py-1 text-xs font-semibold text-white">
+                                                                            ✓ Terpilih
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            )}
-                                                            <Input
-                                                                type="file"
-                                                                accept="image/*"
-                                                                onChange={(e) => {
-                                                                    const file = e.target.files?.[0];
-                                                                    if (file) {
-                                                                        onChange(file);
-                                                                        handleFilePreview(e, setInstagramTagProofPreview);
-                                                                    }
-                                                                }}
-                                                                className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-purple-400 dark:border-zinc-600"
-                                                                {...field}
-                                                            />
-                                                        </div>
-                                                    </FormControl>
-                                                    <FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
+                                                                )}
+                                                                <Input
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    onChange={(e) => {
+                                                                        const file = e.target.files?.[0];
+                                                                        if (file) {
+                                                                            onChange(file);
+                                                                            handleFilePreview(e, setInstagramTagProofPreview);
+                                                                        }
+                                                                    }}
+                                                                    className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-purple-400 dark:border-zinc-600"
+                                                                    {...field}
+                                                                />
+                                                            </div>
+                                                        </FormControl>
+                                                        <FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                );
+                                            }}
                                         />
                                     </div>
 

@@ -35,6 +35,8 @@ interface PartnershipProduct {
     key_points?: string | null;
     thumbnail?: string | null;
     registration_deadline: string;
+    event_deadline?: string | null;
+    payment_code?: string | null;
     duration_days?: number | null;
     schedule_days: string[];
     strikethrough_price: number;
@@ -68,7 +70,9 @@ const formSchema = z
             required_error: 'Batas waktu pendaftaran harus diisi',
             invalid_type_error: 'Batas waktu pendaftaran harus berupa tanggal yang valid',
         }),
-        duration_days: z.number().min(0, 'Durasi tidak boleh negatif').nullable(),
+        event_deadline: z.date().nullable().optional(),
+        payment_code: z.string().nullable().optional(),
+        duration_days: z.number().min(0, 'Durasi tidak boleh negatif'),
         schedule_days: z.array(z.string()).min(1, 'Pilih minimal 1 hari'),
         strikethrough_price: z.number().min(0, 'Harga tidak boleh negatif'),
         price: z.number().min(0, 'Harga tidak boleh negatif'),
@@ -109,6 +113,7 @@ export default function EditPartnershipProduct({ product, categories }: { produc
     const [preview, setPreview] = useState<string | null>(null);
     const [thumbnailError, setThumbnailError] = useState(false);
     const [openIssuedCalendar, setOpenIssuedCalendar] = useState(false);
+    const [openEventCalendar, setOpenEventCalendar] = useState(false);
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -135,7 +140,9 @@ export default function EditPartnershipProduct({ product, categories }: { produc
             key_points: product.key_points ?? '',
             thumbnail: null,
             registration_deadline: product.registration_deadline ? parseISO(product.registration_deadline) : undefined,
-            duration_days: product.duration_days ?? null,
+            event_deadline: product.event_deadline ? parseISO(product.event_deadline) : undefined,
+            payment_code: product.payment_code ?? '',
+            duration_days: product.duration_days ?? 0,
             schedule_days: product.schedule_days ?? [],
             strikethrough_price: product.strikethrough_price ?? 0,
             price: product.price ?? 0,
@@ -145,13 +152,34 @@ export default function EditPartnershipProduct({ product, categories }: { produc
         },
     });
 
+    const pad2 = (n: number) => String(n).padStart(2, '0');
+
+    const getTimeValue = (date?: Date | null) => {
+        if (!date) return '23:59';
+        return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+    };
+
+    const setTimeOnDate = (date: Date, time: string) => {
+        const [hh, mm] = time.split(':');
+        const hours = Number(hh ?? 0);
+        const minutes = Number(mm ?? 0);
+        const result = new Date(date);
+        result.setHours(hours, minutes, 0, 0);
+        return result;
+    };
+
     function onSubmit(values: z.infer<typeof formSchema>) {
         const deadline = new Date(values.registration_deadline);
-        deadline.setHours(23, 59, 59, 999);
+        deadline.setSeconds(0, 0);
+
+        const eventDeadline = values.event_deadline ? new Date(values.event_deadline) : null;
+        if (eventDeadline) eventDeadline.setSeconds(0, 0);
 
         const formData = {
             ...values,
             registration_deadline: format(deadline, 'yyyy-MM-dd HH:mm:ss'),
+            event_deadline: eventDeadline ? format(eventDeadline, 'yyyy-MM-dd HH:mm:ss') : null,
+            payment_code: values.payment_code?.trim() ? values.payment_code.trim() : null,
         };
 
         router.post(route('partnership-products.update', product.id), { ...formData, _method: 'PUT' }, { forceFormData: true });
@@ -471,27 +499,117 @@ export default function EditPartnershipProduct({ product, categories }: { produc
                             />
 
                             {form.watch('type') === 'scholarship' && (
-                                <FormField
-                                    control={form.control}
-                                    name="scholarship_group_link"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>
-                                                Link Grup WhatsApp/Telegram <span className="text-red-500">*</span>
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    {...field}
-                                                    type="url"
-                                                    placeholder="https://chat.whatsapp.com/xxxxx atau https://t.me/xxxxx"
-                                                    value={field.value ?? ''}
-                                                />
-                                            </FormControl>
-                                            <FormDescription>Link grup WhatsApp atau Telegram untuk peserta beasiswa yang diterima.</FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                <>
+                                    <FormField
+                                        control={form.control}
+                                        name="scholarship_group_link"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>
+                                                    Link Grup WhatsApp/Telegram <span className="text-red-500">*</span>
+                                                </FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        {...field}
+                                                        type="url"
+                                                        placeholder="https://chat.whatsapp.com/xxxxx atau https://t.me/xxxxx"
+                                                        value={field.value ?? ''}
+                                                    />
+                                                </FormControl>
+                                                <FormDescription>
+                                                    Link grup WhatsApp atau Telegram untuk peserta beasiswa yang diterima.
+                                                </FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="event_deadline"
+                                        render={({ field }) => (
+                                            <FormItem className="flex flex-col">
+                                                <FormLabel>Batas Waktu Event (Opsional)</FormLabel>
+                                                <div className="flex flex-col gap-2 sm:flex-row">
+                                                    <Popover open={openEventCalendar} onOpenChange={setOpenEventCalendar}>
+                                                        <PopoverTrigger asChild>
+                                                            <FormControl>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    className={cn(
+                                                                        'w-full flex-1 justify-start pl-3 text-left font-normal',
+                                                                        !field.value && 'text-muted-foreground',
+                                                                    )}
+                                                                >
+                                                                    {field.value ? (
+                                                                        format(field.value, 'PPP', { locale: id })
+                                                                    ) : (
+                                                                        <span>Pilih tanggal</span>
+                                                                    )}
+                                                                    <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                                                                </Button>
+                                                            </FormControl>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-auto p-0" align="start">
+                                                            <CalendarComponent
+                                                                mode="single"
+                                                                selected={field.value ?? undefined}
+                                                                captionLayout="dropdown"
+                                                                endMonth={new Date(new Date().getFullYear() + 10, 11)}
+                                                                onSelect={(date) => {
+                                                                    if (!date) {
+                                                                        field.onChange(null);
+                                                                        return;
+                                                                    }
+
+                                                                    const baseTime = getTimeValue(field.value);
+                                                                    field.onChange(setTimeOnDate(date, baseTime));
+                                                                    setOpenEventCalendar(false);
+                                                                }}
+                                                                disabled={(date) => {
+                                                                    const today = new Date();
+                                                                    today.setHours(0, 0, 0, 0);
+                                                                    return date < today;
+                                                                }}
+                                                                initialFocus
+                                                            />
+                                                        </PopoverContent>
+                                                    </Popover>
+
+                                                    <FormControl>
+                                                        <Input
+                                                            type="time"
+                                                            className="w-full sm:w-36"
+                                                            value={getTimeValue(field.value)}
+                                                            disabled={!field.value}
+                                                            onChange={(e) => {
+                                                                if (!field.value) return;
+                                                                field.onChange(setTimeOnDate(field.value, e.target.value));
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                </div>
+                                                <FormDescription>Deadline event/agenda untuk program beasiswa (jika ada).</FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="payment_code"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Kode Pembayaran (Opsional)</FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} value={field.value ?? ''} placeholder="Contoh: PAY-ABC123" autoComplete="off" />
+                                                </FormControl>
+                                                <FormDescription>Kode pembayaran untuk kebutuhan internal/integrasi.</FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </>
                             )}
 
                             <div className="space-y-4 rounded-md border border-gray-200 p-4">
@@ -508,40 +626,61 @@ export default function EditPartnershipProduct({ product, categories }: { produc
                                             <FormLabel>
                                                 Batas Waktu Pendaftaran <span className="text-red-500">*</span>
                                             </FormLabel>
-                                            <Popover open={openIssuedCalendar} onOpenChange={setOpenIssuedCalendar}>
-                                                <PopoverTrigger asChild>
-                                                    <FormControl>
-                                                        <Button
-                                                            variant="outline"
-                                                            className={cn(
-                                                                'w-full pl-3 text-left font-normal',
-                                                                !field.value && 'text-muted-foreground',
-                                                            )}
-                                                        >
-                                                            {field.value ? format(field.value, 'PPP', { locale: id }) : <span>Pilih tanggal</span>}
-                                                            <Calendar className="ml-auto h-4 w-4 opacity-50" />
-                                                        </Button>
-                                                    </FormControl>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start">
-                                                    <CalendarComponent
-                                                        mode="single"
-                                                        selected={field.value}
-                                                        captionLayout="dropdown"
-                                                        endMonth={new Date(new Date().getFullYear() + 10, 11)}
-                                                        onSelect={(date) => {
-                                                            if (date) field.onChange(date);
-                                                            setOpenIssuedCalendar(false);
+                                            <div className="flex flex-col gap-2 sm:flex-row">
+                                                <Popover open={openIssuedCalendar} onOpenChange={setOpenIssuedCalendar}>
+                                                    <PopoverTrigger asChild>
+                                                        <FormControl>
+                                                            <Button
+                                                                variant="outline"
+                                                                className={cn(
+                                                                    'w-full flex-1 justify-start pl-3 text-left font-normal',
+                                                                    !field.value && 'text-muted-foreground',
+                                                                )}
+                                                            >
+                                                                {field.value ? (
+                                                                    format(field.value, 'PPP', { locale: id })
+                                                                ) : (
+                                                                    <span>Pilih tanggal</span>
+                                                                )}
+                                                                <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                                                            </Button>
+                                                        </FormControl>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-0" align="start">
+                                                        <CalendarComponent
+                                                            mode="single"
+                                                            selected={field.value}
+                                                            captionLayout="dropdown"
+                                                            endMonth={new Date(new Date().getFullYear() + 10, 11)}
+                                                            onSelect={(date) => {
+                                                                if (!date) return;
+                                                                const baseTime = getTimeValue(field.value);
+                                                                field.onChange(setTimeOnDate(date, baseTime));
+                                                                setOpenIssuedCalendar(false);
+                                                            }}
+                                                            disabled={(date) => {
+                                                                const today = new Date();
+                                                                today.setHours(0, 0, 0, 0);
+                                                                return date < today;
+                                                            }}
+                                                            initialFocus
+                                                        />
+                                                    </PopoverContent>
+                                                </Popover>
+
+                                                <FormControl>
+                                                    <Input
+                                                        type="time"
+                                                        className="w-full sm:w-36"
+                                                        value={getTimeValue(field.value)}
+                                                        disabled={!field.value}
+                                                        onChange={(e) => {
+                                                            if (!field.value) return;
+                                                            field.onChange(setTimeOnDate(field.value, e.target.value));
                                                         }}
-                                                        disabled={(date) => {
-                                                            const today = new Date();
-                                                            today.setHours(0, 0, 0, 0);
-                                                            return date < today;
-                                                        }}
-                                                        initialFocus
                                                     />
-                                                </PopoverContent>
-                                            </Popover>
+                                                </FormControl>
+                                            </div>
                                             <FormDescription>Tanggal terakhir untuk melakukan pendaftaran</FormDescription>
                                             <FormMessage />
                                         </FormItem>
@@ -604,8 +743,8 @@ export default function EditPartnershipProduct({ product, categories }: { produc
                                                         placeholder="0"
                                                         min="0"
                                                         {...field}
-                                                        value={field.value ?? ''}
-                                                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                                                        value={field.value ?? 0}
+                                                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 0)}
                                                         autoComplete="off"
                                                         className="flex-1"
                                                     />
