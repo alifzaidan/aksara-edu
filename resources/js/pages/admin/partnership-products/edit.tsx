@@ -80,7 +80,7 @@ const formSchema = z
         type: z.enum(['regular', 'scholarship'], {
             required_error: 'Tipe kategori harus dipilih',
         }),
-        scholarship_group_link: z.string().url('Link grup harus berupa URL yang valid').nullable(),
+        scholarship_group_link: z.union([z.string().url('Link grup harus berupa URL yang valid'), z.literal(''), z.null()]),
     })
     .refine(
         (data) => {
@@ -93,20 +93,7 @@ const formSchema = z
             message: 'Harga coret harus lebih besar dari harga normal.',
             path: ['strikethrough_price'],
         },
-    )
-    .refine(
-        (data) => {
-            if (data.type === 'scholarship') {
-                return data.scholarship_group_link && data.scholarship_group_link.trim() !== '';
-            }
-            return true;
-        },
-        {
-            message: 'Link grup WhatsApp/Telegram harus diisi untuk tipe Beasiswa',
-            path: ['scholarship_group_link'],
-        },
     );
-
 export default function EditPartnershipProduct({ product, categories }: { product: PartnershipProduct; categories: { id: string; name: string }[] }) {
     const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
     const [showStrikethroughPrice, setShowStrikethroughPrice] = useState(product.strikethrough_price > 0);
@@ -180,6 +167,7 @@ export default function EditPartnershipProduct({ product, categories }: { produc
             registration_deadline: format(deadline, 'yyyy-MM-dd HH:mm:ss'),
             event_deadline: eventDeadline ? format(eventDeadline, 'yyyy-MM-dd HH:mm:ss') : null,
             payment_code: values.payment_code?.trim() ? values.payment_code.trim() : null,
+            scholarship_group_link: values.scholarship_group_link?.trim() ? values.scholarship_group_link.trim() : null,
         };
 
         router.post(route('partnership-products.update', product.id), { ...formData, _method: 'PUT' }, { forceFormData: true });
