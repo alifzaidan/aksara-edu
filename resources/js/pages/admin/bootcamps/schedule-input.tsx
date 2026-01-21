@@ -9,6 +9,7 @@ import { CalendarIcon, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 
 export type BootcampSchedule = {
+    id?: string;
     schedule_date: string;
     day: string;
     start_time: string;
@@ -67,6 +68,7 @@ export default function BootcampScheduleInput({ value, onChange, startDate, endD
         const updated = [
             ...schedules,
             {
+                id: undefined,
                 schedule_date: '',
                 day: '',
                 start_time: '07:00',

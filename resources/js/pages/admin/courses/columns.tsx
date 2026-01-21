@@ -213,7 +213,7 @@ export const columns: ColumnDef<Course>[] = [
             const title = row.original.title;
             const thumbnail = row.original.thumbnail;
             const thumbnailUrl = thumbnail ? `/storage/${thumbnail}` : '/assets/images/placeholder.png';
-            return <img src={thumbnailUrl} alt={title} className="h-16 w-16 rounded object-cover" />;
+            return <img src={thumbnailUrl} alt={title} className="h-16 rounded object-cover" />;
         },
     },
     {

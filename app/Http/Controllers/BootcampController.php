@@ -193,7 +193,8 @@ class BootcampController extends Controller
         $bootcamp = Bootcamp::with(['category', 'user', 'schedules', 'tools'])->findOrFail($id);
 
         $transactions = Invoice::with([
-            'user.referrer',
+            'user',
+            'referrer',
             'bootcampItems' => function ($query) use ($id) {
                 $query->where('bootcamp_id', $id)
                     ->with('freeRequirement');
@@ -374,54 +375,95 @@ class BootcampController extends Controller
                 6 => 'sabtu',
             ];
 
-            $existingSchedules = $bootcamp->schedules()->get()->keyBy(function ($schedule) {
-                return $schedule->schedule_date . '|' . $schedule->start_time . '|' . $schedule->end_time;
+            $incomingSchedules = collect($request->schedules)
+                ->filter(function ($scheduleData) {
+                    return !empty($scheduleData['schedule_date']) && !empty($scheduleData['start_time']) && !empty($scheduleData['end_time']);
+                })
+                ->values();
+
+            $hasIds = $incomingSchedules->contains(function ($scheduleData) {
+                return !empty($scheduleData['id']);
             });
 
-            $processedKeys = [];
+            // New path: update by schedule id (prevents duplicates when date/time changes)
+            if ($hasIds) {
+                $existingById = $bootcamp->schedules()->get()->keyBy('id');
+                $processedIds = [];
+                $skippedDeletes = 0;
 
-            foreach ($request->schedules as $scheduleData) {
-                if (
-                    empty($scheduleData['schedule_date']) ||
-                    empty($scheduleData['start_time']) ||
-                    empty($scheduleData['end_time'])
-                ) {
-                    continue;
-                }
-
-                $date = Carbon::parse($scheduleData['schedule_date'])->toDateString();
-                $dayEnum = $dayMap[Carbon::parse($date)->dayOfWeek];
-                $startTime = $scheduleData['start_time'];
-                $endTime = $scheduleData['end_time'];
-
-                $scheduleKey = $date . '|' . $startTime . '|' . $endTime;
-                $processedKeys[] = $scheduleKey;
-
-                if ($existingSchedules->has($scheduleKey)) {
-                    $existingSchedule = $existingSchedules->get($scheduleKey);
-                    if ($existingSchedule->day !== $dayEnum) {
-                        $existingSchedule->update(['day' => $dayEnum]);
-                    }
-                } else {
-                    $bootcamp->schedules()->create([
+                foreach ($incomingSchedules as $scheduleData) {
+                    $date = Carbon::parse($scheduleData['schedule_date'])->toDateString();
+                    $dayEnum = $dayMap[Carbon::parse($date)->dayOfWeek];
+                    $payload = [
                         'schedule_date' => $date,
                         'day' => $dayEnum,
-                        'start_time' => $startTime,
-                        'end_time' => $endTime,
-                    ]);
+                        'start_time' => $scheduleData['start_time'],
+                        'end_time' => $scheduleData['end_time'],
+                    ];
+
+                    if (!empty($scheduleData['id']) && $existingById->has($scheduleData['id'])) {
+                        $existingSchedule = $existingById->get($scheduleData['id']);
+                        $existingSchedule->update($payload);
+                        $processedIds[] = $existingSchedule->id;
+                    } else {
+                        $created = $bootcamp->schedules()->create($payload);
+                        $processedIds[] = $created->id;
+                    }
                 }
-            }
 
-            $schedulesToDelete = $existingSchedules->reject(function ($schedule) use ($processedKeys) {
-                $scheduleKey = $schedule->schedule_date . '|' . $schedule->start_time . '|' . $schedule->end_time;
-                return in_array($scheduleKey, $processedKeys);
-            });
-
-            foreach ($schedulesToDelete as $schedule) {
-                $hasAttendances = $schedule->attendances()->exists();
-
-                if (!$hasAttendances) {
+                $toDelete = $bootcamp->schedules()->whereNotIn('id', $processedIds)->get();
+                foreach ($toDelete as $schedule) {
+                    if ($schedule->attendances()->exists()) {
+                        $skippedDeletes++;
+                        continue;
+                    }
                     $schedule->delete();
+                }
+
+                if ($skippedDeletes > 0) {
+                    session()->flash('warning', 'Sebagian jadwal tidak dihapus karena sudah memiliki data absensi.');
+                }
+            } else {
+                // Backward-compatible path: match by composite key
+                $existingSchedules = $bootcamp->schedules()->get()->keyBy(function ($schedule) {
+                    return $schedule->schedule_date . '|' . $schedule->start_time . '|' . $schedule->end_time;
+                });
+
+                $processedKeys = [];
+
+                foreach ($incomingSchedules as $scheduleData) {
+                    $date = Carbon::parse($scheduleData['schedule_date'])->toDateString();
+                    $dayEnum = $dayMap[Carbon::parse($date)->dayOfWeek];
+                    $startTime = $scheduleData['start_time'];
+                    $endTime = $scheduleData['end_time'];
+
+                    $scheduleKey = $date . '|' . $startTime . '|' . $endTime;
+                    $processedKeys[] = $scheduleKey;
+
+                    if ($existingSchedules->has($scheduleKey)) {
+                        $existingSchedule = $existingSchedules->get($scheduleKey);
+                        if ($existingSchedule->day !== $dayEnum) {
+                            $existingSchedule->update(['day' => $dayEnum]);
+                        }
+                    } else {
+                        $bootcamp->schedules()->create([
+                            'schedule_date' => $date,
+                            'day' => $dayEnum,
+                            'start_time' => $startTime,
+                            'end_time' => $endTime,
+                        ]);
+                    }
+                }
+
+                $schedulesToDelete = $existingSchedules->reject(function ($schedule) use ($processedKeys) {
+                    $scheduleKey = $schedule->schedule_date . '|' . $schedule->start_time . '|' . $schedule->end_time;
+                    return in_array($scheduleKey, $processedKeys);
+                });
+
+                foreach ($schedulesToDelete as $schedule) {
+                    if (!$schedule->attendances()->exists()) {
+                        $schedule->delete();
+                    }
                 }
             }
         }

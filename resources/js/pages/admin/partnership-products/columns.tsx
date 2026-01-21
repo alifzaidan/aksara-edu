@@ -104,7 +104,7 @@ export const columns: ColumnDef<PartnershipProduct>[] = [
         cell: ({ row }) => {
             const thumbnail = row.original.thumbnail;
             const thumbnailUrl = thumbnail ? `/storage/${thumbnail}` : '/assets/images/placeholder.png';
-            return <img src={thumbnailUrl} alt={row.original.title} className="h-14 rounded object-cover" />;
+            return <img src={thumbnailUrl} alt={row.original.title} className="h-16 rounded object-cover" />;
         },
     },
     {

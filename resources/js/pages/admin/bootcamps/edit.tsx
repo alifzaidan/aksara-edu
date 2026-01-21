@@ -175,8 +175,36 @@ export default function EditBootcamp({
         return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     }
 
+    function toLocalYmd(value?: string) {
+        if (!value) return undefined;
+        const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (!match) return undefined;
+
+        // If value is an ISO datetime (e.g. ends with Z / has timezone), convert to local date.
+        if (value.includes('T')) {
+            const dt = new Date(value);
+            if (!Number.isNaN(dt.getTime())) return formatYmd(dt);
+        }
+
+        return match[1];
+    }
+
+    function dateForCalendar(value?: string) {
+        if (!value) return undefined;
+        if (value.includes('T')) {
+            const dt = new Date(value);
+            return Number.isNaN(dt.getTime()) ? undefined : dt;
+        }
+        const ymd = toLocalYmd(value);
+        if (!ymd) return undefined;
+        const [y, m, d] = ymd.split('-').map((v) => parseInt(v, 10));
+        if (!y || !m || !d) return undefined;
+        return new Date(y, m - 1, d);
+    }
+
     const [schedules, setSchedules] = useState<BootcampSchedule[]>(
         bootcamp.schedules?.map((s: BootcampSchedule) => ({
+            id: s.id,
             schedule_date: s.schedule_date,
             day: s.day,
             start_time: s.start_time,
@@ -551,7 +579,8 @@ export default function EditBootcamp({
                                     control={form.control}
                                     name="start_date"
                                     render={({ field }) => {
-                                        const endDateObj = endVal ? new Date(endVal) : undefined;
+                                        const endDateObj = dateForCalendar(endVal);
+                                        const selected = dateForCalendar(field.value);
                                         return (
                                             <FormItem className="flex flex-col">
                                                 <FormLabel>
@@ -567,8 +596,8 @@ export default function EditBootcamp({
                                                                     className="w-32 justify-between font-normal"
                                                                     type="button"
                                                                 >
-                                                                    {field.value
-                                                                        ? new Date(field.value).toLocaleDateString('id-ID', {
+                                                                    {selected
+                                                                        ? selected.toLocaleDateString('id-ID', {
                                                                               day: 'numeric',
                                                                               month: 'short',
                                                                               year: 'numeric',
@@ -580,8 +609,8 @@ export default function EditBootcamp({
                                                             <PopoverContent className="w-auto overflow-hidden p-0" align="start">
                                                                 <Calendar
                                                                     mode="single"
-                                                                    selected={field.value ? new Date(field.value) : undefined}
-                                                                    defaultMonth={field.value ? new Date(field.value) : undefined}
+                                                                    selected={selected}
+                                                                    defaultMonth={selected}
                                                                     endMonth={new Date(new Date().getFullYear() + 10, 11)}
                                                                     disabled={(date) =>
                                                                         !!endDateObj &&
@@ -598,7 +627,8 @@ export default function EditBootcamp({
                                                                         const dateStr = formatYmd(date);
                                                                         field.onChange(dateStr);
                                                                         const endDate = form.getValues('end_date');
-                                                                        if (!endDate || new Date(endDate) < date) {
+                                                                        const endObj = dateForCalendar(endDate);
+                                                                        if (!endObj || endObj < date) {
                                                                             form.setValue('end_date', dateStr, {
                                                                                 shouldDirty: true,
                                                                                 shouldValidate: true,
@@ -620,7 +650,8 @@ export default function EditBootcamp({
                                     control={form.control}
                                     name="end_date"
                                     render={({ field }) => {
-                                        const startDateObj = startVal ? new Date(startVal) : undefined;
+                                        const startDateObj = dateForCalendar(startVal);
+                                        const selected = dateForCalendar(field.value);
                                         return (
                                             <FormItem className="flex flex-col">
                                                 <FormLabel>
@@ -636,8 +667,8 @@ export default function EditBootcamp({
                                                                     className="w-32 justify-between font-normal"
                                                                     type="button"
                                                                 >
-                                                                    {field.value
-                                                                        ? new Date(field.value).toLocaleDateString('id-ID', {
+                                                                    {selected
+                                                                        ? selected.toLocaleDateString('id-ID', {
                                                                               day: 'numeric',
                                                                               month: 'short',
                                                                               year: 'numeric',
@@ -649,7 +680,7 @@ export default function EditBootcamp({
                                                             <PopoverContent className="w-auto overflow-hidden p-0" align="start">
                                                                 <Calendar
                                                                     mode="single"
-                                                                    selected={field.value ? new Date(field.value) : undefined}
+                                                                    selected={selected}
                                                                     endMonth={new Date(new Date().getFullYear() + 10, 11)}
                                                                     captionLayout="dropdown"
                                                                     disabled={(date) =>
@@ -685,8 +716,8 @@ export default function EditBootcamp({
                             <BootcampScheduleInput
                                 value={schedules}
                                 onChange={setSchedules}
-                                startDate={startVal ? startVal.split('T')[0] : undefined}
-                                endDate={endVal ? endVal.split('T')[0] : undefined}
+                                startDate={toLocalYmd(startVal)}
+                                endDate={toLocalYmd(endVal)}
                             />
                             <FormField
                                 control={form.control}
