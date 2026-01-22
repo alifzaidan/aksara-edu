@@ -7,9 +7,40 @@ interface Bootcamp {
 
 function parseList(items?: string | null): string[] {
     if (!items) return [];
-    const matches = items.match(/<li>(.*?)<\/li>/g);
-    if (!matches) return [];
-    return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
+
+    const raw = String(items).trim();
+    if (!raw) return [];
+
+    const liMatches = raw.match(/<li[^>]*>[\s\S]*?<\/li>/gi);
+    const normalized = raw
+        .replace(/<br\s*\/?\s*>/gi, '\n')
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<\/div>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/\r\n?/g, '\n');
+
+    const lines = normalized
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => s.replace(/^[-*•–—\u2022]+\s+/, '').trim())
+        .filter(Boolean);
+
+    // Kalau ada <li>, pakai itu sebagai sumber list
+    if (liMatches?.length) {
+        return liMatches
+            .map((li) =>
+                li
+                    .replace(/<li[^>]*>/gi, '')
+                    .replace(/<\/li>/gi, '')
+                    .replace(/<br\s*\/?\s*>/gi, '\n')
+                    .replace(/<[^>]+>/g, '')
+                    .trim(),
+            )
+            .filter(Boolean);
+    }
+
+    return lines;
 }
 
 export default function RequirementSection({ bootcamp }: { bootcamp: Bootcamp }) {

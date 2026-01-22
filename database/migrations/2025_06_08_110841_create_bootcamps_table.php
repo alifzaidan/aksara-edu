@@ -34,6 +34,9 @@ return new class extends Migration
             $table->string('group_url')->nullable();
             $table->boolean('has_submission_link')->default(false);
             $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
+            $table->text('requirement_1')->nullable();
+            $table->text('requirement_2')->nullable();
+            $table->text('requirement_3')->nullable();
             $table->timestamps();
         });
     }

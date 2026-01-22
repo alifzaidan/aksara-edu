@@ -119,6 +119,9 @@ class BootcampController extends Controller
             'group_url' => 'nullable|string',
             'has_submission_link' => 'nullable|boolean',
             'tools' => 'nullable|array',
+            'requirement_1' => 'nullable|string',
+            'requirement_2' => 'nullable|string',
+            'requirement_3' => 'nullable|string',
         ]);
 
         $data = $request->all();
@@ -323,6 +326,9 @@ class BootcampController extends Controller
             'group_url' => 'nullable|string',
             'has_submission_link' => 'nullable|boolean',
             'tools' => 'nullable|array',
+            'requirement_1' => 'nullable|string',
+            'requirement_2' => 'nullable|string',
+            'requirement_3' => 'nullable|string',
         ]);
 
         $bootcamp = Bootcamp::findOrFail($id);

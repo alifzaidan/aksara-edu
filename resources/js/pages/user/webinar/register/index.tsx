@@ -22,6 +22,9 @@ interface Webinar {
     description?: string | null;
     benefits?: string | null;
     group_url?: string | null;
+    requirement_1?: string | null;
+    requirement_2?: string | null;
+    requirement_3?: string | null;
 }
 
 interface DiscountData {
@@ -73,15 +76,15 @@ export default function RegisterWebinar({
     const [promoError, setPromoError] = useState('');
 
     const [showFreeForm, setShowFreeForm] = useState(false);
-    const [freeFormData, setFreeFormData] = useState({
-        ig_follow_proof: null as File | null,
-        tag_friend_proof: null as File | null,
-        tiktok_follow_proof: null as File | null,
+    const [freeFormData, setFreeFormData] = useState<Record<string, File | null>>({
+        requirement_1_proof: null,
+        requirement_2_proof: null,
+        requirement_3_proof: null,
     });
-    const [fileErrors, setFileErrors] = useState({
-        ig_follow_proof: false,
-        tag_friend_proof: false,
-        tiktok_follow_proof: false,
+    const [fileErrors, setFileErrors] = useState<Record<string, boolean>>({
+        requirement_1_proof: false,
+        requirement_2_proof: false,
+        requirement_3_proof: false,
     });
 
     const benefitList = parseList(webinar.benefits);
@@ -188,8 +191,8 @@ export default function RegisterWebinar({
             return;
         }
 
-        if (!freeFormData.ig_follow_proof || !freeFormData.tag_friend_proof || !freeFormData.tiktok_follow_proof) {
-            alert('Harap upload semua bukti follow dan tag yang diperlukan!');
+        if (!freeFormData.requirement_1_proof || !freeFormData.requirement_2_proof || !freeFormData.requirement_3_proof) {
+            alert('Harap upload semua bukti yang diperlukan!');
             return;
         }
 
@@ -198,9 +201,9 @@ export default function RegisterWebinar({
         const formData = new FormData();
         formData.append('type', 'webinar');
         formData.append('id', webinar.id);
-        formData.append('ig_follow_proof', freeFormData.ig_follow_proof);
-        formData.append('tag_friend_proof', freeFormData.tag_friend_proof);
-        formData.append('tiktok_follow_proof', freeFormData.tiktok_follow_proof);
+        formData.append('requirement_1_proof', freeFormData.requirement_1_proof);
+        formData.append('requirement_2_proof', freeFormData.requirement_2_proof);
+        formData.append('requirement_3_proof', freeFormData.requirement_3_proof);
 
         router.post(route('enroll.free'), formData, {
             onError: (errors) => {
@@ -487,37 +490,9 @@ export default function RegisterWebinar({
                                         </div>
                                         <p className="text-sm text-gray-600">Untuk mendapatkan akses gratis, Anda perlu:</p>
                                         <ul className="space-y-1 text-left text-sm">
-                                            <li>
-                                                • Follow Instagram kami{' '}
-                                                <a
-                                                    href="https://www.instagram.com/aksarateknologi/"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-600 underline"
-                                                >
-                                                    @aksarateknologi
-                                                </a>{' '}
-                                                <a
-                                                    href="https://www.instagram.com/aksademy/"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-600 underline"
-                                                >
-                                                    @aksademy
-                                                </a>
-                                            </li>
-                                            <li>
-                                                • Follow TikTok kami{' '}
-                                                <a
-                                                    href="https://www.tiktok.com/@aksarateknologimandiri"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-600 underline"
-                                                >
-                                                    @aksarateknologi
-                                                </a>
-                                            </li>
-                                            <li>• Tag 3 teman di postingan Instagram kami</li>
+                                            {webinar.requirement_1 && <li>• {webinar.requirement_1}</li>}
+                                            {webinar.requirement_2 && <li>• {webinar.requirement_2}</li>}
+                                            {webinar.requirement_3 && <li>• {webinar.requirement_3}</li>}
                                         </ul>
                                         <p className="text-xs text-gray-500">Upload bukti follow dan tag untuk mendapatkan akses</p>
                                     </div>
@@ -641,71 +616,29 @@ export default function RegisterWebinar({
                         <form onSubmit={handleFreeCheckout}>
                             <h2 className="my-2 text-xl font-bold italic">Upload Bukti Follow</h2>
                             <div className="space-y-4 rounded-lg border p-4">
-                                {/* Bukti Follow Instagram */}
-                                <div>
-                                    <Label htmlFor="ig_follow_proof">Bukti Follow Instagram</Label>
-                                    <Input
-                                        id="ig_follow_proof"
-                                        data-field="ig_follow_proof"
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => handleFileChange('ig_follow_proof', e.target.files?.[0] || null)}
-                                        className={fileErrors.ig_follow_proof ? 'border-red-500 focus:ring-red-500' : ''}
-                                        required
-                                    />
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        Screenshot halaman profil Instagram kami yang menunjukkan Anda sudah follow (Maks. 2MB)
-                                    </p>
-                                    {fileErrors.ig_follow_proof && (
-                                        <p className="mt-1 text-xs text-red-600">
-                                            File tidak valid. Pastikan ukuran tidak melebihi 2MB dan format gambar.
-                                        </p>
-                                    )}
-                                </div>
+                                {[1, 2, 3].map((index) => {
+                                    const requirementKey = `requirement_${index}`;
+                                    const proofKey = `${requirementKey}_proof` as const;
+                                    const requirementText = webinar[requirementKey as keyof Webinar] as string | null | undefined;
 
-                                {/* Bukti Follow TikTok */}
-                                <div>
-                                    <Label htmlFor="tiktok_follow_proof">Bukti Follow TikTok</Label>
-                                    <Input
-                                        id="tiktok_follow_proof"
-                                        data-field="tiktok_follow_proof"
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => handleFileChange('tiktok_follow_proof', e.target.files?.[0] || null)}
-                                        className={fileErrors.tiktok_follow_proof ? 'border-red-500 focus:ring-red-500' : ''}
-                                        required
-                                    />
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        Screenshot halaman profil TikTok kami yang menunjukkan Anda sudah follow (Maks. 2MB)
-                                    </p>
-                                    {fileErrors.tiktok_follow_proof && (
-                                        <p className="mt-1 text-xs text-red-600">
-                                            File tidak valid. Pastikan ukuran tidak melebihi 2MB dan format gambar.
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Bukti Tag 3 Teman */}
-                                <div>
-                                    <Label htmlFor="tag_friend_proof">Bukti Tag 3 Teman di Instagram</Label>
-                                    <Input
-                                        id="tag_friend_proof"
-                                        data-field="tag_friend_proof"
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => handleFileChange('tag_friend_proof', e.target.files?.[0] || null)}
-                                        className={fileErrors.tag_friend_proof ? 'border-red-500 focus:ring-red-500' : ''}
-                                        required
-                                    />
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        Screenshot postingan Instagram kami yang menunjukkan Anda sudah tag 3 teman di komentar (Maks. 2MB)
-                                    </p>
-                                    {fileErrors.tag_friend_proof && (
-                                        <p className="mt-1 text-xs text-red-600">
-                                            File tidak valid. Pastikan ukuran tidak melebihi 2MB dan format gambar.
-                                        </p>
-                                    )}
-                                </div>
+                                    return (
+                                        <div key={index}>
+                                            <Label htmlFor={proofKey}>
+                                                Bukti Persyaratan {index}: {requirementText || `Persyaratan ${index}`}
+                                            </Label>
+                                            <Input
+                                                id={proofKey}
+                                                data-field={proofKey}
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => handleFileChange(proofKey, e.target.files?.[0] || null)}
+                                                className={fileErrors[proofKey] ? 'border-red-500' : ''}
+                                                required
+                                            />
+                                            <p className="mt-1 text-xs text-gray-500">{requirementText} (Maks. 2MB)</p>
+                                        </div>
+                                    );
+                                })}
 
                                 <div className="flex gap-2">
                                     <Button
@@ -713,16 +646,15 @@ export default function RegisterWebinar({
                                         variant="outline"
                                         onClick={() => {
                                             setShowFreeForm(false);
-                                            // Reset file errors ketika kembali
                                             setFileErrors({
-                                                ig_follow_proof: false,
-                                                tag_friend_proof: false,
-                                                tiktok_follow_proof: false,
+                                                requirement_1_proof: false,
+                                                requirement_2_proof: false,
+                                                requirement_3_proof: false,
                                             });
                                             setFreeFormData({
-                                                ig_follow_proof: null,
-                                                tag_friend_proof: null,
-                                                tiktok_follow_proof: null,
+                                                requirement_1_proof: null,
+                                                requirement_2_proof: null,
+                                                requirement_3_proof: null,
                                             });
                                         }}
                                         className="flex-1"
@@ -733,12 +665,10 @@ export default function RegisterWebinar({
                                         type="submit"
                                         disabled={
                                             loading ||
-                                            !freeFormData.ig_follow_proof ||
-                                            !freeFormData.tag_friend_proof ||
-                                            !freeFormData.tiktok_follow_proof ||
-                                            fileErrors.ig_follow_proof ||
-                                            fileErrors.tag_friend_proof ||
-                                            fileErrors.tiktok_follow_proof
+                                            !freeFormData.requirement_1_proof ||
+                                            !freeFormData.requirement_2_proof ||
+                                            !freeFormData.requirement_3_proof ||
+                                            Object.values(fileErrors).some((e) => e)
                                         }
                                         className="flex-1"
                                     >

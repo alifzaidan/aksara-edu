@@ -48,6 +48,9 @@ interface Bootcamp {
     requirements?: string | null;
     curriculum?: string | null;
     group_url?: string | null;
+    requirement_1?: string | null;
+    requirement_2?: string | null;
+    requirement_3?: string | null;
     host_name?: string | null;
     host_description?: string | null;
     has_submission_link?: boolean;
@@ -82,6 +85,9 @@ const formSchema = z
         batch: z.number().min(0),
         has_submission_link: z.boolean().optional(),
         tools: z.array(z.string()).optional(),
+        requirement_1: z.string().nullable(),
+        requirement_2: z.string().nullable(),
+        requirement_3: z.string().nullable(),
     })
     .refine(
         (data) => {
@@ -156,6 +162,9 @@ export default function EditBootcamp({
             batch: bootcamp.batch ?? 1,
             has_submission_link: Boolean(bootcamp.has_submission_link),
             tools: bootcamp.tools?.map((tool) => tool.id) ?? [],
+            requirement_1: bootcamp.requirement_1 ?? '',
+            requirement_2: bootcamp.requirement_2 ?? '',
+            requirement_3: bootcamp.requirement_3 ?? '',
         },
     });
 
@@ -948,6 +957,60 @@ export default function EditBootcamp({
                                                 height: 300,
                                             }}
                                         />
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="requirement_1"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Persyaratan 1 (untuk bootcamp gratis)</FormLabel>
+                                        <Textarea
+                                            {...field}
+                                            value={field.value ?? ''}
+                                            className="w-full rounded border p-2"
+                                            placeholder="Contoh: Follow Instagram @kompeten.idn"
+                                            autoComplete="off"
+                                        />
+                                        <FormDescription>Teks persyaratan pertama yang akan ditampilkan untuk bootcamp gratis</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="requirement_2"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Persyaratan 2 (untuk bootcamp gratis)</FormLabel>
+                                        <Textarea
+                                            {...field}
+                                            value={field.value ?? ''}
+                                            className="w-full rounded border p-2"
+                                            placeholder="Contoh: Follow TikTok @kompeten.idn"
+                                            autoComplete="off"
+                                        />
+                                        <FormDescription>Teks persyaratan kedua yang akan ditampilkan untuk bootcamp gratis</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="requirement_3"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Persyaratan 3 (untuk bootcamp gratis)</FormLabel>
+                                        <Textarea
+                                            {...field}
+                                            value={field.value ?? ''}
+                                            className="w-full rounded border p-2"
+                                            placeholder="Contoh: Tag 3 teman di postingan Instagram kami"
+                                            autoComplete="off"
+                                        />
+                                        <FormDescription>Teks persyaratan ketiga yang akan ditampilkan untuk bootcamp gratis</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}

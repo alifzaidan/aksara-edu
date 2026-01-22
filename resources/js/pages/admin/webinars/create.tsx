@@ -53,6 +53,9 @@ const formSchema = z
         group_url: z.string().nullable(),
         batch: z.number().min(0),
         tools: z.array(z.string()).optional(),
+        requirement_1: z.string().nullable(),
+        requirement_2: z.string().nullable(),
+        requirement_3: z.string().nullable(),
     })
     .refine(
         (data) => {
@@ -123,6 +126,9 @@ export default function CreateWebinar({
             group_url: '',
             batch: 1,
             tools: [],
+            requirement_1: 'Follow Instagram @kompeten.idn',
+            requirement_2: 'Follow TikTok @kompeten.idn',
+            requirement_3: 'Tag 3 teman di postingan Instagram kami',
         },
     });
 
@@ -745,6 +751,60 @@ export default function CreateWebinar({
                                                 height: 300,
                                             }}
                                         />
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="requirement_1"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Persyaratan 1 (untuk webinar gratis)</FormLabel>
+                                        <Textarea
+                                            {...field}
+                                            value={field.value ?? ''}
+                                            className="w-full rounded border p-2"
+                                            placeholder="Contoh: Follow Instagram @kompeten.idn"
+                                            autoComplete="off"
+                                        />
+                                        <FormDescription>Teks persyaratan pertama yang akan ditampilkan untuk webinar gratis</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="requirement_2"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Persyaratan 2 (untuk webinar gratis)</FormLabel>
+                                        <Textarea
+                                            {...field}
+                                            value={field.value ?? ''}
+                                            className="w-full rounded border p-2"
+                                            placeholder="Contoh: Follow TikTok @kompeten.idn"
+                                            autoComplete="off"
+                                        />
+                                        <FormDescription>Teks persyaratan kedua yang akan ditampilkan untuk webinar gratis</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="requirement_3"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Persyaratan 3 (untuk webinar gratis)</FormLabel>
+                                        <Textarea
+                                            {...field}
+                                            value={field.value ?? ''}
+                                            className="w-full rounded border p-2"
+                                            placeholder="Contoh: Tag 3 teman di postingan Instagram kami"
+                                            autoComplete="off"
+                                        />
+                                        <FormDescription>Teks persyaratan ketiga yang akan ditampilkan untuk webinar gratis</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
