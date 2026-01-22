@@ -193,8 +193,7 @@ class BootcampController extends Controller
         $bootcamp = Bootcamp::with(['category', 'user', 'schedules', 'tools'])->findOrFail($id);
 
         $transactions = Invoice::with([
-            'user',
-            'referrer',
+            'user.referrer',
             'bootcampItems' => function ($query) use ($id) {
                 $query->where('bootcamp_id', $id)
                     ->with('freeRequirement');
