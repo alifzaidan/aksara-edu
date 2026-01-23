@@ -39,7 +39,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const formSchema = z
     .object({
-        user_id: z.string().nonempty('Mentor harus dipilih'),
+        mentor_ids: z.array(z.string()).min(1, 'Mentor harus dipilih'),
         title: z.string().nonempty('Judul harus diisi'),
         category_id: z.string().nonempty('Kategori harus dipilih'),
         description: z.string().nullable(),
@@ -112,7 +112,7 @@ export default function CreateBootcamp({
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            user_id: '',
+            mentor_ids: [],
             title: '',
             category_id: '',
             description: '',
@@ -143,8 +143,8 @@ export default function CreateBootcamp({
             has_submission_link: false,
             batch: 1,
             tools: [],
-            requirement_1: 'Follow Instagram @kompeten.idn',
-            requirement_2: 'Follow TikTok @kompeten.idn',
+            requirement_1: 'Follow Instagram @aksademy',
+            requirement_2: 'Follow TikTok @aksademy',
             requirement_3: 'Tag 3 teman di postingan Instagram kami',
         },
     });
@@ -195,7 +195,7 @@ export default function CreateBootcamp({
         router.post(route('bootcamps.store'), { ...values, schedules }, { forceFormData: true });
     }
 
-    const selectedMentor = mentors.find((m) => m.id === form.watch('user_id'));
+    const selectedMentors = mentors.filter((m) => (form.watch('mentor_ids') ?? []).includes(m.id));
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
@@ -763,7 +763,7 @@ export default function CreateBootcamp({
                             />
                             <FormField
                                 control={form.control}
-                                name="user_id"
+                                name="mentor_ids"
                                 render={({ field }) => (
                                     <FormItem className="flex flex-col">
                                         <FormLabel>
@@ -777,15 +777,19 @@ export default function CreateBootcamp({
                                                         role="combobox"
                                                         className={cn('justify-between', !field.value && 'text-muted-foreground')}
                                                     >
-                                                        {selectedMentor ? (
+                                                        {selectedMentors.length > 0 ? (
                                                             <div className="flex items-center gap-2">
                                                                 <Avatar className="h-6 w-6">
-                                                                    <AvatarImage src={selectedMentor.avatar} alt={selectedMentor.name} />
+                                                                    <AvatarImage src={selectedMentors[0]?.avatar} alt={selectedMentors[0]?.name} />
                                                                     <AvatarFallback className="text-xs">
-                                                                        {getInitials(selectedMentor.name)}
+                                                                        {getInitials(selectedMentors[0]!.name)}
                                                                     </AvatarFallback>
                                                                 </Avatar>
-                                                                <span>{selectedMentor.name}</span>
+                                                                <span>
+                                                                    {selectedMentors.length === 1
+                                                                        ? selectedMentors[0].name
+                                                                        : `${selectedMentors.length} mentor dipilih`}
+                                                                </span>
                                                             </div>
                                                         ) : (
                                                             <span className="flex items-center gap-2">
@@ -808,8 +812,13 @@ export default function CreateBootcamp({
                                                                     value={mentor.name}
                                                                     key={mentor.id}
                                                                     onSelect={() => {
-                                                                        form.setValue('user_id', mentor.id);
-                                                                        setIsMentorPopoverOpen(false);
+                                                                        const current = new Set(field.value ?? []);
+                                                                        if (current.has(mentor.id)) {
+                                                                            current.delete(mentor.id);
+                                                                        } else {
+                                                                            current.add(mentor.id);
+                                                                        }
+                                                                        field.onChange(Array.from(current));
                                                                     }}
                                                                     className="flex items-start gap-2 py-2"
                                                                 >
@@ -828,7 +837,7 @@ export default function CreateBootcamp({
                                                                     <Check
                                                                         className={cn(
                                                                             'mt-1 ml-auto',
-                                                                            mentor.id === field.value ? 'opacity-100' : 'opacity-0',
+                                                                            field.value?.includes(mentor.id) ? 'opacity-100' : 'opacity-0',
                                                                         )}
                                                                     />
                                                                 </CommandItem>
@@ -838,7 +847,16 @@ export default function CreateBootcamp({
                                                 </Command>
                                             </PopoverContent>
                                         </Popover>
-                                        <FormDescription>Pilih mentor yang akan menjadi pemateri webinar ini</FormDescription>
+                                        {selectedMentors.length >= 1 ? (
+                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                {selectedMentors.map((m) => (
+                                                    <span key={m.id} className="bg-muted text-foreground rounded-full px-3 py-1 text-xs">
+                                                        {m.name}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        ) : null}
+                                        <FormDescription>Pilih satu atau lebih mentor untuk bootcamp ini</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -937,7 +955,7 @@ export default function CreateBootcamp({
                                             {...field}
                                             value={field.value ?? ''}
                                             className="w-full rounded border p-2"
-                                            placeholder="Contoh: Follow Instagram @kompeten.idn"
+                                            placeholder="Contoh: Follow Instagram @aksademy"
                                             autoComplete="off"
                                         />
                                         <FormDescription>Teks persyaratan pertama yang akan ditampilkan untuk bootcamp gratis</FormDescription>
@@ -955,7 +973,7 @@ export default function CreateBootcamp({
                                             {...field}
                                             value={field.value ?? ''}
                                             className="w-full rounded border p-2"
-                                            placeholder="Contoh: Follow TikTok @kompeten.idn"
+                                            placeholder="Contoh: Follow TikTok @aksademy"
                                             autoComplete="off"
                                         />
                                         <FormDescription>Teks persyaratan kedua yang akan ditampilkan untuk bootcamp gratis</FormDescription>

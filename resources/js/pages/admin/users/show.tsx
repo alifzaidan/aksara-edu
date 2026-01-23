@@ -62,7 +62,8 @@ interface InvoiceItem {
             title: string;
             thumbnail?: string;
             price: number;
-            user: { id: string; name: string };
+            host_name?: string | null;
+            mentors?: Array<{ id: string; name: string }>;
         };
     }>;
     webinarItems?: Array<{
@@ -104,7 +105,8 @@ interface EnrollmentData {
         title: string;
         thumbnail?: string;
         price: number;
-        user: { id: string; name: string };
+        host_name?: string | null;
+        mentors?: Array<{ id: string; name: string }>;
     };
     webinar?: {
         id: string;
@@ -213,7 +215,7 @@ const getInvoiceItems = (invoice: InvoiceItem) => {
             ...invoice.courseItems.map((item) => ({
                 type: 'course',
                 title: item.course.title,
-                mentor: item.course.user.name,
+                mentor: item.course.user?.name ?? '-',
                 thumbnail: item.course.thumbnail,
                 price: item.course.price,
             })),
@@ -225,7 +227,8 @@ const getInvoiceItems = (invoice: InvoiceItem) => {
             ...invoice.bootcampItems.map((item) => ({
                 type: 'bootcamp',
                 title: item.bootcamp.title,
-                mentor: item.bootcamp.user.name,
+                mentor:
+                    item.bootcamp.host_name ?? (item.bootcamp.mentors?.length ? item.bootcamp.mentors.map((mentor) => mentor.name).join(', ') : '-'),
                 thumbnail: item.bootcamp.thumbnail,
                 price: item.bootcamp.price,
             })),
@@ -237,7 +240,7 @@ const getInvoiceItems = (invoice: InvoiceItem) => {
             ...invoice.webinarItems.map((item) => ({
                 type: 'webinar',
                 title: item.webinar.title,
-                mentor: item.webinar.user.name,
+                mentor: item.webinar.user?.name ?? '-',
                 thumbnail: item.webinar.thumbnail,
                 price: item.webinar.price,
             })),
@@ -517,6 +520,16 @@ export default function UserShow({ user, invoices, enrollments, stats }: UserSho
                                     <div className="mb-4 space-y-4">
                                         {enrollments.data.map((enrollment) => {
                                             const content = enrollment.course || enrollment.bootcamp || enrollment.webinar;
+
+                                            const mentorName =
+                                                enrollment.type === 'course'
+                                                    ? enrollment.course?.user?.name
+                                                    : enrollment.type === 'webinar'
+                                                      ? enrollment.webinar?.user?.name
+                                                      : (enrollment.bootcamp?.host_name ??
+                                                        (enrollment.bootcamp?.mentors?.length
+                                                            ? enrollment.bootcamp.mentors.map((mentor) => mentor.name).join(', ')
+                                                            : undefined));
                                             return (
                                                 <div key={enrollment.id} className="flex items-start gap-4 rounded-lg border p-4">
                                                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100">
@@ -529,7 +542,7 @@ export default function UserShow({ user, invoices, enrollments, stats }: UserSho
                                                                     <h4 className="font-medium">{content?.title}</h4>
                                                                     {getProductTypeBadge(enrollment.type)}
                                                                 </div>
-                                                                <p className="text-muted-foreground text-sm">Mentor: {content?.user.name}</p>
+                                                                <p className="text-muted-foreground text-sm">Mentor: {mentorName ?? '-'}</p>
                                                                 <p className="text-muted-foreground text-sm">
                                                                     Bergabung: {formatDate(enrollment.created_at)}
                                                                 </p>

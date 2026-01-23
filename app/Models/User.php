@@ -87,7 +87,8 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function bootcamps()
     {
-        return $this->hasMany(Bootcamp::class);
+        return $this->belongsToMany(Bootcamp::class, 'bootcamp_mentors', 'user_id', 'bootcamp_id')
+            ->withTimestamps();
     }
 
     public function webinars()

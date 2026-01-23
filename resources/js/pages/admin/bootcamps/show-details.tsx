@@ -45,12 +45,12 @@ interface Bootcamp {
     group_url?: string | null;
     requirements?: string | null;
     curriculum?: string | null;
-    user?: {
+    mentors?: Array<{
         id: string;
         name: string;
         bio?: string;
         avatar?: string;
-    };
+    }>;
     has_submission_link?: boolean;
     created_at: string | Date;
 }
@@ -437,23 +437,27 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                     <TableRow>
                         <TableCell>Pemateri</TableCell>
                         <TableCell>
-                            {bootcamp.user ? (
-                                <div className="flex items-center gap-3">
-                                    {bootcamp.user.avatar ? (
-                                        <img
-                                            src={`/storage/${bootcamp.user.avatar}`}
-                                            alt={bootcamp.user.name}
-                                            className="h-10 w-10 rounded-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-600">
-                                            {getInitials(bootcamp.user.name)}
+                            {bootcamp.mentors && bootcamp.mentors.length > 0 ? (
+                                <div className="flex flex-col gap-3">
+                                    {bootcamp.mentors.map((mentor: { id: string; name: string; bio?: string; avatar?: string }) => (
+                                        <div key={mentor.id} className="flex items-center gap-3">
+                                            {mentor.avatar ? (
+                                                <img
+                                                    src={`/storage/${mentor.avatar}`}
+                                                    alt={mentor.name}
+                                                    className="h-10 w-10 rounded-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-600">
+                                                    {getInitials(mentor.name)}
+                                                </div>
+                                            )}
+                                            <div>
+                                                <div className="font-medium">{mentor.name}</div>
+                                                <div className="text-sm text-gray-500">{mentor.bio ?? 'Tidak ada bio'}</div>
+                                            </div>
                                         </div>
-                                    )}
-                                    <div>
-                                        <div className="font-medium">{bootcamp.user.name}</div>
-                                        <div className="text-sm text-gray-500">{bootcamp.user.bio ?? 'Tidak ada bio'}</div>
-                                    </div>
+                                    ))}
                                 </div>
                             ) : (
                                 '-'

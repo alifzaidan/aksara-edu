@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('bootcamps', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignUuid('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignUuid('category_id')->constrained('categories')->onDelete('cascade');
             $table->string('title');
             $table->string('slug')->unique();

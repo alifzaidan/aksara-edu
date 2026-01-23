@@ -24,12 +24,12 @@ class BootcampController extends Controller
         $isAffiliate = $user->hasRole('affiliate');
 
         if ($isAffiliate) {
-            $bootcamps = Bootcamp::with(['category', 'user', 'schedules', 'certificate'])
+            $bootcamps = Bootcamp::with(['category', 'mentors', 'schedules', 'certificate'])
                 ->where('status', 'published')
                 ->latest()
                 ->get();
         } else {
-            $bootcamps = Bootcamp::with(['category', 'user', 'schedules', 'certificate'])
+            $bootcamps = Bootcamp::with(['category', 'mentors', 'schedules', 'certificate'])
                 ->latest()
                 ->get();
         }
@@ -101,7 +101,8 @@ class BootcampController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'mentor_ids' => 'required|array|min:1',
+            'mentor_ids.*' => 'required|exists:users,id',
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
@@ -124,7 +125,7 @@ class BootcampController extends Controller
             'requirement_3' => 'nullable|string',
         ]);
 
-        $data = $request->all();
+        $data = $request->except(['tools', 'schedules', 'mentor_ids', 'user_id']);
         foreach (['start_date', 'end_date', 'registration_deadline'] as $field) {
             if (!empty($data[$field])) {
                 $data[$field] = Carbon::parse($data[$field])
@@ -188,12 +189,19 @@ class BootcampController extends Controller
             $bootcamp->tools()->sync($request->tools);
         }
 
+        $mentorIds = collect($request->input('mentor_ids', []))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+        $bootcamp->mentors()->sync($mentorIds);
+
         return redirect()->route('bootcamps.index')->with('success', 'Bootcamp berhasil dibuat.');
     }
 
     public function show(string $id)
     {
-        $bootcamp = Bootcamp::with(['category', 'user', 'schedules', 'tools'])->findOrFail($id);
+        $bootcamp = Bootcamp::with(['category', 'mentors', 'schedules', 'tools'])->findOrFail($id);
 
         $transactions = Invoice::with([
             'user.referrer',
@@ -296,7 +304,7 @@ class BootcampController extends Controller
 
     public function edit(string $id)
     {
-        $bootcamp = Bootcamp::with(['schedules', 'tools'])->findOrFail($id);
+        $bootcamp = Bootcamp::with(['schedules', 'tools', 'mentors'])->findOrFail($id);
         $categories = Category::all();
         $tools = Tool::all();
 
@@ -308,7 +316,6 @@ class BootcampController extends Controller
     public function update(Request $request, string $id)
     {
         $request->validate([
-            'user_id' => 'required|exists:users,id',
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
@@ -329,10 +336,12 @@ class BootcampController extends Controller
             'requirement_1' => 'nullable|string',
             'requirement_2' => 'nullable|string',
             'requirement_3' => 'nullable|string',
+            'mentor_ids' => 'required|array|min:1',
+            'mentor_ids.*' => 'required|exists:users,id',
         ]);
 
         $bootcamp = Bootcamp::findOrFail($id);
-        $data = $request->all();
+        $data = $request->except(['tools', 'schedules', 'mentor_ids', 'user_id']);
 
         foreach (['start_date', 'end_date', 'registration_deadline'] as $field) {
             if (!empty($data[$field])) {
@@ -477,6 +486,13 @@ class BootcampController extends Controller
             $bootcamp->tools()->sync($request->tools);
         }
 
+        $mentorIds = collect($request->input('mentor_ids', []))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+        $bootcamp->mentors()->sync($mentorIds);
+
         return redirect()->route('bootcamps.show', $bootcamp->id)->with('success', 'Bootcamp berhasil diperbarui.');
     }
 
@@ -529,6 +545,10 @@ class BootcampController extends Controller
 
         if ($bootcamp->tools && $bootcamp->tools->count() > 0) {
             $newBootcamp->tools()->sync($bootcamp->tools->pluck('id')->toArray());
+        }
+
+        if ($bootcamp->relationLoaded('mentors') ? $bootcamp->mentors : $bootcamp->mentors()->exists()) {
+            $newBootcamp->mentors()->sync($bootcamp->mentors()->pluck('users.id')->toArray());
         }
 
         return redirect()->route('bootcamps.show', $newBootcamp->id)

@@ -78,7 +78,7 @@ class SearchController extends Controller
                     ];
                 });
 
-            $bootcamps = Bootcamp::with(['category', 'user'])
+            $bootcamps = Bootcamp::with(['category', 'mentors'])
                 ->where('status', 'published')
                 ->where(function ($q) use ($myBootcampIds) {
                     $q->where(function ($subQ) {
@@ -90,7 +90,7 @@ class SearchController extends Controller
                     $q->where('title', 'LIKE', "%{$query}%")
                         ->orWhere('description', 'LIKE', "%{$query}%")
                         ->orWhere('host_name', 'LIKE', "%{$query}%")
-                        ->orWhereHas('user', function ($userQuery) use ($query) {
+                        ->orWhereHas('mentors', function ($userQuery) use ($query) {
                             $userQuery->where('name', 'LIKE', "%{$query}%");
                         });
                 })
@@ -107,7 +107,7 @@ class SearchController extends Controller
                         'description' => $bootcamp->description,
                         'price' => $this->formatPrice($bootcamp->price),
                         'strikethrough_price' => $this->formatPrice($bootcamp->strikethrough_price),
-                        'instructor' => $bootcamp->host_name ?? $bootcamp->user->name ?? null,
+                        'instructor' => $bootcamp->host_name ?? $bootcamp->mentors->pluck('name')->first() ?? null,
                         'thumbnail' => $bootcamp->thumbnail,
                         'duration' => $duration,
                         'start_date' => $bootcamp->start_date,

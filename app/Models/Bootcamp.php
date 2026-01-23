@@ -18,9 +18,9 @@ class Bootcamp extends Model
         'has_submission_link' => 'boolean',
     ];
 
-    public function user()
+    public function mentors()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsToMany(User::class, 'bootcamp_mentors')->withTimestamps();
     }
 
     public function category()
