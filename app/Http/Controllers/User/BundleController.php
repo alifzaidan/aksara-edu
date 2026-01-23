@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Auth;
 
 class BundleController extends Controller
 {
+    private const ADMIN_WHATSAPP_URL = 'https://wa.me/+6285142505794';
+
     public function index()
     {
         $bundles = Bundle::with(['bundleItems.bundleable'])
@@ -44,7 +46,14 @@ class BundleController extends Controller
         $this->handleReferralCode($request);
 
         if ($bundle->status !== 'published') {
-            abort(404);
+            return Inertia::render('user/unavailable/index', [
+                'title' => 'Bundle Tidak Tersedia',
+                'item' => $bundle->only(['title', 'slug', 'status']),
+                'adminWhatsappUrl' => self::ADMIN_WHATSAPP_URL,
+                'message' => 'Bundle tidak tersedia. Silahkan hubungi admin.',
+                'backUrl' => route('bundle.index'),
+                'backLabel' => 'Kembali ke Daftar Bundle',
+            ])->toResponse($request)->setStatusCode(404);
         }
 
         if ($bundle->registration_deadline && now()->gt($bundle->registration_deadline)) {
@@ -186,13 +195,20 @@ class BundleController extends Controller
     {
         $this->handleReferralCode($request);
 
+        if ($bundle->status !== 'published') {
+            return Inertia::render('user/unavailable/index', [
+                'title' => 'Bundle Tidak Tersedia',
+                'item' => $bundle->only(['title', 'slug', 'status']),
+                'adminWhatsappUrl' => self::ADMIN_WHATSAPP_URL,
+                'message' => 'Bundle tidak tersedia. Silahkan hubungi admin.',
+                'backUrl' => route('bundle.index'),
+                'backLabel' => 'Kembali ke Daftar Bundle',
+            ])->toResponse($request)->setStatusCode(404);
+        }
+
         if (!Auth::check()) {
             $currentUrl = $request->fullUrl();
             return redirect()->route('login', ['redirect' => $currentUrl]);
-        }
-
-        if ($bundle->status !== 'published') {
-            abort(404);
         }
 
         if ($bundle->registration_deadline && now()->gt($bundle->registration_deadline)) {

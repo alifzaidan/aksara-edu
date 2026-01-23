@@ -13,6 +13,8 @@ use Inertia\Inertia;
 
 class PartnershipProductController extends Controller
 {
+    private const ADMIN_WHATSAPP_URL = 'https://wa.me/+6285142505794';
+
     public function index()
     {
         $categories = Category::all();
@@ -30,6 +32,17 @@ class PartnershipProductController extends Controller
 
     public function detail(Request $request, PartnershipProduct $partnershipProduct)
     {
+        if ($partnershipProduct->status !== 'published') {
+            return Inertia::render('user/unavailable/index', [
+                'title' => 'Program Tidak Tersedia',
+                'item' => $partnershipProduct->only(['title', 'slug', 'status']),
+                'adminWhatsappUrl' => self::ADMIN_WHATSAPP_URL,
+                'message' => 'Program tidak tersedia. Silahkan hubungi admin.',
+                'backUrl' => route('partnership-product.index'),
+                'backLabel' => 'Kembali ke Daftar Program',
+            ])->toResponse($request)->setStatusCode(404);
+        }
+
         $partnershipProduct->load(['category']);
 
         $relatedPartnershipProducts = PartnershipProduct::with(['category'])
@@ -50,6 +63,17 @@ class PartnershipProductController extends Controller
     public function trackClick(Request $request, string $id)
     {
         $product = PartnershipProduct::findOrFail($id);
+
+        if ($product->status !== 'published') {
+            return Inertia::render('user/unavailable/index', [
+                'title' => 'Program Tidak Tersedia',
+                'item' => $product->only(['title', 'slug', 'status']),
+                'adminWhatsappUrl' => self::ADMIN_WHATSAPP_URL,
+                'message' => 'Program tidak tersedia. Silahkan hubungi admin.',
+                'backUrl' => route('partnership-product.index'),
+                'backLabel' => 'Kembali ke Daftar Program',
+            ])->toResponse($request)->setStatusCode(404);
+        }
 
         $deadline = new \DateTime($product->registration_deadline);
         $now = new \DateTime();
