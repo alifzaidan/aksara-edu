@@ -497,7 +497,7 @@ class InvoiceController extends Controller
             $referralCode = session('referral_code');
             $referredByUserId = null;
 
-            if ($referralCode && $referralCode !== 'KMP2025') {
+            if ($referralCode && $referralCode !== 'AKS2025') {
                 $referrer = User::where('affiliate_code', $referralCode)->first();
                 if ($referrer && $referrer->id !== $userId) {
                     $referredByUserId = $referrer->id;
@@ -544,7 +544,7 @@ class InvoiceController extends Controller
                 'field' => 'invoice_code',
                 'length' => 11,
                 'reset_on_prefix_change'  => true,
-                'prefix' => 'KMP-' . date('y')
+                'prefix' => 'AKS-' . date('y')
             ]);
 
             $invoice = Invoice::create([
