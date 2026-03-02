@@ -119,7 +119,13 @@ class WebinarController extends Controller
         try {
             $userId = Auth::id();
 
-            $webinar = Invoice::with('webinarItems.webinar')
+            $webinar = Invoice::with([
+                'webinarItems' => function ($query) use ($slug) {
+                    $query->whereHas('webinar', function ($q) use ($slug) {
+                        $q->where('slug', $slug);
+                    })->with('webinar'); // ✅ filter by slug
+                }
+            ])
                 ->where('user_id', $userId)
                 ->where('status', 'paid')
                 ->whereHas('webinarItems.webinar', function ($query) use ($slug) {
@@ -131,7 +137,12 @@ class WebinarController extends Controller
                 return back()->with('error', 'Webinar tidak ditemukan atau Anda belum terdaftar.');
             }
 
-            $enrollmentWebinar = $webinar->webinarItems->first();
+            $enrollmentWebinar = $webinar->webinarItems->first(); // ✅ sudah difilter by slug
+
+            if (!$enrollmentWebinar) {
+                return back()->with('error', 'Webinar tidak ditemukan.');
+            }
+
             $webinarData = $enrollmentWebinar->webinar;
 
             if (!$enrollmentWebinar->attendance_verified || !$enrollmentWebinar->review || !$enrollmentWebinar->rating) {
@@ -178,7 +189,13 @@ class WebinarController extends Controller
         try {
             $userId = Auth::id();
 
-            $webinar = Invoice::with('webinarItems.webinar')
+            $webinar = Invoice::with([
+                'webinarItems' => function ($query) use ($slug) {
+                    $query->whereHas('webinar', function ($q) use ($slug) {
+                        $q->where('slug', $slug);
+                    })->with('webinar'); // ✅ filter by slug
+                }
+            ])
                 ->where('user_id', $userId)
                 ->where('status', 'paid')
                 ->whereHas('webinarItems.webinar', function ($query) use ($slug) {
@@ -190,7 +207,12 @@ class WebinarController extends Controller
                 return back()->with('error', 'Webinar tidak ditemukan atau Anda belum terdaftar.');
             }
 
-            $enrollmentWebinar = $webinar->webinarItems->first();
+            $enrollmentWebinar = $webinar->webinarItems->first(); // ✅ sudah difilter by slug
+
+            if (!$enrollmentWebinar) {
+                return back()->with('error', 'Webinar tidak ditemukan.');
+            }
+
             $webinarData = $enrollmentWebinar->webinar;
 
             if (!$enrollmentWebinar->attendance_verified || !$enrollmentWebinar->review || !$enrollmentWebinar->rating) {

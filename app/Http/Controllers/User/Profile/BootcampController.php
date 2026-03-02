@@ -184,7 +184,13 @@ class BootcampController extends Controller
         try {
             $userId = Auth::id();
 
-            $bootcamp = Invoice::with(['bootcampItems.bootcamp.schedules', 'bootcampItems.attendances'])
+            $bootcamp = Invoice::with([
+                'bootcampItems' => function ($query) use ($slug) {
+                    $query->whereHas('bootcamp', function ($q) use ($slug) {
+                        $q->where('slug', $slug);
+                    })->with(['bootcamp.schedules', 'attendances']); // ✅ eager load dengan filter slug
+                },
+            ])
                 ->where('user_id', $userId)
                 ->where('status', 'paid')
                 ->whereHas('bootcampItems.bootcamp', function ($query) use ($slug) {
@@ -196,7 +202,12 @@ class BootcampController extends Controller
                 return back()->with('error', 'Bootcamp tidak ditemukan atau Anda belum terdaftar.');
             }
 
-            $enrollment = $bootcamp->bootcampItems->first();
+            $enrollment = $bootcamp->bootcampItems->first(); // ✅ sekarang sudah difilter by slug
+            
+            if (!$enrollment) {
+                return back()->with('error', 'Bootcamp tidak ditemukan.');
+            }
+
             $bootcampData = $enrollment->bootcamp;
 
             $bootcampEndDate = new \Carbon\Carbon($bootcampData->end_date);
@@ -241,7 +252,13 @@ class BootcampController extends Controller
         try {
             $userId = Auth::id();
 
-            $bootcamp = Invoice::with(['bootcampItems.bootcamp.schedules', 'bootcampItems.attendances'])
+            $bootcamp = Invoice::with([
+                'bootcampItems' => function ($query) use ($slug) {
+                    $query->whereHas('bootcamp', function ($q) use ($slug) {
+                        $q->where('slug', $slug);
+                    })->with(['bootcamp.schedules', 'attendances']); // ✅ eager load dengan filter slug
+                },
+            ])
                 ->where('user_id', $userId)
                 ->where('status', 'paid')
                 ->whereHas('bootcampItems.bootcamp', function ($query) use ($slug) {
@@ -253,7 +270,12 @@ class BootcampController extends Controller
                 return back()->with('error', 'Bootcamp tidak ditemukan atau Anda belum terdaftar.');
             }
 
-            $enrollment = $bootcamp->bootcampItems->first();
+            $enrollment = $bootcamp->bootcampItems->first(); // ✅ sekarang sudah difilter by slug
+
+            if (!$enrollment) {
+                return back()->with('error', 'Bootcamp tidak ditemukan.');
+            }
+
             $bootcampData = $enrollment->bootcamp;
 
             $bootcampEndDate = new \Carbon\Carbon($bootcampData->end_date);
