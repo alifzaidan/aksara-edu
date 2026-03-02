@@ -54,11 +54,11 @@ class AdminController extends Controller
     {
         return Invoice::where('status', 'paid')
             ->select(
-                DB::raw('DATE(created_at) as date'),
+                DB::raw('DATE(paid_at) as date'),
                 DB::raw('SUM(nett_amount) as total_amount'),
                 DB::raw('COUNT(*) as transaction_count')
             )
-            ->whereDate('created_at', '>=', now()->subDays(30))
+            ->whereDate('paid_at', '>=', now()->subDays(30))
             ->groupBy('date')
             ->orderBy('date', 'desc')
             ->get();
@@ -68,12 +68,12 @@ class AdminController extends Controller
     {
         return Invoice::where('status', 'paid')
             ->select(
-                DB::raw('YEAR(created_at) as year'),
-                DB::raw('MONTH(created_at) as month'),
+                DB::raw('YEAR(paid_at) as year'),
+                DB::raw('MONTH(paid_at) as month'),
                 DB::raw('SUM(nett_amount) as total_amount'),
                 DB::raw('COUNT(*) as transaction_count')
             )
-            ->whereDate('created_at', '>=', now()->subMonths(12))
+            ->whereDate('paid_at', '>=', now()->subMonths(12))
             ->groupBy('year', 'month')
             ->orderBy('year', 'asc')
             ->orderBy('month', 'asc')
@@ -285,11 +285,11 @@ class AdminController extends Controller
             ->whereYear('enrollment_webinars.created_at', now()->year)->count();
 
         $revenueToday = Invoice::where('status', 'paid')
-            ->whereDate('created_at', today())
+            ->whereDate('paid_at', today())
             ->sum('nett_amount');
 
         $revenueYesterday = Invoice::where('status', 'paid')
-            ->whereDate('created_at', now()->subDay())
+            ->whereDate('paid_at', now()->subDay())
             ->sum('nett_amount');
 
         $dailyRevenueChange = 0;
@@ -300,13 +300,13 @@ class AdminController extends Controller
         }
 
         $revenueThisMonth = Invoice::where('status', 'paid')
-            ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
+            ->whereMonth('paid_at', now()->month)
+            ->whereYear('paid_at', now()->year)
             ->sum('nett_amount');
 
         $revenueLastMonth = Invoice::where('status', 'paid')
-            ->whereMonth('created_at', now()->subMonth()->month)
-            ->whereYear('created_at', now()->subMonth()->year)
+            ->whereMonth('paid_at', now()->subMonth()->month)
+            ->whereYear('paid_at', now()->subMonth()->year)
             ->sum('nett_amount');
 
         $monthlyRevenueChange = 0;
