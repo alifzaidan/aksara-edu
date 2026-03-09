@@ -526,7 +526,7 @@ export default function CreateDiscountCode({ products }: CreateDiscountCodeProps
                                                             if (date) field.onChange(date);
                                                             setStartDateOpen(false);
                                                         }}
-                                                        disabled={(date) => date < new Date()}
+                                                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                                                         initialFocus
                                                     />
                                                 </PopoverContent>
@@ -703,13 +703,12 @@ export default function CreateDiscountCode({ products }: CreateDiscountCodeProps
                                                                                 )}
                                                                             {statusInfo && (
                                                                                 <p
-                                                                                    className={`mt-1 text-xs ${
-                                                                                        statusInfo.type === 'closed'
-                                                                                            ? 'text-red-600'
-                                                                                            : statusInfo.type === 'will-close'
-                                                                                              ? 'text-orange-600'
-                                                                                              : 'text-green-600'
-                                                                                    }`}
+                                                                                    className={`mt-1 text-xs ${statusInfo.type === 'closed'
+                                                                                        ? 'text-red-600'
+                                                                                        : statusInfo.type === 'will-close'
+                                                                                            ? 'text-orange-600'
+                                                                                            : 'text-green-600'
+                                                                                        }`}
                                                                                 >
                                                                                     {statusInfo.text}
                                                                                 </p>
