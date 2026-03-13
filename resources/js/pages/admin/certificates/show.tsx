@@ -103,7 +103,7 @@ export default function ShowCertificate({ certificate, flash }: CertificateProps
                             <CertificateDetail certificate={certificate} />
                         </TabsContent>
                         <TabsContent value="participants">
-                            <CertificateParticipants participants={certificate.participants || []} />
+                            <CertificateParticipants participants={certificate.participants || []} issuedDate={certificate.issued_date} />
                         </TabsContent>
                     </Tabs>
 

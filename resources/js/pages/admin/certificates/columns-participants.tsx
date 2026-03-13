@@ -28,7 +28,7 @@ export interface CertificateParticipant {
     user: User;
 }
 
-export const columns: ColumnDef<CertificateParticipant>[] = [
+export const getColumns = (issuedDate?: string | null): ColumnDef<CertificateParticipant>[] => [
     {
         accessorKey: 'certificate_number',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Nomor" />,
@@ -57,9 +57,14 @@ export const columns: ColumnDef<CertificateParticipant>[] = [
         ),
     },
     {
-        accessorKey: 'created_at',
+        id: 'issued_date',
+        accessorFn: () => issuedDate ?? null,
         header: ({ column }) => <DataTableColumnHeader column={column} title="Tanggal Terbit" />,
-        cell: ({ row }) => <p>{format(new Date(row.original.created_at), 'dd MMM yyyy', { locale: id })}</p>,
+        cell: ({ row }) => {
+            const publishedAt = issuedDate ?? row.original.created_at;
+
+            return <p>{format(new Date(publishedAt), 'dd MMM yyyy', { locale: id })}</p>;
+        },
     },
     {
         id: 'actions',
