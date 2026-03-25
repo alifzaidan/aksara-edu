@@ -2,7 +2,7 @@ import RatingDialog from '@/components/rating-dialog';
 import { Button } from '@/components/ui/button';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Award, BadgeCheck, CheckCircle, Download, Eye, Star } from 'lucide-react';
+import { ArrowLeft, Award, BadgeCheck, CheckCircle, Download, Eye, MessageCircle, Star } from 'lucide-react';
 import { useState } from 'react';
 
 interface Category {
@@ -20,6 +20,7 @@ interface Course {
     category: Category;
     course_url: string;
     registration_url: string;
+    group_url?: string | null;
     key_points: string;
     description: string | null;
     short_description: string | null;
@@ -396,6 +397,15 @@ export default function DetailMyCourse({
                                     >
                                         {isCompleted ? 'Lihat Kembali Materi' : 'Lanjutkan Belajar'}
                                     </Button>
+
+                                    {courseData.group_url && (
+                                        <Button variant="outline" className="mt-2 w-full" asChild>
+                                            <a href={courseData.group_url} target="_blank" rel="noopener noreferrer">
+                                                <MessageCircle className="mr-2 h-4 w-4" />
+                                                Masuk Grup WA
+                                            </a>
+                                        </Button>
+                                    )}
                                 </div>
                             </div>
                         </div>

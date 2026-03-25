@@ -14,7 +14,7 @@ import EditModule from './edit-module';
 interface Lesson {
     id?: string | number;
     title: string;
-    type: 'text' | 'video' | 'file' | 'quiz';
+    type: 'text' | 'video' | 'file' | 'quiz' | 'assignment';
     description?: string;
     is_free: boolean;
     content?: string;
@@ -219,6 +219,7 @@ export default function CourseModulesSection({ modules, setModules }: CourseModu
                                                 <div className="flex items-center justify-center">
                                                     <Badge className="mr-2">{lesson.type.charAt(0).toUpperCase() + lesson.type.slice(1)}</Badge>
                                                     <Dialog
+                                                        modal={false}
                                                         open={editLessonOpen?.modIdx === idx && editLessonOpen?.lessonIdx === lidx}
                                                         onOpenChange={(v) => {
                                                             if (!v) setEditLessonOpen(null);
@@ -281,7 +282,7 @@ export default function CourseModulesSection({ modules, setModules }: CourseModu
                                 )}
 
                                 {/* Tombol tambah materi */}
-                                <Dialog open={lessonOpenIdx === idx} onOpenChange={(v: boolean) => setLessonOpenIdx(v ? idx : null)}>
+                                <Dialog modal={false} open={lessonOpenIdx === idx} onOpenChange={(v: boolean) => setLessonOpenIdx(v ? idx : null)}>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button

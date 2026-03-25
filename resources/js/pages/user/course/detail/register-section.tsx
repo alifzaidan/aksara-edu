@@ -16,7 +16,7 @@ interface Course {
         lessons?: {
             title: string;
             description?: string | null;
-            type: 'text' | 'video' | 'file' | 'quiz';
+            type: 'text' | 'video' | 'file' | 'quiz' | 'assignment';
             video_url?: string | null;
         }[];
     }[];

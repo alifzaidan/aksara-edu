@@ -12,7 +12,7 @@ import { FormEventHandler, useEffect, useRef, useState } from 'react';
 interface Lesson {
     id?: string | number; // Add ID field for existing lessons
     title: string;
-    type: 'text' | 'video' | 'file' | 'quiz';
+    type: 'text' | 'video' | 'file' | 'quiz' | 'assignment';
     description?: string;
     is_free: boolean;
     content?: string;
@@ -56,6 +56,25 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
     const [isPreview, setIsPreview] = useState(lesson.is_preview !== undefined ? lesson.is_preview : true);
     const titleInput = useRef<HTMLInputElement>(null);
 
+    const shouldKeepDialogOpen = (target: EventTarget | null) => {
+        const element = target as HTMLElement | null;
+        return !!element?.closest('.tox-tinymce-aux, .tox-menu, .tox-dialog, .moxman-window, .tam-assetmanager-root');
+    };
+
+    useEffect(() => {
+        const handleTinyMceFocus = (event: FocusEvent) => {
+            const target = event.target as HTMLElement | null;
+            if (target?.closest('.tox-tinymce-aux, .moxman-window, .tam-assetmanager-root')) {
+                event.stopImmediatePropagation();
+            }
+        };
+
+        document.addEventListener('focusin', handleTinyMceFocus, true);
+        return () => {
+            document.removeEventListener('focusin', handleTinyMceFocus, true);
+        };
+    }, []);
+
     useEffect(() => {
         setTitle(lesson.title);
         setType(lesson.type);
@@ -85,6 +104,7 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
             description,
             is_free: isFree,
             content: type === 'text' ? content : undefined,
+            ...(type === 'assignment' ? { content } : {}),
             video_url: type === 'video' ? video : undefined,
             attachment: type === 'file' ? (attachment ?? lesson.attachment) : undefined,
             quizzes:
@@ -103,7 +123,26 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
     };
 
     return (
-        <DialogContent>
+        <DialogContent
+            onInteractOutside={(event) => {
+                const target = (event as { detail?: { originalEvent?: Event } }).detail?.originalEvent?.target ?? event.target;
+                if (shouldKeepDialogOpen(target)) {
+                    event.preventDefault();
+                }
+            }}
+            onPointerDownOutside={(event) => {
+                const target = (event as { detail?: { originalEvent?: Event } }).detail?.originalEvent?.target ?? event.target;
+                if (shouldKeepDialogOpen(target)) {
+                    event.preventDefault();
+                }
+            }}
+            onFocusOutside={(event) => {
+                const target = (event as { detail?: { originalEvent?: Event } }).detail?.originalEvent?.target ?? event.target;
+                if (shouldKeepDialogOpen(target)) {
+                    event.preventDefault();
+                }
+            }}
+        >
             <DialogTitle>Edit Materi</DialogTitle>
             <DialogDescription>Ubah judul, tipe, dan deskripsi materi.</DialogDescription>
             <form className="space-y-6" onSubmit={handleSubmit}>
@@ -149,6 +188,7 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
                                 <SelectItem value="video">Video</SelectItem>
                                 <SelectItem value="file">File</SelectItem>
                                 <SelectItem value="quiz">Quiz</SelectItem>
+                                <SelectItem value="assignment">Penugasan</SelectItem>
                             </SelectGroup>
                         </SelectContent>
                     </Select>
@@ -249,19 +289,22 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
                             />
                             {/* Switch for file download permission */}
                             <div className="mt-2 flex items-center space-x-2">
-                                <Switch 
-                                    id="is-preview" 
-                                    checked={isPreview} 
+                                <Switch
+                                    id="is-preview"
+                                    checked={isPreview}
                                     onCheckedChange={attachment && attachment.type !== 'application/pdf' ? undefined : setIsPreview}
-                                    className={attachment && attachment.type !== 'application/pdf' ? 'opacity-50 cursor-not-allowed' : ''}
+                                    className={attachment && attachment.type !== 'application/pdf' ? 'cursor-not-allowed opacity-50' : ''}
                                 />
-                                <Label htmlFor="is-preview" className={attachment && attachment.type !== 'application/pdf' ? 'text-muted-foreground' : ''}>
+                                <Label
+                                    htmlFor="is-preview"
+                                    className={attachment && attachment.type !== 'application/pdf' ? 'text-muted-foreground' : ''}
+                                >
                                     {isPreview ? 'File hanya bisa dilihat (preview)' : 'File bisa di-download'}
                                 </Label>
                             </div>
                             {/* Show message when non-PDF file is selected */}
                             {attachment && attachment.type !== 'application/pdf' && (
-                                <div className="mt-1 text-xs text-muted-foreground">
+                                <div className="text-muted-foreground mt-1 text-xs">
                                     Preview hanya tersedia untuk file PDF. File non-PDF otomatis bisa di-download.
                                 </div>
                             )}
@@ -281,8 +324,8 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
                                     preview.url && (
                                         <div className="mt-2 w-full rounded border p-2">
                                             <div className="mt-2 flex items-center gap-2 text-xs">
-                                                {(attachment instanceof File && attachment.type === 'application/pdf') || 
-                                                 (typeof attachment === 'string' && attachment) ? (
+                                                {(attachment instanceof File && attachment.type === 'application/pdf') ||
+                                                (typeof attachment === 'string' && attachment) ? (
                                                     <a
                                                         href={preview.url}
                                                         target="_blank"
@@ -301,8 +344,8 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
                                                     </>
                                                 )}
                                             </div>
-                                            {(attachment instanceof File && attachment.type === 'application/pdf') || 
-                                             (typeof attachment === 'string' && attachment) ? (
+                                            {(attachment instanceof File && attachment.type === 'application/pdf') ||
+                                            (typeof attachment === 'string' && attachment) ? (
                                                 <object data={preview.url} type="application/pdf" width="100%" height="200px">
                                                     <p>
                                                         Preview tidak tersedia.{' '}
@@ -312,7 +355,7 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
                                                     </p>
                                                 </object>
                                             ) : (
-                                                <div className="text-xs text-muted-foreground italic">Preview hanya tersedia untuk file PDF.</div>
+                                                <div className="text-muted-foreground text-xs italic">Preview hanya tersedia untuk file PDF.</div>
                                             )}
                                         </div>
                                     )
@@ -357,6 +400,25 @@ export default function EditLesson({ setOpen, onEdit, lesson }: EditLessonProps)
                                 value={quizPassingScore}
                                 onChange={(e) => setQuizPassingScore(Number(e.target.value))}
                             />
+                        </div>
+                    )}
+                    {type === 'assignment' && (
+                        <div>
+                            <Label htmlFor="assignment-content" className="mb-1 block text-sm font-medium">
+                                Instruksi Penugasan
+                            </Label>
+                            <Editor
+                                apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
+                                value={content}
+                                onEditorChange={(val) => setContent(val)}
+                                init={{
+                                    plugins: ['anchor', 'autolink', 'link', 'lists', 'table', 'wordcount'],
+                                    onboarding: false,
+                                    toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | link | removeformat',
+                                    height: 260,
+                                }}
+                            />
+                            <p className="text-muted-foreground mt-1 text-xs">Peserta akan mengunggah tugas dalam format PDF.</p>
                         </div>
                     )}
                     <div className="mt-2 flex items-center space-x-2">

@@ -9,7 +9,7 @@ import { Dispatch, SetStateAction, type ReactNode } from 'react';
 interface Lesson {
     id: string;
     title: string;
-    type: 'video' | 'text' | 'file' | 'quiz';
+    type: 'video' | 'text' | 'file' | 'quiz' | 'assignment';
     isCompleted: boolean;
     quizzes?: any[];
 }

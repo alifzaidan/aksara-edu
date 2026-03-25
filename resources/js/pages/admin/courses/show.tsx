@@ -31,6 +31,7 @@ interface Course {
     thumbnail?: string | null;
     course_url: string;
     registration_url: string;
+    group_url?: string | null;
     status: string;
     level: string;
     created_at: string | Date;
@@ -40,7 +41,7 @@ interface Course {
         lessons?: {
             title: string;
             description?: string | null;
-            type: 'text' | 'video' | 'file' | 'quiz';
+            type: 'text' | 'video' | 'file' | 'quiz' | 'assignment';
             attachment?: string | null;
             video_url?: string | null;
             is_free?: boolean;
@@ -90,6 +91,8 @@ export default function ShowCourse({ course, transactions, ratings, certificate,
 
     const approvedRatings = ratings.filter((rating) => rating.status === 'approved');
     const averageRating = approvedRatings.length > 0 ? approvedRatings.reduce((sum, rating) => sum + rating.rating, 0) / approvedRatings.length : 0;
+    const moduleCount = course.modules?.length ?? 0;
+    const lessonCount = course.modules?.reduce((total, module) => total + (module.lessons?.length ?? 0), 0) ?? 0;
 
     useEffect(() => {
         if (flash?.success) {
@@ -140,6 +143,14 @@ export default function ShowCourse({ course, transactions, ratings, certificate,
                     <Tabs defaultValue="detail" className="lg:col-span-2">
                         <TabsList>
                             <TabsTrigger value="detail">Detail</TabsTrigger>
+                            <TabsTrigger value="materi">
+                                Modul & Materi
+                                {(moduleCount > 0 || lessonCount > 0) && (
+                                    <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">
+                                        {moduleCount} / {lessonCount}
+                                    </span>
+                                )}
+                            </TabsTrigger>
                             {!isAffiliate && (
                                 <TabsTrigger value="transaksi">
                                     Transaksi
@@ -164,6 +175,8 @@ export default function ShowCourse({ course, transactions, ratings, certificate,
                         </TabsList>
                         <TabsContent value="detail">
                             <CourseDetail course={course} averageRating={averageRating} />
+                        </TabsContent>
+                        <TabsContent value="materi">
                             <ShowModules modules={course.modules} courseId={course.id} />
                         </TabsContent>
                         <TabsContent value="transaksi">

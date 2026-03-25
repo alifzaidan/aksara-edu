@@ -1,16 +1,16 @@
 import { Button } from '@/components/ui/button';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
-import { Crown, FileText } from 'lucide-react';
+import { Crown, FileText, MessageCircle } from 'lucide-react';
 
 interface CourseItem {
-    course: { title: string; slug: string; thumbnail: string };
+    course: { title: string; slug: string; thumbnail: string; group_url?: string | null };
 }
 interface BootcampItem {
-    bootcamp: { title: string; slug: string; thumbnail: string };
+    bootcamp: { title: string; slug: string; thumbnail: string; group_url?: string | null };
 }
 interface WebinarItem {
-    webinar: { title: string; slug: string; thumbnail: string };
+    webinar: { title: string; slug: string; thumbnail: string; group_url?: string | null };
 }
 
 interface Invoice {
@@ -33,23 +33,28 @@ export default function CheckoutSuccess({ invoice }: InvoiceProps) {
     let title = '';
     let link = '';
     let label = '';
+    let groupUrl: string | null = null;
 
     if (courseItems.length > 0) {
         title = `Checkout Kelas "${courseItems[0].course.title}" Berhasil!`;
         link = `/profile/my-courses/${courseItems[0].course.slug}`;
         label = 'Akses Kelas';
+        groupUrl = courseItems[0].course.group_url || null;
     } else if (bootcampItems.length > 0) {
         title = `Checkout Bootcamp "${bootcampItems[0].bootcamp.title}" Berhasil!`;
         link = `/profile/my-bootcamps/${bootcampItems[0].bootcamp.slug}`;
         label = 'Akses Bootcamp';
+        groupUrl = bootcampItems[0].bootcamp.group_url || null;
     } else if (webinarItems.length > 0) {
         title = `Checkout Webinar "${webinarItems[0].webinar.title}" Berhasil!`;
         link = `/profile/my-webinars/${webinarItems[0].webinar.slug}`;
         label = 'Akses Webinar';
+        groupUrl = webinarItems[0].webinar.group_url || null;
     } else {
         title = 'Checkout Berhasil!';
         link = '/profile';
         label = 'Lihat Profil';
+        groupUrl = null;
     }
 
     return (
@@ -71,6 +76,14 @@ export default function CheckoutSuccess({ invoice }: InvoiceProps) {
                             {label}
                         </Link>
                     </Button>
+                    {groupUrl && (
+                        <Button variant="secondary" className="mx-auto mb-4 w-fit bg-green-500 hover:bg-green-600 border-green-600" asChild>
+                            <a href={groupUrl} target="_blank" rel="noopener noreferrer">
+                                <MessageCircle className="size-4" />
+                                Masuk Grup WA
+                            </a>
+                        </Button>
+                    )}
                     <Button variant="outline" asChild>
                         <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
                             <FileText className="size-4" />

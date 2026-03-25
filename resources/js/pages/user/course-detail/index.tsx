@@ -3,19 +3,38 @@ import { Button } from '@/components/ui/button';
 import CourseLayout from '@/layouts/course-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { AlertTriangle, CheckCircle, ChevronLeft, ChevronRight, ExternalLink, FileDown, HelpCircle, XCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import {
+    AlertTriangle,
+    CheckCircle,
+    ChevronLeft,
+    ChevronRight,
+    ClipboardCheck,
+    ExternalLink,
+    FileDown,
+    HelpCircle,
+    Upload,
+    XCircle,
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+
+interface AssignmentSubmission {
+    id: string;
+    file_path: string;
+    status: 'pending' | 'approved' | 'rejected';
+    admin_note?: string | null;
+}
 
 interface Lesson {
     id: string;
     title: string;
-    type: 'video' | 'text' | 'file' | 'quiz';
+    type: 'video' | 'text' | 'file' | 'quiz' | 'assignment';
     content?: string;
     video_url?: string;
     attachment?: string;
     is_preview?: boolean | number;
     isCompleted: boolean;
+    assignment_submission?: AssignmentSubmission | null;
     quizzes?: {
         id: string;
         title: string;
@@ -30,7 +49,7 @@ interface Lesson {
             is_passed: boolean;
             time_taken: number;
             submitted_at: string;
-            answers_summary: any[];
+            answers_summary: unknown[];
         }[];
         questions: {
             id: string;
@@ -71,7 +90,7 @@ interface CourseDetailProps {
 
 function getYouTubeEmbedUrl(url: string): string {
     if (!url) return '';
-    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const youtubeRegex = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/;
     const match = url.match(youtubeRegex);
 
     if (match && match[1]) {
@@ -123,7 +142,7 @@ function VideoPlayer({ lesson }: { lesson: Lesson }) {
     );
 }
 
-function QuizDashboard({ lesson, onStartQuiz }: { lesson: Lesson; onStartQuiz: () => void }) {
+function QuizDashboard({ lesson }: { lesson: Lesson }) {
     const quiz = lesson.quizzes?.[0];
 
     if (!quiz) {
@@ -139,11 +158,6 @@ function QuizDashboard({ lesson, onStartQuiz }: { lesson: Lesson; onStartQuiz: (
     const attempts = quiz.attempts || [];
     const hasPassedAttempt = attempts.find((attempt) => attempt.is_passed);
 
-    // Add handler for viewing quiz details
-    const handleViewQuizDetails = () => {
-        router.get(`/quiz/${quiz.id}`);
-    };
-
     const handleStartQuiz = () => {
         router.get(`/quiz/${quiz.id}/start`);
     };
@@ -151,11 +165,6 @@ function QuizDashboard({ lesson, onStartQuiz }: { lesson: Lesson; onStartQuiz: (
     // Add handler for viewing answers
     const handleViewAnswers = () => {
         router.get(`/quiz/${quiz.id}/answers`);
-    };
-
-    // Add handler for viewing history
-    const handleViewHistory = () => {
-        router.get(`/quiz/${quiz.id}/history`);
     };
 
     return (
@@ -300,13 +309,16 @@ function QuizDashboard({ lesson, onStartQuiz }: { lesson: Lesson; onStartQuiz: (
 
 function LessonContent({
     lesson,
-    onQuizComplete,
-    courseSlug,
+    onAssignmentSubmitted,
 }: {
     lesson: Lesson | null;
-    onQuizComplete?: (lessonId: string) => void;
-    courseSlug?: string;
+    onAssignmentSubmitted?: (lessonId: string, submission: AssignmentSubmission) => void;
 }) {
+    const [assignmentFile, setAssignmentFile] = useState<File | null>(null);
+    const [isSubmittingAssignment, setIsSubmittingAssignment] = useState(false);
+    const [isDragOver, setIsDragOver] = useState(false);
+    const assignmentInputRef = useRef<HTMLInputElement | null>(null);
+
     if (!lesson) {
         return (
             <div className="bg-muted/40 flex h-full items-center justify-center rounded-lg">
@@ -315,13 +327,60 @@ function LessonContent({
         );
     }
 
-    const handleStartQuiz = () => {
-        const quiz = lesson.quizzes?.[0];
-        if (quiz?.id) {
-            router.get(`/quiz/${quiz.id}`);
-        } else {
-            toast.error('Quiz tidak tersedia');
+    const handleSubmitAssignment = async () => {
+        if (!lesson || lesson.type !== 'assignment') {
+            return;
         }
+
+        if (!assignmentFile) {
+            toast.error('Silakan pilih file PDF terlebih dahulu.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('assignment_file', assignmentFile);
+
+        setIsSubmittingAssignment(true);
+        try {
+            const response = await fetch(`/lesson/${lesson.id}/assignment-submit`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: formData,
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                toast.error(result?.message || 'Gagal mengirim tugas.');
+                return;
+            }
+
+            if (result?.submission) {
+                onAssignmentSubmitted?.(lesson.id, result.submission as AssignmentSubmission);
+            }
+            setAssignmentFile(null);
+            toast.success('Tugas berhasil dikirim. Status: masih di cek admin.');
+        } catch {
+            toast.error('Terjadi kesalahan saat mengirim tugas.');
+        } finally {
+            setIsSubmittingAssignment(false);
+        }
+    };
+
+    const handleAssignmentFileChange = (file: File | null) => {
+        if (!file) {
+            setAssignmentFile(null);
+            return;
+        }
+
+        const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        if (!isPdf) {
+            toast.error('File harus berformat PDF.');
+            return;
+        }
+
+        setAssignmentFile(file);
     };
 
     // const handleBackToDashboard = () => {
@@ -389,9 +448,104 @@ function LessonContent({
         case 'quiz':
             return (
                 <ErrorBoundary>
-                    <QuizDashboard lesson={lesson} onStartQuiz={handleStartQuiz} />
+                    <QuizDashboard lesson={lesson} />
                 </ErrorBoundary>
             );
+        case 'assignment': {
+            const submission = lesson.assignment_submission;
+
+            return (
+                <div className="space-y-4">
+                    <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: lesson.content || '' }} />
+
+                    <div className="rounded-lg border border-purple-200 bg-purple-50 p-4">
+                        <div className="mb-2 flex items-center gap-2 text-purple-700">
+                            <ClipboardCheck className="h-5 w-5" />
+                            <p className="font-medium">Unggah Tugas (PDF)</p>
+                        </div>
+
+                        {submission && (
+                            <div className="mb-3 rounded border bg-white p-3 text-sm">
+                                <p>
+                                    Status:{' '}
+                                    <span
+                                        className={`font-semibold capitalize ${
+                                            submission.status === 'approved'
+                                                ? 'text-green-600'
+                                                : submission.status === 'rejected'
+                                                  ? 'text-red-600'
+                                                  : 'text-amber-600'
+                                        }`}
+                                    >
+                                        {submission.status}
+                                    </span>
+                                </p>
+                                <a
+                                    href={`/storage/${submission.file_path}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 underline"
+                                >
+                                    Lihat file yang sudah dikirim
+                                </a>
+                                {submission.admin_note && <p className="mt-1 text-red-600">Catatan admin: {submission.admin_note}</p>}
+                                {submission.status === 'pending' && (
+                                    <p className="mt-1 text-amber-600">Tugas masih di cek admin. Anda belum bisa lanjut ke materi berikutnya.</p>
+                                )}
+                            </div>
+                        )}
+
+                        <input
+                            ref={assignmentInputRef}
+                            type="file"
+                            accept="application/pdf"
+                            onChange={(e) => handleAssignmentFileChange(e.target.files?.[0] ?? null)}
+                            className="hidden"
+                        />
+
+                        <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => assignmentInputRef.current?.click()}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    assignmentInputRef.current?.click();
+                                }
+                            }}
+                            onDragOver={(e) => {
+                                e.preventDefault();
+                                setIsDragOver(true);
+                            }}
+                            onDragLeave={(e) => {
+                                e.preventDefault();
+                                setIsDragOver(false);
+                            }}
+                            onDrop={(e) => {
+                                e.preventDefault();
+                                setIsDragOver(false);
+                                handleAssignmentFileChange(e.dataTransfer.files?.[0] ?? null);
+                            }}
+                            className={`mb-2 cursor-pointer rounded-lg border-2 border-dashed p-4 text-center transition-colors ${
+                                isDragOver ? 'border-purple-500 bg-purple-100' : 'border-purple-300 bg-white'
+                            }`}
+                        >
+                            <p className="text-sm font-medium text-purple-700">Klik untuk pilih file atau drag & drop PDF di sini</p>
+                            {assignmentFile ? (
+                                <p className="mt-1 text-xs text-green-700">File terpilih: {assignmentFile.name}</p>
+                            ) : (
+                                <p className="text-muted-foreground mt-1 text-xs">Belum ada file dipilih</p>
+                            )}
+                        </div>
+
+                        <Button onClick={handleSubmitAssignment} disabled={!assignmentFile || isSubmittingAssignment} className="gap-2">
+                            <Upload className="h-4 w-4" />
+                            {isSubmittingAssignment ? 'Mengirim...' : submission ? 'Upload Ulang Tugas' : 'Kirim Tugas'}
+                        </Button>
+                    </div>
+                </div>
+            );
+        }
         default:
             return <div>Tipe materi tidak dikenal.</div>;
     }
@@ -424,7 +578,7 @@ export default function CourseDetail({ course, auto_select_lesson_id, progress_i
         return modules[0]?.lessons[0] || null;
     });
 
-    const [isQuizFullscreen, setIsQuizFullscreen] = useState(false);
+    const isQuizFullscreen = false;
 
     // Initialize completion state from database
     const [moduleData, setModuleData] = useState<Module[]>(() => {
@@ -528,6 +682,35 @@ export default function CourseDetail({ course, auto_select_lesson_id, progress_i
         }
     };
 
+    const handleAssignmentSubmitted = (lessonId: string, submission: AssignmentSubmission) => {
+        setModuleData((prevModules) =>
+            prevModules.map((module) => ({
+                ...module,
+                lessons: module.lessons.map((lesson) =>
+                    lesson.id === lessonId
+                        ? {
+                              ...lesson,
+                              assignment_submission: submission,
+                              isCompleted: false,
+                          }
+                        : lesson,
+                ),
+            })),
+        );
+
+        setSelectedLesson((prevLesson) => {
+            if (!prevLesson || prevLesson.id !== lessonId) {
+                return prevLesson;
+            }
+
+            return {
+                ...prevLesson,
+                assignment_submission: submission,
+                isCompleted: false,
+            };
+        });
+    };
+
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: course.title,
@@ -546,9 +729,7 @@ export default function CourseDetail({ course, auto_select_lesson_id, progress_i
     };
 
     // Check if current lesson is quiz and in fullscreen mode
-    const currentLessonContent = selectedLesson ? (
-        <LessonContent lesson={selectedLesson} onQuizComplete={handleLessonComplete} courseSlug={course.slug} />
-    ) : null;
+    const currentLessonContent = selectedLesson ? <LessonContent lesson={selectedLesson} onAssignmentSubmitted={handleAssignmentSubmitted} /> : null;
 
     // If quiz is in fullscreen mode, render without course layout
     if (selectedLesson?.type === 'quiz' && isQuizFullscreen) {
@@ -678,6 +859,59 @@ export default function CourseDetail({ course, auto_select_lesson_id, progress_i
                             <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2 text-blue-600">
                                 <HelpCircle className="h-5 w-5" />
                                 <span className="font-medium">Selesaikan Quiz untuk Melanjutkan</span>
+                            </div>
+                        )
+                    ) : selectedLesson && selectedLesson.type === 'assignment' ? (
+                        selectedLesson.isCompleted ? (
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 rounded-lg bg-green-50 px-4 py-2 text-green-600">
+                                    <CheckCircle className="h-5 w-5" />
+                                    <span className="font-medium">Penugasan Sudah Di-ACC Admin</span>
+                                </div>
+                                {(() => {
+                                    if (!selectedLesson) return null;
+                                    if (moduleData.length === 0) return null;
+                                    const lastModule = moduleData[moduleData.length - 1];
+                                    if (lastModule.lessons.length === 0) return null;
+                                    const isLast = selectedLesson.id === lastModule.lessons[lastModule.lessons.length - 1].id;
+                                    if (isLast) return null;
+
+                                    let nextLesson: Lesson | null = null;
+                                    let found = false;
+                                    for (const module of moduleData) {
+                                        for (let i = 0; i < module.lessons.length; i++) {
+                                            if (module.lessons[i].id === selectedLesson.id) {
+                                                if (i < module.lessons.length - 1) {
+                                                    nextLesson = module.lessons[i + 1];
+                                                } else {
+                                                    const moduleIndex = moduleData.indexOf(module);
+                                                    if (moduleIndex < moduleData.length - 1) {
+                                                        nextLesson = moduleData[moduleIndex + 1].lessons[0];
+                                                    }
+                                                }
+                                                found = true;
+                                                break;
+                                            }
+                                        }
+                                        if (found) break;
+                                    }
+
+                                    if (!nextLesson) return null;
+                                    return (
+                                        <Button variant="outline" onClick={() => setSelectedLesson(nextLesson)} className="gap-2">
+                                            Selanjutnya <ChevronRight className="h-4 w-4" />
+                                        </Button>
+                                    );
+                                })()}
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 rounded-lg bg-amber-50 px-4 py-2 text-amber-700">
+                                <ClipboardCheck className="h-5 w-5" />
+                                <span className="font-medium">
+                                    {selectedLesson.assignment_submission?.status === 'pending'
+                                        ? 'Masih di cek admin. Belum bisa lanjut ke materi selanjutnya.'
+                                        : 'Kumpulkan tugas. Belum bisa lanjut ke materi selanjutnya.'}
+                                </span>
                             </div>
                         )
                     ) : (

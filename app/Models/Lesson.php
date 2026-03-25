@@ -25,6 +25,11 @@ class Lesson extends Model
         return $this->hasMany(LessonCompletion::class);
     }
 
+    public function assignmentSubmissions()
+    {
+        return $this->hasMany(LessonAssignmentSubmission::class);
+    }
+
     public function isCompletedByUser($userId)
     {
         return $this->completions()->where('user_id', $userId)->exists();

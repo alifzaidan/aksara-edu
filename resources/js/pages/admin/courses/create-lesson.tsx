@@ -7,11 +7,11 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Editor } from '@tinymce/tinymce-react';
-import { FormEventHandler, useRef, useState } from 'react';
+import { FormEventHandler, useEffect, useRef, useState } from 'react';
 
 interface Lesson {
     title: string;
-    type: 'text' | 'video' | 'file' | 'quiz';
+    type: 'text' | 'video' | 'file' | 'quiz' | 'assignment';
     description?: string;
     is_free: boolean;
     content?: string;
@@ -53,6 +53,25 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
     const [isPreview, setIsPreview] = useState(true);
     const titleInput = useRef<HTMLInputElement>(null);
 
+    const shouldKeepDialogOpen = (target: EventTarget | null) => {
+        const element = target as HTMLElement | null;
+        return !!element?.closest('.tox-tinymce-aux, .tox-menu, .tox-dialog, .moxman-window, .tam-assetmanager-root');
+    };
+
+    useEffect(() => {
+        const handleTinyMceFocus = (event: FocusEvent) => {
+            const target = event.target as HTMLElement | null;
+            if (target?.closest('.tox-tinymce-aux, .moxman-window, .tam-assetmanager-root')) {
+                event.stopImmediatePropagation();
+            }
+        };
+
+        document.addEventListener('focusin', handleTinyMceFocus, true);
+        return () => {
+            document.removeEventListener('focusin', handleTinyMceFocus, true);
+        };
+    }, []);
+
     const handleSubmit: FormEventHandler = (e) => {
         e.preventDefault();
         if (!title.trim()) {
@@ -60,13 +79,14 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
             titleInput.current?.focus();
             return;
         }
-        
+
         const lessonData = {
             title,
             type,
             description,
             is_free: isFree,
             content: type === 'text' ? content : undefined,
+            ...(type === 'assignment' ? { content } : {}),
             video_url: type === 'video' ? videoUrl : undefined,
             attachment: type === 'file' ? attachment : undefined,
             quizzes:
@@ -81,7 +101,7 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                     : undefined,
             is_preview: isPreview,
         };
-        
+
         onAdd(lessonData);
         setTitle('');
         setDescription('');
@@ -95,7 +115,26 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
     };
 
     return (
-        <DialogContent>
+        <DialogContent
+            onInteractOutside={(event) => {
+                const target = (event as { detail?: { originalEvent?: Event } }).detail?.originalEvent?.target ?? event.target;
+                if (shouldKeepDialogOpen(target)) {
+                    event.preventDefault();
+                }
+            }}
+            onPointerDownOutside={(event) => {
+                const target = (event as { detail?: { originalEvent?: Event } }).detail?.originalEvent?.target ?? event.target;
+                if (shouldKeepDialogOpen(target)) {
+                    event.preventDefault();
+                }
+            }}
+            onFocusOutside={(event) => {
+                const target = (event as { detail?: { originalEvent?: Event } }).detail?.originalEvent?.target ?? event.target;
+                if (shouldKeepDialogOpen(target)) {
+                    event.preventDefault();
+                }
+            }}
+        >
             <DialogTitle>Tambah Materi</DialogTitle>
             <DialogDescription>Masukkan judul, tipe, dan deskripsi materi.</DialogDescription>
             <form className="space-y-6" onSubmit={handleSubmit}>
@@ -141,6 +180,7 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                                 <SelectItem value="video">Video</SelectItem>
                                 <SelectItem value="file">File</SelectItem>
                                 <SelectItem value="quiz">Quiz</SelectItem>
+                                <SelectItem value="assignment">Penugasan</SelectItem>
                             </SelectGroup>
                         </SelectContent>
                     </Select>
@@ -242,19 +282,22 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                             />
                             {/* Switch for file download permission */}
                             <div className="mt-2 flex items-center space-x-2">
-                                <Switch 
-                                    id="is-preview" 
-                                    checked={isPreview} 
+                                <Switch
+                                    id="is-preview"
+                                    checked={isPreview}
                                     onCheckedChange={attachment && attachment.type !== 'application/pdf' ? undefined : setIsPreview}
-                                    className={attachment && attachment.type !== 'application/pdf' ? 'opacity-50 cursor-not-allowed' : ''}
+                                    className={attachment && attachment.type !== 'application/pdf' ? 'cursor-not-allowed opacity-50' : ''}
                                 />
-                                <Label htmlFor="is-preview" className={attachment && attachment.type !== 'application/pdf' ? 'text-muted-foreground' : ''}>
+                                <Label
+                                    htmlFor="is-preview"
+                                    className={attachment && attachment.type !== 'application/pdf' ? 'text-muted-foreground' : ''}
+                                >
                                     {isPreview ? 'File hanya bisa dilihat (preview)' : 'File bisa di-download'}
                                 </Label>
                             </div>
                             {/* Show message when non-PDF file is selected */}
                             {attachment && attachment.type !== 'application/pdf' && (
-                                <div className="mt-1 text-xs text-muted-foreground">
+                                <div className="text-muted-foreground mt-1 text-xs">
                                     Preview hanya tersedia untuk file PDF. File non-PDF otomatis bisa di-download.
                                 </div>
                             )}
@@ -287,7 +330,7 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                                             </p>
                                         </object>
                                     ) : (
-                                        <div className="text-xs text-muted-foreground italic">Preview hanya tersedia untuk file PDF.</div>
+                                        <div className="text-muted-foreground text-xs italic">Preview hanya tersedia untuk file PDF.</div>
                                     )}
                                 </div>
                             )}
@@ -319,7 +362,7 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                                 value={quizTimeLimit}
                                 onChange={(e) => setQuizTimeLimit(Number(e.target.value))}
                             />
-                            <div className="text-muted-foreground text-xs mt-1">
+                            <div className="text-muted-foreground mt-1 text-xs">
                                 Isi <span className="font-bold">0</span> jika quiz tidak memiliki batas waktu
                             </div>
                             <Label htmlFor="quiz-passing-score" className="mb-1 block text-sm font-medium">
@@ -337,6 +380,25 @@ export default function CreateLesson({ setOpen, onAdd }: CreateLessonProps) {
                             <p className="text-muted-foreground text-sm">
                                 Simpan quiz terlebih dahulu. Untuk mengakses soal-soal, silahkan mengkases melalui detail kelas.
                             </p>
+                        </div>
+                    )}
+                    {type === 'assignment' && (
+                        <div>
+                            <Label htmlFor="assignment-content" className="mb-1 block text-sm font-medium">
+                                Instruksi Penugasan
+                            </Label>
+                            <Editor
+                                apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
+                                value={content}
+                                onEditorChange={(val) => setContent(val)}
+                                init={{
+                                    plugins: ['anchor', 'autolink', 'link', 'lists', 'table', 'wordcount'],
+                                    onboarding: false,
+                                    toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | link | removeformat',
+                                    height: 260,
+                                }}
+                            />
+                            <p className="text-muted-foreground mt-1 text-xs">Peserta akan mengunggah tugas dalam format PDF.</p>
                         </div>
                     )}
                     <div className="mt-2 flex items-center space-x-2">

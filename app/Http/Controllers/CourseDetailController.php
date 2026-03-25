@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\Lesson;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -27,6 +26,9 @@ class CourseDetailController extends Controller
             },
             'modules.lessons.completions' => function ($query) use ($userId) {
                 $query->where('user_id', $userId);
+            },
+            'modules.lessons.assignmentSubmissions' => function ($query) use ($userId) {
+                $query->where('user_id', $userId)->latest();
             }
         ]);
 
@@ -71,6 +73,17 @@ class CourseDetailController extends Controller
                                 }
                             }
                         }
+                    }
+                }
+
+                if ($lesson->type === 'assignment') {
+                    $assignmentSubmission = $lesson->assignmentSubmissions->first();
+                    $lesson->assignment_submission = $assignmentSubmission;
+
+                    if ($assignmentSubmission && $assignmentSubmission->status === 'approved') {
+                        $isCompleted = true;
+                    } else {
+                        $isCompleted = false;
                     }
                 }
 

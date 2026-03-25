@@ -1,11 +1,10 @@
 import { NavUser } from '@/components/nav-user';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { FileDown, FileText, LogOut, PlayCircle, HelpCircle, CheckCircle, Circle } from 'lucide-react';
+import { FileDown, FileText, LogOut, PlayCircle, HelpCircle, CheckCircle, Circle, ClipboardCheck } from 'lucide-react';
 import { NavFooter } from './nav-footer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
-import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { useMemo, useState, useEffect } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
@@ -14,7 +13,7 @@ import { useSidebar } from '@/components/ui/sidebar';
 interface Lesson {
     id: string;
     title: string;
-    type: 'video' | 'text' | 'file' | 'quiz';
+    type: 'video' | 'text' | 'file' | 'quiz' | 'assignment';
     isCompleted: boolean;
     quizzes?: any[];
 }
@@ -57,6 +56,7 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
         text: <FileText className="text-muted-foreground h-4 w-4" />,
         file: <FileDown className="text-muted-foreground h-4 w-4" />,
         quiz: <HelpCircle className="text-muted-foreground h-4 w-4" />,
+        assignment: <ClipboardCheck className="text-muted-foreground h-4 w-4" />,
     };
 
     // Calculate progress

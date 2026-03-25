@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignUuid('module_id')->constrained('modules')->onDelete('cascade');
             $table->string('title');
             $table->text('description')->nullable();
-            $table->enum('type', ['text', 'video', 'file', 'quiz'])->default('text');
+            $table->enum('type', ['text', 'video', 'file', 'quiz', 'assignment'])->default('text');
             $table->text('video_url')->nullable();
             $table->text('content')->nullable();
             $table->text('attachment')->nullable();

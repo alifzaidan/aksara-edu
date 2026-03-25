@@ -101,6 +101,7 @@ class CourseController extends Controller
             'short_description' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'key_points' => 'nullable|string',
+            'group_url' => 'nullable|string',
             'thumbnail' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'strikethrough_price' => 'required|numeric|min:0',
             'price' => 'required|numeric|min:0',
@@ -196,7 +197,7 @@ class CourseController extends Controller
 
     public function show(string $id)
     {
-        $course = Course::with(['category', 'user', 'tools', 'images', 'modules.lessons.quizzes.questions'])->findOrFail($id);
+        $course = Course::with(['category', 'user', 'tools', 'images', 'modules.lessons.quizzes.questions', 'modules.lessons.assignmentSubmissions.user'])->findOrFail($id);
 
         $transactions = Invoice::with(['user.referrer'])
             ->whereHas('courseItems', function ($query) use ($id) {
@@ -237,6 +238,7 @@ class CourseController extends Controller
             'short_description' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'key_points' => 'nullable|string',
+            'group_url' => 'nullable|string',
             'thumbnail' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'strikethrough_price' => 'required|numeric|min:0',
             'price' => 'required|numeric|min:0',
