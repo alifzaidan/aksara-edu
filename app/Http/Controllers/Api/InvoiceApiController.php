@@ -189,14 +189,45 @@ class InvoiceApiController extends Controller
         $pendingTransactions = $invoices->where('status', 'pending')->count();
         $failedTransactions = $invoices->where('status', 'failed')->count();
 
+        $paidInvoices = $invoices->where('status', 'paid');
+
         // Revenue statistics
-        $totalRevenue = $invoices->where('status', 'paid')->sum('nett_amount');
+        $totalRevenue = $paidInvoices->sum('nett_amount');
 
         // Revenue bulan ini dihitung berdasarkan paid_at
-        $thisMonthRevenue = $invoices
-            ->where('status', 'paid')
+        $thisMonthRevenue = $paidInvoices
             ->filter(function ($invoice) {
                 return $invoice->paid_at && Carbon::parse($invoice->paid_at)->isCurrentMonth();
+            })
+            ->sum('nett_amount');
+
+        $today = Carbon::today();
+        $yesterday = Carbon::yesterday();
+        $lastMonthStart = Carbon::now()->subMonthNoOverflow()->startOfMonth();
+        $lastMonthEnd = Carbon::now()->subMonthNoOverflow()->endOfMonth();
+
+        $totalNominalToday = $paidInvoices
+            ->filter(function ($invoice) use ($today) {
+                return $invoice->paid_at && Carbon::parse($invoice->paid_at)->isSameDay($today);
+            })
+            ->sum('nett_amount');
+
+        $totalNominalYesterday = $paidInvoices
+            ->filter(function ($invoice) use ($yesterday) {
+                return $invoice->paid_at && Carbon::parse($invoice->paid_at)->isSameDay($yesterday);
+            })
+            ->sum('nett_amount');
+
+        $totalNominalLastMonth = $paidInvoices
+            ->filter(function ($invoice) use ($lastMonthStart, $lastMonthEnd) {
+                if (!$invoice->paid_at) {
+                    return false;
+                }
+
+                $paidAt = Carbon::parse($invoice->paid_at);
+
+                return $paidAt->greaterThanOrEqualTo($lastMonthStart)
+                    && $paidAt->lessThanOrEqualTo($lastMonthEnd);
             })
             ->sum('nett_amount');
 
@@ -209,6 +240,9 @@ class InvoiceApiController extends Controller
             'success' => true,
             'data' => [
                 'total_transactions' => $totalTransactions,
+                'total_nominal_today' => $totalNominalToday,
+                'total_nominal_yesterday' => $totalNominalYesterday,
+                'total_nominal_last_month' => $totalNominalLastMonth,
                 'paid_transactions' => $paidTransactions,
                 'pending_transactions' => $pendingTransactions,
                 'failed_transactions' => $failedTransactions,
