@@ -22,7 +22,7 @@ export default function FaqSection() {
                 <AccordionItem value="getting-started" className="rounded-lg border-2 border-zinc-400 px-4 py-2">
                     <AccordionTrigger className="w-full text-left text-zinc-950 hover:cursor-pointer dark:text-zinc-50">
                         <div className="flex items-center justify-between">
-                            <p className="md:text-lg">Apa itu Aksademi?</p>
+                            <p className="md:text-lg">Apa itu Aksademy?</p>
                             <ChevronUp className="text-primary h-4 w-4 transition-transform duration-200 group-data-expanded:-rotate-180 dark:text-zinc-50" />
                         </div>
                     </AccordionTrigger>
@@ -36,13 +36,13 @@ export default function FaqSection() {
                 <AccordionItem value="animation-properties" className="rounded-lg border-2 border-zinc-400 px-4 py-2">
                     <AccordionTrigger className="w-full text-left text-zinc-950 hover:cursor-pointer dark:text-zinc-50">
                         <div className="flex items-center justify-between">
-                            <p className="md:text-lg">Apa saja fitur yang tersedia di Aksademi?</p>
+                            <p className="md:text-lg">Apa saja fitur yang tersedia di Aksademy?</p>
                             <ChevronUp className="text-primary h-4 w-4 transition-transform duration-200 group-data-expanded:-rotate-180 dark:text-zinc-50" />
                         </div>
                     </AccordionTrigger>
                     <AccordionContent>
                         <p className="text-sm text-zinc-500 md:text-base dark:text-zinc-400">
-                            Aksademi menawarkan berbagai fitur seperti Kelas Online, Bootcamp, dan pelatihan dalam bentuk Webinar yang mencakup
+                            Aksademy menawarkan berbagai fitur seperti Kelas Online, Bootcamp, dan pelatihan dalam bentuk Webinar yang mencakup
                             berbagai disiplin ilmu. Setiap fitur dirancang untuk memberikan pengalaman belajar yang interaktif dan mendalam,
                             memungkinkan pengguna untuk mengembangkan keterampilan mereka secara efektif.
                         </p>
@@ -66,13 +66,13 @@ export default function FaqSection() {
                 <AccordionItem value="community-and-support" className="rounded-lg border-2 border-zinc-400 px-4 py-2">
                     <AccordionTrigger className="w-full text-left text-zinc-950 hover:cursor-pointer dark:text-zinc-50">
                         <div className="flex items-center justify-between">
-                            <p className="md:text-lg">Kemana saya bisa mendapatkan informasi lebih lanjut tentang Aksademi?</p>
+                            <p className="md:text-lg">Kemana saya bisa mendapatkan informasi lebih lanjut tentang Aksademy?</p>
                             <ChevronUp className="text-primary h-4 w-4 transition-transform duration-200 group-data-expanded:-rotate-180 dark:text-zinc-50" />
                         </div>
                     </AccordionTrigger>
                     <AccordionContent>
                         <p className="text-sm text-zinc-500 md:text-base dark:text-zinc-400">
-                            Untuk informasi lebih lanjut tentang Aksademi, Anda dapat menghubungi admin kami di{' '}
+                            Untuk informasi lebih lanjut tentang Aksademy, Anda dapat menghubungi admin kami di{' '}
                             <a href="https://wa.me/+6285142505794" className="text-primary hover:underline">
                                 +6285142505794
                             </a>
