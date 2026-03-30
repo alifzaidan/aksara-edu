@@ -132,7 +132,7 @@ class DiscountCodeController extends Controller
         $courses = Course::select('id', 'title', 'price')->where('status', 'published')->get();
 
         $bootcamps = Bootcamp::select('id', 'title', 'price', 'registration_deadline', 'start_date', 'batch')
-            ->where('status', 'published')
+            ->whereIn('status', ['published', 'hidden'])
             ->get()
             ->map(function ($bootcamp) {
                 return [
@@ -326,7 +326,7 @@ class DiscountCodeController extends Controller
         $courses = Course::select('id', 'title', 'price')->where('status', 'published')->get();
 
         $bootcamps = Bootcamp::select('id', 'title', 'price', 'registration_deadline', 'start_date', 'batch')
-            ->where('status', 'published')
+            ->whereIn('status', ['published', 'hidden'])
             ->get()
             ->map(function ($bootcamp) {
                 return [

@@ -213,7 +213,7 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                         <div className="flex-1">
                             <h4 className="font-medium text-yellow-800 dark:text-yellow-200">Bootcamp Disembunyikan</h4>
                             <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
-                                Peserta hanya dapat mengakses bootcamp melalui link langsung, namun bootcamp ini tidak akan muncul di dahsboard. Anda
+                                Peserta hanya dapat mengakses bootcamp melalui link langsung, namun bootcamp ini tidak akan muncul di dashboard. Anda
                                 dapat mempublikasikan kembali bootcamp ini untuk membuatnya terlihat publik.
                             </p>
                         </div>

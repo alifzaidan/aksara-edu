@@ -25,7 +25,7 @@ class BootcampController extends Controller
 
         if ($isAffiliate) {
             $bootcamps = Bootcamp::with(['category', 'mentors', 'schedules', 'certificate'])
-                ->where('status', 'published')
+                ->whereIn('status', ['published', 'hidden'])
                 ->latest()
                 ->get();
         } else {
