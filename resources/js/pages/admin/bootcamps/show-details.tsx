@@ -195,7 +195,7 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                 </div>
             </div>
 
-            {bootcamp.status === 'published' ? (
+            {bootcamp.status === 'published' || bootcamp.status === 'hidden' ? (
                 <p className="text-muted-foreground text-center text-sm">
                     {isAffiliate
                         ? 'Share link afiliasi diatas ke sosial media, whatsapp, tiktok, landing page, email ataupun channel penjualan lainnya untuk mendapatkan komisi dari setiap pendaftaran'
@@ -203,8 +203,22 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                 </p>
             ) : (
                 <p className="text-center text-sm text-red-500">
-                    Bootcamp ini belum diterbitkan. Silakan terbitkan bootcamp terlebih dahulu untuk membagikan link akses bootcamp.
+                    Bootcamp ini belum diterbitkan. Silahkan terbitkan bootcamp terlebih dahulu untuk membagikan link akses bootcamp.
                 </p>
+            )}
+
+            {bootcamp.status === 'hidden' && (
+                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
+                    <div className="flex items-start gap-3">
+                        <div className="flex-1">
+                            <h4 className="font-medium text-yellow-800 dark:text-yellow-200">Bootcamp Disembunyikan</h4>
+                            <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
+                                Peserta hanya dapat mengakses bootcamp melalui link langsung, namun bootcamp ini tidak akan muncul di dahsboard. Anda
+                                dapat mempublikasikan kembali bootcamp ini untuk membuatnya terlihat publik.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Detail komisi untuk affiliate */}

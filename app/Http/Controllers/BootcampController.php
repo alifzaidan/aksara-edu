@@ -573,6 +573,15 @@ class BootcampController extends Controller
         return back()->with('success', 'Bootcamp berhasil ditutup.');
     }
 
+    public function hidden(string $id)
+    {
+        $bootcamp = Bootcamp::findOrFail($id);
+        $bootcamp->status = 'hidden';
+        $bootcamp->save();
+
+        return back()->with('success', 'Bootcamp berhasil disembunyikan.');
+    }
+
     public function addScheduleRecording(Request $request, string $bootcampId, string $scheduleId)
     {
         $request->validate([

@@ -176,6 +176,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/bootcamps/{bootcamp}/publish', [BootcampController::class, 'publish'])->name('bootcamps.publish');
         Route::post('/bootcamps/{bootcamp}/archive', [BootcampController::class, 'archive'])->name('bootcamps.archive');
         Route::post('/bootcamps/{bootcamp}/duplicate', [BootcampController::class, 'duplicate'])->name('bootcamps.duplicate');
+        Route::post('/bootcamps/{bootcamp}/hidden', [BootcampController::class, 'hidden'])->name('bootcamps.hidden');
         Route::post('/bootcamps/{bootcamp}/schedules/{schedule}/recording', [BootcampController::class, 'addScheduleRecording'])->name('bootcamps.add-recording');
         Route::delete('/bootcamps/{bootcamp}/schedules/{schedule}/recording', [BootcampController::class, 'removeScheduleRecording'])->name('bootcamps.remove-recording');
 

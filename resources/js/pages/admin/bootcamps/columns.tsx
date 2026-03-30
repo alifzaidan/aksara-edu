@@ -80,7 +80,7 @@ export type Bootcamp = {
     price: number;
     start_date: string;
     end_date: string;
-    status: 'draft' | 'published' | 'archived';
+    status: 'draft' | 'published' | 'archived' | 'hidden';
     certificate?: {
         id: string;
         title: string;
@@ -191,6 +191,7 @@ export const columns: ColumnDef<Bootcamp>[] = [
             if (status === 'draft') color = 'bg-gray-200 text-gray-800';
             if (status === 'published') color = 'bg-blue-100 text-blue-800';
             if (status === 'archived') color = 'bg-zinc-300 text-zinc-700';
+            if (status === 'hidden') color = 'bg-yellow-300 text-yellow-700';
             return <Badge className={`capitalize ${color} border-0`}>{status}</Badge>;
         },
     },

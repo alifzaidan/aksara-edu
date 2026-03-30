@@ -44,7 +44,7 @@ class BootcampController extends Controller
     {
         $this->handleReferralCode($request);
 
-        if ($bootcamp->status !== 'published') {
+        if ($bootcamp->status !== 'published' && $bootcamp->status !== 'hidden') {
             return Inertia::render('user/unavailable/index', [
                 'title' => 'Bootcamp Tidak Tersedia',
                 'item' => $bootcamp->only(['title', 'slug', 'status']),
@@ -93,7 +93,7 @@ class BootcampController extends Controller
     {
         $this->handleReferralCode($request);
 
-        if ($bootcamp->status !== 'published') {
+        if ($bootcamp->status !== 'published' && $bootcamp->status !== 'hidden') {
             return Inertia::render('user/unavailable/index', [
                 'title' => 'Bootcamp Tidak Tersedia',
                 'item' => $bootcamp->only(['title', 'slug', 'status']),

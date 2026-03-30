@@ -7,7 +7,7 @@ import { BreadcrumbItem, SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Award, CircleX, Copy, Plus, Send, SquarePen, Trash } from 'lucide-react';
+import { Award, CircleX, Copy, EyeOff, Plus, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { Participant } from './columns-participants';
@@ -165,7 +165,7 @@ export default function ShowBootcamp({ bootcamp, transactions, participants, rat
                         <div>
                             <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
                             <div className="space-y-4 rounded-lg border p-4">
-                                {(bootcamp.status === 'draft' || bootcamp.status === 'archived') && (
+                                {(bootcamp.status === 'draft' || bootcamp.status === 'archived' || bootcamp.status === 'hidden') && (
                                     <>
                                         {!certificate && (
                                             <div className="mb-4 rounded-lg bg-red-50 p-3 text-center text-sm text-red-700">
@@ -181,6 +181,14 @@ export default function ShowBootcamp({ bootcamp, transactions, participants, rat
                                     </>
                                 )}
                                 {bootcamp.status === 'published' && (
+                                    <Button asChild className="w-full">
+                                        <Link method="post" href={route('bootcamps.hidden', { bootcamp: bootcamp.id })}>
+                                            <EyeOff />
+                                            Sembunyikan
+                                        </Link>
+                                    </Button>
+                                )}
+                                {(bootcamp.status === 'published' || bootcamp.status === 'hidden') && (
                                     <Button asChild className="w-full">
                                         <Link method="post" href={route('bootcamps.archive', { bootcamp: bootcamp.id })}>
                                             <CircleX />
