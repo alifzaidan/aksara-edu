@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('phone_number')->nullable();
+            $table->string('instance')->nullable();
             $table->string('bio')->nullable();
             $table->string('password');
             $table->char('affiliate_code', 36)->nullable();

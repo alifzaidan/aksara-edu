@@ -9,6 +9,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import {
     BookText,
+    Building,
     Calendar,
     CheckCircle,
     ChevronLeft,
@@ -34,6 +35,7 @@ interface UserData {
     name: string;
     email: string;
     phone_number?: string;
+    instance?: string;
     avatar?: string;
     created_at: string;
     roles: Array<{ name: string }>;
@@ -381,7 +383,7 @@ export default function UserShow({ user, invoices, enrollments, stats }: UserSho
                                 </TooltipContent>
                             </Tooltip>
                             <DialogContent>
-                                <EditUser user={{ ...user, phone_number: user.phone_number ?? '' }} setOpen={setEditDialogOpen} />
+                                <EditUser user={{ ...user, instance: user.instance ?? '', phone_number: user.phone_number ?? '' }} setOpen={setEditDialogOpen} />
                             </DialogContent>
                         </Dialog>
 
@@ -440,6 +442,10 @@ export default function UserShow({ user, invoices, enrollments, stats }: UserSho
                                             <span>{user.phone_number}</span>
                                         </div>
                                     )}
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <Building className="text-muted-foreground h-4 w-4" />
+                                        <span>{user.instance}</span>
+                                    </div>
                                     <div className="flex items-center gap-2 text-sm">
                                         <Calendar className="text-muted-foreground h-4 w-4" />
                                         <span>Bergabung {formatDate(user.created_at)}</span>
@@ -525,11 +531,11 @@ export default function UserShow({ user, invoices, enrollments, stats }: UserSho
                                                 enrollment.type === 'course'
                                                     ? enrollment.course?.user?.name
                                                     : enrollment.type === 'webinar'
-                                                      ? enrollment.webinar?.user?.name
-                                                      : (enrollment.bootcamp?.host_name ??
-                                                        (enrollment.bootcamp?.mentors?.length
-                                                            ? enrollment.bootcamp.mentors.map((mentor) => mentor.name).join(', ')
-                                                            : undefined));
+                                                        ? enrollment.webinar?.user?.name
+                                                        : (enrollment.bootcamp?.host_name ??
+                                                            (enrollment.bootcamp?.mentors?.length
+                                                                ? enrollment.bootcamp.mentors.map((mentor) => mentor.name).join(', ')
+                                                                : undefined));
                                             return (
                                                 <div key={enrollment.id} className="flex items-start gap-4 rounded-lg border p-4">
                                                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100">
