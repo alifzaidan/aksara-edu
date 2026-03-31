@@ -13,6 +13,7 @@ type RegisterForm = {
     name: string;
     email: string;
     phone_number: string;
+    instance?: string;
     password: string;
     password_confirmation: string;
     affiliate_code?: string;
@@ -39,6 +40,7 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
         name: '',
         email: '',
         phone_number: '',
+        instance: '',
         password: '',
         password_confirmation: '',
         affiliate_code: getReferralCode(),
@@ -121,6 +123,24 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
                             placeholder="08xxxxxxxxxx"
                         />
                         <InputError message={errors.phone_number} />
+                    </div>
+                    
+                    <div className="grid gap-2">
+                        <Label htmlFor="instance">Instansi</Label>
+                        <Input
+                            id="instance"
+                            type="text"
+                            tabIndex={2}
+                            autoComplete="instance"
+                            value={data.instance}
+                            onChange={(e) => setData('instance', e.target.value)}
+                            disabled={processing}
+                            placeholder="Masukkan Instansi Anda (opsional)"
+                        />
+                        <p className="text-xs text-gray-500">
+                            Kosongkan jika tidak memiliki instansi
+                        </p>
+                        <InputError message={errors.instance} />
                     </div>
 
                     <div className="grid gap-2">
