@@ -97,7 +97,7 @@ class InvoiceController extends Controller
         $thisMonthTransactions = $invoices
             ->filter(function ($inv) {
                 return $inv->paid_at && Carbon::parse($inv->paid_at)->isCurrentMonth();
-        })->count();
+            })->count();
 
         $thisMonthRevenue = $invoices
             ->where('status', 'paid')
@@ -344,6 +344,7 @@ class InvoiceController extends Controller
             $transactionFee = $request->input('transaction_fee', 5000);
             $nettAmount = $request->input('nett_amount');
             $totalAmount = $request->input('total_amount');
+            $discountCodeAmount = $request->input('discount_code_amount', 0);
 
             $bundle = Bundle::with('bundleItems.bundleable')->findOrFail($bundleId);
 
@@ -363,9 +364,21 @@ class InvoiceController extends Controller
             }
 
             // Validate pricing
-            $expectedNettAmount = $bundle->price;
+            $expectedNettAmount = $bundle->price - $discountCodeAmount;
             $expectedTotal = $expectedNettAmount + $transactionFee;
 
+            Log::info('Creating bundle invoice', [
+                'user_id' => $userId,
+                'bundle_id' => $bundleId,
+                'bundle_price' => $bundle->price,
+                'discount_amount' => $discountAmount,
+                'discount_code_amount' => $discountCodeAmount,
+                'transaction_fee' => $transactionFee,
+                'nett_amount' => $nettAmount,
+                'total_amount' => $totalAmount,
+                'expected_nett_amount' => $expectedNettAmount,
+                'expected_total_amount' => $expectedTotal,
+            ]);
             if ($nettAmount != $expectedNettAmount) {
                 throw new \Exception('Harga nett tidak sesuai');
             }
@@ -373,6 +386,7 @@ class InvoiceController extends Controller
             if ($totalAmount != $expectedTotal) {
                 throw new \Exception('Total amount tidak sesuai');
             }
+
 
             $invoice_code = IdGenerator::generate([
                 'table' => 'invoices',

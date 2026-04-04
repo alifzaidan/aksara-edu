@@ -36,6 +36,7 @@ interface CreateDiscountCodeProps {
         courses: Product[];
         bootcamps: Product[];
         webinars: Product[];
+        bundles: Product[];
     };
 }
 
@@ -224,6 +225,15 @@ export default function CreateDiscountCode({ products }: CreateDiscountCodeProps
                     return registrationEnd >= discountStartDate;
                 });
 
+            case 'bundle':
+                return products.bundles.filter((bundle) => {
+                    if (selectedProductIds.includes(bundle.id)) return false;
+
+                    if (!bundle.registration_deadline || !discountStartDate) return true;
+                    const registrationEnd = parseISO(bundle.registration_deadline);
+                    return registrationEnd >= discountStartDate;
+                });
+
             default:
                 return [];
         }
@@ -237,6 +247,8 @@ export default function CreateDiscountCode({ products }: CreateDiscountCodeProps
                 return 'Bootcamp';
             case 'webinar':
                 return 'Webinar';
+            case 'bundle':
+                return 'Bundle';
             default:
                 return type;
         }
@@ -617,10 +629,20 @@ export default function CreateDiscountCode({ products }: CreateDiscountCodeProps
                                             Webinar
                                         </FormLabel>
                                     </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id="bundle"
+                                            checked={watchApplicableTypes.includes('bundle')}
+                                            onCheckedChange={(checked) => handleApplicableTypeChange('bundle', !!checked)}
+                                        />
+                                        <FormLabel htmlFor="bundle" className="text-sm font-normal">
+                                            Bundle
+                                        </FormLabel>
+                                    </div>
                                 </div>
                                 <p className="text-muted-foreground text-sm">Kosong = berlaku untuk semua produk</p>
 
-                                {(watchApplicableTypes.includes('bootcamp') || watchApplicableTypes.includes('webinar')) && (
+                                {(watchApplicableTypes.includes('bootcamp') || watchApplicableTypes.includes('webinar') || watchApplicableTypes.includes('bundle')) &&  (
                                     <div className="rounded-md bg-blue-50 p-3">
                                         <div className="flex items-start">
                                             <AlertCircle className="mt-0.5 mr-2 h-4 w-4 text-blue-600" />
@@ -668,6 +690,9 @@ export default function CreateDiscountCode({ products }: CreateDiscountCodeProps
                                                                 )}
                                                                 {watchApplicableTypes.includes('webinar') && (
                                                                     <SelectItem value="webinar">Webinar</SelectItem>
+                                                                )}
+                                                                {watchApplicableTypes.includes('bundle') && (
+                                                                    <SelectItem value="bundle">Bundle</SelectItem>
                                                                 )}
                                                             </SelectContent>
                                                         </Select>

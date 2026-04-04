@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DiscountCode;
 use App\Models\Course;
 use App\Models\Bootcamp;
+use App\Models\Bundle;
 use App\Models\DiscountUsage;
 use App\Models\Webinar;
 use Carbon\Carbon;
@@ -161,11 +162,26 @@ class DiscountCodeController extends Controller
                 ];
             });
 
+        $bundles = Bundle::select('id', 'title', 'price', 'registration_deadline', 'created_at')
+            ->where('status', 'published')
+            ->get()
+            ->map(function ($bundle) {
+                return [
+                    'id' => $bundle->id,
+                    'title' => $bundle->title,
+                    'original_title' => $bundle->title,
+                    'price' => $bundle->price,
+                    'registration_deadline' => $bundle->registration_deadline,
+                    'event_date' => $bundle->created_at,
+                ];
+            });
+
         return Inertia::render('admin/discount-codes/create', [
             'products' => [
                 'courses' => $courses,
                 'bootcamps' => $bootcamps,
                 'webinars' => $webinars,
+                'bundles' => $bundles,
             ]
         ]);
     }
@@ -185,10 +201,10 @@ class DiscountCodeController extends Controller
             'expires_at' => 'required|date|after:starts_at',
             'is_active' => 'boolean',
             'applicable_types' => 'nullable|array',
-            'applicable_types.*' => 'in:course,bootcamp,webinar',
+            'applicable_types.*' => 'in:course,bootcamp,webinar,bundle',
             'applicable_ids' => 'nullable|array',
             'applicable_products' => 'nullable|array',
-            'applicable_products.*.type' => 'in:course,bootcamp,webinar',
+            'applicable_products.*.type' => 'in:course,bootcamp,webinar,bundle',
             'applicable_products.*.id' => 'string',
         ]);
 
@@ -439,9 +455,9 @@ class DiscountCodeController extends Controller
             'expires_at' => 'required|date|after:starts_at',
             'is_active' => 'boolean',
             'applicable_types' => 'nullable|array',
-            'applicable_types.*' => 'in:course,bootcamp,webinar',
+            'applicable_types.*' => 'in:course,bootcamp,webinar,bundle',
             'applicable_products' => 'nullable|array',
-            'applicable_products.*.type' => 'in:course,bootcamp,webinar',
+            'applicable_products.*.type' => 'in:course,bootcamp,webinar,bundle',
             'applicable_products.*.id' => 'string',
         ]);
 
@@ -516,7 +532,7 @@ class DiscountCodeController extends Controller
             $request->validate([
                 'code' => 'required|string',
                 'amount' => 'required|integer|min:1',
-                'product_type' => 'required|string|in:course,bootcamp,webinar',
+                'product_type' => 'required|string|in:course,bootcamp,webinar,bundle',
                 'product_id' => 'required|string',
             ]);
 

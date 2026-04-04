@@ -7,8 +7,11 @@ import UserLayout from '@/layouts/user-layout';
 import { rupiahFormatter } from '@/lib/utils';
 import { SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { BadgeCheck, Check, Hourglass, Package, User } from 'lucide-react';
+import { BadgeCheck, Check, Hourglass, LoaderCircle, Package, RefreshCw, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 interface Product {
     id: string;
@@ -51,6 +54,20 @@ interface CheckoutBundleProps {
     referralInfo: ReferralInfo;
 }
 
+interface DiscountData {
+    valid: boolean;
+    discount_amount: number;
+    final_amount: number;
+    discount_code: {
+        id: string;
+        code: string;
+        name: string;
+        type: string;
+        formatted_value: string;
+    };
+    message?: string;
+}
+
 export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, referralInfo }: CheckoutBundleProps) {
     const { auth } = usePage<SharedData>().props;
     const isLoggedIn = !!auth.user;
@@ -61,7 +78,60 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
 
     const transactionFee = 5000;
     const bundleDiscount = bundle.strikethrough_price - bundle.price;
-    const totalPrice = bundle.price + transactionFee;
+    const [discountData, setDiscountData] = useState<DiscountData | null>(null);
+    const discountAmount = discountData?.valid ? discountData.discount_amount : 0;
+    const finalBundle = bundle.price - discountAmount;
+
+    const [promoCode, setPromoCode] = useState('');
+    const [promoLoading, setPromoLoading] = useState(false);
+    const [promoError, setPromoError] = useState('');
+    const totalPrice = finalBundle + transactionFee;
+
+    useEffect(() => {
+        if (!promoCode.trim()) {
+            setDiscountData(null);
+            setPromoError('');
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            validatePromoCode();
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [promoCode]);
+
+    const validatePromoCode = async () => {
+        if (!promoCode.trim()) return;
+
+        setPromoLoading(true);
+        setPromoError('');
+
+        try {
+            const requestData: any = {
+                code: promoCode,
+                amount: bundle.price,
+                product_type: 'bundle',
+                product_id: bundle.id,
+            };
+
+            const response = await axios.post('/api/discount-codes/validate', requestData);
+
+            if (response.data.valid) {
+                setDiscountData(response.data);
+                setPromoError('');
+            } else {
+                setDiscountData(null);
+                setPromoError(response.data.message || 'Kode promo tidak valid');
+            }
+        } catch (error: any) {
+            setDiscountData(null);
+            setPromoError(error.response?.data?.message || 'Terjadi kesalahan saat memvalidasi kode promo');
+        } finally {
+            setPromoLoading(false);
+        }
+    };
+
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -111,13 +181,17 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
         setLoading(true);
 
         const submitPayment = async (retryCount = 0): Promise<void> => {
-            const invoiceData = {
+            const invoiceData: any = {
                 bundle_id: bundle.id,
                 discount_amount: bundleDiscount,
-                nett_amount: bundle.price,
+                nett_amount: finalBundle,
                 transaction_fee: transactionFee,
                 total_amount: totalPrice,
             };
+            if (discountData?.valid) {
+                invoiceData.discount_code_id = discountData.discount_code.id;
+                invoiceData.discount_code_amount = discountData.discount_amount;
+            }
 
             try {
                 const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
@@ -284,8 +358,8 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
                                                     {item.bundleable_type.includes('Course')
                                                         ? 'Kelas Online'
                                                         : item.bundleable_type.includes('Bootcamp')
-                                                          ? 'Bootcamp'
-                                                          : 'Webinar'}
+                                                            ? 'Bootcamp'
+                                                            : 'Webinar'}
                                                 </p>
                                             </div>
                                             <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -354,6 +428,69 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
                             <form onSubmit={handleCheckout}>
                                 <h2 className="mb-4 text-xl font-bold italic">Detail Pembayaran</h2>
                                 <div className="space-y-4 rounded-lg border p-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="promo-code" className="text-sm font-medium">
+                                            Punya Kode Promo?
+                                        </Label>
+                                        <div className="flex gap-2">
+                                            <div className="relative flex-1">
+                                                <Input
+                                                    id="promo-code"
+                                                    type="text"
+                                                    placeholder="Masukkan kode promo"
+                                                    value={promoCode}
+                                                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                                                    className="pr-10"
+                                                />
+                                                {promoLoading && (
+                                                    <div className="absolute top-1/2 right-3 -translate-y-1/2">
+                                                        <LoaderCircle className="h-4 w-4 animate-spin text-gray-400" />
+                                                    </div>
+                                                )}
+                                                {!promoLoading && promoCode && (
+                                                    <div className="absolute top-1/2 right-3 -translate-y-1/2">
+                                                        {discountData?.valid ? (
+                                                            <Check className="h-5 w-5 text-green-600" />
+                                                        ) : promoError ? (
+                                                            <X className="h-5 w-5 text-red-600" />
+                                                        ) : null}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="icon"
+                                                onClick={async () => {
+                                                    if (!promoCode.trim()) {
+                                                        toast.error('Masukkan kode promo terlebih dahulu');
+                                                        return;
+                                                    }
+                                                    await validatePromoCode();
+                                                }}
+                                                disabled={promoLoading || !promoCode.trim()}
+                                                className="flex-shrink-0"
+                                            >
+                                                <RefreshCw className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                        {promoError && <p className="text-sm text-red-600">{promoError}</p>}
+                                        {discountData?.valid && (
+                                            <div className="rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20">
+                                                <div className="flex items-center gap-2">
+                                                    <Check className="h-4 w-4 text-green-600" />
+                                                    <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                                                        Promo "{discountData.discount_code.code}" diterapkan!
+                                                    </p>
+                                                </div>
+                                                <p className="mt-1 text-xs text-green-600 dark:text-green-300">
+                                                    {discountData.discount_code.name}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <Separator />
                                     {/* Price Breakdown */}
                                     <div className="space-y-2">
                                         <div className="flex items-center justify-between">
@@ -376,6 +513,17 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
                                                 {rupiahFormatter.format(bundle.price)}
                                             </span>
                                         </div>
+
+                                        {discountData?.valid && (
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-gray-600 dark:text-gray-400">
+                                                    Diskon Promo ({discountData.discount_code.code})
+                                                </span>
+                                                <span className="font-semibold text-green-600">
+                                                    -Rp {discountData.discount_amount.toLocaleString('id-ID')}
+                                                </span>
+                                            </div>
+                                        )}
 
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm text-gray-600 dark:text-gray-400">Biaya Transaksi</span>
