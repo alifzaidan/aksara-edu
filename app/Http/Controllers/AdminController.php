@@ -232,10 +232,15 @@ class AdminController extends Controller
 
     private function getAdminStats($startDate = null, $endDate = null)
     {
+        $currentMonthStart = now()->copy()->startOfMonth();
+        $currentMonthEnd = $currentMonthStart->copy()->endOfMonth();
+        $previousMonthStart = $currentMonthStart->copy()->subMonthNoOverflow()->startOfMonth();
+        $previousMonthEnd = $currentMonthStart->copy()->subMonthNoOverflow()->endOfMonth();
+
         $invoiceQuery = Invoice::where('status', 'paid');
 
         if ($startDate && $endDate) {
-            $invoiceQuery->whereBetween('created_at', [
+            $invoiceQuery->whereBetween('paid_at', [
                 Carbon::parse($startDate)->startOfDay(),
                 Carbon::parse($endDate)->endOfDay()
             ]);
@@ -300,13 +305,11 @@ class AdminController extends Controller
         }
 
         $revenueThisMonth = Invoice::where('status', 'paid')
-            ->whereMonth('paid_at', now()->month)
-            ->whereYear('paid_at', now()->year)
+            ->whereBetween('paid_at', [$currentMonthStart, $currentMonthEnd])
             ->sum('nett_amount');
 
         $revenueLastMonth = Invoice::where('status', 'paid')
-            ->whereMonth('paid_at', now()->subMonth()->month)
-            ->whereYear('paid_at', now()->subMonth()->year)
+            ->whereBetween('paid_at', [$previousMonthStart, $previousMonthEnd])
             ->sum('nett_amount');
 
         $monthlyRevenueChange = 0;
@@ -350,6 +353,11 @@ class AdminController extends Controller
 
     private function getAffiliateStats(User $user, $startDate = null, $endDate = null)
     {
+        $currentMonthStart = now()->copy()->startOfMonth();
+        $currentMonthEnd = $currentMonthStart->copy()->endOfMonth();
+        $previousMonthStart = $currentMonthStart->copy()->subMonthNoOverflow()->startOfMonth();
+        $previousMonthEnd = $currentMonthStart->copy()->subMonthNoOverflow()->endOfMonth();
+
         // Query dasar untuk earnings affiliate
         $earningsQuery = AffiliateEarning::where('affiliate_user_id', $user->id);
 
@@ -365,14 +373,12 @@ class AdminController extends Controller
 
         // Commission bulan ini
         $monthlyCommission = (clone $earningsQuery)
-            ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
+            ->whereBetween('created_at', [$currentMonthStart, $currentMonthEnd])
             ->sum('amount');
 
         // Commission bulan lalu
         $lastMonthCommission = (clone $earningsQuery)
-            ->whereMonth('created_at', now()->subMonth()->month)
-            ->whereYear('created_at', now()->subMonth()->year)
+            ->whereBetween('created_at', [$previousMonthStart, $previousMonthEnd])
             ->sum('amount');
 
         // Commission hari ini
@@ -409,7 +415,9 @@ class AdminController extends Controller
             'commission_last_month' => $lastMonthCommission,
             'daily_commission_change' => round($dailyCommissionChange, 1),
             'monthly_commission_change' => round($monthlyCommissionChange, 1),
-            'total_referrals' => User::where('referred_by_user_id', $user->id)->count(),
+            'total_referrals' => AffiliateEarning::where('affiliate_user_id', $user->id)
+                ->distinct('invoice_id')
+                ->count(),
             'conversion_rate' => 0, // Data klik belum ada, jadi kita set 0
             'total_clicks' => 0, // Data klik belum ada, jadi kita set 0
             'recent_referrals' => AffiliateEarning::where('affiliate_user_id', $user->id)
@@ -424,6 +432,11 @@ class AdminController extends Controller
 
     private function getMentorStats(User $user, $startDate = null, $endDate = null)
     {
+        $currentMonthStart = now()->copy()->startOfMonth();
+        $currentMonthEnd = $currentMonthStart->copy()->endOfMonth();
+        $previousMonthStart = $currentMonthStart->copy()->subMonthNoOverflow()->startOfMonth();
+        $previousMonthEnd = $currentMonthStart->copy()->subMonthNoOverflow()->endOfMonth();
+
         $mentorCourses = Course::where('user_id', $user->id)->pluck('id');
 
         $studentIds = Invoice::whereHas('courseItems', function ($query) use ($mentorCourses) {
@@ -449,13 +462,11 @@ class AdminController extends Controller
         $mentorRevenue = $totalCourseRevenue * $mentorCommissionRate;
 
         $monthlyRevenue = (clone $revenueQuery)
-            ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
+            ->whereBetween('created_at', [$currentMonthStart, $currentMonthEnd])
             ->sum('nett_amount') * $mentorCommissionRate;
 
         $lastMonthRevenue = (clone $revenueQuery)
-            ->whereMonth('created_at', now()->subMonth()->month)
-            ->whereYear('created_at', now()->subMonth()->year)
+            ->whereBetween('created_at', [$previousMonthStart, $previousMonthEnd])
             ->sum('nett_amount') * $mentorCommissionRate;
 
         $todayRevenue = (clone $revenueQuery)
