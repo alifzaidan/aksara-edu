@@ -1,7 +1,12 @@
-import { columns, type Invoice } from './columns-transactions';
+import { columns, type BundleTransactionInvoice } from './columns-transactions';
 import { DataTable } from './data-table-transactions';
 
-export default function WebinarTransaction({ transactions, webinarId }: { transactions: Invoice[]; webinarId: string }) {
+interface BundleTransactionProps {
+    transactions: BundleTransactionInvoice[];
+    bundleId: string;
+}
+
+export default function BundleTransaction({ transactions, bundleId }: BundleTransactionProps) {
     const paidTransactions = transactions.filter((t) => t.status === 'paid');
 
     return (
@@ -15,12 +20,12 @@ export default function WebinarTransaction({ transactions, webinarId }: { transa
                 )}
             </div>
 
-            {transactions && transactions.length > 0 ? (
-                <DataTable columns={columns} data={transactions} webinarId={webinarId} />
+            {transactions.length > 0 ? (
+                <DataTable columns={columns} data={transactions} bundleId={bundleId} />
             ) : (
                 <div className="flex flex-col items-center justify-center gap-4 py-12">
                     <img src="/assets/images/not-found.webp" alt="Transaksi Tidak Tersedia" className="w-48" />
-                    <p className="text-muted-foreground text-center text-sm">Belum ada transaksi untuk webinar ini.</p>
+                    <p className="text-muted-foreground text-center text-sm">Belum ada transaksi untuk bundle ini.</p>
                 </div>
             )}
         </div>

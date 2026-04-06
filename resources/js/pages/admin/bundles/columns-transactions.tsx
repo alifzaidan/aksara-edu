@@ -15,7 +15,7 @@ interface User {
     phone_number: string | null;
 }
 
-export interface Invoice {
+export interface BundleTransactionInvoice {
     id: string;
     user: User;
     referrer: { id: string; name: string } | null;
@@ -27,9 +27,10 @@ export interface Invoice {
     created_at: string;
 }
 
-export const columns: ColumnDef<Invoice>[] = [
+export const columns: ColumnDef<BundleTransactionInvoice>[] = [
     {
-        accessorKey: 'user.name',
+        id: 'user_name',
+        accessorFn: (row) => row.user?.name ?? '',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Nama Pembeli" />,
         cell: ({ row }) => <div className="font-medium">{row.original.user?.name || '-'}</div>,
     },
@@ -78,7 +79,13 @@ export const columns: ColumnDef<Invoice>[] = [
     {
         accessorKey: 'paid_at',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Tgl. Pembayaran" />,
-        cell: ({ row }) => <p>{format(new Date(row.original.paid_at ? row.original.paid_at : new Date()), 'dd MMM yyyy, HH:mm', { locale: id })}</p>,
+        cell: ({ row }) => (
+            <p>
+                {row.original.paid_at
+                    ? format(new Date(row.original.paid_at), 'dd MMM yyyy, HH:mm', { locale: id })
+                    : '-'}
+            </p>
+        ),
     },
     {
         id: 'actions',

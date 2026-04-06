@@ -15,6 +15,8 @@ import { id } from 'date-fns/locale';
 import { Calendar, CircleX, Copy, LinkIcon, Package, Send, ShoppingCart, SquarePen, Trash, Users } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { BundleTransactionInvoice } from './columns-transactions';
+import BundleTransaction from './show-transactions';
 
 interface Product {
     id: string;
@@ -146,6 +148,21 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
     const totalEnrollments = bundle.enrollments.length;
     const paidEnrollments = bundle.enrollments.filter((e) => e.invoice.status === 'paid').length;
     const totalRevenue = bundle.enrollments.filter((e) => e.invoice.status === 'paid').reduce((sum, e) => sum + e.invoice.amount, 0);
+    const transactions: BundleTransactionInvoice[] = bundle.enrollments.map((enrollment) => ({
+        id: enrollment.invoice.id,
+        user: {
+            id: enrollment.invoice.user.id,
+            name: enrollment.invoice.user.name,
+            phone_number: null,
+        },
+        referrer: null,
+        invoice_code: enrollment.invoice.invoice_code,
+        invoice_url: null,
+        amount: enrollment.invoice.amount,
+        status: enrollment.invoice.status as BundleTransactionInvoice['status'],
+        paid_at: enrollment.invoice.paid_at ?? null,
+        created_at: enrollment.created_at,
+    }));
 
     const deadlineDate = bundle.registration_deadline ? new Date(bundle.registration_deadline) : null;
     const isDeadlinePassed = deadlineDate ? isPast(deadlineDate) : false;
@@ -168,6 +185,11 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                     )}
                                 </TabsTrigger>
                             )}
+                            <TabsTrigger value="transactions">
+                                Transaksi
+                                {totalEnrollments > 0 && (
+                                    <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{paidEnrollments}</span>)}
+                            </TabsTrigger>
                         </TabsList>
 
                         {/* Detail Tab */}
@@ -533,8 +555,8 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                                                 enrollment.invoice.status === 'paid'
                                                                                     ? 'bg-green-100 text-green-700'
                                                                                     : enrollment.invoice.status === 'pending'
-                                                                                      ? 'bg-yellow-100 text-yellow-700'
-                                                                                      : 'bg-red-100 text-red-700'
+                                                                                        ? 'bg-yellow-100 text-yellow-700'
+                                                                                        : 'bg-red-100 text-red-700'
                                                                             }
                                                                         >
                                                                             {enrollment.invoice.status}
@@ -543,11 +565,11 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                                     <TableCell className="text-sm">
                                                                         {enrollment.invoice.paid_at
                                                                             ? format(new Date(enrollment.invoice.paid_at), 'dd MMM yyyy HH:mm', {
-                                                                                  locale: id,
-                                                                              })
+                                                                                locale: id,
+                                                                            })
                                                                             : format(new Date(enrollment.created_at), 'dd MMM yyyy HH:mm', {
-                                                                                  locale: id,
-                                                                              })}
+                                                                                locale: id,
+                                                                            })}
                                                                     </TableCell>
                                                                 </TableRow>
                                                             ))}
@@ -562,6 +584,10 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                 </div>
                             </TabsContent>
                         )}
+
+                        <TabsContent value="transactions">
+                            <BundleTransaction transactions={transactions} bundleId={bundle.id} />
+                        </TabsContent>
                     </Tabs>
 
                     {/* Sidebar Actions */}
@@ -701,6 +727,6 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                     )}
                 </div>
             </div>
-        </AdminLayout>
+        </AdminLayout >
     );
 }

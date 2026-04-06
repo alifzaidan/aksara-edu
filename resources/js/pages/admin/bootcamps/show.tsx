@@ -154,7 +154,7 @@ export default function ShowBootcamp({ bootcamp, transactions, participants, rat
                             <BootcampDetail bootcamp={bootcamp} />
                         </TabsContent>
                         <TabsContent value="transaksi">
-                            <BootcampTransaction transactions={transactions} />
+                            <BootcampTransaction transactions={transactions} bootcampId={bootcamp.id} />
                         </TabsContent>
                         <TabsContent value="rating">
                             <BootcampRatingComponent ratings={ratings} averageRating={averageRating} />

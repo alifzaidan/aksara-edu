@@ -225,7 +225,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
 
         Route::resource('promotions', PromotionController::class);
         Route::patch('promotions/{promotion}/toggle-status', [PromotionController::class, 'toggleStatus'])->name('promotions.toggle-status');
-    });
+        Route::get('transactions/export', [InvoiceController::class, 'export'])->name('transactions.export');    });
 
     Route::middleware(['role:affiliate|admin'])->group(function () {
         Route::get('bootcamps', [BootcampController::class, 'index'])->name('bootcamps.index');

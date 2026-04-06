@@ -163,7 +163,7 @@ export default function ShowWebinar({ webinar, transactions, participants, ratin
                             <WebinarParticipantSection participants={participants} />
                         </TabsContent>
                         <TabsContent value="transaksi">
-                            <WebinarTransaction transactions={transactions} />
+                            <WebinarTransaction transactions={transactions} webinarId={webinar.id} />
                         </TabsContent>
                         <TabsContent value="rating">
                             <WebinarRatingComponent ratings={ratings} averageRating={averageRating} />

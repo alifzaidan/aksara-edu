@@ -180,7 +180,7 @@ export default function ShowCourse({ course, transactions, ratings, certificate,
                             <ShowModules modules={course.modules} courseId={course.id} />
                         </TabsContent>
                         <TabsContent value="transaksi">
-                            <CourseTransaction transactions={transactions} />
+                            <CourseTransaction transactions={transactions} courseId={course.id} />
                         </TabsContent>
                         {isAdmin && (
                             <TabsContent value="rating">

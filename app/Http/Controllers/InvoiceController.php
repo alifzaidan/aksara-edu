@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\TransactionsExport;
 use App\Models\AffiliateEarning;
 use App\Models\Bootcamp;
 use App\Models\Bundle;
@@ -27,7 +28,7 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Haruncpi\LaravelIdGenerator\IdGenerator;
 use Illuminate\Support\Facades\Log;
-
+use Maatwebsite\Excel\Facades\Excel;
 use Xendit\Configuration;
 use Xendit\Invoice\CreateInvoiceRequest;
 use Xendit\Invoice\InvoiceApi;
@@ -41,19 +42,61 @@ class InvoiceController extends Controller
         Configuration::setXenditKey(config('xendit.API_KEY'));
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $invoices = Invoice::with([
+        // Ambil filter tanggal dari request
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $status = $request->input('status');
+        $paymentType = $request->input('payment_type');
+        $productType = $request->input('product_type');
+
+        // Buat query dasar
+        $invoicesQuery = Invoice::with([
             'user.referrer',
             'courseItems.course',
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
             'bundleEnrollments.bundle'
-        ])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        ]);
 
-        // ✅ Calculate Statistics
+        // Apply date filter jika ada
+        if ($startDate && $endDate) {
+            $start = Carbon::parse($startDate)->startOfDay();
+            $end = Carbon::parse($endDate)->endOfDay();
+
+            $invoicesQuery->where(function ($q) use ($start, $end) {
+                $q->where(function ($q2) use ($start, $end) {
+                    $q2->where('status', 'paid')
+                        ->whereBetween('paid_at', [$start, $end]);
+                })->orWhere(function ($q2) use ($start, $end) {
+                    $q2->whereIn('status', ['paid', 'pending', 'failed'])
+                        ->whereBetween('created_at', [$start, $end]);
+                });
+            });
+        }
+
+        // ✅ PERBAIKAN: Apply status filter HANYA jika ada status yang dipilih
+        if ($status && !empty($status)) {
+            $invoicesQuery->where('status', $status);
+        }
+
+        // Apply payment type filter (free vs paid)
+        if ($paymentType === 'free') {
+            $invoicesQuery->where('nett_amount', 0);
+        } elseif ($paymentType === 'paid') {
+            $invoicesQuery->where('nett_amount', '>', 0);
+        }
+
+        // Apply product type filter
+        if ($productType && !empty($productType)) {
+            $invoicesQuery->whereHas($productType . 'Items');
+        }
+
+        // Get filtered invoices
+        $invoices = $invoicesQuery->orderBy('created_at', 'desc')->get();
+
+        // ✅ Calculate Statistics (berdasarkan data yang sudah difilter)
         $totalTransactions = $invoices->count();
         $paidTransactions = $invoices->where('status', 'paid')->count();
         $pendingTransactions = $invoices->where('status', 'pending')->count();
@@ -74,16 +117,14 @@ class InvoiceController extends Controller
         $webinarTransactions = $invoices->filter(fn($inv) => $inv->webinarItems->count() > 0)->count();
         $bundleTransactions = $invoices->filter(fn($inv) => $inv->bundleEnrollments->count() > 0)->count();
 
-        // Affiliate statistics
-        $affiliateTransactions = $invoices->filter(fn($inv) => $inv->user && $inv->user->referrer)->count();
+        $affiliateTransactions = $invoices->filter(fn($inv) => $inv->referred_by_user_id !== null)->count();
         $affiliateRevenue = $invoices
             ->where('status', 'paid')
-            ->filter(fn($inv) => $inv->user && $inv->user->referrer)
+            ->filter(fn($inv) => $inv->referred_by_user_id !== null)
             ->sum('nett_amount');
 
-        // Today's statistics
         $todayTransactions = $invoices->filter(function ($inv) {
-            return Carbon::parse($inv->created_at)->isToday();
+            return Carbon::parse($inv->paid_at)->isToday();
         })->count();
 
         $todayRevenue = $invoices
@@ -93,11 +134,9 @@ class InvoiceController extends Controller
             })
             ->sum('nett_amount');
 
-        // This month statistics
-        $thisMonthTransactions = $invoices
-            ->filter(function ($inv) {
-                return $inv->paid_at && Carbon::parse($inv->paid_at)->isCurrentMonth();
-            })->count();
+        $thisMonthTransactions = $invoices->filter(function ($inv) {
+            return Carbon::parse($inv->paid_at)->isCurrentMonth();
+        })->count();
 
         $thisMonthRevenue = $invoices
             ->where('status', 'paid')
@@ -106,12 +145,10 @@ class InvoiceController extends Controller
             })
             ->sum('nett_amount');
 
-        // Average transaction value
         $averageTransactionValue = $paidEnrollments > 0
             ? $totalRevenue / $paidEnrollments
             : 0;
 
-        // Success rate
         $successRate = $totalTransactions > 0
             ? ($paidTransactions / $totalTransactions) * 100
             : 0;
@@ -151,6 +188,13 @@ class InvoiceController extends Controller
         return Inertia::render('admin/transactions/index', [
             'invoices' => $invoices,
             'statistics' => $statistics,
+            'filters' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'status' => $status,
+                'payment_type' => $paymentType,
+                'product_type' => $productType,
+            ],
         ]);
     }
 
@@ -1363,5 +1407,30 @@ class InvoiceController extends Controller
         $pdf->setPaper('A4', 'portrait');
 
         return $pdf->stream("invoice-{$invoice->invoice_code}.pdf");
+    }
+
+    public function export(Request $request)
+    {
+        $filters = $request->only([
+            'start_date',
+            'end_date',
+            'status',
+            'payment_type',
+            'product_type',
+            'bootcamp_id',
+            'webinar_id',
+            'course_id',
+            'bundle_id'
+        ]);
+        $filename = 'Laporan_Transaksi';
+
+        if ($request->start_date && $request->end_date) {
+            $filename .= '_' . Carbon::parse($request->start_date)->format('dmY')
+                . '-' . Carbon::parse($request->end_date)->format('dmY');
+        }
+
+        $filename .= '_' . now()->format('YmdHis') . '.xlsx';
+
+        return Excel::download(new TransactionsExport($filters), $filename);
     }
 }

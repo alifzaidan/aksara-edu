@@ -28,46 +28,30 @@ import { CalendarIcon, CheckCircle, ChevronDownIcon, Clock, Download, Filter, X,
 import React, { useMemo, useState } from 'react';
 
 export const status = [
-    {
-        value: 'pending',
-        label: 'Pending',
-        icon: Clock,
-    },
-    {
-        value: 'paid',
-        label: 'Paid',
-        icon: CheckCircle,
-    },
-    {
-        value: 'failed',
-        label: 'Failed',
-        icon: XCircle,
-    },
+    { value: 'pending', label: 'Pending', icon: Clock },
+    { value: 'paid', label: 'Paid', icon: CheckCircle },
+    { value: 'failed', label: 'Failed', icon: XCircle },
 ];
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
-    courseId?: string;
+    bundleId?: string;
 }
 
-export function DataTable<TData, TValue>({ columns, data, courseId }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({ columns, data, bundleId }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
     const [rowSelection, setRowSelection] = React.useState({});
 
-    // Date filter states
     const [startDate, setStartDate] = useState<Date | undefined>();
     const [endDate, setEndDate] = useState<Date | undefined>();
     const [isStartDateOpen, setIsStartDateOpen] = useState(false);
     const [isEndDateOpen, setIsEndDateOpen] = useState(false);
 
-    // Filter data by date range (client-side)
     const filteredData = useMemo(() => {
-        if (!startDate || !endDate) {
-            return data;
-        }
+        if (!startDate || !endDate) return data;
 
         const start = new Date(startDate);
         start.setHours(0, 0, 0, 0);
@@ -76,15 +60,15 @@ export function DataTable<TData, TValue>({ columns, data, courseId }: DataTableP
         end.setHours(23, 59, 59, 999);
 
         return (data as any[]).filter((item) => {
-            const status = (item.status || '').toLowerCase();
+            const trxStatus = (item.status || '').toLowerCase();
 
-            if (status === 'paid') {
+            if (trxStatus === 'paid') {
                 if (!item.paid_at) return false;
                 const paidAt = new Date(item.paid_at);
                 return paidAt >= start && paidAt <= end;
             }
 
-            if (status === 'pending' || status === 'failed') {
+            if (trxStatus === 'pending' || trxStatus === 'failed') {
                 if (!item.created_at) return false;
                 const createdAt = new Date(item.created_at);
                 return createdAt >= start && createdAt <= end;
@@ -105,18 +89,12 @@ export function DataTable<TData, TValue>({ columns, data, courseId }: DataTableP
         getFilteredRowModel: getFilteredRowModel(),
         onColumnVisibilityChange: setColumnVisibility,
         onRowSelectionChange: setRowSelection,
-        state: {
-            sorting,
-            columnFilters,
-            columnVisibility,
-            rowSelection,
-        },
+        state: { sorting, columnFilters, columnVisibility, rowSelection },
     });
 
     const isFiltered = table.getState().columnFilters.length > 0;
     const hasDateFilter = startDate && endDate;
 
-    // Clear all filters including date
     const handleClearAllFilters = () => {
         table.resetColumnFilters();
         setStartDate(undefined);
@@ -126,13 +104,8 @@ export function DataTable<TData, TValue>({ columns, data, courseId }: DataTableP
     const handleExportToExcel = () => {
         const params = new URLSearchParams();
 
-        // Date filter
         if (startDate) params.append('start_date', format(startDate, 'yyyy-MM-dd'));
         if (endDate) params.append('end_date', format(endDate, 'yyyy-MM-dd'));
-
-        // Column/search filters
-        const titleFilter = table.getColumn('title')?.getFilterValue() as string;
-        if (titleFilter) params.append('title', titleFilter);
 
         const userNameFilter = table.getColumn('user_name')?.getFilterValue() as string;
         if (userNameFilter) params.append('user_name', userNameFilter);
@@ -140,21 +113,14 @@ export function DataTable<TData, TValue>({ columns, data, courseId }: DataTableP
         const statusFilter = table.getColumn('status')?.getFilterValue();
         if (statusFilter) params.append('status', String(statusFilter));
 
-        const paymentTypeFilter = table.getColumn('payment_type')?.getFilterValue();
-        if (paymentTypeFilter) params.append('payment_type', String(paymentTypeFilter));
-
-        params.append('product_type', 'course');
-
-        if (courseId) {
-            params.append('course_id', courseId);
-        }
+        params.append('product_type', 'bundle');
+        if (bundleId) params.append('bundle_id', bundleId);
 
         window.location.href = route('transactions.export') + '?' + params.toString();
     };
 
     return (
         <div>
-            {/* Date Filter Section */}
             <div className="mb-4 rounded-lg border bg-card p-4">
                 <div className="flex flex-col gap-4">
                     <div className="flex flex-col gap-2">
@@ -250,7 +216,6 @@ export function DataTable<TData, TValue>({ columns, data, courseId }: DataTableP
                 )}
             </div>
 
-            {/* Existing Filters */}
             <div className="flex flex-col items-stretch gap-2 py-4 lg:flex-row lg:items-center">
                 <Input
                     placeholder="Cari nama pembeli..."
@@ -261,12 +226,7 @@ export function DataTable<TData, TValue>({ columns, data, courseId }: DataTableP
                 <div className="flex flex-col items-center gap-2 lg:flex-row">
                     {table.getColumn('status') && <DataTableFacetedFilter column={table.getColumn('status')} title="Status" options={status} />}
                     {isFiltered && (
-                        <Button
-                            onClick={() => {
-                                table.resetColumnFilters();
-                            }}
-                            className="h-8 px-2 lg:px-3"
-                        >
+                        <Button onClick={() => table.resetColumnFilters()} className="h-8 px-2 lg:px-3">
                             Reset
                             <X />
                         </Button>
@@ -274,18 +234,17 @@ export function DataTable<TData, TValue>({ columns, data, courseId }: DataTableP
                 </div>
                 <DataTableViewOptions table={table} />
             </div>
-            <div className="rounded-md border">
+
+            <div className="w-[1000px] max-w-full min-w-full overflow-x-auto rounded-md border">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => {
-                                    return (
-                                        <TableHead key={header.id}>
-                                            {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                        </TableHead>
-                                    );
-                                })}
+                                {headerGroup.headers.map((header) => (
+                                    <TableHead key={header.id}>
+                                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                    </TableHead>
+                                ))}
                             </TableRow>
                         ))}
                     </TableHeader>
@@ -308,6 +267,7 @@ export function DataTable<TData, TValue>({ columns, data, courseId }: DataTableP
                     </TableBody>
                 </Table>
             </div>
+
             <div className="py-4">
                 <DataTablePagination table={table} />
             </div>

@@ -64,13 +64,17 @@ interface Statistics {
 interface TransactionProps {
     invoices: Invoice[];
     statistics: Statistics;
+    filters?: {
+        start_date?: string;
+        end_date?: string;
+    };
     flash?: {
         success?: string;
         error?: string;
     };
 }
 
-export default function Transactions({ invoices, statistics, flash }: TransactionProps) {
+export default function Transactions({ invoices, statistics, filters, flash }: TransactionProps) {
     const [showMoreStats, setShowMoreStats] = useState(false);
 
     useEffect(() => {
@@ -364,7 +368,7 @@ export default function Transactions({ invoices, statistics, flash }: Transactio
                 </div>
 
                 {/* Data Table */}
-                <DataTable columns={columns} data={invoices} />
+                <DataTable columns={columns} data={invoices} filters={filters} />
             </div>
         </AdminLayout>
     );
