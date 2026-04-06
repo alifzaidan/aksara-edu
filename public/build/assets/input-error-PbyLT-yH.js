@@ -1,1 +1,0 @@
-import{j as n}from"./app-DWHOKDOq.js";import{c as o}from"./utils-Bismg2lm.js";function m({message:r,className:t="",...e}){return r?n.jsx("p",{...e,className:o("text-sm text-red-600 dark:text-red-400",t),children:r}):null}export{m as I};
