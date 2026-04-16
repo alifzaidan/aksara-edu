@@ -13,7 +13,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { format, isPast } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Calendar, CircleX, Copy, LinkIcon, Package, Send, ShoppingCart, SquarePen, Trash, Users } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { BundleTransactionInvoice } from './columns-transactions';
 import BundleTransaction from './show-transactions';
@@ -108,6 +108,31 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
         },
     ];
 
+    // Membuat affiliateUrls seperti di webinar
+    const affiliateUrls = useMemo(() => {
+        const affiliateCode = auth.user.affiliate_code;
+        const appendAffiliateCode = (url: string, code: string) => {
+            try {
+                const urlObj = new URL(url);
+                urlObj.searchParams.set('ref', code);
+                return urlObj.toString();
+            } catch {
+                const separator = url.includes('?') ? '&' : '?';
+                return `${url}${separator}ref=${code}`;
+            }
+        };
+        if (isAffiliate && affiliateCode) {
+            return {
+                registrationUrl: appendAffiliateCode(bundle.registration_url, affiliateCode),
+                bundleUrl: appendAffiliateCode(bundle.bundle_url, affiliateCode),
+            };
+        }
+        return {
+            registrationUrl: bundle.registration_url,
+            bundleUrl: bundle.bundle_url,
+        };
+    }, [bundle.registration_url, bundle.bundle_url, auth.user.affiliate_code, isAffiliate]);
+
     useEffect(() => {
         if (flash?.success) {
             toast.success(flash.success);
@@ -123,8 +148,12 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
 
     const handleCopyRegistrationLink = async () => {
         try {
-            await navigator.clipboard.writeText(bundle.registration_url);
-            toast.success('Link pendaftaran berhasil disalin!');
+            await navigator.clipboard.writeText(affiliateUrls.registrationUrl);
+            if (isAffiliate) {
+                toast.success('Link pendaftaran dengan kode afiliasi berhasil disalin!');
+            } else {
+                toast.success('Link pendaftaran berhasil disalin!');
+            }
         } catch {
             toast.error('Gagal menyalin link pendaftaran');
         }
@@ -132,8 +161,12 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
 
     const handleCopyBundleLink = async () => {
         try {
-            await navigator.clipboard.writeText(bundle.bundle_url);
-            toast.success('Link produk berhasil disalin!');
+            await navigator.clipboard.writeText(affiliateUrls.bundleUrl);
+            if (isAffiliate) {
+                toast.success('Link produk dengan kode afiliasi berhasil disalin!');
+            } else {
+                toast.success('Link produk berhasil disalin!');
+            }
         } catch {
             toast.error('Gagal menyalin link produk');
         }
@@ -173,6 +206,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
             <div className="px-4 py-4 md:px-6">
                 <h1 className="mb-4 text-2xl font-semibold">Detail {bundle.title}</h1>
 
+                {/* ...existing code... */}
                 <div className={`${!isAffiliate ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
                     <Tabs defaultValue="detail" className="lg:col-span-2">
                         <TabsList>
@@ -205,12 +239,31 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                     </div>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="text-lg font-medium">Share Link untuk Menerima Pendaftaran</h2>
+                                        {isAffiliate && <div className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">Mode Afiliasi</div>}
+                                    </div>
+
+                                    {isAffiliate && (
+                                        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+                                            <div className="flex items-start gap-3">
+                                                <div className="flex-1">
+                                                    <h4 className="font-medium text-blue-800 dark:text-blue-200">Link Afiliasi Otomatis</h4>
+                                                    <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
+                                                        Link di bawah sudah menyertakan kode afiliasi Anda ({auth.user.affiliate_code}). Setiap pendaftaran melalui link ini
+                                                        akan memberikan komisi untuk Anda.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="flex flex-col gap-4 md:flex-row">
                                         <div className="flex-1 space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Link Pendaftaran</label>
+                                            <label className="text-sm font-medium text-gray-700">Link Pendaftaran {isAffiliate && '(dengan kode afiliasi)'}</label>
                                             <Input
                                                 type="text"
-                                                value={bundle.registration_url}
+                                                value={affiliateUrls.registrationUrl}
                                                 readOnly
                                                 className="rounded border p-2 text-sm"
                                                 placeholder="Link Pendaftaran"
@@ -221,19 +274,17 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                 className="w-full hover:cursor-pointer"
                                                 disabled={bundle.status === 'draft' || bundle.status === 'archived'}
                                             >
-                                                Salin Link Pendaftaran <LinkIcon />
+                                                {isAffiliate ? 'Salin Link Afiliasi Pendaftaran' : 'Salin Link Pendaftaran'} <LinkIcon />
                                             </Button>
                                         </div>
                                         <div className="flex-1 space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">
-                                                Link Produk Bundling {isAffiliate && '(dengan kode afiliasi)'}
-                                            </label>
+                                            <label className="text-sm font-medium text-gray-700">Link Produk {isAffiliate && '(dengan kode afiliasi)'}</label>
                                             <Input
                                                 type="text"
-                                                value={bundle.bundle_url}
+                                                value={affiliateUrls.bundleUrl}
                                                 readOnly
                                                 className="rounded border p-2 text-sm"
-                                                placeholder="Link Produk Bundling"
+                                                placeholder="Link Produk"
                                             />
                                             <Button
                                                 type="button"
@@ -241,21 +292,38 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                 className="w-full hover:cursor-pointer"
                                                 disabled={bundle.status === 'draft' || bundle.status === 'archived'}
                                             >
-                                                Salin Link Produk <LinkIcon />
+                                                {isAffiliate ? 'Salin Link Afiliasi Produk' : 'Salin Link Produk'} <LinkIcon />
                                             </Button>
                                         </div>
                                     </div>
 
                                     {bundle.status === 'published' ? (
                                         <p className="text-muted-foreground text-center text-sm">
-                                            Share link diatas ke sosial media, whatsapp, tiktok, landing page, email ataupun channel penjualan lainnya
-                                            untuk mendapatkan klik dan pendaftaran produk bundling.
+                                            {isAffiliate
+                                                ? 'Share link afiliasi diatas ke sosial media, whatsapp, tiktok, landing page, email ataupun channel penjualan lainnya untuk mendapatkan komisi dari setiap pendaftaran'
+                                                : 'Share link diatas ke sosial media, whatsapp, tiktok, landing page, email ataupun channel penjualan lainnya untuk menerima order dan pembayaran'}
                                         </p>
                                     ) : (
                                         <p className="text-center text-sm text-red-500">
-                                            Produk ini belum diterbitkan. Silakan terbitkan produk terlebih dahulu untuk membagikan link akses
-                                            bundling produk.
+                                            Produk ini belum diterbitkan. Silakan terbitkan produk terlebih dahulu untuk membagikan link akses bundling produk.
                                         </p>
+                                    )}
+
+                                    {isAffiliate && bundle.status === 'published' && (
+                                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800">
+                                            <h4 className="mb-2 text-sm font-medium">Detail Link Afiliasi:</h4>
+                                            <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+                                                <div>
+                                                    <span className="font-medium">Link Asli:</span> {bundle.registration_url}
+                                                </div>
+                                                <div>
+                                                    <span className="font-medium">Kode Afiliasi:</span> {auth.user.affiliate_code}
+                                                </div>
+                                                <div>
+                                                    <span className="font-medium">Rate Komisi:</span> {auth.user.commission}%
+                                                </div>
+                                            </div>
+                                        </div>
                                     )}
 
                                     {/* Thumbnail */}
