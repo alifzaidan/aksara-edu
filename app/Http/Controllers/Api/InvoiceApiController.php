@@ -203,6 +203,7 @@ class InvoiceApiController extends Controller
 
         $today = Carbon::today();
         $yesterday = Carbon::yesterday();
+        $currentYear = Carbon::now()->year;
         $lastMonthStart = Carbon::now()->subMonthNoOverflow()->startOfMonth();
         $lastMonthEnd = Carbon::now()->subMonthNoOverflow()->endOfMonth();
 
@@ -231,6 +232,44 @@ class InvoiceApiController extends Controller
             })
             ->sum('nett_amount');
 
+        $paidInvoicesThisYear = $paidInvoices
+            ->filter(function ($invoice) use ($currentYear) {
+                return $invoice->paid_at
+                    && Carbon::parse($invoice->paid_at)->year === $currentYear;
+            });
+
+        $totalNominalThisYear = $paidInvoicesThisYear->sum('nett_amount');
+
+        $monthLabels = [
+            1 => 'january',
+            2 => 'february',
+            3 => 'march',
+            4 => 'april',
+            5 => 'may',
+            6 => 'june',
+            7 => 'july',
+            8 => 'august',
+            9 => 'september',
+            10 => 'october',
+            11 => 'november',
+            12 => 'december',
+        ];
+
+        $monthlyNominalThisYear = collect($monthLabels)
+            ->mapWithKeys(function ($monthLabel) {
+                return [$monthLabel => 0];
+            })
+            ->all();
+
+        foreach ($paidInvoicesThisYear as $invoice) {
+            $monthNumber = Carbon::parse($invoice->paid_at)->month;
+            $monthKey = $monthLabels[$monthNumber] ?? null;
+
+            if ($monthKey !== null) {
+                $monthlyNominalThisYear[$monthKey] += $invoice->nett_amount;
+            }
+        }
+
         // Success rate
         $successRate = $totalTransactions > 0
             ? ($paidTransactions / $totalTransactions) * 100
@@ -243,6 +282,8 @@ class InvoiceApiController extends Controller
                 'total_nominal_today' => $totalNominalToday,
                 'total_nominal_yesterday' => $totalNominalYesterday,
                 'total_nominal_last_month' => $totalNominalLastMonth,
+                'total_nominal_this_year' => $totalNominalThisYear,
+                'monthly_nominal_this_year' => $monthlyNominalThisYear,
                 'paid_transactions' => $paidTransactions,
                 'pending_transactions' => $pendingTransactions,
                 'failed_transactions' => $failedTransactions,
