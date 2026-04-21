@@ -285,10 +285,6 @@ class PartnershipProductController extends Controller
             return back()->with('error', 'Batas event (event_deadline) belum diisi.');
         }
 
-        if (empty($product->payment_code)) {
-            return back()->with('error', 'Payment code belum diisi.');
-        }
-
         $participant = PartnershipProductScholarship::where('partnership_product_id', $id)
             ->where('id', $scholarshipId)
             ->firstOrFail();
@@ -319,7 +315,11 @@ class PartnershipProductController extends Controller
             $message .= "Langkah Selanjutnya:\n";
             $message .= "Silakan melengkapi pendaftaran melalui link berikut 👇\n";
             $message .= "🔗 {$product->registration_url}\n\n";
-            $message .= "🧾 Kode Pembayaran: {$product->payment_code}\n\n";
+
+            if (!empty($product->payment_code)) {
+                $message .= "🧾 Kode Pembayaran: {$product->payment_code}\n\n";
+            }
+
             $message .= "⚠️ Penting:\n";
             $message .= "• Batas akhir pengisian hingga {$deadlineText}\n";
             $message .= "• Pastikan data diisi dengan benar agar proses berjalan lancar\n\n";
