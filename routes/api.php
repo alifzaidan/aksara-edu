@@ -26,3 +26,17 @@ Route::middleware(['auth:sanctum', 'token.ability:external-api'])->group(functio
     Route::get('/invoices/statistics', [InvoiceApiController::class, 'statistics'])->name('api.invoices.statistics');
     Route::get('/invoices/{id}', [InvoiceApiController::class, 'show'])->name('api.invoices.show');
 });
+
+Route::post('/check-email', function (Request $request) {
+    $user = \App\Models\User::where('email', $request->email)->first();
+    
+    if ($user) {
+        return response()->json([
+            'exists' => true,
+            'name' => $user->name,
+            'phone_number' => $user->phone_number,
+        ]);
+    }
+    
+    return response()->json(['exists' => false]);
+});

@@ -3,8 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { rupiahFormatter } from '@/lib/utils';
-import { SharedData } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { AlertTriangle, Calendar, Check, Package, Sparkles } from 'lucide-react';
@@ -43,36 +42,12 @@ export default function RegisterSection({
     hasOwnedItems,
     ownedItems,
 }: RegisterSectionProps) {
-    const { auth } = usePage<SharedData>().props;
-
     const deadline = bundle.registration_deadline ? new Date(bundle.registration_deadline) : null;
 
-    const isLoggedIn = !!auth.user;
-    const isProfileComplete = isLoggedIn && auth.user?.phone_number;
-
-    let registrationUrl: string;
-    let buttonText: string;
-    let warningMessage: string | null = null;
-    let isDisabled = false;
-
-    if (hasOwnedItems) {
-        registrationUrl = '#';
-        buttonText = 'Tidak Dapat Mendaftar';
-        warningMessage = 'Anda sudah memiliki beberapa produk dalam bundle ini!';
-        isDisabled = true;
-    } else if (!isLoggedIn) {
-        registrationUrl = bundle.registration_url;
-        buttonText = 'Login untuk Mendaftar';
-        warningMessage = 'Anda harus login terlebih dahulu!';
-    } else if (!isProfileComplete) {
-        registrationUrl = route('profile.edit', { redirect: window.location.href });
-        buttonText = 'Lengkapi Profil untuk Mendaftar';
-        warningMessage = 'Profil Anda belum lengkap!';
-    } else {
-        registrationUrl = bundle.registration_url;
-        buttonText = 'Daftar Sekarang';
-        warningMessage = null;
-    }
+    const isDisabled = false;
+    const registrationUrl = bundle.registration_url;
+    const buttonText = 'Daftar Sekarang';
+    const warningMessage = null;
 
     return (
         <section className="mx-auto my-12 w-full max-w-5xl px-4" id="register">

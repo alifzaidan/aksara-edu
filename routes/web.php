@@ -41,8 +41,52 @@ use App\Http\Controllers\User\Profile\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WebinarController;
 use App\Http\Controllers\User\QuizController as UserQuizController;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+Route::post('/auto-login', function (Request $request) {
+    try {
+        $request->validate([
+            'email' => 'required|email',
+            'phone_number' => 'required|string',
+        ]);
+
+        $user = User::where('email', $request->email)
+            ->where('phone_number', $request->phone_number)
+            ->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email atau nomor telepon tidak sesuai'
+            ], 401);
+        }
+
+        Auth::login($user, true);
+        $request->session()->regenerate();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Login berhasil',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone_number' => $user->phone_number,
+            ]
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Auto-login error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
+    }
+})->name('auto-login');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/terms-and-conditions', [LegalController::class, 'termsAndConditions'])->name('terms-and-conditions');
@@ -133,7 +177,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/course/{course}/rating', [CourseRatingController::class, 'store'])->name('course.rating.store');
 
     Route::get('/invoice/{id}/pdf', [InvoiceController::class, 'generatePDF'])->name('invoice.pdf')->middleware('auth');
-    Route::post('/api/discount-codes/validate', [DiscountCodeController::class, 'validate'])->name('api.discount-codes.validate');
 });
 
 Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('admin')->group(function () {
@@ -225,7 +268,8 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
 
         Route::resource('promotions', PromotionController::class);
         Route::patch('promotions/{promotion}/toggle-status', [PromotionController::class, 'toggleStatus'])->name('promotions.toggle-status');
-        Route::get('transactions/export', [InvoiceController::class, 'export'])->name('transactions.export');    });
+        Route::get('transactions/export', [InvoiceController::class, 'export'])->name('transactions.export');
+    });
 
     Route::middleware(['role:affiliate|admin'])->group(function () {
         Route::get('bootcamps', [BootcampController::class, 'index'])->name('bootcamps.index');
@@ -239,6 +283,8 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::get('affiliate-earnings', [AffiliateEarningController::class, 'index'])->name('earnings.index');
     });
 });
+
+Route::post('/api/discount-codes/validate', [DiscountCodeController::class, 'validate'])->name('api.discount-codes.validate');
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';

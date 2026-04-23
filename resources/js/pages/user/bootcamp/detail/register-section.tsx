@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { SharedData } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { BadgeCheck, CalendarDays, ChartArea, Clock, Hourglass, MapPin, Users } from 'lucide-react';
 
 interface Bootcamp {
@@ -19,33 +18,15 @@ interface Bootcamp {
 }
 
 export default function RegisterSection({ bootcamp }: { bootcamp: Bootcamp }) {
-    const { auth } = usePage<SharedData>().props;
     const start = new Date(bootcamp.start_date);
     const end = new Date(bootcamp.end_date);
     const diffMs = end.getTime() - start.getTime();
     const diffDays = Math.ceil(diffMs / (24 * 60 * 60 * 1000)) + 1;
     const totalWeeks = Math.ceil(diffDays / 7);
 
-    const isLoggedIn = !!auth.user;
-    const isProfileComplete = isLoggedIn && auth.user?.phone_number;
-
-    let registrationUrl: string;
-    let buttonText: string;
-    let warningMessage: string | null = null;
-
-    if (!isLoggedIn) {
-        registrationUrl = bootcamp.registration_url;
-        buttonText = 'Login untuk Mendaftar';
-        warningMessage = 'Anda harus login terlebih dahulu!';
-    } else if (!isProfileComplete) {
-        registrationUrl = route('profile.edit', { redirect: window.location.href });
-        buttonText = 'Lengkapi Profil untuk Mendaftar';
-        warningMessage = 'Profil Anda belum lengkap!';
-    } else {
-        registrationUrl = bootcamp.registration_url;
-        buttonText = 'Daftar Sekarang';
-        warningMessage = null;
-    }
+    const registrationUrl = bootcamp.registration_url;
+    const buttonText = 'Daftar Sekarang';
+    const warningMessage = null;
 
     const deadline = new Date(bootcamp.registration_deadline);
     const isRegistrationOpen = new Date() < deadline;

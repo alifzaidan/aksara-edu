@@ -102,10 +102,10 @@ class CourseController extends Controller
             ])->toResponse($request)->setStatusCode(404);
         }
 
-        if (!Auth::check()) {
-            $currentUrl = $request->fullUrl();
-            return redirect()->route('login', ['redirect' => $currentUrl]);
-        }
+        // if (!Auth::check()) {
+        //     $currentUrl = $request->fullUrl();
+        //     return redirect()->route('login', ['redirect' => $currentUrl]);
+        // }
 
         $course->load(['modules.lessons']);
         $hasAccess = false;

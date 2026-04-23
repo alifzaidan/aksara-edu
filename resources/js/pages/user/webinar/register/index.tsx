@@ -7,8 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UserLayout from '@/layouts/user-layout';
 import { SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import axios from 'axios';
 import { BadgeCheck, Check, Hourglass, User, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface Webinar {
@@ -46,11 +47,32 @@ interface ReferralInfo {
     hasActive: boolean;
 }
 
+interface GuestFormData {
+    name: string;
+    email: string;
+    phone_number: string;
+    instance: string;
+}
+
+interface PendingCheckoutData {
+    webinarId: string;
+    timestamp: number;
+    promoCode: string;
+    discountData: DiscountData | null;
+    termsAccepted: boolean;
+    isFree: boolean;
+}
+
 function parseList(items?: string | null): string[] {
     if (!items) return [];
     const matches = items.match(/<li>(.*?)<\/li>/g);
     if (!matches) return [];
     return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+    if (error instanceof Error && error.message) return error.message;
+    return fallback;
 }
 
 export default function RegisterWebinar({
@@ -74,6 +96,15 @@ export default function RegisterWebinar({
     const [discountData, setDiscountData] = useState<DiscountData | null>(null);
     const [promoLoading, setPromoLoading] = useState(false);
     const [promoError, setPromoError] = useState('');
+    const [checkingEmail, setCheckingEmail] = useState(false);
+    const [emailExists, setEmailExists] = useState(false);
+
+    const [guestFormData, setGuestFormData] = useState<GuestFormData>({
+        name: '',
+        email: '',
+        phone_number: '',
+        instance: '',
+    });
 
     const [showFreeForm, setShowFreeForm] = useState(false);
     const [freeFormData, setFreeFormData] = useState<Record<string, File | null>>({
@@ -96,6 +127,10 @@ export default function RegisterWebinar({
     const finalWebinarPrice = basePrice - discountAmount;
     const totalPrice = isFree ? 0 : finalWebinarPrice + transactionFee;
 
+    const updateGuestForm = (field: keyof GuestFormData, value: string) => {
+        setGuestFormData((prev) => ({ ...prev, [field]: value }));
+    };
+
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const refFromUrl = urlParams.get('ref');
@@ -107,7 +142,46 @@ export default function RegisterWebinar({
         }
     }, [referralInfo]);
 
-    // Debounced promo code validation
+    const validatePromoCode = useCallback(async () => {
+        if (!promoCode.trim() || isFree) return;
+
+        setPromoLoading(true);
+        setPromoError('');
+
+        try {
+            const requestData: Record<string, string | number> = {
+                code: promoCode,
+                amount: webinar.price,
+                product_type: 'webinar',
+                product_id: webinar.id,
+            };
+
+            if (!isLoggedIn && emailExists && guestFormData.email) {
+                requestData.email = guestFormData.email;
+            }
+
+            const response = await axios.post('/api/discount-codes/validate', requestData);
+            const data = response.data;
+
+            if (data.valid) {
+                setDiscountData(data);
+                setPromoError('');
+            } else {
+                setDiscountData(null);
+                setPromoError(data.message || 'Kode promo tidak valid');
+            }
+        } catch (error: unknown) {
+            setDiscountData(null);
+            if (axios.isAxiosError(error)) {
+                setPromoError(error.response?.data?.message || 'Terjadi kesalahan saat memvalidasi kode promo');
+            } else {
+                setPromoError('Terjadi kesalahan saat memvalidasi kode promo');
+            }
+        } finally {
+            setPromoLoading(false);
+        }
+    }, [emailExists, guestFormData.email, isFree, isLoggedIn, promoCode, webinar.id, webinar.price]);
+
     useEffect(() => {
         if (!promoCode.trim() || isFree) {
             setDiscountData(null);
@@ -120,48 +194,46 @@ export default function RegisterWebinar({
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [promoCode]);
+    }, [isFree, promoCode, validatePromoCode]);
 
-    const validatePromoCode = async () => {
-        if (!promoCode.trim() || isFree) return;
+    useEffect(() => {
+        if (isLoggedIn) return;
 
-        setPromoLoading(true);
-        setPromoError('');
-
-        try {
-            const response = await fetch('/api/discount-codes/validate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify({
-                    code: promoCode,
-                    amount: webinar.price,
-                    product_type: 'webinar',
-                    product_id: webinar.id,
-                }),
-            });
-
-            const data = await response.json();
-
-            if (data.valid) {
-                setDiscountData(data);
-                setPromoError('');
-            } else {
-                setDiscountData(null);
-                setPromoError(data.message || 'Kode promo tidak valid');
-            }
-        } catch {
-            setDiscountData(null);
-            setPromoError('Terjadi kesalahan saat memvalidasi kode promo');
-        } finally {
-            setPromoLoading(false);
+        const email = guestFormData.email.trim();
+        if (!email || !email.includes('@')) {
+            setEmailExists(false);
+            return;
         }
-    };
 
-    const refreshCSRFToken = async (): Promise<string> => {
+        const timer = setTimeout(async () => {
+            setCheckingEmail(true);
+
+            try {
+                const response = await axios.post('/api/check-email', { email });
+                const data = response.data;
+
+                if (data.exists) {
+                    setEmailExists(true);
+                    setGuestFormData((prev) => ({
+                        ...prev,
+                        name: data.name || prev.name,
+                        phone_number: data.phone_number || prev.phone_number,
+                        instance: data.instance || prev.instance,
+                    }));
+                } else {
+                    setEmailExists(false);
+                }
+            } catch {
+                setEmailExists(false);
+            } finally {
+                setCheckingEmail(false);
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [guestFormData.email, isLoggedIn]);
+
+    const refreshCSRFToken = useCallback(async (): Promise<string> => {
         try {
             const response = await fetch('/csrf-token', {
                 method: 'GET',
@@ -180,7 +252,138 @@ export default function RegisterWebinar({
             console.error('Failed to refresh CSRF token:', error);
             throw error;
         }
+    }, []);
+
+    const savePendingCheckout = () => {
+        const pendingCheckoutData: PendingCheckoutData = {
+            webinarId: webinar.id,
+            timestamp: Date.now(),
+            promoCode,
+            discountData,
+            termsAccepted,
+            isFree,
+        };
+
+        sessionStorage.setItem('pendingCheckoutWebinar', JSON.stringify(pendingCheckoutData));
     };
+
+    const ensureAuthenticated = async (): Promise<boolean> => {
+        if (isLoggedIn) return true;
+
+        if (!guestFormData.email || !guestFormData.phone_number) {
+            toast.error('Email dan nomor telepon wajib diisi.');
+            return false;
+        }
+
+        setLoading(true);
+
+        try {
+            if (emailExists) {
+                const loginResponse = await axios.post(route('auto-login'), {
+                    email: guestFormData.email,
+                    phone_number: guestFormData.phone_number,
+                });
+
+                const loginData = loginResponse.data;
+
+                if (!loginData.success) {
+                    throw new Error(loginData.message || 'Gagal login otomatis.');
+                }
+
+                toast.success('Login berhasil. Melanjutkan checkout...');
+            } else {
+                if (!guestFormData.name) {
+                    toast.error('Nama wajib diisi.');
+                    setLoading(false);
+                    return false;
+                }
+
+                await axios.post(route('register'), {
+                    name: guestFormData.name,
+                    email: guestFormData.email,
+                    phone_number: guestFormData.phone_number,
+                    instance: guestFormData.instance,
+                    password: guestFormData.phone_number,
+                    password_confirmation: guestFormData.phone_number,
+                    affiliate_code: referralInfo.code,
+                });
+
+                toast.success('Registrasi berhasil. Melanjutkan checkout...');
+            }
+
+            savePendingCheckout();
+            window.location.reload();
+            return false;
+        } catch (error: unknown) {
+            setLoading(false);
+            if (axios.isAxiosError(error)) {
+                toast.error(error.response?.data?.message || getErrorMessage(error, 'Gagal memproses login/registrasi otomatis.'));
+            } else {
+                toast.error(getErrorMessage(error, 'Gagal memproses login/registrasi otomatis.'));
+            }
+            return false;
+        }
+    };
+
+    const submitPayment = useCallback(
+        async (activeDiscountData: DiscountData | null, retryCount = 0): Promise<void> => {
+            const originalDiscountAmount = webinar.strikethrough_price > 0 ? webinar.strikethrough_price - webinar.price : 0;
+            const promoDiscountAmount = activeDiscountData?.discount_amount || 0;
+            const activeFinalPrice = basePrice - promoDiscountAmount;
+            const activeTotalPrice = isFree ? 0 : activeFinalPrice + transactionFee;
+
+            const invoiceData: Record<string, string | number> = {
+                type: 'webinar',
+                id: webinar.id,
+                discount_amount: originalDiscountAmount + promoDiscountAmount,
+                nett_amount: activeFinalPrice,
+                transaction_fee: transactionFee,
+                total_amount: activeTotalPrice,
+            };
+
+            if (activeDiscountData?.valid) {
+                invoiceData.discount_code_id = activeDiscountData.discount_code.id;
+                invoiceData.discount_code_amount = activeDiscountData.discount_amount;
+            }
+
+            try {
+                const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
+
+                const res = await fetch(route('invoice.store'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || '',
+                        Accept: 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(invoiceData),
+                });
+
+                if (res.status === 419 && retryCount < 2) {
+                    await refreshCSRFToken();
+                    return submitPayment(activeDiscountData, retryCount + 1);
+                }
+
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    if (data.payment_url) {
+                        sessionStorage.removeItem('pendingCheckoutWebinar');
+                        window.location.href = data.payment_url;
+                    } else {
+                        throw new Error('Payment URL not received');
+                    }
+                } else {
+                    throw new Error(data.message || 'Gagal membuat invoice.');
+                }
+            } catch (error) {
+                console.error('Payment error:', error);
+                throw error;
+            }
+        },
+        [basePrice, isFree, refreshCSRFToken, transactionFee, webinar.id, webinar.price, webinar.strikethrough_price],
+    );
 
     const handleFreeCheckout = (e: React.FormEvent) => {
         e.preventDefault();
@@ -218,14 +421,19 @@ export default function RegisterWebinar({
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!isProfileComplete) {
-            alert('Profil Anda belum lengkap! Harap lengkapi nomor telepon terlebih dahulu.');
-            window.location.href = route('profile.edit');
+        if (!termsAccepted && !isFree) {
+            alert('Anda harus menyetujui syarat dan ketentuan!');
             return;
         }
 
-        if (!termsAccepted && !isFree) {
-            alert('Anda harus menyetujui syarat dan ketentuan!');
+        const authenticated = await ensureAuthenticated();
+        if (!authenticated) {
+            return;
+        }
+
+        if (!isProfileComplete) {
+            alert('Profil Anda belum lengkap! Harap lengkapi nomor telepon terlebih dahulu.');
+            window.location.href = route('profile.edit');
             return;
         }
 
@@ -237,70 +445,60 @@ export default function RegisterWebinar({
             return;
         }
 
-        const submitPayment = async (retryCount = 0): Promise<void> => {
-            const originalDiscountAmount = webinar.strikethrough_price > 0 ? webinar.strikethrough_price - webinar.price : 0;
-            const promoDiscountAmount = discountData?.discount_amount || 0;
-
-            const invoiceData: any = {
-                type: 'webinar',
-                id: webinar.id,
-                discount_amount: originalDiscountAmount + promoDiscountAmount,
-                nett_amount: finalWebinarPrice,
-                transaction_fee: transactionFee,
-                total_amount: totalPrice,
-            };
-
-            if (discountData?.valid) {
-                invoiceData.discount_code_id = discountData.discount_code.id;
-                invoiceData.discount_code_amount = discountData.discount_amount;
-            }
-
-            try {
-                // Get fresh CSRF token
-                const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
-
-                const res = await fetch(route('invoice.store'), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                        Accept: 'application/json',
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify(invoiceData),
-                });
-
-                // Handle 419 error with retry
-                if (res.status === 419 && retryCount < 2) {
-                    console.log(`CSRF token expired, refreshing... (attempt ${retryCount + 1})`);
-                    await refreshCSRFToken();
-                    return submitPayment(retryCount + 1);
-                }
-
-                const data = await res.json();
-
-                if (res.ok && data.success) {
-                    if (data.payment_url) {
-                        window.location.href = data.payment_url;
-                    } else {
-                        throw new Error('Payment URL not received');
-                    }
-                } else {
-                    throw new Error(data.message || 'Gagal membuat invoice.');
-                }
-            } catch (error) {
-                console.error('Payment error:', error);
-                throw error;
-            }
-        };
-
         try {
-            await submitPayment();
-        } catch (error: any) {
-            alert(error.message || 'Terjadi kesalahan saat proses pembayaran.');
+            await submitPayment(discountData);
+        } catch (error: unknown) {
+            alert(getErrorMessage(error, 'Terjadi kesalahan saat proses pembayaran.'));
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        if (!isLoggedIn) return;
+
+        const pendingCheckoutRaw = sessionStorage.getItem('pendingCheckoutWebinar');
+        if (!pendingCheckoutRaw) return;
+
+        try {
+            const pendingCheckout = JSON.parse(pendingCheckoutRaw) as PendingCheckoutData;
+
+            const fiveMinutes = 5 * 60 * 1000;
+            if (Date.now() - pendingCheckout.timestamp > fiveMinutes) {
+                sessionStorage.removeItem('pendingCheckoutWebinar');
+                return;
+            }
+
+            if (pendingCheckout.webinarId !== webinar.id) {
+                sessionStorage.removeItem('pendingCheckoutWebinar');
+                return;
+            }
+
+            if (pendingCheckout.promoCode) {
+                setPromoCode(pendingCheckout.promoCode);
+            }
+
+            setDiscountData(pendingCheckout.discountData || null);
+            setTermsAccepted(pendingCheckout.termsAccepted || false);
+
+            if (pendingCheckout.isFree) {
+                setShowFreeForm(true);
+                setLoading(false);
+                sessionStorage.removeItem('pendingCheckoutWebinar');
+                return;
+            }
+
+            setLoading(true);
+
+            submitPayment(pendingCheckout.discountData || null).catch((error: unknown) => {
+                console.error('Pending checkout webinar error:', error);
+                toast.error(getErrorMessage(error, 'Gagal melanjutkan checkout webinar.'));
+                setLoading(false);
+                sessionStorage.removeItem('pendingCheckoutWebinar');
+            });
+        } catch {
+            sessionStorage.removeItem('pendingCheckoutWebinar');
+        }
+    }, [isLoggedIn, submitPayment, webinar.id]);
 
     // Function untuk validasi ukuran file
     const validateFileSize = (file: File, maxSizeMB: number = 2): boolean => {
@@ -354,45 +552,7 @@ export default function RegisterWebinar({
         toast.success('File berhasil diunggah.');
     };
 
-    if (!isLoggedIn) {
-        const currentUrl = window.location.href;
-        const loginUrl = route('login', { redirect: currentUrl });
-
-        return (
-            <UserLayout>
-                <Head title="Login Required" />
-
-                <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
-                    <div className="mx-auto my-12 w-full max-w-7xl px-4">
-                        <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
-                            Daftar Webinar "{webinar.title}"
-                        </h2>
-                        <p className="text-center text-gray-400">Silakan login terlebih dahulu untuk mendaftar webinar.</p>
-                    </div>
-                </section>
-                <section className="mx-auto my-4 w-full max-w-7xl px-4">
-                    <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
-                        <User size={64} className="text-blue-500" />
-                        <h2 className="text-xl font-bold">Login Diperlukan</h2>
-                        <p className="text-sm text-gray-500">
-                            Anda perlu login terlebih dahulu untuk mendaftar webinar ini.
-                            {referralInfo.hasActive && ' Kode referral Anda akan tetap tersimpan.'}
-                        </p>
-                        <div className="flex w-full max-w-md gap-2">
-                            <Button asChild className="flex-1">
-                                <a href={loginUrl}>Login</a>
-                            </Button>
-                            <Button asChild variant="outline" className="flex-1">
-                                <Link href={route('register', referralInfo.code ? { ref: referralInfo.code } : {})}>Daftar</Link>
-                            </Button>
-                        </div>
-                    </div>
-                </section>
-            </UserLayout>
-        );
-    }
-
-    if (!isProfileComplete) {
+    if (isLoggedIn && !isProfileComplete) {
         return (
             <UserLayout>
                 <Head title="Daftar Webinar" />
@@ -483,6 +643,69 @@ export default function RegisterWebinar({
                         <form onSubmit={handleCheckout}>
                             <h2 className="my-2 text-xl font-bold italic">Detail {isFree ? 'Pendaftaran' : 'Pembayaran'}</h2>
                             <div className="space-y-4 rounded-lg border p-4">
+                                {!isLoggedIn && (
+                                    <div className="space-y-3 rounded-lg border p-4">
+                                        <h3 className="text-lg font-semibold">Data Diri</h3>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="guest-email">Email</Label>
+                                            <Input
+                                                id="guest-email"
+                                                type="email"
+                                                placeholder="email@example.com"
+                                                value={guestFormData.email}
+                                                onChange={(e) => updateGuestForm('email', e.target.value)}
+                                                required
+                                            />
+                                            {checkingEmail && <p className="text-xs text-gray-500">Mengecek email...</p>}
+                                            {emailExists && <p className="text-xs text-green-600">Email ditemukan. Login otomatis akan digunakan.</p>}
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="guest-name">Nama</Label>
+                                            <Input
+                                                id="guest-name"
+                                                type="text"
+                                                placeholder="Nama lengkap"
+                                                value={guestFormData.name}
+                                                onChange={(e) => updateGuestForm('name', e.target.value)}
+                                                disabled={emailExists}
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="guest-phone">No. Telepon</Label>
+                                            <Input
+                                                id="guest-phone"
+                                                type="tel"
+                                                placeholder="08xxxxxxxxxx"
+                                                value={guestFormData.phone_number}
+                                                onChange={(e) => updateGuestForm('phone_number', e.target.value)}
+                                                disabled={emailExists}
+                                                required
+                                            />
+                                            {!emailExists && (
+                                                <p className="text-xs text-gray-500">Nomor telepon akan digunakan sebagai password akun Anda.</p>
+                                            )}
+                                            {emailExists && (
+                                                <p className="text-xs text-blue-600">Data akun ditemukan dan dikunci agar sesuai akun terdaftar.</p>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="guest-instance">Instansi (Opsional)</Label>
+                                            <Input
+                                                id="guest-instance"
+                                                type="text"
+                                                placeholder="Instansi / perusahaan"
+                                                value={guestFormData.instance}
+                                                onChange={(e) => updateGuestForm('instance', e.target.value)}
+                                                disabled={emailExists}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
                                 {isFree ? (
                                     <div className="space-y-2 text-center">
                                         <div className="flex items-center justify-between p-4">

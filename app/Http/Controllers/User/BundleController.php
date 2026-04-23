@@ -206,10 +206,10 @@ class BundleController extends Controller
             ])->toResponse($request)->setStatusCode(404);
         }
 
-        if (!Auth::check()) {
-            $currentUrl = $request->fullUrl();
-            return redirect()->route('login', ['redirect' => $currentUrl]);
-        }
+        // if (!Auth::check()) {
+        //     $currentUrl = $request->fullUrl();
+        //     return redirect()->route('login', ['redirect' => $currentUrl]);
+        // }
 
         if ($bundle->registration_deadline && now()->gt($bundle->registration_deadline)) {
             return redirect()->route('bundle.show', $bundle->slug)
