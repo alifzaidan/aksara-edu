@@ -39,9 +39,26 @@ class AffiliateController extends Controller
         $totalEarnings = $affiliates->sum('total_earnings');
         $totalTransactions = $affiliates->sum('total_transactions');
 
-        $allEarnings = AffiliateEarning::all();
-        $paidCommission = $allEarnings->where('status', 'paid')->sum('amount');
-        $pendingCommission = $allEarnings->where('status', 'approved')->sum('amount');
+        $commissionByAffiliate = AffiliateEarning::query()
+            ->selectRaw('affiliate_user_id, SUM(amount) as total_commission')
+            ->groupBy('affiliate_user_id')
+            ->pluck('total_commission', 'affiliate_user_id');
+
+        $paidByAffiliate = AffiliateWithdrawal::query()
+            ->selectRaw('affiliate_user_id, SUM(amount) as paid_commission')
+            ->groupBy('affiliate_user_id')
+            ->pluck('paid_commission', 'affiliate_user_id');
+
+        $paidCommission = $affiliates->sum(function ($affiliate) use ($paidByAffiliate) {
+            return (int) ($paidByAffiliate[$affiliate->id] ?? 0);
+        });
+
+        $pendingCommission = $affiliates->sum(function ($affiliate) use ($commissionByAffiliate, $paidByAffiliate) {
+            $totalCommission = (int) ($commissionByAffiliate[$affiliate->id] ?? 0);
+            $paid = (int) ($paidByAffiliate[$affiliate->id] ?? 0);
+
+            return max(0, $totalCommission - $paid);
+        });
 
         $statistics = [
             'overview' => [
