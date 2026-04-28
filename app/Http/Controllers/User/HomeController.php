@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Bootcamp;
 use App\Models\Bundle;
 use App\Models\Course;
+use App\Models\EnrollmentPrivate;
 use App\Models\Invoice;
 use App\Models\PartnershipProduct;
 use App\Models\PrivateClass;
@@ -259,7 +260,9 @@ class HomeController extends Controller
 
             $myPartnershipIds = [];
 
-            $myPrivateIds = \App\Models\EnrollmentPrivate::where('user_id', $userId)
+            $myPrivateIds = EnrollmentPrivate::whereHas('invoice', function ($query) use ($userId) {
+                $query->where('user_id', $userId);
+            })
                 ->pluck('private_class_id')
                 ->unique()
                 ->values()
