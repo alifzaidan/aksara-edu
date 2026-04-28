@@ -78,6 +78,12 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         roles: ['admin', 'affiliate'],
     },
     {
+        title: 'Private Class',
+        href: '/admin/privates',
+        icon: BookText,
+        roles: ['admin', 'affiliate'],
+    },
+    {
         title: 'Paket Bundling',
         href: '/admin/bundles',
         icon: Gift,

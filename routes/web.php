@@ -21,6 +21,7 @@ use App\Http\Controllers\LegalController;
 use App\Http\Controllers\LessonAssignmentController;
 use App\Http\Controllers\MentorController;
 use App\Http\Controllers\PartnershipProductController;
+use App\Http\Controllers\PrivateClassController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\PromotionController;
@@ -28,6 +29,7 @@ use App\Http\Controllers\ToolController;
 use App\Http\Controllers\User\CourseController as UserCourseController;
 use App\Http\Controllers\User\BootcampController as UserBootcampController;
 use App\Http\Controllers\User\BundleController as UserBundleController;
+use App\Http\Controllers\User\PrivateController as UserPrivateController;
 use App\Http\Controllers\User\WebinarController as UserWebinarController;
 use App\Http\Controllers\User\PartnershipProductController as UserPartnershipProductController;
 use App\Http\Controllers\User\ArticleController as UserArticleController;
@@ -97,6 +99,8 @@ Route::get('/bootcamp', [UserBootcampController::class, 'index'])->name('bootcam
 Route::get('/bootcamp/{bootcamp:slug}', [UserBootcampController::class, 'detail'])->name('bootcamp.detail');
 Route::get('/webinar', [UserWebinarController::class, 'index'])->name('webinar.index');
 Route::get('/webinar/{webinar:slug}', [UserWebinarController::class, 'detail'])->name('webinar.detail');
+Route::get('/private', [UserPrivateController::class, 'index'])->name('private.index');
+Route::get('/private/{privateClass:slug}', [UserPrivateController::class, 'detail'])->name('private.detail');
 Route::get('/bundle', [UserBundleController::class, 'index'])->name('bundle.index');
 Route::get('/bundle/{bundle:slug}', [UserBundleController::class, 'detail'])->name('bundle.detail');
 Route::get('/certification', [UserPartnershipProductController::class, 'index'])->name('partnership-product.index');
@@ -110,6 +114,7 @@ Route::get('/mentor/{id}', [UserMentorController::class, 'show'])->name('mentor.
 Route::get('/course/{course:slug}/checkout', [UserCourseController::class, 'showCheckout'])->name('course.checkout');
 Route::get('/bootcamp/{bootcamp:slug}/register', [UserBootcampController::class, 'showRegister'])->name('bootcamp.register');
 Route::get('/webinar/{webinar:slug}/register', [UserWebinarController::class, 'showRegister'])->name('webinar.register');
+Route::get('/private/{privateClass:slug}/register', [UserPrivateController::class, 'showRegister'])->name('private.register');
 Route::get('/bundle/{bundle:slug}/checkout', [UserBundleController::class, 'showCheckout'])->name('bundle.checkout');
 Route::get('/certification/{partnershipProduct:slug}/track-click', [UserPartnershipProductController::class, 'trackClick'])->name('partnership-products.track-click');
 Route::get('/certification/{partnershipProduct:slug}/scholarship-apply', [UserPartnershipProductController::class, 'scholarshipApply'])->name('partnership-products.scholarship-apply');
@@ -120,6 +125,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/course/checkout/success', [UserCourseController::class, 'showCheckoutSuccess'])->name('course.checkout.success');
     Route::get('/bootcamp/register/success', [UserBootcampController::class, 'showRegisterSuccess'])->name('bootcamp.register.success');
     Route::get('/webinar/register/success', [UserWebinarController::class, 'showRegisterSuccess'])->name('webinar.register.success');
+    Route::get('/private/register/success', [UserPrivateController::class, 'showRegisterSuccess'])->name('private.register.success');
 
     Route::post('/invoice', [InvoiceController::class, 'store'])->name('invoice.store');
     Route::post('/invoice-bundle', [InvoiceController::class, 'storeBundle'])->name('invoice.store.bundle');
@@ -230,6 +236,11 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::patch('webinars/{webinar}/add-recording', [WebinarController::class, 'addRecording'])->name('webinars.add-recording');
         Route::delete('/webinars/{id}/recording', [WebinarController::class, 'removeRecording'])->name('webinars.recording.remove');
 
+        Route::resource('privates', PrivateClassController::class);
+        Route::post('/privates/{private}/publish', [PrivateClassController::class, 'publish'])->name('privates.publish');
+        Route::post('/privates/{private}/archive', [PrivateClassController::class, 'archive'])->name('privates.archive');
+        Route::post('/privates/{private}/duplicate', [PrivateClassController::class, 'duplicate'])->name('privates.duplicate');
+
         Route::resource('partnership-products', PartnershipProductController::class);
         Route::post('/partnership-products/{id}/publish', [PartnershipProductController::class, 'publish'])->name('partnership-products.publish');
         Route::post('/partnership-products/{id}/archive', [PartnershipProductController::class, 'archive'])->name('partnership-products.archive');
@@ -277,6 +288,9 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
 
         Route::get('webinars', [WebinarController::class, 'index'])->name('webinars.index');
         Route::get('webinars/{webinar}', [WebinarController::class, 'show'])->name('webinars.show');
+
+        Route::get('privates', [PrivateClassController::class, 'index'])->name('privates.index');
+        Route::get('privates/{private}', [PrivateClassController::class, 'show'])->name('privates.show');
     });
 
     Route::middleware(['role:affiliate|mentor'])->group(function () {

@@ -21,3 +21,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+ADMIN_UI_RULES.md
+USER_UI_RULES.md

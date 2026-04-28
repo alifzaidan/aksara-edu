@@ -8,6 +8,7 @@ use App\Models\Bundle;
 use App\Models\Course;
 use App\Models\Invoice;
 use App\Models\PartnershipProduct;
+use App\Models\PrivateClass;
 use App\Models\Promotion;
 use App\Models\Tool;
 use App\Models\Webinar;
@@ -150,6 +151,28 @@ class HomeController extends Controller
                 ];
             });
 
+        // ✅ Add Private Classes
+        $privateClasses = PrivateClass::with(['category', 'schedules'])
+            ->where('status', 'published')
+            ->orderBy('created_at', 'desc')
+            ->take(6)
+            ->get()
+            ->map(function ($pc) {
+                $firstSchedule = $pc->schedules->first();
+                return [
+                    'id' => $pc->id,
+                    'title' => $pc->title,
+                    'thumbnail' => $pc->thumbnail,
+                    'slug' => $pc->slug,
+                    'strikethrough_price' => $pc->strikethrough_price ?? 0,
+                    'price' => $pc->price,
+                    'start_time' => $firstSchedule?->start_time,
+                    'category' => $pc->category,
+                    'type' => 'private',
+                    'created_at' => $pc->created_at,
+                ];
+            });
+
         // Gabungkan semua produk dan urutkan berdasarkan tanggal terbaru
         $latestProducts = collect()
             ->merge($courses)
@@ -157,6 +180,7 @@ class HomeController extends Controller
             ->merge($webinars)
             ->merge($bundles)
             ->merge($partnershipProducts)
+            ->merge($privateClasses)
             ->sortByDesc('created_at')
             ->take(6)
             ->values();
@@ -167,6 +191,7 @@ class HomeController extends Controller
             ->merge($webinars)
             ->merge($bundles)
             ->merge($partnershipProducts)
+            ->merge($privateClasses)
             ->map(function ($product) {
                 return [
                     'id' => $product['id'],
@@ -182,6 +207,7 @@ class HomeController extends Controller
             'webinars' => [],
             'bundles' => [],
             'partnerships' => [],
+            'privates' => [],
         ];
 
         if (Auth::check()) {
@@ -233,12 +259,19 @@ class HomeController extends Controller
 
             $myPartnershipIds = [];
 
+            $myPrivateIds = \App\Models\EnrollmentPrivate::where('user_id', $userId)
+                ->pluck('private_class_id')
+                ->unique()
+                ->values()
+                ->all();
+
             $myProductIds = [
                 'courses' => $myCourseIds,
                 'bootcamps' => $myBootcampIds,
                 'webinars' => $myWebinarIds,
                 'bundles' => $myBundleIds,
                 'partnerships' => $myPartnershipIds,
+                'privates' => $myPrivateIds,
             ];
         }
 

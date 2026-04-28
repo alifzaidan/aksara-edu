@@ -41,6 +41,12 @@ const serviceItems = [
         icon: MonitorPlay,
         description: 'Seminar online dengan berbagai topik up to date',
     },
+    {
+        title: 'Private Class',
+        href: '/private',
+        icon: BookText,
+        description: 'Pendampingan intensif 1-on-1 secara online atau offline',
+    },
 ];
 
 const activeItemStyles = 'text-primary bg-primary/10 dark:text-white dark:bg-primary/50';
@@ -147,7 +153,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                     <NavigationMenuContent>
                                         <ul className="grid w-[600px] gap-3 p-4 md:grid-cols-[.75fr_1fr]">
                                             {/* Row Span - Bundling */}
-                                            <li className="row-span-3">
+                                            <li className="row-span-4">
                                                 <NavigationMenuLink asChild>
                                                     <Link
                                                         href="/bundle"
@@ -174,6 +180,9 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             </ListItem>
                                             <ListItem href="/webinar" title="Webinar" icon={MonitorPlay}>
                                                 Seminar online dengan topik terkini dan expert speaker
+                                            </ListItem>
+                                            <ListItem href="/private" title="Private Class" icon={BookText}>
+                                                Pendampingan 1-on-1 dengan mentor untuk kebutuhan belajar yang lebih personal
                                             </ListItem>
                                         </ul>
                                     </NavigationMenuContent>

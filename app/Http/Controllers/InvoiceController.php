@@ -13,9 +13,12 @@ use App\Models\DiscountUsage;
 use App\Models\EnrollmentBootcamp;
 use App\Models\EnrollmentBundle;
 use App\Models\EnrollmentCourse;
+use App\Models\EnrollmentPrivate;
 use App\Models\EnrollmentWebinar;
 use App\Models\FreeEnrollmentRequirement;
 use App\Models\Invoice;
+use App\Models\PrivateClass;
+use App\Models\PrivateClassSchedule;
 use App\Models\User;
 use App\Models\Webinar;
 use App\Traits\WablasTrait;
@@ -24,7 +27,6 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Haruncpi\LaravelIdGenerator\IdGenerator;
 use Illuminate\Support\Facades\Log;
@@ -57,6 +59,8 @@ class InvoiceController extends Controller
             'courseItems.course',
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
+            'privateItems.privateClass',
+            'privateItems.privateClassSchedule',
             'bundleEnrollments.bundle'
         ]);
 
@@ -115,6 +119,7 @@ class InvoiceController extends Controller
         $courseTransactions = $invoices->filter(fn($inv) => $inv->courseItems->count() > 0)->count();
         $bootcampTransactions = $invoices->filter(fn($inv) => $inv->bootcampItems->count() > 0)->count();
         $webinarTransactions = $invoices->filter(fn($inv) => $inv->webinarItems->count() > 0)->count();
+        $privateTransactions = $invoices->filter(fn($inv) => $inv->privateItems->count() > 0)->count();
         $bundleTransactions = $invoices->filter(fn($inv) => $inv->bundleEnrollments->count() > 0)->count();
 
         $affiliateTransactions = $invoices->filter(fn($inv) => $inv->referred_by_user_id !== null)->count();
@@ -175,6 +180,7 @@ class InvoiceController extends Controller
                 'course' => $courseTransactions,
                 'bootcamp' => $bootcampTransactions,
                 'webinar' => $webinarTransactions,
+                'private' => $privateTransactions,
                 'bundle' => $bundleTransactions,
             ],
             'period' => [
@@ -205,6 +211,8 @@ class InvoiceController extends Controller
             $userId = Auth::id();
             $type = $request->input('type', 'course');
             $itemId = $request->input('id');
+            $privateClassScheduleId = $request->input('private_class_schedule_id');
+            $selectedPrivateSchedule = null;
 
             $discountAmount = $request->input('discount_amount', 0);
             $nettAmount = $request->input('nett_amount', 0);
@@ -226,8 +234,72 @@ class InvoiceController extends Controller
                 $item = Webinar::findOrFail($itemId);
                 $enrollmentTable = EnrollmentWebinar::class;
                 $enrollmentField = 'webinar_id';
+            } elseif ($type === 'private') {
+                $item = PrivateClass::findOrFail($itemId);
+                $enrollmentTable = EnrollmentPrivate::class;
+                $enrollmentField = 'private_class_id';
+
+                if (!$privateClassScheduleId) {
+                    throw new \Exception('Jadwal private class wajib dipilih');
+                }
+
+                $selectedPrivateSchedule = PrivateClassSchedule::where('id', $privateClassScheduleId)
+                    ->where('private_class_id', $item->id)
+                    ->where('is_active', true)
+                    ->first();
+
+                if (!$selectedPrivateSchedule) {
+                    throw new \Exception('Jadwal private class tidak valid atau sudah tidak aktif');
+                }
             } else {
                 throw new \Exception('Tipe pembelian tidak valid');
+            }
+
+            if ($type === 'private') {
+                if ($item->status !== 'published') {
+                    throw new \Exception('Private class tidak tersedia untuk checkout');
+                }
+
+                $effectiveDeadline = $selectedPrivateSchedule?->registration_deadline ?? $item->registration_deadline;
+                if ($effectiveDeadline && now()->gt($effectiveDeadline)) {
+                    throw new \Exception('Pendaftaran jadwal private class sudah ditutup');
+                }
+
+                $maxParticipants = max((int) ($selectedPrivateSchedule?->max_participants ?? 1), 1);
+
+                $alreadyPaidByUser = EnrollmentPrivate::where('private_class_schedule_id', $selectedPrivateSchedule->id)
+                    ->whereHas('invoice', function ($query) use ($userId) {
+                        $query->where('user_id', $userId)->where('status', 'paid');
+                    })
+                    ->exists();
+
+                if ($alreadyPaidByUser) {
+                    throw new \Exception('Anda sudah terdaftar pada jadwal private class ini.');
+                }
+
+                $paidCount = EnrollmentPrivate::where('private_class_schedule_id', $selectedPrivateSchedule->id)
+                    ->whereHas('invoice', function ($query) {
+                        $query->where('status', 'paid');
+                    })
+                    ->count();
+
+                if ($paidCount >= $maxParticipants) {
+                    throw new \Exception('Slot private class pada jadwal terpilih sudah penuh.');
+                }
+
+                $activePendingCount = EnrollmentPrivate::where('private_class_schedule_id', $selectedPrivateSchedule->id)
+                    ->whereHas('invoice', function ($query) {
+                        $query->where('status', 'pending')
+                            ->where(function ($q) {
+                                $q->whereNull('expires_at')
+                                    ->orWhere('expires_at', '>', now());
+                            });
+                    })
+                    ->count();
+
+                if (($paidCount + $activePendingCount) >= $maxParticipants) {
+                    throw new \Exception('Slot private class pada jadwal terpilih sedang dipesan. Silakan coba jadwal lain.');
+                }
             }
 
             $discountCode = null;
@@ -282,7 +354,9 @@ class InvoiceController extends Controller
 
             $items = [
                 [
-                    'name' => $item->title,
+                    'name' => $type === 'private' && $selectedPrivateSchedule
+                        ? $item->title . ' (' . Carbon::parse($selectedPrivateSchedule->start_time)->format('d M Y H:i') . ')'
+                        : $item->title,
                     'price' => $item->strikethrough_price > 0 ? $item->strikethrough_price : $item->price,
                     'quantity' => 1,
                 ]
@@ -348,6 +422,7 @@ class InvoiceController extends Controller
             $enrollmentTable::create([
                 'invoice_id' => $invoice->id,
                 $enrollmentField => $item->id,
+                'private_class_schedule_id' => $type === 'private' ? $selectedPrivateSchedule->id : null,
                 'price' => $nettAmount,
                 'completed_at' => null,
                 'progress' => 0,
@@ -535,8 +610,9 @@ class InvoiceController extends Controller
         DB::beginTransaction();
         try {
             $request->validate([
-                'type' => 'required|string|in:course,bootcamp,webinar',
+                'type' => 'required|string|in:course,bootcamp,webinar,private',
                 'id' => 'required',
+                'private_class_schedule_id' => 'nullable|required_if:type,private|uuid',
 
                 // New generic proof keys (preferred)
                 'requirement_1_proof' => 'nullable|image|max:2048',
@@ -552,6 +628,8 @@ class InvoiceController extends Controller
             $userId = Auth::id();
             $type = $request->input('type', 'course');
             $itemId = $request->input('id');
+            $privateClassScheduleId = $request->input('private_class_schedule_id');
+            $selectedPrivateSchedule = null;
 
             $referralCode = session('referral_code');
             $referredByUserId = null;
@@ -579,20 +657,65 @@ class InvoiceController extends Controller
                 $item = Webinar::findOrFail($itemId);
                 $enrollmentTable = EnrollmentWebinar::class;
                 $enrollmentField = 'webinar_id';
+            } elseif ($type === 'private') {
+                $item = PrivateClass::findOrFail($itemId);
+                $enrollmentTable = EnrollmentPrivate::class;
+                $enrollmentField = 'private_class_id';
+
+                $selectedPrivateSchedule = PrivateClassSchedule::where('id', $privateClassScheduleId)
+                    ->where('private_class_id', $item->id)
+                    ->where('is_active', true)
+                    ->first();
+
+                if (!$selectedPrivateSchedule) {
+                    throw new \Exception('Jadwal private class tidak valid atau sudah tidak aktif');
+                }
             } else {
                 throw new \Exception('Tipe pendaftaran tidak valid');
+            }
+
+            if ($type === 'private') {
+                if ($item->status !== 'published') {
+                    throw new \Exception('Private class tidak tersedia untuk pendaftaran');
+                }
+
+                $effectiveDeadline = $selectedPrivateSchedule?->registration_deadline ?? $item->registration_deadline;
+                if ($effectiveDeadline && now()->gt($effectiveDeadline)) {
+                    throw new \Exception('Pendaftaran jadwal private class sudah ditutup');
+                }
+
+                $maxParticipants = max((int) ($selectedPrivateSchedule?->max_participants ?? 1), 1);
+
+                $hasPaidEnrollment = EnrollmentPrivate::where('private_class_schedule_id', $selectedPrivateSchedule->id)
+                    ->whereHas('invoice', function ($query) {
+                        $query->where('status', 'paid');
+                    })
+                    ->count();
+
+                if ($hasPaidEnrollment >= $maxParticipants || $maxParticipants <= 0) {
+                    throw new \Exception('Slot private class pada jadwal terpilih sudah terisi.');
+                }
             }
 
             if ($item->price > 0) {
                 throw new \Exception('Item ini tidak gratis');
             }
 
-            $existingEnrollment = $enrollmentTable::where($enrollmentField, $item->id)
-                ->whereHas('invoice', function ($query) use ($userId) {
-                    $query->where('user_id', $userId)
-                        ->where('status', 'paid');
-                })
-                ->first();
+            if ($type === 'private') {
+                $existingEnrollment = $enrollmentTable::where('private_class_schedule_id', $selectedPrivateSchedule->id)
+                    ->whereHas('invoice', function ($query) use ($userId) {
+                        $query->where('user_id', $userId)
+                            ->where('status', 'paid');
+                    })
+                    ->first();
+            } else {
+                $existingEnrollment = $enrollmentTable::where($enrollmentField, $item->id)
+                    ->whereHas('invoice', function ($query) use ($userId) {
+                        $query->where('user_id', $userId)
+                            ->where('status', 'paid');
+                    })
+                    ->first();
+            }
 
             if ($existingEnrollment) {
                 throw new \Exception('Anda sudah terdaftar untuk item ini');
@@ -623,6 +746,7 @@ class InvoiceController extends Controller
             $enrollment = $enrollmentTable::create([
                 'invoice_id' => $invoice->id,
                 $enrollmentField => $item->id,
+                'private_class_schedule_id' => $type === 'private' ? $selectedPrivateSchedule->id : null,
                 'price' => 0,
                 'completed_at' => null,
                 'progress' => 0,
@@ -672,7 +796,7 @@ class InvoiceController extends Controller
 
     public function show($id)
     {
-        $invoice = Invoice::with(['courseItems.course', 'bootcampItems.bootcamp', 'webinarItems.webinar'])->findOrFail($id);
+        $invoice = Invoice::with(['courseItems.course', 'bootcampItems.bootcamp', 'webinarItems.webinar', 'privateItems.privateClass', 'privateItems.privateClassSchedule'])->findOrFail($id);
         return Inertia::render('user/checkout/success', ['invoice' => $invoice]);
     }
 
@@ -715,6 +839,10 @@ class InvoiceController extends Controller
 
             if ($invoice->webinarItems->count() > 0) {
                 EnrollmentWebinar::where('invoice_id', $invoice->id)->delete();
+            }
+
+            if ($invoice->privateItems->count() > 0) {
+                EnrollmentPrivate::where('invoice_id', $invoice->id)->delete();
             }
 
             $userId = $invoice->user_id;
@@ -843,6 +971,8 @@ class InvoiceController extends Controller
             'courseItems.course',
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
+            'privateItems.privateClass',
+            'privateItems.privateClassSchedule',
             'bundleEnrollments.bundle.bundleItems.bundleable'
         ])->where('invoice_code', $request->external_id)->first();
 
@@ -977,6 +1107,8 @@ class InvoiceController extends Controller
                 $itemType = 'Bootcamp';
             } elseif ($invoice->webinarItems->count() > 0) {
                 $itemType = 'Webinar';
+            } elseif ($invoice->privateItems->count() > 0) {
+                $itemType = 'Private Class';
             }
 
             $message = "*[Aksademy - Pembayaran {$itemType} Gagal]*\n\n";
@@ -1063,6 +1195,16 @@ class InvoiceController extends Controller
                 'title' => $itemData->webinar->title,
                 'item' => $itemData->webinar
             ];
+        } elseif ($invoice->privateItems->count() > 0) {
+            $itemType = 'private';
+            $itemData = $invoice->privateItems()->with('privateClass', 'privateClassSchedule')->first();
+            $typeInfo = [
+                'icon' => '🎓',
+                'name' => 'Private Class',
+                'menu' => 'Dashboard',
+                'title' => $itemData->privateClass->title,
+                'item' => $itemData->privateClass
+            ];
         }
 
         $isFreePurchase = $invoice->amount == 0;
@@ -1138,6 +1280,36 @@ class InvoiceController extends Controller
                 $message .= "⚠️ *Penting:* \n";
                 $message .= "• Bergabung dengan group untuk mendapatkan info penting dan diskusi\n";
                 $message .= "• Aktif mengikuti seluruh kegiatan bootcamp\n\n";
+            }
+        } elseif ($itemType === 'private') {
+            $privateClass = $typeInfo['item'];
+            $privateSchedule = $itemData?->privateClassSchedule;
+
+            if ($privateSchedule) {
+                $startTime = Carbon::parse($privateSchedule->start_time);
+                $endTime = Carbon::parse($privateSchedule->end_time);
+                $message .= "*Jadwal Private Class:*\n";
+                $message .= "📅 {$startTime->format('d M Y')}\n";
+                $message .= "🕐 {$startTime->format('H:i')} - {$endTime->format('H:i')} WIB\n\n";
+            } elseif (!empty($privateClass->start_time)) {
+                $startTime = Carbon::parse($privateClass->start_time);
+                $message .= "*Jadwal Private Class:*\n";
+                $message .= "📅 {$startTime->format('d M Y')}\n";
+                $message .= "🕐 {$startTime->format('H:i')} WIB\n\n";
+            }
+
+            if (!empty($privateClass->mode)) {
+                $modeText = $privateClass->mode === 'offline' ? 'Offline' : 'Online';
+                $message .= "📍 Mode: *{$modeText}*\n";
+                if ($privateClass->mode === 'offline' && !empty($privateClass->location)) {
+                    $message .= "📌 Lokasi: {$privateClass->location}\n";
+                }
+                $message .= "\n";
+            }
+
+            if (!empty($privateClass->group_url)) {
+                $message .= "*Join Group Private Class:*\n";
+                $message .= "👥 {$privateClass->group_url}\n\n";
             }
         }
 
@@ -1336,7 +1508,7 @@ class InvoiceController extends Controller
      */
     private function addEnrollmentToCertificateParticipants(Invoice $invoice)
     {
-        $invoice->load(['courseItems', 'bootcampItems', 'webinarItems', 'bundleEnrollments.bundle.bundleItems.bundleable']);
+        $invoice->load(['courseItems', 'bootcampItems', 'webinarItems', 'privateItems', 'bundleEnrollments.bundle.bundleItems.bundleable']);
 
         foreach ($invoice->courseItems as $courseItem) {
             $this->addToCertificateParticipants('course', $courseItem->course_id, $invoice->user_id);
@@ -1385,7 +1557,9 @@ class InvoiceController extends Controller
             'user',
             'courseItems.course',
             'bootcampItems.bootcamp',
-            'webinarItems.webinar'
+            'webinarItems.webinar',
+            'privateItems.privateClass',
+            'privateItems.privateClassSchedule'
         ])->findOrFail($id);
 
         if ($invoice->status !== 'paid') {
@@ -1403,7 +1577,7 @@ class InvoiceController extends Controller
             ]
         ];
 
-        $pdf = PDF::loadView('invoices.pdf', $data);
+        $pdf = Pdf::loadView('invoices.pdf', $data);
         $pdf->setPaper('A4', 'portrait');
 
         return $pdf->stream("invoice-{$invoice->invoice_code}.pdf");

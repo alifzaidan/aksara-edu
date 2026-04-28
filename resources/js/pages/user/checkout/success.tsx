@@ -12,6 +12,9 @@ interface BootcampItem {
 interface WebinarItem {
     webinar: { title: string; slug: string; thumbnail: string; group_url?: string | null };
 }
+interface PrivateItem {
+    private_class: { title: string; slug: string; thumbnail: string; group_url?: string | null };
+}
 
 interface Invoice {
     id: string;
@@ -19,6 +22,7 @@ interface Invoice {
     course_items?: CourseItem[];
     bootcamp_items?: BootcampItem[];
     webinar_items?: WebinarItem[];
+    private_items?: PrivateItem[];
 }
 
 interface InvoiceProps {
@@ -29,6 +33,7 @@ export default function CheckoutSuccess({ invoice }: InvoiceProps) {
     const courseItems = invoice.course_items ?? [];
     const bootcampItems = invoice.bootcamp_items ?? [];
     const webinarItems = invoice.webinar_items ?? [];
+    const privateItems = invoice.private_items ?? [];
 
     let title = '';
     let link = '';
@@ -50,6 +55,11 @@ export default function CheckoutSuccess({ invoice }: InvoiceProps) {
         link = `/profile/my-webinars/${webinarItems[0].webinar.slug}`;
         label = 'Akses Webinar';
         groupUrl = webinarItems[0].webinar.group_url || null;
+    } else if (privateItems.length > 0) {
+        title = `Checkout Private Class "${privateItems[0].private_class.title}" Berhasil!`;
+        link = `/private/${privateItems[0].private_class.slug}`;
+        label = 'Lihat Private Class';
+        groupUrl = privateItems[0].private_class.group_url || null;
     } else {
         title = 'Checkout Berhasil!';
         link = '/profile';
@@ -77,7 +87,7 @@ export default function CheckoutSuccess({ invoice }: InvoiceProps) {
                         </Link>
                     </Button>
                     {groupUrl && (
-                        <Button variant="secondary" className="mx-auto mb-4 w-fit bg-green-500 hover:bg-green-600 border-green-600" asChild>
+                        <Button variant="secondary" className="mx-auto mb-4 w-fit border-green-600 bg-green-500 hover:bg-green-600" asChild>
                             <a href={groupUrl} target="_blank" rel="noopener noreferrer">
                                 <MessageCircle className="size-4" />
                                 Masuk Grup WA

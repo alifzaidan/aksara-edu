@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 interface Product {
     id: string;
     title: string;
-    type: 'course' | 'bootcamp' | 'webinar';
+    type: 'course' | 'bootcamp' | 'webinar' | 'private';
     price: number;
 }
 

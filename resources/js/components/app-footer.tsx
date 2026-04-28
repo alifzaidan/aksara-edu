@@ -16,6 +16,10 @@ const productItems: ProductItem[] = [
         href: '/webinar',
     },
     {
+        title: 'Private Class',
+        href: '/private',
+    },
+    {
         title: 'Bundling',
         href: '/bundle',
     },

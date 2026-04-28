@@ -23,7 +23,7 @@ interface Product {
     registration_deadline?: string;
     duration_days?: number;
     category?: Category;
-    type: 'course' | 'bootcamp' | 'webinar' | 'bundle' | 'partnership';
+    type: 'course' | 'bootcamp' | 'webinar' | 'bundle' | 'partnership' | 'private';
     created_at: string;
 }
 
@@ -33,6 +33,7 @@ interface MyProductIds {
     webinars: string[];
     bundles: string[];
     partnerships: string[];
+    privates: string[];
 }
 
 interface LatestProductsProps {
@@ -47,6 +48,7 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
         webinars: myProductIds?.webinars || [],
         bundles: myProductIds?.bundles || [],
         partnerships: myProductIds?.partnerships || [],
+        privates: myProductIds?.privates || [],
     };
 
     const getProductBadge = (type: string) => {
@@ -81,6 +83,12 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                         Partnership
                     </span>
                 );
+            case 'private':
+                return (
+                    <span className="absolute top-2 left-2 rounded-full bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
+                        Private
+                    </span>
+                );
             default:
                 return null;
         }
@@ -104,6 +112,8 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                 return safeMyProductIds.bundles.includes(product.id);
             case 'partnership':
                 return safeMyProductIds.partnerships.includes(product.id);
+            case 'private':
+                return safeMyProductIds.privates.includes(product.id);
             default:
                 return false;
         }
@@ -122,6 +132,8 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                 return `/bundle/${product.slug}`;
             case 'partnership':
                 return `/certification/${product.slug}`;
+            case 'private':
+                return hasProductAccess ? `profile/my-privates/${product.slug}` : `/private/${product.slug}`;
             default:
                 return '#';
         }
@@ -188,6 +200,21 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
             );
         }
 
+        if (product.type === 'private' && product.start_time) {
+            return (
+                <div className="mt-2 flex items-center gap-2">
+                    <Calendar size="18" />
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {new Date(product.start_time).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                        })}
+                    </p>
+                </div>
+            );
+        }
+
         return null;
     };
 
@@ -219,7 +246,7 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                     Produk Terbaru
                 </p>
                 <h2 className="dark:text-primary-foreground mx-auto mb-8 max-w-2xl text-3xl font-bold italic md:text-4xl">
-                    Kelas, Bootcamp, Webinar & Bundling Terbaru dari Aksademy
+                    Kelas, Bootcamp, Webinar, Private & Bundling Terbaru dari Aksademy
                 </h2>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {(() => {

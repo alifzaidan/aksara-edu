@@ -4,29 +4,25 @@ namespace App\Exports;
 
 use App\Models\Invoice;
 use Maatwebsite\Excel\Concerns\FromQuery;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
-use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Carbon\Carbon;
 
-class TransactionsExport implements 
-    FromQuery, 
-    WithHeadings, 
-    WithMapping, 
-    WithColumnWidths,
-    WithStyles
+class TransactionsExport implements
+    FromQuery,
+    \Maatwebsite\Excel\Concerns\WithHeadings,
+    \Maatwebsite\Excel\Concerns\WithMapping,
+    \Maatwebsite\Excel\Concerns\WithColumnWidths,
+    \Maatwebsite\Excel\Concerns\WithStyles
 {
     protected $startDate;
     protected $endDate;
     protected $status;
     protected $paymentType;
     protected $productType;
-    protected $bootcampId;  
-    protected $webinarId;   
+    protected $bootcampId;
+    protected $webinarId;
     protected $courseId;
-    protected $bundleId;    
+    protected $bundleId;
 
     public function __construct($filters = [])
     {
@@ -35,10 +31,10 @@ class TransactionsExport implements
         $this->status = $filters['status'] ?? null;
         $this->paymentType = $filters['payment_type'] ?? null;
         $this->productType = $filters['product_type'] ?? null;
-        $this->bootcampId = $filters['bootcamp_id'] ?? null;  
-        $this->webinarId = $filters['webinar_id'] ?? null;    
-        $this->courseId = $filters['course_id'] ?? null;      
-        $this->bundleId = $filters['bundle_id'] ?? null;      
+        $this->bootcampId = $filters['bootcamp_id'] ?? null;
+        $this->webinarId = $filters['webinar_id'] ?? null;
+        $this->courseId = $filters['course_id'] ?? null;
+        $this->bundleId = $filters['bundle_id'] ?? null;
     }
 
     public function query()
@@ -48,6 +44,7 @@ class TransactionsExport implements
             'courseItems.course',
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
+            'privateItems.privateClass',
             'bundleEnrollments.bundle'
         ]);
 
@@ -77,7 +74,7 @@ class TransactionsExport implements
                 case 'course':
                     if ($this->courseId) {
                         // Filter by specific course
-                        $query->whereHas('courseItems', function($q) {
+                        $query->whereHas('courseItems', function ($q) {
                             $q->where('course_id', $this->courseId);
                         });
                     } else {
@@ -88,7 +85,7 @@ class TransactionsExport implements
                 case 'bootcamp':
                     if ($this->bootcampId) {
                         // Filter by specific bootcamp
-                        $query->whereHas('bootcampItems', function($q) {
+                        $query->whereHas('bootcampItems', function ($q) {
                             $q->where('bootcamp_id', $this->bootcampId);
                         });
                     } else {
@@ -99,7 +96,7 @@ class TransactionsExport implements
                 case 'webinar':
                     if ($this->webinarId) {
                         // Filter by specific webinar
-                        $query->whereHas('webinarItems', function($q) {
+                        $query->whereHas('webinarItems', function ($q) {
                             $q->where('webinar_id', $this->webinarId);
                         });
                     } else {
@@ -110,13 +107,16 @@ class TransactionsExport implements
                 case 'bundle':
                     if ($this->bundleId) {
                         // Filter by specific bundle
-                        $query->whereHas('bundleEnrollments', function($q) {
+                        $query->whereHas('bundleEnrollments', function ($q) {
                             $q->where('bundle_id', $this->bundleId);
                         });
                     } else {
                         // All bundles
                         $query->whereHas('bundleEnrollments');
-                    }   
+                    }
+                    break;
+                case 'private':
+                    $query->whereHas('privateItems');
                     break;
             }
         }
@@ -238,6 +238,12 @@ class TransactionsExport implements
             }
         }
 
+        if ($invoice->privateItems) {
+            foreach ($invoice->privateItems as $item) {
+                $names[] = $item->privateClass->title ?? '-';
+            }
+        }
+
         if ($invoice->bundleEnrollments) {
             foreach ($invoice->bundleEnrollments as $item) {
                 $names[] = $item->bundle->title ?? '-';
@@ -253,6 +259,7 @@ class TransactionsExport implements
         if ($invoice->courseItems && $invoice->courseItems->count() > 0) return 'Kelas Online';
         if ($invoice->bootcampItems && $invoice->bootcampItems->count() > 0) return 'Bootcamp';
         if ($invoice->webinarItems && $invoice->webinarItems->count() > 0) return 'Webinar';
+        if ($invoice->privateItems && $invoice->privateItems->count() > 0) return 'Private Class';
         return '-';
     }
 }
