@@ -145,7 +145,7 @@ export default function Affiliates({ affiliates, statistics, flash }: AffiliateP
                                             </span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Pending</span>
+                                            <span className="text-muted-foreground">Komisi Tersedia</span>
                                             <span className="font-medium text-yellow-600">
                                                 {rupiahFormatter.format(statistics.earnings.pending_commission)}
                                             </span>
@@ -207,7 +207,7 @@ export default function Affiliates({ affiliates, statistics, flash }: AffiliateP
                         <div className="dark:to-background rounded-lg border bg-gradient-to-br from-yellow-50 to-white p-4 shadow-sm dark:from-yellow-950/20">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-muted-foreground text-sm font-medium">Komisi Pending</p>
+                                    <p className="text-muted-foreground text-sm font-medium">Komisi Tersedia</p>
                                     <h3 className="mt-2 text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                                         {rupiahFormatter.format(statistics.earnings.pending_commission)}
                                     </h3>
