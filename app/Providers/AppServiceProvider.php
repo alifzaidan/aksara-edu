@@ -25,5 +25,12 @@ class AppServiceProvider extends ServiceProvider
         // if (app()->environment('local')) {
         //     URL::forceScheme('https');
         // }
+        
+        // Force the root URL to match the one defined in .env
+        // This prevents generating URLs with or without 'www' depending on the request host,
+        // which can cause CORS issues in frontend apps.
+        if (config('app.url')) {
+            URL::forceRootUrl(config('app.url'));
+        }
     }
 }
