@@ -91,7 +91,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, referralInfo }: CheckoutBundleProps) {
     const { auth } = usePage<SharedData>().props;
     const isLoggedIn = !!auth.user;
-    const isProfileComplete = isLoggedIn && auth.user?.phone_number;
+    const isProfileComplete = isLoggedIn && auth.user?.phone_number && auth.user?.instance;
 
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -260,6 +260,11 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
             return false;
         }
 
+        if (!emailExists && !guestFormData.instance) {
+            toast.error('Instansi wajib diisi.');
+            return false;
+        }
+
         setLoading(true);
 
         try {
@@ -380,7 +385,7 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
         }
 
         if (!isProfileComplete) {
-            alert('Profil Anda belum lengkap! Harap lengkapi nomor telepon terlebih dahulu.');
+            alert('Profil Anda belum lengkap! Harap lengkapi nomor telepon dan instansi terlebih dahulu.');
             window.location.href = route('profile.edit');
             return;
         }
@@ -458,7 +463,7 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
                         <User size={64} className="text-orange-500" />
                         <h2 className="text-xl font-bold">Profil Belum Lengkap</h2>
                         <p className="text-sm text-gray-500">
-                            Profil Anda belum lengkap! Harap lengkapi nomor telepon terlebih dahulu untuk membeli paket bundling.
+                            Profil Anda belum lengkap! Harap lengkapi nomor telepon dan instansi terlebih dahulu untuk membeli paket bundling.
                         </p>
                         <Button asChild className="w-full max-w-md">
                             <Link href={route('profile.edit', { redirect: window.location.href })}>Lengkapi Profil</Link>
@@ -648,7 +653,7 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
                                             </div>
 
                                             <div className="space-y-2">
-                                                <Label htmlFor="guest-instance">Instansi (Opsional)</Label>
+                                                <Label htmlFor="guest-instance">Instansi</Label>
                                                 <Input
                                                     id="guest-instance"
                                                     type="text"
@@ -656,6 +661,7 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
                                                     value={guestFormData.instance}
                                                     onChange={(e) => updateGuestForm('instance', e.target.value)}
                                                     disabled={emailExists}
+                                                    required
                                                 />
                                             </div>
                                         </div>

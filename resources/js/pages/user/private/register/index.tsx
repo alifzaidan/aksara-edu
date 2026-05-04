@@ -65,7 +65,7 @@ function parseList(items?: string | null): string[] {
 export default function PrivateRegister({ privateClass, scheduleOptions, referralInfo }: Props) {
     const { auth } = usePage<SharedData>().props;
     const isLoggedIn = !!auth.user;
-    const isProfileComplete = isLoggedIn && auth.user?.phone_number;
+    const isProfileComplete = isLoggedIn && auth.user?.phone_number && auth.user?.instance;
     const isFree = privateClass.price === 0;
     const benefitList = parseList(privateClass.benefits);
 
@@ -86,7 +86,6 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
         () => scheduleOptions.find((schedule) => schedule.id === selectedScheduleId) || null,
         [scheduleOptions, selectedScheduleId],
     );
-
 
     const updateGuestForm = (field: keyof GuestFormData, value: string) => {
         setGuestFormData((prev) => ({ ...prev, [field]: value }));
@@ -141,12 +140,15 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
     }, [guestFormData.email, isLoggedIn]);
 
     const savePendingCheckout = () => {
-        sessionStorage.setItem('pendingPrivateCheckout', JSON.stringify({
-            privateClassId: privateClass.id,
-            scheduleId: selectedScheduleId,
-            timestamp: Date.now(),
-            termsAccepted,
-        }));
+        sessionStorage.setItem(
+            'pendingPrivateCheckout',
+            JSON.stringify({
+                privateClassId: privateClass.id,
+                scheduleId: selectedScheduleId,
+                timestamp: Date.now(),
+                termsAccepted,
+            }),
+        );
     };
 
     const ensureAuthenticated = async (): Promise<boolean> => {
@@ -154,6 +156,11 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
 
         if (!guestFormData.email || !guestFormData.phone_number) {
             toast.error('Email dan nomor telepon wajib diisi.');
+            return false;
+        }
+
+        if (!emailExists && !guestFormData.instance) {
+            toast.error('Instansi wajib diisi.');
             return false;
         }
 
@@ -373,7 +380,7 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                         <User size={64} className="text-orange-500" />
                         <h2 className="text-xl font-bold">Profil Belum Lengkap</h2>
                         <p className="text-sm text-gray-500">
-                            Profil Anda belum lengkap! Harap lengkapi nomor telepon terlebih dahulu untuk mendaftar private class.
+                            Profil Anda belum lengkap! Harap lengkapi nomor telepon dan instansi terlebih dahulu untuk mendaftar private class.
                         </p>
                         <Button asChild className="w-full max-w-md">
                             <Link href={route('profile.edit', { redirect: window.location.href })}>Lengkapi Profil</Link>
@@ -414,9 +421,7 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                         <TabsContent value="schedule">
                             <div className="h-full rounded-lg border p-4">
                                 <h2 className="text-3xl font-bold italic">Jadwal Tersedia</h2>
-                                <p className="mt-2 mb-4 text-sm text-gray-600">
-                                    Pilih jadwal private class yang sesuai dengan waktu Anda.
-                                </p>
+                                <p className="mt-2 mb-4 text-sm text-gray-600">Pilih jadwal private class yang sesuai dengan waktu Anda.</p>
                                 <div className="space-y-2">
                                     {scheduleOptions.map((schedule) => (
                                         <label
@@ -468,9 +473,7 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                         <TabsContent value="detail">
                             <div className="h-full rounded-lg border p-4">
                                 <h2 className="text-3xl font-bold italic">Yang akan kamu dapatkan</h2>
-                                <p className="mt-2 mb-4 text-sm text-gray-600">
-                                    Manfaat yang akan kamu peroleh setelah mengikuti private class ini.
-                                </p>
+                                <p className="mt-2 mb-4 text-sm text-gray-600">Manfaat yang akan kamu peroleh setelah mengikuti private class ini.</p>
                                 <ul className="space-y-2">
                                     {benefitList.length > 0 ? (
                                         benefitList.map((benefit, idx) => (
@@ -526,7 +529,12 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                             </Button>
                         </div>
                     ) : (
-                        <form onSubmit={(e) => { e.preventDefault(); handleCheckout(); }}>
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                handleCheckout();
+                            }}
+                        >
                             <h2 className="my-2 text-xl font-bold italic">Detail {isFree ? 'Pendaftaran' : 'Pembayaran'}</h2>
                             <div className="space-y-4 rounded-lg border p-4">
                                 {/* Guest form */}
@@ -544,9 +552,7 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                                                 required
                                             />
                                             {checkingEmail && <p className="text-xs text-gray-500">Mengecek email...</p>}
-                                            {emailExists && (
-                                                <p className="text-xs text-green-600">Email ditemukan. Login otomatis akan digunakan.</p>
-                                            )}
+                                            {emailExists && <p className="text-xs text-green-600">Email ditemukan. Login otomatis akan digunakan.</p>}
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="guest-name">Nama</Label>
@@ -572,18 +578,14 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                                                 required
                                             />
                                             {!emailExists && (
-                                                <p className="text-xs text-gray-500">
-                                                    Nomor telepon akan digunakan sebagai password akun Anda.
-                                                </p>
+                                                <p className="text-xs text-gray-500">Nomor telepon akan digunakan sebagai password akun Anda.</p>
                                             )}
                                             {emailExists && (
-                                                <p className="text-xs text-blue-600">
-                                                    Data akun ditemukan dan dikunci agar sesuai akun terdaftar.
-                                                </p>
+                                                <p className="text-xs text-blue-600">Data akun ditemukan dan dikunci agar sesuai akun terdaftar.</p>
                                             )}
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="guest-instance">Instansi (Opsional)</Label>
+                                            <Label htmlFor="guest-instance">Instansi</Label>
                                             <Input
                                                 id="guest-instance"
                                                 type="text"
@@ -591,6 +593,7 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                                                 value={guestFormData.instance}
                                                 onChange={(e) => updateGuestForm('instance', e.target.value)}
                                                 disabled={emailExists}
+                                                required
                                             />
                                         </div>
                                     </div>
@@ -620,41 +623,37 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                                     </div>
                                 ) : (
                                     <div className="space-y-2 rounded-lg border p-4">
-                                        {(privateClass.strikethrough_price ?? 0) > 0 && (privateClass.strikethrough_price ?? 0) > privateClass.price && (
-                                            <>
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-gray-600">Harga Asli</span>
-                                                    <span className="font-semibold text-gray-500 line-through">
-                                                        Rp {(privateClass.strikethrough_price ?? 0).toLocaleString('id-ID')}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-gray-600">Diskon</span>
-                                                    <span className="font-semibold text-red-500">
-                                                        -Rp {((privateClass.strikethrough_price ?? 0) - privateClass.price).toLocaleString('id-ID')}
-                                                    </span>
-                                                </div>
-                                                <Separator className="my-2" />
-                                            </>
-                                        )}
+                                        {(privateClass.strikethrough_price ?? 0) > 0 &&
+                                            (privateClass.strikethrough_price ?? 0) > privateClass.price && (
+                                                <>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-gray-600">Harga Asli</span>
+                                                        <span className="font-semibold text-gray-500 line-through">
+                                                            Rp {(privateClass.strikethrough_price ?? 0).toLocaleString('id-ID')}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-gray-600">Diskon</span>
+                                                        <span className="font-semibold text-red-500">
+                                                            -Rp{' '}
+                                                            {((privateClass.strikethrough_price ?? 0) - privateClass.price).toLocaleString('id-ID')}
+                                                        </span>
+                                                    </div>
+                                                    <Separator className="my-2" />
+                                                </>
+                                            )}
                                         <div className="flex items-center justify-between">
                                             <span className="text-gray-600">Harga Private Class</span>
-                                            <span className="font-semibold text-gray-500">
-                                                Rp {privateClass.price.toLocaleString('id-ID')}
-                                            </span>
+                                            <span className="font-semibold text-gray-500">Rp {privateClass.price.toLocaleString('id-ID')}</span>
                                         </div>
                                         <div className="flex items-center justify-between">
                                             <span className="text-gray-600">Biaya Transaksi</span>
-                                            <span className="font-semibold text-gray-500">
-                                                Rp {transactionFee.toLocaleString('id-ID')}
-                                            </span>
+                                            <span className="font-semibold text-gray-500">Rp {transactionFee.toLocaleString('id-ID')}</span>
                                         </div>
                                         <Separator className="my-2" />
                                         <div className="flex items-center justify-between">
                                             <span className="font-semibold text-gray-900">Total Pembayaran</span>
-                                            <span className="text-primary text-xl font-bold">
-                                                Rp {totalPrice.toLocaleString('id-ID')}
-                                            </span>
+                                            <span className="text-primary text-xl font-bold">Rp {totalPrice.toLocaleString('id-ID')}</span>
                                         </div>
                                     </div>
                                 )}
@@ -692,4 +691,3 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
         </UserLayout>
     );
 }
-

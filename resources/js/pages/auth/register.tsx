@@ -13,7 +13,7 @@ type RegisterForm = {
     name: string;
     email: string;
     phone_number: string;
-    instance?: string;
+    instance: string;
     password: string;
     password_confirmation: string;
     affiliate_code?: string;
@@ -130,16 +130,14 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
                         <Input
                             id="instance"
                             type="text"
+                            required
                             tabIndex={2}
                             autoComplete="instance"
                             value={data.instance}
                             onChange={(e) => setData('instance', e.target.value)}
                             disabled={processing}
-                            placeholder="Masukkan Instansi Anda (opsional)"
+                            placeholder="Masukkan instansi Anda"
                         />
-                        <p className="text-xs text-gray-500">
-                            Kosongkan jika tidak memiliki instansi
-                        </p>
                         <InputError message={errors.instance} />
                     </div>
 
