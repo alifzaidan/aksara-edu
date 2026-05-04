@@ -109,7 +109,7 @@ export const columns: ColumnDef<Mentor>[] = [
             };
 
             return row.original.avatar ? (
-                <img src={row.original.avatar} alt={row.original.name} className="h-10 w-10 rounded-full object-cover" />
+                <img src={`/storage/${row.original.avatar}`} alt={row.original.name} className="h-10 w-10 rounded-full object-cover" />
             ) : (
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-300 text-xs font-bold text-gray-700">
                     {getInitials(row.original.name)}

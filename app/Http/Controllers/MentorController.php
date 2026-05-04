@@ -102,7 +102,6 @@ class MentorController extends Controller
         $avatarPath = null;
         if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('avatars/mentors', 'public');
-            $avatarPath = '/storage/' . $avatarPath;
         }
 
         $user = User::create([
@@ -269,7 +268,7 @@ class MentorController extends Controller
 
         if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('avatars/mentors', 'public');
-            $data['avatar'] = '/storage/' . $avatarPath;
+            $data['avatar'] = $avatarPath;
         } else {
             unset($data['avatar']);
         }

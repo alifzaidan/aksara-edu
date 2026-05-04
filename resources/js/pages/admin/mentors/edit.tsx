@@ -165,7 +165,7 @@ export default function EditMentor({ mentor, setOpen }: EditMentorProps) {
                         ) : (
                             mentor.avatar && (
                                 <div className="mt-2">
-                                    <img src={mentor.avatar} alt="current avatar" className="h-16 w-16 rounded-full object-cover" />
+                                    <img src={`/storage/${mentor.avatar}`} alt="current avatar" className="h-16 w-16 rounded-full object-cover" />
                                 </div>
                             )
                         )}

@@ -10,19 +10,15 @@ export default function MentorDetail({ mentor }: { mentor: Mentor }) {
             .join('');
     };
 
-    const colors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-cyan-500'];
-    const colorIndex = mentor.id.charCodeAt(0) % colors.length;
-    const bgColor = colors[colorIndex];
-
     return (
         <div className="space-y-6 rounded-lg border p-4">
             <h2 className="text-lg font-medium">Data Mentor</h2>
 
             <div className="flex items-center gap-4 border-b pb-4">
                 {mentor.avatar ? (
-                    <img src={mentor.avatar} alt={mentor.name} className="h-24 w-24 rounded-full object-cover" />
+                    <img src={`/storage/${mentor.avatar}`} alt={mentor.name} className="h-24 w-24 rounded-full object-cover" />
                 ) : (
-                    <div className={`${bgColor} flex h-24 w-24 items-center justify-center rounded-full text-2xl font-bold text-white`}>
+                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gray-300 text-2xl font-bold text-gray-700">
                         {getInitials(mentor.name)}
                     </div>
                 )}
