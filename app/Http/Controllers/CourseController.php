@@ -203,6 +203,7 @@ class CourseController extends Controller
             ->whereHas('courseItems', function ($query) use ($id) {
                 $query->where('course_id', $id);
             })
+            ->whereDoesntHave('bundleEnrollments')
             ->latest()
             ->get();
 

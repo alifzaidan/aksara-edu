@@ -203,7 +203,7 @@ class BootcampController extends Controller
     {
         $bootcamp = Bootcamp::with(['category', 'mentors', 'schedules', 'tools'])->findOrFail($id);
 
-        $transactions = Invoice::with([
+        $transactionQuery = Invoice::with([
             'user.referrer',
             'bootcampItems' => function ($query) use ($id) {
                 $query->where('bootcamp_id', $id)
@@ -212,7 +212,14 @@ class BootcampController extends Controller
         ])
             ->whereHas('bootcampItems', function ($query) use ($id) {
                 $query->where('bootcamp_id', $id);
-            })
+            });
+
+        $transactions = (clone $transactionQuery)
+            ->whereDoesntHave('bundleEnrollments')
+            ->latest()
+            ->get();
+
+        $ratingTransactions = (clone $transactionQuery)
             ->latest()
             ->get();
 
@@ -270,7 +277,7 @@ class BootcampController extends Controller
                 ];
             });
 
-        $ratings = $transactions->flatMap(function ($invoice) {
+        $ratings = $ratingTransactions->flatMap(function ($invoice) {
             return $invoice->bootcampItems->map(function ($item) use ($invoice) {
                 if ($item->rating && $item->review) {
                     return [
