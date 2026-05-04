@@ -69,6 +69,7 @@ export type Mentor = {
     total_webinars: number;
     total_bootcamps: number;
     total_earnings: number;
+    avatar?: string;
 };
 
 export const columns: ColumnDef<Mentor>[] = [
@@ -94,6 +95,28 @@ export const columns: ColumnDef<Mentor>[] = [
             const index = row.index + 1;
             return <div className="font-medium">{index}</div>;
         },
+    },
+    {
+        accessorKey: 'avatar',
+        header: 'Avatar',
+        cell: ({ row }) => {
+            const getInitials = (name: string) => {
+                return name
+                    .split(' ')
+                    .map((word) => word.charAt(0).toUpperCase())
+                    .slice(0, 2)
+                    .join('');
+            };
+
+            return row.original.avatar ? (
+                <img src={row.original.avatar} alt={row.original.name} className="h-10 w-10 rounded-full object-cover" />
+            ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-300 text-xs font-bold text-gray-700">
+                    {getInitials(row.original.name)}
+                </div>
+            );
+        },
+        enableSorting: false,
     },
     {
         accessorKey: 'name',

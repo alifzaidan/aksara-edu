@@ -81,6 +81,7 @@ class MentorController extends Controller
             'phone_number' => 'required|string|max:255',
             'password' => 'required|string|min:8',
             'commission' => 'required|numeric|min:0',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $lastMentor = User::role('mentor')
@@ -98,6 +99,12 @@ class MentorController extends Controller
 
         $mentorCode = 'MTR' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
 
+        $avatarPath = null;
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('avatars/mentors', 'public');
+            $avatarPath = '/storage/' . $avatarPath;
+        }
+
         $user = User::create([
             'name' => $request->name,
             'bio' => $request->bio,
@@ -105,6 +112,7 @@ class MentorController extends Controller
             'phone_number' => $request->phone_number,
             'password' => Hash::make($request->password),
             'commission' => $request->commission,
+            'avatar' => $avatarPath,
             'affiliate_code' => $mentorCode,
             'affiliate_status' => 'Active',
             'email_verified_at' => now(),
@@ -252,10 +260,21 @@ class MentorController extends Controller
             'email' => 'required|string|lowercase|email|max:255|unique:' . User::class . ',email,' . $id,
             'phone_number' => 'required|string|max:255',
             'commission' => 'required|numeric|min:0',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $mentor = User::findOrFail($id);
-        $mentor->update($request->all());
+
+        $data = $request->all();
+
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('avatars/mentors', 'public');
+            $data['avatar'] = '/storage/' . $avatarPath;
+        } else {
+            unset($data['avatar']);
+        }
+
+        $mentor->update($data);
 
         return redirect()->route('mentors.show', $mentor->id)->with('success', 'Mentor berhasil diperbarui.');
     }

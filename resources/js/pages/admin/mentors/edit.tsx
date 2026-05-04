@@ -14,6 +14,7 @@ interface EditMentorProps {
         email: string;
         phone_number: string;
         commission: number;
+        avatar?: string;
     };
     setOpen: (open: boolean) => void;
 }
@@ -25,23 +26,33 @@ export default function EditMentor({ mentor, setOpen }: EditMentorProps) {
     const phoneInput = useRef<HTMLInputElement>(null);
     const commissionInput = useRef<HTMLInputElement>(null);
 
-    const { data, setData, put, processing, reset, errors, clearErrors } = useForm<
-        Required<{ name: string; bio: string; email: string; phone_number: string; commission: number }>
-    >({
+    const { data, setData, post, processing, reset, errors, clearErrors } = useForm<{
+        _method: string;
+        name: string;
+        bio: string;
+        email: string;
+        phone_number: string;
+        commission: number;
+        avatar?: File | null;
+    }>({
+        _method: 'put',
         name: mentor.name,
         bio: mentor.bio ?? '',
         email: mentor.email,
         phone_number: mentor.phone_number,
         commission: mentor.commission,
+        avatar: null,
     });
 
     useEffect(() => {
         setData({
+            _method: 'put',
             name: mentor.name,
             bio: mentor.bio ?? '',
             email: mentor.email,
             phone_number: mentor.phone_number,
             commission: mentor.commission,
+            avatar: null,
         });
         clearErrors();
     }, [mentor, setData, clearErrors]);
@@ -49,15 +60,18 @@ export default function EditMentor({ mentor, setOpen }: EditMentorProps) {
     const updateMentor: FormEventHandler = (e) => {
         e.preventDefault();
 
-        put(route('mentors.update', mentor.id), {
-            preserveScroll: true,
-            onSuccess: () => {
-                setOpen(false);
-                reset();
-                clearErrors();
+        post(
+            route('mentors.update', mentor.id),
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setOpen(false);
+                    reset();
+                    clearErrors();
+                },
+                onError: () => nameInput.current?.focus(),
             },
-            onError: () => nameInput.current?.focus(),
-        });
+        );
     };
 
     return (
@@ -129,6 +143,33 @@ export default function EditMentor({ mentor, setOpen }: EditMentorProps) {
                         autoComplete="off"
                     />
                     <InputError message={errors.phone_number} />
+
+                    <div>
+                        <Label htmlFor="avatar" className="text-xs">
+                            Avatar (opsional)
+                        </Label>
+                        <Input
+                            id="avatar"
+                            type="file"
+                            name="avatar"
+                            accept="image/*"
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setData('avatar', e.target.files && e.target.files[0] ? e.target.files[0] : null)
+                            }
+                        />
+                        <InputError message={errors.avatar} />
+                        {data.avatar ? (
+                            <div className="mt-2">
+                                <img src={URL.createObjectURL(data.avatar)} alt="avatar preview" className="h-16 w-16 rounded-full object-cover" />
+                            </div>
+                        ) : (
+                            mentor.avatar && (
+                                <div className="mt-2">
+                                    <img src={mentor.avatar} alt="current avatar" className="h-16 w-16 rounded-full object-cover" />
+                                </div>
+                            )
+                        )}
+                    </div>
 
                     <Label htmlFor="commission" className="text-xs text-gray-500">
                         Komisi (%) - Komisi yang akan diterima mentor dari setiap transaksi

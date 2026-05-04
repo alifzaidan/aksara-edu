@@ -25,13 +25,14 @@ export default function CreateMentor({ setOpen }: CreateMentorProps) {
         reset,
         errors,
         clearErrors,
-    } = useForm<Required<{ name: string; bio: string; email: string; phone_number: string; password: string; commission: number }>>({
+    } = useForm<{ name: string; bio: string; email: string; phone_number: string; password: string; commission: number; avatar?: File | null }>({
         name: '',
         bio: '',
         email: '',
         phone_number: '',
         password: '',
         commission: 0,
+        avatar: null,
     });
 
     const createMentor: FormEventHandler = (e) => {
@@ -135,6 +136,27 @@ export default function CreateMentor({ setOpen }: CreateMentorProps) {
                         disabled
                     />
                     <InputError message={errors.password} />
+
+                    <div>
+                        <Label htmlFor="avatar" className="text-xs">
+                            Avatar (opsional)
+                        </Label>
+                        <Input
+                            id="avatar"
+                            type="file"
+                            name="avatar"
+                            accept="image/*"
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setData('avatar', e.target.files && e.target.files[0] ? e.target.files[0] : null)
+                            }
+                        />
+                        <InputError message={errors.avatar} />
+                        {data.avatar && (
+                            <div className="mt-2">
+                                <img src={URL.createObjectURL(data.avatar)} alt="avatar preview" className="h-16 w-16 rounded-full object-cover" />
+                            </div>
+                        )}
+                    </div>
 
                     <Label htmlFor="commission" className="text-xs text-gray-500">
                         Komisi (%) - Komisi yang akan diterima mentor dari setiap transaksi
