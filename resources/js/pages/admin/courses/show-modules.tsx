@@ -388,49 +388,51 @@ export default function ShowModules({ modules, courseId }: { modules?: Module[];
 
             {/* Modal Preview */}
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="w-full max-w-4xl">
+                <DialogContent className="w-full max-w-[92vw] overflow-hidden">
                     <div className="mb-2 flex items-center justify-between">
                         <DialogTitle className="text-base">{preview?.title}</DialogTitle>
                     </div>
                     <DialogDescription>
-                        {preview?.type === 'video' && preview.url && (
-                            <div className="w-full">
-                                <iframe
-                                    className="rounded border"
-                                    width="100%"
-                                    height="300"
-                                    src={
-                                        preview.url.includes('youtube.com') || preview.url.includes('youtu.be')
-                                            ? `https://www.youtube.com/embed/${getYoutubeId(preview.url)}`
-                                            : preview.url
-                                    }
-                                    title="YouTube Preview"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                />
-                            </div>
-                        )}
-                        {preview?.type === 'file' && preview.url && (
-                            <div className="w-full">
-                                <object data={preview.url} type="application/pdf" width="100%" height="500px">
-                                    <p>
-                                        Preview tidak tersedia.{' '}
-                                        <a href={preview.url} target="_blank" rel="noopener noreferrer">
-                                            Download PDF
-                                        </a>
-                                    </p>
-                                </object>
-                            </div>
-                        )}
-                        {preview?.type === 'text' && (
-                            <div className="prose w-full max-w-none">
-                                {preview.content ? (
-                                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: preview.content }} />
-                                ) : (
-                                    <div className="text-muted-foreground">Tidak ada isi materi teks.</div>
-                                )}
-                            </div>
-                        )}
+                        <div className="max-h-[85vh] overflow-y-auto pr-2">
+                            {preview?.type === 'video' && preview.url && (
+                                <div className="w-full">
+                                    <div className="aspect-video w-full overflow-hidden rounded border bg-black">
+                                        <iframe
+                                            className="h-full w-full"
+                                            src={
+                                                preview.url.includes('youtube.com') || preview.url.includes('youtu.be')
+                                                    ? `https://www.youtube.com/embed/${getYoutubeId(preview.url)}`
+                                                    : preview.url
+                                            }
+                                            title="YouTube Preview"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                            {preview?.type === 'file' && preview.url && (
+                                <div className="w-full">
+                                    <object data={preview.url} type="application/pdf" width="100%" height="520px">
+                                        <p>
+                                            Preview tidak tersedia.{' '}
+                                            <a href={preview.url} target="_blank" rel="noopener noreferrer">
+                                                Download PDF
+                                            </a>
+                                        </p>
+                                    </object>
+                                </div>
+                            )}
+                            {preview?.type === 'text' && (
+                                <div className="prose w-full max-w-none break-words">
+                                    {preview.content ? (
+                                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: preview.content }} />
+                                    ) : (
+                                        <div className="text-muted-foreground">Tidak ada isi materi teks.</div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </DialogDescription>
                 </DialogContent>
             </Dialog>
