@@ -15,6 +15,9 @@ interface WebinarItem {
 interface PrivateItem {
     private_class: { title: string; slug: string; thumbnail: string; group_url?: string | null };
 }
+interface CertificationProgramItem {
+    certification_program: { title: string; slug: string; thumbnail: string; group_url?: string | null };
+}
 
 interface Invoice {
     id: string;
@@ -23,6 +26,7 @@ interface Invoice {
     bootcamp_items?: BootcampItem[];
     webinar_items?: WebinarItem[];
     private_items?: PrivateItem[];
+    certification_program_items?: CertificationProgramItem[];
 }
 
 interface InvoiceProps {
@@ -34,6 +38,7 @@ export default function CheckoutSuccess({ invoice }: InvoiceProps) {
     const bootcampItems = invoice.bootcamp_items ?? [];
     const webinarItems = invoice.webinar_items ?? [];
     const privateItems = invoice.private_items ?? [];
+    const certificationProgramItems = invoice.certification_program_items ?? [];
 
     let title = '';
     let link = '';
@@ -60,6 +65,11 @@ export default function CheckoutSuccess({ invoice }: InvoiceProps) {
         link = `/private/${privateItems[0].private_class.slug}`;
         label = 'Lihat Private Class';
         groupUrl = privateItems[0].private_class.group_url || null;
+    } else if (certificationProgramItems.length > 0) {
+        title = `Checkout Sertifikasi Program "${certificationProgramItems[0].certification_program.title}" Berhasil!`;
+        link = `/profile/my-certification-programs/${certificationProgramItems[0].certification_program.slug}`;
+        label = 'Akses Sertifikasi';
+        groupUrl = certificationProgramItems[0].certification_program.group_url || null;
     } else {
         title = 'Checkout Berhasil!';
         link = '/profile';

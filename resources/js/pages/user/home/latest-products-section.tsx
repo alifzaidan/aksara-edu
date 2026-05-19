@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Spotlight } from '@/components/ui/spotlight';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Link } from '@inertiajs/react';
-import { Calendar, Clock, Package, Percent } from 'lucide-react';
+import { Calendar, Clock, Percent } from 'lucide-react';
 
 interface Category {
     id: string;
@@ -23,7 +23,7 @@ interface Product {
     registration_deadline?: string;
     duration_days?: number;
     category?: Category;
-    type: 'course' | 'bootcamp' | 'webinar' | 'bundle' | 'partnership' | 'private';
+    type: 'course' | 'bootcamp' | 'webinar' | 'bundle' | 'private' | 'certification-program';
     created_at: string;
 }
 
@@ -32,8 +32,8 @@ interface MyProductIds {
     bootcamps: string[];
     webinars: string[];
     bundles: string[];
-    partnerships: string[];
     privates: string[];
+    certificationPrograms: string[];
 }
 
 interface LatestProductsProps {
@@ -47,8 +47,8 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
         bootcamps: myProductIds?.bootcamps || [],
         webinars: myProductIds?.webinars || [],
         bundles: myProductIds?.bundles || [],
-        partnerships: myProductIds?.partnerships || [],
         privates: myProductIds?.privates || [],
+        certificationPrograms: myProductIds?.certificationPrograms || [],
     };
 
     const getProductBadge = (type: string) => {
@@ -77,16 +77,16 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                         Bundle
                     </span>
                 );
-            case 'partnership':
-                return (
-                    <span className="absolute top-2 left-2 rounded-full bg-pink-100 px-2 py-1 text-xs font-medium text-pink-700 dark:bg-pink-900 dark:text-pink-300">
-                        Partnership
-                    </span>
-                );
             case 'private':
                 return (
                     <span className="absolute top-2 left-2 rounded-full bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
                         Private
+                    </span>
+                );
+            case 'certification-program':
+                return (
+                    <span className="absolute top-2 left-2 rounded-full bg-cyan-100 px-2 py-1 text-xs font-medium text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300">
+                        Sertifikasi
                     </span>
                 );
             default:
@@ -110,10 +110,10 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                 return safeMyProductIds.webinars.includes(product.id);
             case 'bundle':
                 return safeMyProductIds.bundles.includes(product.id);
-            case 'partnership':
-                return safeMyProductIds.partnerships.includes(product.id);
             case 'private':
                 return safeMyProductIds.privates.includes(product.id);
+            case 'certification-program':
+                return safeMyProductIds.certificationPrograms.includes(product.id);
             default:
                 return false;
         }
@@ -130,10 +130,10 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                 return hasProductAccess ? `profile/my-webinars/${product.slug}` : `/webinar/${product.slug}`;
             case 'bundle':
                 return `/bundle/${product.slug}`;
-            case 'partnership':
-                return `/certification/${product.slug}`;
             case 'private':
                 return hasProductAccess ? `profile/my-privates/${product.slug}` : `/private/${product.slug}`;
+            case 'certification-program':
+                return hasProductAccess ? `profile/my-certification-programs/${product.slug}` : `/certification-program/${product.slug}`;
             default:
                 return '#';
         }
@@ -191,15 +191,6 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
             );
         }
 
-        if (product.type === 'partnership' && product.duration_days) {
-            return (
-                <div className="mt-2 flex items-center gap-2">
-                    <Package size="18" />
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Durasi: {product.duration_days} Hari</p>
-                </div>
-            );
-        }
-
         if (product.type === 'private' && product.start_time) {
             return (
                 <div className="mt-2 flex items-center gap-2">
@@ -237,7 +228,7 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
     };
 
     const safeLatestProducts = Array.isArray(latestProducts) ? latestProducts : [];
-    const availableProducts = safeLatestProducts.filter((product) => !hasAccess(product));
+    const availableProducts = safeLatestProducts.filter((product) => product.type === 'certification-program' || !hasAccess(product));
 
     return (
         <section className="mx-auto w-full max-w-7xl px-4 py-8">
@@ -270,7 +261,6 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
 
                         return availableProducts.map((product) => {
                             const productUrl = getProductUrl(product);
-                            // ✅ Calculate discount for each product
                             const discount = calculateDiscount(product.strikethrough_price, product.price);
 
                             return (
@@ -287,7 +277,6 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                                                     />
                                                     {getProductBadge(product.type)}
 
-                                                    {/* ✅ Discount Badge - Top Right (from bundling-section.tsx) */}
                                                     {discount > 0 && (
                                                         <div className="absolute top-2 right-2">
                                                             <Badge className="bg-red-500 text-white shadow-lg">
@@ -315,8 +304,24 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                                                     </div>
                                                 )}
 
-                                                {getDateDisplay(product)}
-                                                {getCategoryDisplay(product)}
+                                                <div className="mt-2 flex flex-wrap gap-2">
+                                                    {getDateDisplay(product)}
+                                                    {getCategoryDisplay(product)}
+                                                    {product.type === 'private' && product.start_time && (
+                                                        <div className="flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-1 text-xs text-rose-700 dark:bg-rose-500/10 dark:text-rose-400">
+                                                            <Clock className="h-3 w-3" />
+                                                            <span>{product.start_time.slice(0, 5)} WIB</span>
+                                                        </div>
+                                                    )}
+                                                    {product.type === 'certification-program' && product.registration_deadline && (
+                                                        <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                                                            <Calendar className="h-3 w-3" />
+                                                            <span>
+                                                                Daftar s/d {new Date(product.registration_deadline).toLocaleDateString('id-ID')}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
 
                                                 <div className="mt-4 flex justify-between">
                                                     {product.type === 'course' && product.level && (

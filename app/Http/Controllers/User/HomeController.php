@@ -5,10 +5,10 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\Bootcamp;
 use App\Models\Bundle;
+use App\Models\CertificationProgram;
 use App\Models\Course;
 use App\Models\EnrollmentPrivate;
 use App\Models\Invoice;
-use App\Models\PartnershipProduct;
 use App\Models\PrivateClass;
 use App\Models\Promotion;
 use App\Models\Tool;
@@ -130,27 +130,6 @@ class HomeController extends Controller
                 ];
             });
 
-        // ✅ Add Partnership Products
-        $partnershipProducts = PartnershipProduct::with(['category'])
-            ->where('status', 'published')
-            ->orderBy('created_at', 'desc')
-            ->take(6)
-            ->get()
-            ->map(function ($product) {
-                return [
-                    'id' => $product->id,
-                    'title' => $product->title,
-                    'thumbnail' => $product->thumbnail,
-                    'slug' => $product->slug,
-                    'strikethrough_price' => $product->strikethrough_price,
-                    'price' => $product->price,
-                    'registration_deadline' => $product->registration_deadline,
-                    'duration_days' => $product->duration_days,
-                    'category' => $product->category,
-                    'type' => 'partnership',
-                    'created_at' => $product->created_at,
-                ];
-            });
 
         // ✅ Add Private Classes
         $privateClasses = PrivateClass::with(['category', 'schedules'])
@@ -174,14 +153,36 @@ class HomeController extends Controller
                 ];
             });
 
+        // ✅ Add Certification Programs
+        $certificationPrograms = CertificationProgram::with(['category'])
+            ->where('status', 'published')
+            ->where('type', '!=', 'scholarship')
+            ->orderBy('created_at', 'desc')
+            ->take(6)
+            ->get()
+            ->map(function ($cp) {
+                return [
+                    'id' => $cp->id,
+                    'title' => $cp->title,
+                    'thumbnail' => $cp->thumbnail,
+                    'slug' => $cp->slug,
+                    'strikethrough_price' => $cp->strikethrough_price,
+                    'price' => $cp->price,
+                    'registration_deadline' => $cp->registration_deadline,
+                    'category' => $cp->category,
+                    'type' => 'certification-program',
+                    'created_at' => $cp->created_at,
+                ];
+            });
+
         // Gabungkan semua produk dan urutkan berdasarkan tanggal terbaru
         $latestProducts = collect()
             ->merge($courses)
             ->merge($bootcamps)
             ->merge($webinars)
             ->merge($bundles)
-            ->merge($partnershipProducts)
             ->merge($privateClasses)
+            ->merge($certificationPrograms)
             ->sortByDesc('created_at')
             ->take(6)
             ->values();
@@ -191,8 +192,8 @@ class HomeController extends Controller
             ->merge($bootcamps)
             ->merge($webinars)
             ->merge($bundles)
-            ->merge($partnershipProducts)
             ->merge($privateClasses)
+            ->merge($certificationPrograms)
             ->map(function ($product) {
                 return [
                     'id' => $product['id'],
@@ -207,8 +208,8 @@ class HomeController extends Controller
             'bootcamps' => [],
             'webinars' => [],
             'bundles' => [],
-            'partnerships' => [],
             'privates' => [],
+            'certificationPrograms' => [],
         ];
 
         if (Auth::check()) {
@@ -258,12 +259,21 @@ class HomeController extends Controller
                 ->values()
                 ->all();
 
-            $myPartnershipIds = [];
-
             $myPrivateIds = EnrollmentPrivate::whereHas('invoice', function ($query) use ($userId) {
                 $query->where('user_id', $userId);
             })
                 ->pluck('private_class_id')
+                ->unique()
+                ->values()
+                ->all();
+
+            $myCertificationProgramIds = Invoice::with('certificationProgramItems')
+                ->where('user_id', $userId)
+                ->where('status', 'paid')
+                ->get()
+                ->flatMap(function ($invoice) {
+                    return $invoice->certificationProgramItems->pluck('certification_program_id');
+                })
                 ->unique()
                 ->values()
                 ->all();
@@ -273,8 +283,8 @@ class HomeController extends Controller
                 'bootcamps' => $myBootcampIds,
                 'webinars' => $myWebinarIds,
                 'bundles' => $myBundleIds,
-                'partnerships' => $myPartnershipIds,
                 'privates' => $myPrivateIds,
+                'certificationPrograms' => $myCertificationProgramIds,
             ];
         }
 

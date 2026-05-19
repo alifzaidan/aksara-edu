@@ -195,17 +195,17 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 <NavigationMenuItem className="relative flex h-full items-center">
                                     <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
                                         <Link
-                                            href="/certification"
+                                            href="/certification-programs"
                                             className={cn(
                                                 'hover:bg-primary/5 dark:hover:bg-primary/40 h-9 cursor-pointer px-3',
-                                                page.url.startsWith('/certification') && activeItemStyles,
+                                                page.url.startsWith('/certification-programs') && activeItemStyles,
                                             )}
                                         >
                                             <BriefcaseBusiness className="mr-2 h-4 w-4" />
                                             Sertifikasi
                                         </Link>
                                     </NavigationMenuLink>
-                                    {page.url.startsWith('/certification') && (
+                                    {page.url.startsWith('/certification-programs') && (
                                         <div className="bg-primary absolute bottom-0 left-0 h-0.5 w-full translate-y-px dark:bg-white"></div>
                                     )}
                                 </NavigationMenuItem>
@@ -381,11 +381,11 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                     </Link>
                                     {/* Sertifikasi di Mobile */}
                                     <Link
-                                        href="/certification"
+                                        href="/certification-programs"
                                         onClick={() => setServicesOpen(false)}
                                         className={cn(
                                             'flex items-start gap-3 rounded-lg p-3 transition-colors duration-200',
-                                            page.url.startsWith('/certification')
+                                            page.url.startsWith('/certification-programs')
                                                 ? 'bg-primary/10 text-primary'
                                                 : 'hover:bg-muted/50 hover:text-foreground',
                                         )}
@@ -394,7 +394,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             iconNode={BriefcaseBusiness}
                                             className={cn(
                                                 'mt-0.5 h-5 w-5 flex-shrink-0',
-                                                page.url.startsWith('/certification') ? 'text-primary' : 'text-muted-foreground',
+                                                page.url.startsWith('/certification-programs') ? 'text-primary' : 'text-muted-foreground',
                                             )}
                                         />
                                         <div className="min-w-0 flex-1">

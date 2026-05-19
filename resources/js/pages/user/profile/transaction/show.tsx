@@ -47,6 +47,16 @@ interface WebinarItem {
     };
 }
 
+interface CertificationProgramItem {
+    id: string;
+    certificationProgram: {
+        id: string;
+        title: string;
+        slug: string;
+        thumbnail: string;
+    };
+}
+
 interface Invoice {
     id: string;
     invoice_code: string;
@@ -62,6 +72,7 @@ interface Invoice {
     course_items?: CourseItem[];
     bootcamp_items?: BootcampItem[];
     webinar_items?: WebinarItem[];
+    certificationProgramItems?: CertificationProgramItem[];
 }
 
 interface Props {
@@ -107,6 +118,17 @@ export default function TransactionShow({ invoice }: Props) {
                 thumbnail: webinar.thumbnail,
                 profileRoute: 'profile.webinar.detail',
                 publicRoute: 'webinar.detail',
+            };
+        } else if (invoice.certificationProgramItems && invoice.certificationProgramItems.length > 0) {
+            const certificationProgram = invoice.certificationProgramItems[0].certificationProgram;
+            return {
+                type: 'certification-program',
+                routeParam: 'program',
+                name: certificationProgram.title,
+                slug: certificationProgram.slug,
+                thumbnail: certificationProgram.thumbnail,
+                profileRoute: 'profile.certification-program.detail',
+                publicRoute: 'certification-programs.detail',
             };
         }
         return null;
@@ -213,19 +235,29 @@ export default function TransactionShow({ invoice }: Props) {
                                                     ? 'Kelas Online'
                                                     : productInfo.type === 'bootcamp'
                                                       ? 'Bootcamp'
-                                                      : 'Webinar'}
+                                                      : productInfo.type === 'webinar'
+                                                        ? 'Webinar'
+                                                        : 'Sertifikasi Program'}
                                             </p>
                                             <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                                                 {invoice.status === 'paid' ? (
                                                     <Button asChild size="sm" variant="outline">
-                                                        <Link href={route(productInfo.profileRoute, { [productInfo.type]: productInfo.slug })}>
+                                                        <Link
+                                                            href={route(productInfo.profileRoute, {
+                                                                [productInfo.routeParam || productInfo.type]: productInfo.slug,
+                                                            })}
+                                                        >
                                                             <ExternalLink className="mr-2 h-4 w-4" />
                                                             Buka di Profile
                                                         </Link>
                                                     </Button>
                                                 ) : (
                                                     <Button asChild size="sm" variant="ghost">
-                                                        <Link href={route(productInfo.publicRoute, { [productInfo.type]: productInfo.slug })}>
+                                                        <Link
+                                                            href={route(productInfo.publicRoute, {
+                                                                [productInfo.routeParam || productInfo.type]: productInfo.slug,
+                                                            })}
+                                                        >
                                                             <ExternalLink className="mr-2 h-4 w-4" />
                                                             Lihat Detail Produk
                                                         </Link>

@@ -11,6 +11,7 @@ use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\CertificateDesignController;
 use App\Http\Controllers\CertificateParticipantController;
 use App\Http\Controllers\CertificateSignController;
+use App\Http\Controllers\CertificationProgramController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseDetailController;
 use App\Http\Controllers\EnrollmentProgressController;
@@ -20,7 +21,6 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\LessonAssignmentController;
 use App\Http\Controllers\MentorController;
-use App\Http\Controllers\PartnershipProductController;
 use App\Http\Controllers\PrivateClassController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
@@ -29,13 +29,14 @@ use App\Http\Controllers\ToolController;
 use App\Http\Controllers\User\CourseController as UserCourseController;
 use App\Http\Controllers\User\BootcampController as UserBootcampController;
 use App\Http\Controllers\User\BundleController as UserBundleController;
+use App\Http\Controllers\User\CertificationProgramController as UserCertificationProgramController;
 use App\Http\Controllers\User\PrivateController as UserPrivateController;
 use App\Http\Controllers\User\WebinarController as UserWebinarController;
-use App\Http\Controllers\User\PartnershipProductController as UserPartnershipProductController;
 use App\Http\Controllers\User\ArticleController as UserArticleController;
 use App\Http\Controllers\User\MentorController as UserMentorController;
 use App\Http\Controllers\User\HomeController;
 use App\Http\Controllers\User\Profile\BootcampController as ProfileBootcampController;
+use App\Http\Controllers\User\Profile\CertificationProgramController as ProfileCertificationProgramController;
 use App\Http\Controllers\User\Profile\CourseController as ProfileCourseController;
 use App\Http\Controllers\User\Profile\TransactionController as ProfileTransactionController;
 use App\Http\Controllers\User\Profile\WebinarController as ProfileWebinarController;
@@ -103,8 +104,8 @@ Route::get('/private', [UserPrivateController::class, 'index'])->name('private.i
 Route::get('/private/{privateClass:slug}', [UserPrivateController::class, 'detail'])->name('private.detail');
 Route::get('/bundle', [UserBundleController::class, 'index'])->name('bundle.index');
 Route::get('/bundle/{bundle:slug}', [UserBundleController::class, 'detail'])->name('bundle.detail');
-Route::get('/certification', [UserPartnershipProductController::class, 'index'])->name('partnership-product.index');
-Route::get('/certification/{partnershipProduct:slug}', [UserPartnershipProductController::class, 'detail'])->name('partnership-product.detail');
+Route::get('/certification-programs', [UserCertificationProgramController::class, 'index'])->name('certification-programs.index');
+Route::get('/certification-programs/{program:slug}', [UserCertificationProgramController::class, 'detail'])->name('certification-programs.detail');
 Route::get('/certificate/{code}', [CertificateParticipantController::class, 'show'])->name('certificate.participant.detail');
 Route::get('/article', [UserArticleController::class, 'index'])->name('article.index');
 Route::get('/article/{slug}', [UserArticleController::class, 'show'])->name('article.show');
@@ -116,10 +117,10 @@ Route::get('/bootcamp/{bootcamp:slug}/register', [UserBootcampController::class,
 Route::get('/webinar/{webinar:slug}/register', [UserWebinarController::class, 'showRegister'])->name('webinar.register');
 Route::get('/private/{privateClass:slug}/register', [UserPrivateController::class, 'showRegister'])->name('private.register');
 Route::get('/bundle/{bundle:slug}/checkout', [UserBundleController::class, 'showCheckout'])->name('bundle.checkout');
-Route::get('/certification/{partnershipProduct:slug}/track-click', [UserPartnershipProductController::class, 'trackClick'])->name('partnership-products.track-click');
-Route::get('/certification/{partnershipProduct:slug}/scholarship-apply', [UserPartnershipProductController::class, 'scholarshipApply'])->name('partnership-products.scholarship-apply');
-Route::post('/certification/{partnershipProduct:slug}/scholarship-store', [UserPartnershipProductController::class, 'scholarshipStore'])->name('partnership-products.scholarship-store');
-Route::get('/certification/{partnershipProduct:slug}/scholarship-success', [UserPartnershipProductController::class, 'scholarshipSuccess'])->name('partnership-products.scholarship-success');
+Route::get('/certification-programs/{program:slug}/register', [UserCertificationProgramController::class, 'showRegister'])->name('certification-programs.register');
+Route::get('/certification-programs/{program:slug}/scholarship-apply', [UserCertificationProgramController::class, 'scholarshipApply'])->name('certification-programs.scholarship-apply');
+Route::post('/certification-programs/{program:slug}/scholarship-store', [UserCertificationProgramController::class, 'scholarshipStore'])->name('certification-programs.scholarship-store');
+Route::get('/certification-programs/{program:slug}/scholarship-success', [UserCertificationProgramController::class, 'scholarshipSuccess'])->name('certification-programs.scholarship-success');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/course/checkout/success', [UserCourseController::class, 'showCheckoutSuccess'])->name('course.checkout.success');
@@ -130,6 +131,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/invoice', [InvoiceController::class, 'store'])->name('invoice.store');
     Route::post('/invoice-bundle', [InvoiceController::class, 'storeBundle'])->name('invoice.store.bundle');
     Route::post('/enroll/free', [InvoiceController::class, 'enrollFree'])->name('enroll.free');
+    Route::post('/certification-programs/{program:slug}/apply-regular', [UserCertificationProgramController::class, 'applyRegular'])->name('certification-programs.apply-regular');
     Route::get('/invoice/{id}', [InvoiceController::class, 'show'])->name('invoice.show');
     Route::post('/invoice/{id}/cancel', [InvoiceController::class, 'cancel'])->name('invoice.cancel');
     Route::post('/invoice/expire-old', [InvoiceController::class, 'expireOldInvoices'])->name('invoice.expire-old');
@@ -147,6 +149,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/profile/my-bootcamps/review/submit', [ProfileBootcampController::class, 'submitReview'])->name('profile.bootcamp.review.submit');
     Route::get('/profile/my-bootcamps/{bootcamp}/certificate', [ProfileBootcampController::class, 'downloadCertificate'])->name('profile.bootcamp.certificate');
     Route::get('/profile/my-bootcamps/{bootcamp}/certificate/preview', [ProfileBootcampController::class, 'previewCertificate'])->name('profile.bootcamp.certificate.preview');
+    Route::get('/profile/my-certification-programs', [ProfileCertificationProgramController::class, 'index'])->name('profile.certification-programs');
+    Route::get('/profile/my-certification-programs/{program}', [ProfileCertificationProgramController::class, 'detail'])->name('profile.certification-program.detail');
     Route::get('/profile/my-webinars', [ProfileWebinarController::class, 'index'])->name('profile.webinars');
     Route::get('/profile/my-webinars/{webinar}', [ProfileWebinarController::class, 'detail'])->name('profile.webinar.detail');
     Route::post('/profile/my-webinar/attendance-review/submit', [ProfileWebinarController::class, 'submitAttendanceAndReview'])->name('profile.webinar.attendance-review.submit');
@@ -229,6 +233,19 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/bootcamps/{bootcamp}/schedules/{schedule}/recording', [BootcampController::class, 'addScheduleRecording'])->name('bootcamps.add-recording');
         Route::delete('/bootcamps/{bootcamp}/schedules/{schedule}/recording', [BootcampController::class, 'removeScheduleRecording'])->name('bootcamps.remove-recording');
 
+        Route::resource('certification-programs', CertificationProgramController::class);
+        Route::post('/certification-programs/{program}/publish', [CertificationProgramController::class, 'publish'])->name('certification-programs.publish');
+        Route::post('/certification-programs/{program}/archive', [CertificationProgramController::class, 'archive'])->name('certification-programs.archive');
+        Route::post('/certification-programs/{program}/hidden', [CertificationProgramController::class, 'hidden'])->name('certification-programs.hidden');
+        Route::post('/certification-programs/{program}/schedules/{schedule}/recording', [CertificationProgramController::class, 'addScheduleRecording'])->name('certification-programs.add-recording');
+        Route::delete('/certification-programs/{program}/schedules/{schedule}/recording', [CertificationProgramController::class, 'removeScheduleRecording'])->name('certification-programs.remove-recording');
+        Route::post('/certification-programs/{program}/socialization-schedules/{schedule}/recording', [CertificationProgramController::class, 'addSocializationRecording'])->name('certification-programs.add-socialization-recording');
+        Route::delete('/certification-programs/{program}/socialization-schedules/{schedule}/recording', [CertificationProgramController::class, 'removeSocializationRecording'])->name('certification-programs.remove-socialization-recording');
+        Route::post('/certification-programs/{program}/applications/{application}/approve', [CertificationProgramController::class, 'approveApplication'])->name('certification-programs.applications.approve');
+        Route::post('/certification-programs/{program}/applications/{application}/reject', [CertificationProgramController::class, 'rejectApplication'])->name('certification-programs.applications.reject');
+        Route::post('/certification-programs/{program}/scholarship-applications/{application}/approve', [CertificationProgramController::class, 'approveScholarshipApplication'])->name('certification-programs.scholarship-applications.approve');
+        Route::post('/certification-programs/{program}/scholarship-applications/{application}/reject', [CertificationProgramController::class, 'rejectScholarshipApplication'])->name('certification-programs.scholarship-applications.reject');
+
         Route::resource('webinars', WebinarController::class);
         Route::post('/webinars/{webinar}/publish', [WebinarController::class, 'publish'])->name('webinars.publish');
         Route::post('/webinars/{webinar}/archive', [WebinarController::class, 'archive'])->name('webinars.archive');
@@ -240,17 +257,6 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/privates/{private}/publish', [PrivateClassController::class, 'publish'])->name('privates.publish');
         Route::post('/privates/{private}/archive', [PrivateClassController::class, 'archive'])->name('privates.archive');
         Route::post('/privates/{private}/duplicate', [PrivateClassController::class, 'duplicate'])->name('privates.duplicate');
-
-        Route::resource('partnership-products', PartnershipProductController::class);
-        Route::post('/partnership-products/{id}/publish', [PartnershipProductController::class, 'publish'])->name('partnership-products.publish');
-        Route::post('/partnership-products/{id}/archive', [PartnershipProductController::class, 'archive'])->name('partnership-products.archive');
-        Route::post('/partnership-products/{id}/duplicate', [PartnershipProductController::class, 'duplicate'])->name('partnership-products.duplicate');
-        Route::get('/partnership-products/stats/overview', [PartnershipProductController::class, 'statistics'])->name('partnership-products.statistics');
-        Route::post('/partnership-products/bulk-action', [PartnershipProductController::class, 'bulkAction'])->name('partnership-products.bulk-action');
-        Route::post(
-            '/partnership-products/{id}/scholarship-participants/{scholarshipId}/accept',
-            [PartnershipProductController::class, 'acceptScholarshipParticipant']
-        )->name('partnership-products.scholarship-participants.accept');
 
         Route::resource('bundles', BundleController::class);
         Route::post('/bundles/{bundle}/publish', [BundleController::class, 'publish'])->name('bundles.publish');

@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\User\Profile;
 
 use App\Http\Controllers\Controller;
+use App\Models\EnrollmentCertificationProgram;
 use App\Models\EnrollmentBootcamp;
 use App\Models\EnrollmentCourse;
 use App\Models\EnrollmentWebinar;
-use App\Models\Invoice;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -26,6 +25,10 @@ class ProfileController extends Controller
         })->count();
 
         $webinarCount = EnrollmentWebinar::whereHas('invoice', function ($query) use ($userId) {
+            $query->where('user_id', $userId)->where('status', 'paid');
+        })->count();
+
+        $certificationProgramCount = EnrollmentCertificationProgram::whereHas('invoice', function ($query) use ($userId) {
             $query->where('user_id', $userId)->where('status', 'paid');
         })->count();
 
@@ -92,11 +95,32 @@ class ProfileController extends Controller
                 ];
             });
 
+        $enrolledCertificationPrograms = EnrollmentCertificationProgram::with(['certificationProgram:id,title,slug,group_url', 'invoice'])
+            ->whereHas('invoice', function ($query) use ($userId) {
+                $query->where('user_id', $userId)->where('status', 'paid');
+            })
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($enrollment) {
+                return [
+                    'id' => $enrollment->certificationProgram->id,
+                    'title' => $enrollment->certificationProgram->title,
+                    'slug' => $enrollment->certificationProgram->slug,
+                    'type' => 'certification-program',
+                    'routeParam' => 'program',
+                    'group_url' => $enrollment->certificationProgram->group_url,
+                    'is_scholarship' => $enrollment->is_scholarship,
+                    'enrolled_at' => $enrollment->created_at,
+                ];
+            });
+
         // Gabungkan semua produk dan urutkan berdasarkan tanggal enrollment
         $recentProducts = collect()
             ->merge($enrolledCourses)
             ->merge($enrolledBootcamps)
             ->merge($enrolledWebinars)
+            ->merge($enrolledCertificationPrograms)
             ->sortByDesc('enrolled_at')
             ->take(10)
             ->values();
@@ -106,7 +130,8 @@ class ProfileController extends Controller
                 'courses' => $courseCount,
                 'bootcamps' => $bootcampCount,
                 'webinars' => $webinarCount,
-                'total' => $courseCount + $bootcampCount + $webinarCount,
+                'certificationPrograms' => $certificationProgramCount,
+                'total' => $courseCount + $bootcampCount + $webinarCount + $certificationProgramCount,
             ],
             'recentProducts' => $recentProducts,
         ]);

@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 interface Product {
     id: string;
     title: string;
-    type: 'course' | 'bootcamp' | 'webinar' | 'private';
+    type: 'course' | 'bootcamp' | 'webinar' | 'private' | 'certification-program';
     price: number;
 }
 
@@ -49,7 +49,7 @@ export default function FakeNotifications({ products }: FakeNotificationsProps) 
         const showFakeNotification = () => {
             const randomProduct = products[Math.floor(Math.random() * products.length)];
             const randomName = FAKE_NAMES[Math.floor(Math.random() * FAKE_NAMES.length)];
-            const productType = randomProduct.type === 'course' ? 'Kelas Online' : randomProduct.type === 'bootcamp' ? 'Bootcamp' : 'Webinar';
+            const productType = randomProduct.type === 'course' ? 'Kelas Online' : randomProduct.type === 'bootcamp' ? 'Bootcamp' : randomProduct.type === 'webinar' ? 'Webinar' : randomProduct.type === 'certification-program' ? 'Program Sertifikasi' : 'Private Class';
 
             toast.success(
                 <div className="flex w-full min-w-0 items-start space-x-3">

@@ -206,8 +206,8 @@
                     <div class="invoice-code">#{{ $invoice->invoice_code }}</div>
                     <div style="font-size: 11px; color: #666;">
                         Tanggal: {{ \Carbon\Carbon::parse($invoice->created_at)->format('d M Y') }}<br>
-                        @if($invoice->paid_at)
-                        Dibayar: {{ \Carbon\Carbon::parse($invoice->paid_at)->format('d M Y') }}
+                        @if ($invoice->paid_at)
+                            Dibayar: {{ \Carbon\Carbon::parse($invoice->paid_at)->format('d M Y') }}
                         @endif
                     </div>
                 </td>
@@ -220,8 +220,8 @@
         <div class="customer-info">
             <strong>{{ $invoice->user->name }}</strong><br>
             Email: {{ $invoice->user->email }}<br>
-            @if($invoice->user->phone_number)
-            Telepon: {{ $invoice->user->phone_number }}<br>
+            @if ($invoice->user->phone_number)
+                Telepon: {{ $invoice->user->phone_number }}<br>
             @endif
         </div>
     </div>
@@ -238,92 +238,110 @@
         </thead>
         <tbody>
             @php
-            $itemNumber = 1;
-            $subtotal = 0;
+                $itemNumber = 1;
+                $subtotal = 0;
             @endphp
 
-            @foreach($invoice->courseItems as $item)
-            <tr>
-                <td class="text-center">{{ $itemNumber++ }}</td>
-                <td>
-                    <span class="badge badge-success">Kelas Online</span>
-                </td>
-                <td>
-                    <strong>{{ $item->course->title }}</strong>
-                    @if($item->course->description)
-                    <br><small style="color: #666;">{{ Str::limit($item->course->description, 100) }}</small>
-                    @endif
-                </td>
-                <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
-            </tr>
-            @php $subtotal += $item->price; @endphp
+            @foreach ($invoice->courseItems as $item)
+                <tr>
+                    <td class="text-center">{{ $itemNumber++ }}</td>
+                    <td>
+                        <span class="badge badge-success">Kelas Online</span>
+                    </td>
+                    <td>
+                        <strong>{{ $item->course->title }}</strong>
+                        @if ($item->course->description)
+                            <br><small style="color: #666;">{{ Str::limit($item->course->description, 100) }}</small>
+                        @endif
+                    </td>
+                    <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
+                </tr>
+                @php $subtotal += $item->price; @endphp
             @endforeach
 
-            @foreach($invoice->bootcampItems as $item)
-            <tr>
-                <td class="text-center">{{ $itemNumber++ }}</td>
-                <td>
-                    <span class="badge" style="background-color: #fd7e14; color: white;">Bootcamp</span>
-                </td>
-                <td>
-                    <strong>{{ $item->bootcamp->title }}</strong>
-                    @if($item->bootcamp->description)
-                    <br><small style="color: #666;">{{ Str::limit($item->bootcamp->description, 100) }}</small>
-                    @endif
-                </td>
-                <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
-            </tr>
-            @php $subtotal += $item->price; @endphp
+            @foreach ($invoice->bootcampItems as $item)
+                <tr>
+                    <td class="text-center">{{ $itemNumber++ }}</td>
+                    <td>
+                        <span class="badge" style="background-color: #fd7e14; color: white;">Bootcamp</span>
+                    </td>
+                    <td>
+                        <strong>{{ $item->bootcamp->title }}</strong>
+                        @if ($item->bootcamp->description)
+                            <br><small style="color: #666;">{{ Str::limit($item->bootcamp->description, 100) }}</small>
+                        @endif
+                    </td>
+                    <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
+                </tr>
+                @php $subtotal += $item->price; @endphp
             @endforeach
 
-            @foreach($invoice->webinarItems as $item)
-            <tr>
-                <td class="text-center">{{ $itemNumber++ }}</td>
-                <td>
-                    <span class="badge" style="background-color: #6f42c1; color: white;">Webinar</span>
-                </td>
-                <td>
-                    <strong>{{ $item->webinar->title }}</strong>
-                    @if($item->webinar->description)
-                    <br><small style="color: #666;">{{ Str::limit($item->webinar->description, 100) }}</small>
-                    @endif
-                </td>
-                <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
-            </tr>
-            @php $subtotal += $item->price; @endphp
+            @foreach ($invoice->webinarItems as $item)
+                <tr>
+                    <td class="text-center">{{ $itemNumber++ }}</td>
+                    <td>
+                        <span class="badge" style="background-color: #6f42c1; color: white;">Webinar</span>
+                    </td>
+                    <td>
+                        <strong>{{ $item->webinar->title }}</strong>
+                        @if ($item->webinar->description)
+                            <br><small style="color: #666;">{{ Str::limit($item->webinar->description, 100) }}</small>
+                        @endif
+                    </td>
+                    <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
+                </tr>
+                @php $subtotal += $item->price; @endphp
+            @endforeach
+
+            @foreach ($invoice->certificationProgramItems as $item)
+                <tr>
+                    <td class="text-center">{{ $itemNumber++ }}</td>
+                    <td>
+                        <span class="badge" style="background-color: #198754; color: white;">Sertifikasi Program</span>
+                    </td>
+                    <td>
+                        <strong>{{ $item->certificationProgram->title }}</strong>
+                        @if ($item->certificationProgram->description)
+                            <br><small
+                                style="color: #666;">{{ Str::limit($item->certificationProgram->description, 100) }}</small>
+                        @endif
+                    </td>
+                    <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
+                </tr>
+                @php $subtotal += $item->price; @endphp
             @endforeach
         </tbody>
     </table>
 
     <table class="summary-table">
-        @if($invoice->discount_amount > 0)
-        <tr>
-            <td>Harga Asli:</td>
-            <td class="text-right">Rp {{ number_format($invoice->discount_amount + $subtotal, 0, ',', '.') }}</td>
-        </tr>
-        <tr>
-            <td>Diskon:</td>
-            <td class="text-right" style="color: #dc3545;">-Rp {{ number_format($invoice->discount_amount,
-                0, ',', '.') }}</td>
-        </tr>
+        @if ($invoice->discount_amount > 0)
+            <tr>
+                <td>Harga Asli:</td>
+                <td class="text-right">Rp {{ number_format($invoice->discount_amount + $subtotal, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td>Diskon:</td>
+                <td class="text-right" style="color: #dc3545;">-Rp
+                    {{ number_format($invoice->discount_amount, 0, ',', '.') }}</td>
+            </tr>
         @endif
         <tr>
             <td>Subtotal:</td>
             <td class="text-right">Rp {{ number_format($subtotal, 0, ',', '.') }}</td>
         </tr>
-        @if($invoice->amount > $subtotal)
-        <tr>
-            <td>Biaya Transaksi:</td>
-            <td class="text-right">Rp {{ number_format($invoice->amount - $subtotal, 0, ',', '.') }}</td>
-        </tr>
+        @if ($invoice->amount > $subtotal)
+            <tr>
+                <td>Biaya Transaksi:</td>
+                <td class="text-right">Rp {{ number_format($invoice->amount - $subtotal, 0, ',', '.') }}</td>
+            </tr>
         @endif
         <tr class="total-row">
             <td>TOTAL:</td>
             <td class="text-right">
-                @if($invoice->amount == 0)
-                GRATIS
+                @if ($invoice->amount == 0)
+                    GRATIS
                 @else
-                Rp {{ number_format($invoice->amount, 0, ',', '.') }}
+                    Rp {{ number_format($invoice->amount, 0, ',', '.') }}
                 @endif
             </td>
         </tr>
@@ -333,8 +351,8 @@
         <div class="payment-status">PEMBAYARAN BERHASIL</div>
         <div style="margin-top: 10px; font-size: 11px;">
             <strong>Metode Pembayaran:</strong> {{ $invoice->payment_method ?? 'Tidak diketahui' }}<br>
-            @if($invoice->payment_channel)
-            <strong>Channel:</strong> {{ $invoice->payment_channel }}<br>
+            @if ($invoice->payment_channel)
+                <strong>Channel:</strong> {{ $invoice->payment_channel }}<br>
             @endif
             <strong>Tanggal Pembayaran:</strong> {{ \Carbon\Carbon::parse($invoice->paid_at)->format('d M Y H:i') }}
             WIB<br>
@@ -345,8 +363,8 @@
     <div class="footer">
         <p><strong>Terima kasih atas kepercayaan Anda!</strong></p>
         <p>Invoice ini adalah bukti pembayaran yang sah dan dihasilkan secara otomatis oleh sistem.</p>
-        <p>Untuk pertanyaan lebih lanjut, hubungi customer service kami di {{ $company['email'] }} atau {{
-            $company['phone'] }}</p>
+        <p>Untuk pertanyaan lebih lanjut, hubungi customer service kami di {{ $company['email'] }} atau
+            {{ $company['phone'] }}</p>
         <p style="margin-top: 15px; color: #999;">
             Dicetak pada: {{ \Carbon\Carbon::now()->format('d M Y H:i') }} WIB
         </p>

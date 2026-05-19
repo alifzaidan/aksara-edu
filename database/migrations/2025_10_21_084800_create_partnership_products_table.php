@@ -18,11 +18,13 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->text('short_description')->nullable();
             $table->text('description')->nullable();
-            $table->text('key_points')->nullable();
+            $table->integer('batch')->default(0);
+            $table->text('scholarship_steps')->nullable();
+            $table->text('benefits')->nullable();
+            $table->text('requirements')->nullable();
             $table->string('thumbnail')->nullable();
+            $table->string('document_attachment')->nullable();
             $table->dateTime('registration_deadline')->nullable();
-            $table->integer('duration_days')->default(0);
-            $table->json('schedule_days')->nullable();
             $table->bigInteger('strikethrough_price')->default(0);
             $table->bigInteger('price')->default(0);
             $table->string('product_url')->nullable();

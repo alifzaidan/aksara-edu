@@ -39,7 +39,7 @@ interface Product {
     duration_days?: number;
     bundle_url?: string;
     category?: Category;
-    type: 'course' | 'bootcamp' | 'webinar' | 'bundle' | 'partnership' | 'private';
+    type: 'course' | 'bootcamp' | 'webinar' | 'bundle' | 'private' | 'certification-program';
     created_at: string;
 }
 
@@ -48,8 +48,9 @@ interface MyProductIds {
     bootcamps: string[];
     webinars: string[];
     bundles: string[];
-    partnerships: string[];
+    
     privates: string[];
+    certificationPrograms: string[];
 }
 
 interface ReferralInfo {
@@ -73,7 +74,7 @@ interface HomeProps {
     allProducts: Array<{
         id: string;
         title: string;
-        type: 'course' | 'bootcamp' | 'webinar' | 'private';
+        type: 'course' | 'bootcamp' | 'webinar' | 'private' | 'certification-program';
         price: number;
     }>;
     activePromotion?: Promotion | null;

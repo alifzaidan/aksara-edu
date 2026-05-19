@@ -22,6 +22,12 @@ interface Webinar {
     slug: string;
 }
 
+interface CertificationProgram {
+    id: string;
+    title: string;
+    slug: string;
+}
+
 interface EnrollmentCourse {
     id: string;
     course: Course;
@@ -38,6 +44,13 @@ interface EnrollmentWebinar {
     price: number;
 }
 
+interface EnrollmentCertificationProgram {
+    id: string;
+    certificationProgram: CertificationProgram;
+    price: number;
+    is_scholarship: boolean;
+}
+
 interface Invoice {
     id: string;
     invoice_code: string;
@@ -50,6 +63,7 @@ interface Invoice {
     course_items: EnrollmentCourse[];
     bootcamp_items: EnrollmentBootcamp[];
     webinar_items: EnrollmentWebinar[];
+    certificationProgramItems: EnrollmentCertificationProgram[];
     created_at: string;
 }
 
@@ -60,51 +74,118 @@ interface Props {
 export default function Transactions({ myTransactions }: Props) {
     const [search, setSearch] = useState('');
 
+    const getCertificationProgram = (item: EnrollmentCertificationProgram) => {
+        return (
+            item.certificationProgram ||
+            (item as EnrollmentCertificationProgram & { certification_program?: CertificationProgram }).certification_program
+        );
+    };
+
+    const getItemHref = (type: string, slug: string) => {
+        if (type === 'Certification Program') {
+            return route('profile.certification-program.detail', { program: slug });
+        }
+
+        const pathSegment = type.toLowerCase().replace(/\s+/g, '-');
+        return `/profile/my-${pathSegment}s/${slug}`;
+    };
+
     // Gabungkan semua items dari semua invoice menjadi satu array
-    const allItems = myTransactions.flatMap((invoice) => [
-        ...(invoice.course_items || []).map((item) => ({
-            type: 'Course',
-            title: item.course.title,
-            slug: item.course.slug,
-            price: item.price,
-            invoice_id: invoice.id,
-            invoice_status: invoice.status,
-            invoice_code: invoice.invoice_code,
-            invoice_url: invoice.invoice_url,
-            paid_at: invoice.paid_at,
-            payment_channel: invoice.payment_channel,
-            payment_method: invoice.payment_method,
-            created_at: invoice.created_at,
-        })),
-        ...(invoice.bootcamp_items || []).map((item) => ({
-            type: 'Bootcamp',
-            title: item.bootcamp.title,
-            slug: item.bootcamp.slug,
-            price: item.price,
-            invoice_id: invoice.id,
-            invoice_status: invoice.status,
-            invoice_code: invoice.invoice_code,
-            invoice_url: invoice.invoice_url,
-            paid_at: invoice.paid_at,
-            payment_channel: invoice.payment_channel,
-            payment_method: invoice.payment_method,
-            created_at: invoice.created_at,
-        })),
-        ...(invoice.webinar_items || []).map((item) => ({
-            type: 'Webinar',
-            title: item.webinar.title,
-            slug: item.webinar.slug,
-            price: item.price,
-            invoice_id: invoice.id,
-            invoice_status: invoice.status,
-            invoice_code: invoice.invoice_code,
-            invoice_url: invoice.invoice_url,
-            paid_at: invoice.paid_at,
-            payment_channel: invoice.payment_channel,
-            payment_method: invoice.payment_method,
-            created_at: invoice.created_at,
-        })),
-    ]);
+    const allItems = myTransactions.flatMap((invoice) => {
+        const courseItems = invoice.course_items || invoice.courseItems || [];
+        const bootcampItems = invoice.bootcamp_items || invoice.bootcampItems || [];
+        const webinarItems = invoice.webinar_items || invoice.webinarItems || [];
+        const certificationItems =
+            invoice.certificationProgramItems || invoice.certification_program_items || invoice.certification_program_items || [];
+
+        return [
+            ...courseItems.map((item) => ({
+                type: 'Course',
+                title: item.course.title,
+                slug: item.course.slug,
+                price: item.price,
+                invoice_id: invoice.id,
+                invoice_status: invoice.status,
+                invoice_code: invoice.invoice_code,
+                invoice_url: invoice.invoice_url,
+                paid_at: invoice.paid_at,
+                payment_channel: invoice.payment_channel,
+                payment_method: invoice.payment_method,
+                created_at: invoice.created_at,
+            })),
+            ...bootcampItems.map((item) => ({
+                type: 'Bootcamp',
+                title: item.bootcamp.title,
+                slug: item.bootcamp.slug,
+                price: item.price,
+                invoice_id: invoice.id,
+                invoice_status: invoice.status,
+                invoice_code: invoice.invoice_code,
+                invoice_url: invoice.invoice_url,
+                paid_at: invoice.paid_at,
+                payment_channel: invoice.payment_channel,
+                payment_method: invoice.payment_method,
+                created_at: invoice.created_at,
+            })),
+            ...webinarItems.map((item) => ({
+                type: 'Webinar',
+                title: item.webinar.title,
+                slug: item.webinar.slug,
+                price: item.price,
+                invoice_id: invoice.id,
+                invoice_status: invoice.status,
+                invoice_code: invoice.invoice_code,
+                invoice_url: invoice.invoice_url,
+                paid_at: invoice.paid_at,
+                payment_channel: invoice.payment_channel,
+                payment_method: invoice.payment_method,
+                created_at: invoice.created_at,
+            })),
+            ...certificationItems
+                .map((item) => {
+                    const certificationProgram = getCertificationProgram(item);
+
+                    if (!certificationProgram) {
+                        return null;
+                    }
+
+                    return {
+                        type: 'Certification Program',
+                        title: certificationProgram.title,
+                        slug: certificationProgram.slug,
+                        price: item.price,
+                        invoice_id: invoice.id,
+                        invoice_status: invoice.status,
+                        invoice_code: invoice.invoice_code,
+                        invoice_url: invoice.invoice_url,
+                        paid_at: invoice.paid_at,
+                        payment_channel: invoice.payment_channel,
+                        payment_method: invoice.payment_method,
+                        created_at: invoice.created_at,
+                        is_scholarship: item.is_scholarship,
+                    };
+                })
+                .filter(
+                    (
+                        item,
+                    ): item is {
+                        type: string;
+                        title: string;
+                        slug: string;
+                        price: number;
+                        invoice_id: string;
+                        invoice_status: Invoice['status'];
+                        invoice_code: string;
+                        invoice_url: string;
+                        paid_at: string | null;
+                        payment_channel: string | null;
+                        payment_method: string | null;
+                        created_at: string;
+                        is_scholarship: boolean;
+                    } => item !== null,
+                ),
+        ];
+    });
 
     const filteredItems = allItems.filter((item) => item.title.toLowerCase().includes(search.toLowerCase()));
 
@@ -142,7 +223,7 @@ export default function Transactions({ myTransactions }: Props) {
                         <tbody>
                             {filteredItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="py-8 text-center text-gray-500">
+                                    <td colSpan={7} className="py-8 text-center text-gray-500">
                                         Belum ada transaksi.
                                     </td>
                                 </tr>
@@ -150,14 +231,17 @@ export default function Transactions({ myTransactions }: Props) {
                                 filteredItems.map((item, idx) => (
                                     <tr key={idx} className="border-t dark:border-zinc-800">
                                         <td className="p-2">
-                                            <Link
-                                                href={`/profile/my-${item.type.toLowerCase()}s/${item.slug}`}
-                                                className="text-primary hover:underline"
-                                            >
+                                            <Link href={getItemHref(item.type, item.slug)} className="text-primary hover:underline">
                                                 {item.title}
                                             </Link>
                                         </td>
-                                        <td className="p-2">{item.type === 'Course' ? 'Kelas Online' : item.type}</td>
+                                        <td className="p-2">
+                                            {item.type === 'Course'
+                                                ? 'Kelas Online'
+                                                : item.type === 'Certification Program'
+                                                  ? 'Sertifikasi Program'
+                                                  : item.type}
+                                        </td>
                                         <td className="p-2">{getStatusComponent(item.invoice_status)}</td>
                                         <td className="p-2">
                                             {item.price === 0 ? (
