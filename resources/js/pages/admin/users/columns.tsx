@@ -28,6 +28,7 @@ export type User = {
     webinars_count: number;
     total_enrollments: number;
     program_types: string[];
+    purchased_categories: string[];
     last_purchase_date: string | null;
     last_purchase_items: Array<{
         type: 'course' | 'bootcamp' | 'webinar';
@@ -161,6 +162,50 @@ export const columns: ColumnDef<User>[] = [
                         </>
                     ) : (
                         <span className="text-sm text-gray-400">-</span>
+                    )}
+                </div>
+            );
+        },
+    },
+    {
+        accessorKey: 'purchased_categories',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Kategori" />,
+        filterFn: (row, id, value) => {
+            if (value.length === 0) return true;
+
+            const purchasedCategories = row.original.purchased_categories || [];
+            return value.some((v: string) => purchasedCategories.includes(v));
+        },
+        enableHiding: false,
+        cell: ({ row }) => {
+            const categories = row.original.purchased_categories || [];
+
+            if (categories.length === 0) {
+                return <span className="text-sm text-gray-400">-</span>;
+            }
+
+            return (
+                <div className="flex flex-wrap gap-1">
+                    {categories.slice(0, 2).map((category, index) => (
+                        <Badge key={index} variant="secondary" className="text-[10px]">
+                            {category}
+                        </Badge>
+                    ))}
+                    {categories.length > 2 && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Badge variant="secondary" className="text-[10px]">
+                                    +{categories.length - 2}
+                                </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <div className="flex flex-col gap-1">
+                                    {categories.slice(2).map((category, index) => (
+                                        <span key={index} className="text-xs">{category}</span>
+                                    ))}
+                                </div>
+                            </TooltipContent>
+                        </Tooltip>
                     )}
                 </div>
             );

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import CourseLayout from '@/layouts/course-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
+import axios from 'axios';
 import {
     AlertTriangle,
     CheckCircle,
@@ -342,27 +343,15 @@ function LessonContent({
 
         setIsSubmittingAssignment(true);
         try {
-            const response = await fetch(`/lesson/${lesson.id}/assignment-submit`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: formData,
-            });
+            const response = await axios.post(`/lesson/${lesson.id}/assignment-submit`, formData);
 
-            const result = await response.json();
-            if (!response.ok) {
-                toast.error(result?.message || 'Gagal mengirim tugas.');
-                return;
-            }
-
-            if (result?.submission) {
-                onAssignmentSubmitted?.(lesson.id, result.submission as AssignmentSubmission);
+            if (response.data?.submission) {
+                onAssignmentSubmitted?.(lesson.id, response.data.submission as AssignmentSubmission);
             }
             setAssignmentFile(null);
             toast.success('Tugas berhasil dikirim. Status: masih di cek admin.');
-        } catch {
-            toast.error('Terjadi kesalahan saat mengirim tugas.');
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Terjadi kesalahan saat mengirim tugas.');
         } finally {
             setIsSubmittingAssignment(false);
         }
@@ -629,53 +618,39 @@ export default function CourseDetail({ course, auto_select_lesson_id, progress_i
 
     const handleLessonComplete = async (lessonId: string) => {
         try {
-            const response = await fetch(`/lesson/${lessonId}/complete`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-            });
+            await axios.post(`/lesson/${lessonId}/complete`);
 
-            if (response.ok) {
-                setModuleData((prevModules) =>
-                    prevModules.map((module) => ({
-                        ...module,
-                        lessons: module.lessons.map((lesson) => (lesson.id === lessonId ? { ...lesson, isCompleted: true } : lesson)),
-                    })),
-                );
+            setModuleData((prevModules) =>
+                prevModules.map((module) => ({
+                    ...module,
+                    lessons: module.lessons.map((lesson) => (lesson.id === lessonId ? { ...lesson, isCompleted: true } : lesson)),
+                })),
+            );
 
-                // Find and move to the next lesson
-                let found = false;
-                for (let m = 0; m < moduleData.length; m++) {
-                    for (let l = 0; l < moduleData[m].lessons.length; l++) {
-                        if (moduleData[m].lessons[l].id === lessonId) {
-                            found = true;
-                            // Next lesson in current module
-                            if (l + 1 < moduleData[m].lessons.length) {
-                                setSelectedLesson(moduleData[m].lessons[l + 1]);
-                            } else if (m + 1 < moduleData.length && moduleData[m + 1].lessons.length > 0) {
-                                // First lesson in next module
-                                setSelectedLesson(moduleData[m + 1].lessons[0]);
-                            }
-                            break;
+            // Find and move to the next lesson
+            let found = false;
+            for (let m = 0; m < moduleData.length; m++) {
+                for (let l = 0; l < moduleData[m].lessons.length; l++) {
+                    if (moduleData[m].lessons[l].id === lessonId) {
+                        found = true;
+                        // Next lesson in current module
+                        if (l + 1 < moduleData[m].lessons.length) {
+                            setSelectedLesson(moduleData[m].lessons[l + 1]);
+                        } else if (m + 1 < moduleData.length && moduleData[m + 1].lessons.length > 0) {
+                            // First lesson in next module
+                            setSelectedLesson(moduleData[m + 1].lessons[0]);
                         }
+                        break;
                     }
-                    if (found) break;
                 }
+                if (found) break;
+            }
 
-                // Update enrollment progress after lesson completion
-                try {
-                    await fetch(`/enrollment/progress/${course.slug}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                        },
-                    });
-                } catch (progressError) {
-                    console.error('Error updating enrollment progress:', progressError);
-                }
+            // Update enrollment progress after lesson completion
+            try {
+                await axios.post(`/enrollment/progress/${course.slug}`);
+            } catch (progressError) {
+                console.error('Error updating enrollment progress:', progressError);
             }
         } catch (error) {
             console.error('Error completing lesson:', error);

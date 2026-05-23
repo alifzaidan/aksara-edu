@@ -19,7 +19,7 @@ import { DataTableViewOptions } from '@/components/data-table-view-option';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BookText, MonitorPlay, Presentation, ShoppingBag, X } from 'lucide-react';
+import { BookText, MonitorPlay, Presentation, ShoppingBag, Tags, X } from 'lucide-react';
 import React from 'react';
 
 export const programTypes = [
@@ -56,12 +56,13 @@ export const purchaseStatus = [
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
+    categories?: { id: string; name: string }[];
 }
 
-export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({ columns, data, categories = [] }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({ purchased_categories: false });
     const [rowSelection, setRowSelection] = React.useState({});
 
     const table = useReactTable({
@@ -97,6 +98,13 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
                 <div className="flex flex-col items-center gap-2 lg:flex-row">
                     {table.getColumn('total_enrollments') && (
                         <DataTableFacetedFilter column={table.getColumn('total_enrollments')} title="Tipe Program" options={programTypes} />
+                    )}
+                    {table.getColumn('purchased_categories') && categories.length > 0 && (
+                        <DataTableFacetedFilter
+                            column={table.getColumn('purchased_categories')}
+                            title="Kategori Produk"
+                            options={categories.map((c) => ({ value: c.name, label: c.name, icon: Tags }))}
+                        />
                     )}
                     {table.getColumn('last_purchase_date') && (
                         <DataTableFacetedFilter column={table.getColumn('last_purchase_date')} title="Riwayat Pembelian" options={purchaseStatus} />
