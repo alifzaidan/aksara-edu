@@ -25,6 +25,10 @@ return new class extends Migration
             $table->string('header_bottom')->nullable();
             $table->date('issued_date')->nullable();
             $table->string('period')->nullable();
+            $table->integer('page_count')->default(1);
+            $table->boolean('second_page_grade')->default(false);
+            $table->boolean('second_page_material')->default(false);
+            $table->json('assessment_subjects')->nullable();
             $table->timestamps();
         });
     }

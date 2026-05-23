@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
             $table->integer('certificate_number');
             $table->string('certificate_code')->unique();
+            $table->json('grades')->nullable();
             $table->timestamps();
         });
     }
