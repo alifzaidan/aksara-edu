@@ -3,8 +3,8 @@ import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import AdminLayout from '@/layouts/admin-layout';
 import { rupiahFormatter } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
-import { CheckCircle, ChevronDown, ChevronUp, Plus, TrendingUp, UserCheck, Users as UsersIcon } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import { CheckCircle, ChevronDown, ChevronUp, Megaphone, Plus, TrendingUp, UserCheck, Users as UsersIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { columns, User } from './columns';
@@ -41,9 +41,10 @@ interface UserProps {
         success?: string;
         error?: string;
     };
+    categories: { id: string; name: string }[];
 }
 
-export default function Users({ users, statistics, flash }: UserProps) {
+export default function Users({ users, statistics, flash, categories }: UserProps) {
     const [open, setOpen] = useState(false);
     const [showMoreStats, setShowMoreStats] = useState(false);
 
@@ -65,15 +66,23 @@ export default function Users({ users, statistics, flash }: UserProps) {
                         <h1 className="text-2xl font-semibold">Pengguna</h1>
                         <p className="text-muted-foreground text-sm">Ringkasan dan daftar semua pengguna.</p>
                     </div>
-                    <Dialog open={open} onOpenChange={setOpen}>
-                        <DialogTrigger asChild>
-                            <Button className="hover:cursor-pointer">
-                                Tambah Pengguna
-                                <Plus />
-                            </Button>
-                        </DialogTrigger>
-                        <CreateUser setOpen={setOpen} />
-                    </Dialog>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" asChild>
+                            <Link href={route('broadcasts.index')}>
+                                <Megaphone className="mr-1 h-4 w-4" />
+                                Broadcast
+                            </Link>
+                        </Button>
+                        <Dialog open={open} onOpenChange={setOpen}>
+                            <DialogTrigger asChild>
+                                <Button className="hover:cursor-pointer">
+                                    Tambah Pengguna
+                                    <Plus />
+                                </Button>
+                            </DialogTrigger>
+                            <CreateUser setOpen={setOpen} />
+                        </Dialog>
+                    </div>
                 </div>
 
                 {/* Statistics Cards */}
@@ -224,7 +233,7 @@ export default function Users({ users, statistics, flash }: UserProps) {
                 </div>
 
                 {/* Data Table */}
-                <DataTable columns={columns} data={users} />
+                <DataTable columns={columns} data={users} categories={categories} />
             </div>
         </AdminLayout>
     );

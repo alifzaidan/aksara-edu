@@ -5,6 +5,7 @@ use App\Http\Controllers\AffiliateController;
 use App\Http\Controllers\AffiliateEarningController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\BootcampController;
+use App\Http\Controllers\BroadcastController;
 use App\Http\Controllers\BundleController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CertificateController;
@@ -218,6 +219,11 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
 
     Route::middleware(['role:admin'])->group(function () {
         Route::resource('users', UserController::class);
+
+        Route::resource('broadcasts', BroadcastController::class);
+        Route::post('broadcasts/{broadcast}/filtered-users', [BroadcastController::class, 'filteredUsers'])->name('broadcasts.filtered-users');
+        Route::post('broadcasts/{broadcast}/send', [BroadcastController::class, 'send'])->name('broadcasts.send');
+        Route::post('broadcasts/{broadcast}/send-single', [BroadcastController::class, 'sendSingle'])->name('broadcasts.send-single');
         Route::resource('certificates', CertificateController::class);
         Route::get('/{certificate}/preview', [CertificateController::class, 'preview'])->name('certificates.preview');
         Route::get('/{certificate}/download-all', [CertificateController::class, 'downloadAll'])->name('certificates.download.all');

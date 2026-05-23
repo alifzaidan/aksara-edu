@@ -37,12 +37,13 @@ class UserController extends Controller
             ->with(['invoices' => function ($query) {
                 $query->where('status', 'paid')
                     ->with([
-                        'courseItems.course:id,title,price',
-                        'bootcampItems.bootcamp:id,title,price',
-                        'webinarItems.webinar:id,title,price'
+                        'courseItems.course.category:id,name',
+                        'bootcampItems.bootcamp.category:id,name',
+                        'webinarItems.webinar.category:id,name',
+                        'certificationProgramItems.certificationProgram.category:id,name',
+                        'privateItems.privateClass.category:id,name',
                     ])
-                    ->latest('paid_at')
-                    ->limit(1);
+                    ->latest('paid_at');
             }])
             ->latest()
             ->get();
@@ -50,28 +51,64 @@ class UserController extends Controller
         $usersData = $users->map(function ($user) {
             $lastPurchase = $user->invoices->first();
 
+            $purchasedCategories = collect();
+
+            foreach ($user->invoices as $invoice) {
+                foreach ($invoice->courseItems as $item) {
+                    if ($item->course && $item->course->category) {
+                        $purchasedCategories->push($item->course->category->name);
+                    }
+                }
+                foreach ($invoice->bootcampItems as $item) {
+                    if ($item->bootcamp && $item->bootcamp->category) {
+                        $purchasedCategories->push($item->bootcamp->category->name);
+                    }
+                }
+                foreach ($invoice->webinarItems as $item) {
+                    if ($item->webinar && $item->webinar->category) {
+                        $purchasedCategories->push($item->webinar->category->name);
+                    }
+                }
+                foreach ($invoice->certificationProgramItems as $item) {
+                    if ($item->certificationProgram && $item->certificationProgram->category) {
+                        $purchasedCategories->push($item->certificationProgram->category->name);
+                    }
+                }
+                foreach ($invoice->privateItems as $item) {
+                    if ($item->privateClass && $item->privateClass->category) {
+                        $purchasedCategories->push($item->privateClass->category->name);
+                    }
+                }
+            }
+
             $purchasedItems = [];
             if ($lastPurchase) {
                 foreach ($lastPurchase->courseItems as $item) {
-                    $purchasedItems[] = [
-                        'type' => 'course',
-                        'title' => $item->course->title,
-                        'price' => $item->course->price,
-                    ];
+                    if ($item->course) {
+                        $purchasedItems[] = [
+                            'type' => 'course',
+                            'title' => $item->course->title,
+                            'price' => $item->course->price,
+                        ];
+                    }
                 }
                 foreach ($lastPurchase->bootcampItems as $item) {
-                    $purchasedItems[] = [
-                        'type' => 'bootcamp',
-                        'title' => $item->bootcamp->title,
-                        'price' => $item->bootcamp->price,
-                    ];
+                    if ($item->bootcamp) {
+                        $purchasedItems[] = [
+                            'type' => 'bootcamp',
+                            'title' => $item->bootcamp->title,
+                            'price' => $item->bootcamp->price,
+                        ];
+                    }
                 }
                 foreach ($lastPurchase->webinarItems as $item) {
-                    $purchasedItems[] = [
-                        'type' => 'webinar',
-                        'title' => $item->webinar->title,
-                        'price' => $item->webinar->price,
-                    ];
+                    if ($item->webinar) {
+                        $purchasedItems[] = [
+                            'type' => 'webinar',
+                            'title' => $item->webinar->title,
+                            'price' => $item->webinar->price,
+                        ];
+                    }
                 }
             }
 
@@ -93,6 +130,7 @@ class UserController extends Controller
                 'webinars_count' => $user->webinars_count,
                 'total_enrollments' => $user->courses_count + $user->bootcamps_count + $user->webinars_count,
                 'program_types' => $programTypes,
+                'purchased_categories' => $purchasedCategories->unique()->values()->all(),
                 'last_purchase_date' => $lastPurchase?->paid_at,
                 'last_purchase_items' => $purchasedItems,
                 'last_purchase_total' => $lastPurchase?->nett_amount,
@@ -136,6 +174,7 @@ class UserController extends Controller
         return Inertia::render('admin/users/index', [
             'users' => $usersData,
             'statistics' => $statistics,
+            'categories' => \App\Models\Category::select('id', 'name')->get(),
         ]);
     }
 
