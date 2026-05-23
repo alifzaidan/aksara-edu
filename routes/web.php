@@ -222,6 +222,8 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::get('/{certificate}/preview', [CertificateController::class, 'preview'])->name('certificates.preview');
         Route::get('/{certificate}/download-all', [CertificateController::class, 'downloadAll'])->name('certificates.download.all');
         Route::get('/participant/{participant}/download', [CertificateController::class, 'downloadParticipant'])->name('certificates.participant.download');
+        Route::get('/certificates/{certificate}/download-grades-template', [CertificateController::class, 'downloadGradesTemplate'])->name('certificates.download-grades-template');
+        Route::post('/certificates/{certificate}/import-grades', [CertificateController::class, 'importGrades'])->name('certificates.import-grades');
         Route::resource('certificate-designs', CertificateDesignController::class);
         Route::resource('certificate-signs', CertificateSignController::class);
 

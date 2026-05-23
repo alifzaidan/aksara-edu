@@ -11,6 +11,10 @@ class CertificateParticipant extends Model
 
     protected $guarded = ['created_at', 'updated_at'];
 
+    protected $casts = [
+        'grades' => 'array',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

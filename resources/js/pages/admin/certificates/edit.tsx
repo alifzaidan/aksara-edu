@@ -6,6 +6,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/layouts/admin-layout';
@@ -14,7 +15,7 @@ import { BreadcrumbItem } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Head, router } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { Award, CalendarFold, Check, ChevronDownIcon, ChevronsUpDown } from 'lucide-react';
+import { Award, CalendarFold, Check, ChevronDownIcon, ChevronsUpDown, Trash, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -34,6 +35,10 @@ interface Certificate {
     course_id?: string | null;
     bootcamp_id?: string | null;
     webinar_id?: string | null;
+    page_count?: number | string | null;
+    second_page_grade?: boolean;
+    second_page_material?: boolean;
+    assessment_subjects?: string[] | null;
     design?: { id: string; name: string };
     sign?: { id: string; name: string };
     created_at: string;
@@ -56,6 +61,11 @@ const formSchema = z.object({
     course_id: z.string().nullable(),
     bootcamp_id: z.string().nullable(),
     webinar_id: z.string().nullable(),
+    page_count: z.string().nullable().optional(),
+    second_page_content: z.string().nullable().optional(),
+    second_page_grade: z.boolean().optional(),
+    second_page_material: z.boolean().optional(),
+    assessment_subjects: z.array(z.string()).optional(),
 });
 
 export default function EditCertificate({
@@ -109,10 +119,21 @@ export default function EditCertificate({
             course_id: certificate.course_id ?? '',
             bootcamp_id: certificate.bootcamp_id ?? '',
             webinar_id: certificate.webinar_id ?? '',
+            page_count: String(certificate.page_count ?? 1),
+            second_page_content: certificate.second_page_material ? 'material' : 'grade',
+            second_page_grade: !!certificate.second_page_grade,
+            second_page_material: !!certificate.second_page_material,
+            assessment_subjects: certificate.assessment_subjects ?? [
+                'Tugas Akhir & Portofolio Aplikasi Real-World',
+                'Evaluasi Teori, Kuis & Pemahaman Konseptual',
+                'Keaktifan, Kolaborasi Proyek & Partisipasi Diskusi'
+            ],
         },
     });
 
     const programType = form.watch('program_type');
+    const pageCount = form.watch('page_count');
+    const secondPageContent = form.watch('second_page_content');
 
     function onSubmit(values: z.infer<typeof formSchema>) {
         router.put(route('certificates.update', { certificate: certificate.id }), values);
@@ -284,6 +305,12 @@ export default function EditCertificate({
                                                 form.setValue('course_id', '');
                                                 form.setValue('bootcamp_id', '');
                                                 form.setValue('webinar_id', '');
+                                                // Reset page count and options if not bootcamp
+                                                if (value !== 'bootcamp') {
+                                                    form.setValue('page_count', '1');
+                                                    form.setValue('second_page_grade', false);
+                                                    form.setValue('second_page_material', false);
+                                                }
                                             }}
                                             value={field.value}
                                         >
@@ -365,6 +392,150 @@ export default function EditCertificate({
                                         </FormItem>
                                     )}
                                 />
+                            )}
+
+                            {programType === 'bootcamp' && (
+                                <>
+                                    <FormField
+                                        control={form.control}
+                                        name="page_count"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Jumlah Halaman Sertifikat</FormLabel>
+                                                <Select
+                                                    onValueChange={(value) => {
+                                                        field.onChange(value);
+                                                        if (value === '2') {
+                                                            form.setValue('second_page_content', 'grade');
+                                                            form.setValue('second_page_grade', true);
+                                                            form.setValue('second_page_material', false);
+                                                        } else {
+                                                            form.setValue('second_page_grade', false);
+                                                            form.setValue('second_page_material', false);
+                                                        }
+                                                    }}
+                                                    value={field.value || '1'}
+                                                >
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Pilih jumlah halaman" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="1">1 Halaman</SelectItem>
+                                                        <SelectItem value="2">2 Halaman</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    {pageCount === '2' && (
+                                        <div className="space-y-4 rounded-md border p-4 bg-muted/20">
+                                            <FormField
+                                                control={form.control}
+                                                name="second_page_content"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-sm font-medium block mb-1">
+                                                            Konten Halaman Kedua
+                                                        </FormLabel>
+                                                        <Select
+                                                            onValueChange={(value) => {
+                                                                field.onChange(value);
+                                                                if (value === 'grade') {
+                                                                    form.setValue('second_page_grade', true);
+                                                                    form.setValue('second_page_material', false);
+                                                                } else if (value === 'material') {
+                                                                    form.setValue('second_page_grade', false);
+                                                                    form.setValue('second_page_material', true);
+                                                                }
+                                                            }}
+                                                            value={field.value || 'grade'}
+                                                        >
+                                                            <FormControl>
+                                                                <SelectTrigger className="bg-white">
+                                                                    <SelectValue placeholder="Pilih konten halaman kedua" />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                <SelectItem value="grade">Nilai / Evaluasi (Desain Transkrip)</SelectItem>
+                                                                <SelectItem value="material">Materi / Silabus (Desain Kurikulum)</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormDescription className="text-xs text-muted-foreground mt-1">
+                                                            Pilih salah satu jenis konten yang ingin ditampilkan pada halaman kedua sertifikat. Masing-masing opsi memiliki gaya desain yang unik.
+                                                        </FormDescription>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            {secondPageContent === 'grade' && (
+                                                <div className="space-y-3 mt-4 pt-4 border-t border-gray-200">
+                                                    <div className="flex items-center justify-between">
+                                                        <FormLabel className="text-sm font-medium text-gray-900">
+                                                            Materi / Aspek Penilaian per Kolom
+                                                        </FormLabel>
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                const currentSubjects = form.getValues('assessment_subjects') || [];
+                                                                form.setValue('assessment_subjects', [...currentSubjects, '']);
+                                                            }}
+                                                            className="h-8 gap-1"
+                                                        >
+                                                            <Plus className="h-3.5 w-3.5" />
+                                                            Tambah Kolom
+                                                        </Button>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Tentukan aspek penilaian yang akan diisi nilainya. Kolom ini akan diselaraskan dengan data Excel nilai yang akan diimport.
+                                                     </p>
+
+                                                    <div className="space-y-2">
+                                                        {(form.watch('assessment_subjects') || []).map((subject, index) => (
+                                                            <div key={index} className="flex items-center gap-2">
+                                                                <span className="text-xs font-semibold text-muted-foreground w-6 text-center">
+                                                                    {index + 1}
+                                                                </span>
+                                                                <Input
+                                                                    value={subject}
+                                                                    onChange={(e) => {
+                                                                        const currentSubjects = [...(form.getValues('assessment_subjects') || [])];
+                                                                        currentSubjects[index] = e.target.value;
+                                                                        form.setValue('assessment_subjects', currentSubjects);
+                                                                    }}
+                                                                    placeholder={`Nama Aspek Penilaian ${index + 1} (contoh: Tugas Akhir)`}
+                                                                    className="bg-white flex-1"
+                                                                />
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    onClick={() => {
+                                                                        const currentSubjects = form.getValues('assessment_subjects') || [];
+                                                                        form.setValue(
+                                                                            'assessment_subjects',
+                                                                            currentSubjects.filter((_, i) => i !== index)
+                                                                        );
+                                                                    }}
+                                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                                    disabled={(form.watch('assessment_subjects') || []).length <= 1}
+                                                                >
+                                                                    <Trash className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </>
                             )}
 
                             <FormField

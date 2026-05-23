@@ -12,7 +12,11 @@ class Certificate extends Model
     protected $guarded = ['created_at', 'updated_at'];
 
     protected $casts = [
-        'issued_date' => 'date'
+        'issued_date' => 'date',
+        'page_count' => 'integer',
+        'second_page_grade' => 'boolean',
+        'second_page_material' => 'boolean',
+        'assessment_subjects' => 'array',
     ];
 
     public function design()
