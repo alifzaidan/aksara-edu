@@ -93,6 +93,7 @@ export type CertificationProgram = {
         start_time: string;
         end_time: string;
     }[];
+    batch?: string | null;
 };
 
 export const columns: ColumnDef<CertificationProgram>[] = [
@@ -141,6 +142,11 @@ export const columns: ColumnDef<CertificationProgram>[] = [
                 </Badge>
             );
         },
+    },
+    {
+        accessorKey: 'batch',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Batch" />,
+        cell: ({ row }) => <div className="font-medium">{row.original.batch || '-'}</div>,
     },
     {
         accessorKey: 'price',

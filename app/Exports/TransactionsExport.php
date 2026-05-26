@@ -23,6 +23,7 @@ class TransactionsExport implements
     protected $webinarId;
     protected $courseId;
     protected $bundleId;
+    protected $certificationProgramId;
 
     public function __construct($filters = [])
     {
@@ -35,6 +36,7 @@ class TransactionsExport implements
         $this->webinarId = $filters['webinar_id'] ?? null;
         $this->courseId = $filters['course_id'] ?? null;
         $this->bundleId = $filters['bundle_id'] ?? null;
+        $this->certificationProgramId = $filters['certification_program_id'] ?? null;
     }
 
     public function query()
@@ -45,7 +47,8 @@ class TransactionsExport implements
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
             'privateItems.privateClass',
-            'bundleEnrollments.bundle'
+            'bundleEnrollments.bundle',
+            'certificationProgramItems.certificationProgram'
         ]);
 
         // Apply date filter
@@ -117,6 +120,15 @@ class TransactionsExport implements
                     break;
                 case 'private':
                     $query->whereHas('privateItems');
+                    break;
+                case 'certification_program':
+                    if ($this->certificationProgramId) {
+                        $query->whereHas('certificationProgramItems', function ($q) {
+                            $q->where('certification_program_id', $this->certificationProgramId);
+                        });
+                    } else {
+                        $query->whereHas('certificationProgramItems');
+                    }
                     break;
             }
         }
@@ -250,6 +262,12 @@ class TransactionsExport implements
             }
         }
 
+        if ($invoice->certificationProgramItems) {
+            foreach ($invoice->certificationProgramItems as $item) {
+                $names[] = $item->certificationProgram->title ?? '-';
+            }
+        }
+
         return implode(', ', $names) ?: '-';
     }
 
@@ -260,6 +278,7 @@ class TransactionsExport implements
         if ($invoice->bootcampItems && $invoice->bootcampItems->count() > 0) return 'Bootcamp';
         if ($invoice->webinarItems && $invoice->webinarItems->count() > 0) return 'Webinar';
         if ($invoice->privateItems && $invoice->privateItems->count() > 0) return 'Private Class';
+        if ($invoice->certificationProgramItems && $invoice->certificationProgramItems->count() > 0) return 'Sertifikasi';
         return '-';
     }
 }

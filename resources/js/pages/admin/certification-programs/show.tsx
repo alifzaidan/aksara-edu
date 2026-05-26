@@ -11,8 +11,10 @@ import { id } from 'date-fns/locale';
 import { CircleX, EyeOff, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { Invoice } from './columns-transactions';
 import CertificationProgramApplications from './show-applications';
 import CertificationProgramDetail from './show-details';
+import CertificationProgramTransaction from './show-transactions';
 
 interface Schedule {
     id: string;
@@ -73,10 +75,11 @@ interface Application {
 interface ShowCertificationProgramProps {
     program: CertificationProgram;
     applications: Application[];
+    transactions: Invoice[];
     flash?: { success?: string; error?: string };
 }
 
-export default function ShowCertificationProgram({ program, applications, flash }: ShowCertificationProgramProps) {
+export default function ShowCertificationProgram({ program, applications, transactions, flash }: ShowCertificationProgramProps) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Program Sertifikasi', href: route('certification-programs.index') },
         { title: program.title, href: route('certification-programs.show', program.id) },
@@ -128,6 +131,7 @@ export default function ShowCertificationProgram({ program, applications, flash 
                                         </span>
                                     )}
                                 </TabsTrigger>
+                                <TabsTrigger value="transaksi">Transaksi</TabsTrigger>
                             </TabsList>
 
                             <TabsContent value="detail">
@@ -136,6 +140,10 @@ export default function ShowCertificationProgram({ program, applications, flash 
 
                             <TabsContent value="pendaftar">
                                 <CertificationProgramApplications applications={applications} programType={program.type} programId={program.id} />
+                            </TabsContent>
+
+                            <TabsContent value="transaksi">
+                                <CertificationProgramTransaction transactions={transactions} programId={program.id} />
                             </TabsContent>
                         </Tabs>
                     </div>

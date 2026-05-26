@@ -24,6 +24,8 @@ interface Product {
     duration_days?: number;
     category?: Category;
     type: 'course' | 'bootcamp' | 'webinar' | 'bundle' | 'private' | 'certification-program';
+    program_type?: 'regular' | 'scholarship';
+    scholarship_price?: number;
     created_at: string;
 }
 
@@ -51,8 +53,8 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
         certificationPrograms: myProductIds?.certificationPrograms || [],
     };
 
-    const getProductBadge = (type: string) => {
-        switch (type) {
+    const getProductBadge = (product: Product) => {
+        switch (product.type) {
             case 'course':
                 return (
                     <span className="absolute top-2 left-2 rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300">
@@ -84,9 +86,16 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                     </span>
                 );
             case 'certification-program':
+                if (product.program_type === 'scholarship') {
+                    return (
+                        <span className="absolute top-2 left-2 rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                            Beasiswa
+                        </span>
+                    );
+                }
                 return (
-                    <span className="absolute top-2 left-2 rounded-full bg-cyan-100 px-2 py-1 text-xs font-medium text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300">
-                        Sertifikasi
+                    <span className="absolute top-2 left-2 rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                        Reguler
                     </span>
                 );
             default:
@@ -123,17 +132,17 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
         const hasProductAccess = hasAccess(product);
         switch (product.type) {
             case 'course':
-                return hasProductAccess ? `profile/my-courses/${product.slug}` : `/course/${product.slug}`;
+                return hasProductAccess ? `/profile/my-courses/${product.slug}` : `/course/${product.slug}`;
             case 'bootcamp':
-                return hasProductAccess ? `profile/my-bootcamps/${product.slug}` : `/bootcamp/${product.slug}`;
+                return hasProductAccess ? `/profile/my-bootcamps/${product.slug}` : `/bootcamp/${product.slug}`;
             case 'webinar':
-                return hasProductAccess ? `profile/my-webinars/${product.slug}` : `/webinar/${product.slug}`;
+                return hasProductAccess ? `/profile/my-webinars/${product.slug}` : `/webinar/${product.slug}`;
             case 'bundle':
                 return `/bundle/${product.slug}`;
             case 'private':
-                return hasProductAccess ? `profile/my-privates/${product.slug}` : `/private/${product.slug}`;
+                return hasProductAccess ? `/profile/my-privates/${product.slug}` : `/private/${product.slug}`;
             case 'certification-program':
-                return hasProductAccess ? `profile/my-certification-programs/${product.slug}` : `/certification-program/${product.slug}`;
+                return hasProductAccess ? `/profile/my-certification-programs/${product.slug}` : `/certification-programs/${product.slug}`;
             default:
                 return '#';
         }
@@ -261,7 +270,9 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
 
                         return availableProducts.map((product) => {
                             const productUrl = getProductUrl(product);
-                            const discount = calculateDiscount(product.strikethrough_price, product.price);
+                            const isScholarship = product.type === 'certification-program' && product.program_type === 'scholarship';
+                            const displayPrice = isScholarship ? (product.scholarship_price ?? product.price) : product.price;
+                            const discount = calculateDiscount(product.strikethrough_price, displayPrice);
 
                             return (
                                 <Link key={product.id} href={productUrl} className="h-full">
@@ -275,7 +286,7 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                                                         alt={product.title}
                                                         className="h-48 w-full rounded-t-lg object-cover"
                                                     />
-                                                    {getProductBadge(product.type)}
+                                                    {getProductBadge(product)}
 
                                                     {discount > 0 && (
                                                         <div className="absolute top-2 right-2">
@@ -289,17 +300,17 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                                                 <h2 className="mx-4 mt-2 line-clamp-2 text-left text-lg font-semibold">{product.title}</h2>
                                             </div>
                                             <div className="mt-auto w-full p-4 text-left">
-                                                {product.price === 0 ? (
+                                                {displayPrice === 0 ? (
                                                     <p className="text-lg font-semibold text-green-600 dark:text-green-400">Gratis</p>
                                                 ) : (
                                                     <div className="">
-                                                        {product.strikethrough_price > 0 && product.strikethrough_price > product.price && (
+                                                        {product.strikethrough_price > 0 && product.strikethrough_price > displayPrice && (
                                                             <p className="text-sm text-gray-500 line-through dark:text-gray-400">
                                                                 Rp {product.strikethrough_price.toLocaleString('id-ID')}
                                                             </p>
                                                         )}
                                                         <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                                                            Rp {product.price.toLocaleString('id-ID')}
+                                                            Rp {displayPrice.toLocaleString('id-ID')}
                                                         </p>
                                                     </div>
                                                 )}
