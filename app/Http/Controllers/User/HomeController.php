@@ -181,6 +181,8 @@ class HomeController extends Controller
                     'slug' => $cp->slug,
                     'strikethrough_price' => $cp->strikethrough_price,
                     'price' => $cp->price,
+                    'program_type' => $cp->type,
+                    'scholarship_price' => $cp->scholarship_price,
                     'registration_deadline' => $cp->registration_deadline,
                     'category' => $cp->category,
                     'type' => 'certification-program',
