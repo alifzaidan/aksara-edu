@@ -34,6 +34,10 @@ export const programStatuses = [
     { value: 'hidden', label: 'Hidden', icon: EyeOff },
 ];
 
+type ProgramWithBatch = {
+    batch?: string;
+};
+
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
@@ -44,6 +48,22 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
     const [rowSelection, setRowSelection] = React.useState({});
+
+    const batchOptions = React.useMemo(() => {
+        const batches = new Set<string>();
+        data.forEach((item) => {
+            const program = item as TData & ProgramWithBatch;
+            if (program.batch) {
+                batches.add(program.batch);
+            }
+        });
+        return Array.from(batches)
+            .sort()
+            .map((batch) => ({
+                label: batch,
+                value: batch,
+            }));
+    }, [data]);
 
     const table = useReactTable({
         data,
@@ -71,8 +91,9 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
                     className="lg:max-w-sm"
                 />
                 <div className="flex flex-col items-center gap-2 lg:flex-row">
-                    {table.getColumn('type') && (
-                        <DataTableFacetedFilter column={table.getColumn('type')} title="Tipe" options={programTypes} />
+                    {table.getColumn('type') && <DataTableFacetedFilter column={table.getColumn('type')} title="Tipe" options={programTypes} />}
+                    {table.getColumn('batch') && batchOptions.length > 0 && (
+                        <DataTableFacetedFilter column={table.getColumn('batch')} title="Batch" options={batchOptions} />
                     )}
                     {table.getColumn('status') && (
                         <DataTableFacetedFilter column={table.getColumn('status')} title="Status" options={programStatuses} />

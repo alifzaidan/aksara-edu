@@ -153,10 +153,23 @@ class HomeController extends Controller
                 ];
             });
 
-        // ✅ Add Certification Programs
         $certificationPrograms = CertificationProgram::with(['category'])
             ->where('status', 'published')
-            ->where('type', '!=', 'scholarship')
+            ->where(function ($query) {
+                $query->where(function ($q) {
+                    $q->where('type', 'scholarship')
+                        ->where(function ($sq) {
+                            $sq->whereNull('socialization_registration_deadline')
+                                ->orWhere('socialization_registration_deadline', '>=', now());
+                        });
+                })->orWhere(function ($q) {
+                    $q->where('type', 'regular')
+                        ->where(function ($rq) {
+                            $rq->whereNull('registration_deadline')
+                                ->orWhere('registration_deadline', '>=', now());
+                        });
+                });
+            })
             ->orderBy('created_at', 'desc')
             ->take(6)
             ->get()

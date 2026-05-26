@@ -6,6 +6,7 @@ use App\Models\CertificationProgram;
 use App\Models\CertificationProgramApplication;
 use App\Models\CertificationProgramScholarshipApplication;
 use App\Models\Category;
+use App\Models\Invoice;
 use App\Models\User;
 use App\Traits\WablasTrait;
 use Carbon\Carbon;
@@ -149,9 +150,24 @@ class CertificationProgramController extends Controller
                 ->get();
         }
 
+        $transactionQuery = Invoice::with([
+            'user.referrer',
+            'certificationProgramItems' => function ($query) use ($id) {
+                $query->where('certification_program_id', $id);
+            }
+        ])
+            ->whereHas('certificationProgramItems', function ($query) use ($id) {
+                $query->where('certification_program_id', $id);
+            });
+
+        $transactions = (clone $transactionQuery)
+            ->latest()
+            ->get();
+
         return Inertia::render('admin/certification-programs/show', [
             'program' => $program,
             'applications' => $applications,
+            'transactions' => $transactions,
         ]);
     }
 
