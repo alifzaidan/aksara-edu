@@ -17,6 +17,7 @@ use ZipArchive;
 use App\Exports\CertificateGradesTemplateExport;
 use App\Imports\CertificateGradesImport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\DB;
 
 class CertificateController extends Controller
 {
@@ -452,17 +453,32 @@ class CertificateController extends Controller
         ]);
 
         try {
+            DB::beginTransaction();
+
             $import = new CertificateGradesImport($certificate);
             Excel::import($import, $request->file('file'));
 
-            $errors = $import->getErrors();
-            if (!empty($errors)) {
-                $errorMessage = "Nilai berhasil diimport sebagian (" . $import->getSuccessCount() . " peserta). Beberapa baris gagal:\n" . implode("\n", $errors);
-                return redirect()->back()->with('warning', $errorMessage);
+            $emptyParticipants = $import->getEmptyScoreParticipants();
+            if (!empty($emptyParticipants)) {
+                DB::rollBack();
+                $errorMessage = "Import dibatalkan karena terdapat nilai yang belum terisi. Silakan lengkapi nilai untuk peserta berikut terlebih dahulu:\n";
+                foreach ($emptyParticipants as $name) {
+                    $errorMessage .= "• " . $name . "\n";
+                }
+                return redirect()->back()->with('error', $errorMessage);
             }
 
+            $errors = $import->getErrors();
+            if (!empty($errors)) {
+                DB::rollBack();
+                $errorMessage = "Gagal mengimport nilai karena terdapat data yang tidak valid:\n" . implode("\n", $errors);
+                return redirect()->back()->with('error', $errorMessage);
+            }
+
+            DB::commit();
             return redirect()->back()->with('success', 'Nilai berhasil diimport untuk ' . $import->getSuccessCount() . ' peserta!');
         } catch (\Exception $e) {
+            DB::rollBack();
             return redirect()->back()->with('error', 'Gagal mengimport nilai: ' . $e->getMessage());
         }
     }
