@@ -12,7 +12,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { AlertCircle, BadgeCheck, Calendar, CheckCircle2, Clock, GraduationCap, Loader2, Lock, User } from 'lucide-react';
+import { AlertCircle, BadgeCheck, Calendar, CheckCircle2, Clock, GraduationCap, Loader2, Lock, Tag, User } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -938,6 +938,19 @@ export default function Register({
                                     )}
                                 </div>
                                 {promoError && <p className="text-sm text-red-600">{promoError}</p>}
+                                {discountData?.valid && (
+                                    <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 dark:border-green-900/50 dark:bg-green-950/30">
+                                        <Tag className="h-4 w-4 shrink-0 text-green-600" />
+                                        <div className="flex-1 text-sm">
+                                            <p className="font-medium text-green-700 dark:text-green-400">
+                                                {discountData.discount_code.name}
+                                            </p>
+                                            <p className="text-green-600 dark:text-green-500">
+                                                Hemat {formatRupiah(discountData.discount_amount)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="mb-4 flex items-center justify-between">
@@ -951,7 +964,15 @@ export default function Register({
                             {program.strikethrough_price && program.strikethrough_price > 0 && (
                                 <p className="text-right text-sm text-red-500 line-through">{formatRupiah(program.strikethrough_price)}</p>
                             )}
-                            {displayPrice > 0 ? (
+                            {discountData?.valid ? (
+                                <div className="space-y-1 text-right">
+                                    <p className="text-sm text-gray-500 line-through dark:text-gray-400">{formatRupiah(displayPrice)}</p>
+                                    <p className="text-3xl font-bold text-green-600 italic dark:text-green-400">
+                                        {displayPrice - discountData.discount_amount <= 0 ? 'GRATIS' : formatRupiah(displayPrice - discountData.discount_amount)}
+                                    </p>
+                                    <p className="text-xs text-green-600 dark:text-green-500">Sudah termasuk diskon {discountData.discount_code.formatted_value}</p>
+                                </div>
+                            ) : displayPrice > 0 ? (
                                 <p className="text-right text-3xl font-bold text-gray-900 italic dark:text-gray-100">{formatRupiah(displayPrice)}</p>
                             ) : (
                                 <p className="text-right text-3xl font-bold text-gray-900 italic dark:text-gray-100">GRATIS</p>

@@ -15,6 +15,7 @@ import {
     CreditCard,
     DollarSign,
     Edit,
+    GraduationCap,
     Monitor,
     Percent,
     ShoppingCart,
@@ -142,6 +143,8 @@ const getProductIcon = (type: string) => {
             return <Monitor className="h-3 w-3" />;
         case 'webinar':
             return <Video className="h-3 w-3" />;
+        case 'certification_program':
+            return <GraduationCap className="h-3 w-3" />;
         default:
             return <Tag className="h-3 w-3" />;
     }
@@ -155,6 +158,10 @@ const getProductTypeName = (type: string) => {
             return 'Bootcamp';
         case 'webinar':
             return 'Webinar';
+        case 'bundle':
+            return 'Bundle';
+        case 'certification_program':
+            return 'Program Sertifikasi';
         default:
             return type;
     }

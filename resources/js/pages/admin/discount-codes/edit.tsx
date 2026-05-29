@@ -61,6 +61,8 @@ interface EditDiscountCodeProps {
         courses: Product[];
         bootcamps: Product[];
         webinars: Product[];
+        bundles: Product[];
+        certification_programs: Product[];
     };
 }
 
@@ -259,6 +261,24 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
                     return registrationEnd >= discountStartDate;
                 });
 
+            case 'bundle':
+                return products.bundles.filter((bundle) => {
+                    if (selectedProductIds.includes(bundle.id)) return false;
+
+                    if (!bundle.registration_deadline || !discountStartDate) return true;
+                    const registrationEnd = parseISO(bundle.registration_deadline);
+                    return registrationEnd >= discountStartDate;
+                });
+
+            case 'certification_program':
+                return products.certification_programs.filter((program) => {
+                    if (selectedProductIds.includes(program.id)) return false;
+
+                    if (!program.registration_deadline || !discountStartDate) return true;
+                    const registrationEnd = parseISO(program.registration_deadline);
+                    return registrationEnd >= discountStartDate;
+                });
+
             default:
                 return [];
         }
@@ -272,6 +292,10 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
                 return 'Bootcamp';
             case 'webinar':
                 return 'Webinar';
+            case 'bundle':
+                return 'Bundle';
+            case 'certification_program':
+                return 'Program Sertifikasi';
             default:
                 return type;
         }
@@ -652,6 +676,26 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
                                             Webinar
                                         </FormLabel>
                                     </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id="bundle"
+                                            checked={watchApplicableTypes.includes('bundle')}
+                                            onCheckedChange={(checked) => handleApplicableTypeChange('bundle', !!checked)}
+                                        />
+                                        <FormLabel htmlFor="bundle" className="text-sm font-normal">
+                                            Bundle
+                                        </FormLabel>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id="certification_program"
+                                            checked={watchApplicableTypes.includes('certification_program')}
+                                            onCheckedChange={(checked) => handleApplicableTypeChange('certification_program', !!checked)}
+                                        />
+                                        <FormLabel htmlFor="certification_program" className="text-sm font-normal">
+                                            Program Sertifikasi
+                                        </FormLabel>
+                                    </div>
                                 </div>
                                 <p className="text-muted-foreground text-sm">Kosong = berlaku untuk semua produk</p>
 
@@ -699,6 +743,12 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
                                                                 )}
                                                                 {watchApplicableTypes.includes('webinar') && (
                                                                     <SelectItem value="webinar">Webinar</SelectItem>
+                                                                )}
+                                                                {watchApplicableTypes.includes('bundle') && (
+                                                                    <SelectItem value="bundle">Bundle</SelectItem>
+                                                                )}
+                                                                {watchApplicableTypes.includes('certification_program') && (
+                                                                    <SelectItem value="certification_program">Program Sertifikasi</SelectItem>
                                                                 )}
                                                             </SelectContent>
                                                         </Select>

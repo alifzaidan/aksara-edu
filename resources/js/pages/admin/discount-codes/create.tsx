@@ -37,6 +37,7 @@ interface CreateDiscountCodeProps {
         bootcamps: Product[];
         webinars: Product[];
         bundles: Product[];
+        certification_programs: Product[];
     };
 }
 
@@ -234,6 +235,15 @@ export default function CreateDiscountCode({ products }: CreateDiscountCodeProps
                     return registrationEnd >= discountStartDate;
                 });
 
+            case 'certification_program':
+                return products.certification_programs.filter((program) => {
+                    if (selectedProductIds.includes(program.id)) return false;
+
+                    if (!program.registration_deadline || !discountStartDate) return true;
+                    const registrationEnd = parseISO(program.registration_deadline);
+                    return registrationEnd >= discountStartDate;
+                });
+
             default:
                 return [];
         }
@@ -249,6 +259,8 @@ export default function CreateDiscountCode({ products }: CreateDiscountCodeProps
                 return 'Webinar';
             case 'bundle':
                 return 'Bundle';
+            case 'certification_program':
+                return 'Program Sertifikasi';
             default:
                 return type;
         }
@@ -639,6 +651,16 @@ export default function CreateDiscountCode({ products }: CreateDiscountCodeProps
                                             Bundle
                                         </FormLabel>
                                     </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id="certification_program"
+                                            checked={watchApplicableTypes.includes('certification_program')}
+                                            onCheckedChange={(checked) => handleApplicableTypeChange('certification_program', !!checked)}
+                                        />
+                                        <FormLabel htmlFor="certification_program" className="text-sm font-normal">
+                                            Program Sertifikasi
+                                        </FormLabel>
+                                    </div>
                                 </div>
                                 <p className="text-muted-foreground text-sm">Kosong = berlaku untuk semua produk</p>
 
@@ -693,6 +715,9 @@ export default function CreateDiscountCode({ products }: CreateDiscountCodeProps
                                                                 )}
                                                                 {watchApplicableTypes.includes('bundle') && (
                                                                     <SelectItem value="bundle">Bundle</SelectItem>
+                                                                )}
+                                                                {watchApplicableTypes.includes('certification_program') && (
+                                                                    <SelectItem value="certification_program">Program Sertifikasi</SelectItem>
                                                                 )}
                                                             </SelectContent>
                                                         </Select>
