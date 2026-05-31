@@ -96,14 +96,7 @@ class EarningsExport implements FromQuery, WithHeadings, WithMapping, WithColumn
             $names[] = $item->certificationProgram->title ?? '-';
         }
 
-        $prices = [];
-        foreach ($invoice->courseItems ?? [] as $item) $prices[] = $item->price;
-        foreach ($invoice->bootcampItems ?? [] as $item) $prices[] = $item->price;
-        foreach ($invoice->webinarItems ?? [] as $item) $prices[] = $item->price;
-        foreach ($invoice->bundleEnrollments ?? [] as $item) $prices[] = $item->price;
-        foreach ($invoice->certificationProgramItems ?? [] as $item) $prices[] = $item->price;
-
-        $totalPrice = array_sum($prices);
+        $totalPrice = $invoice->nett_amount;
 
         return [
             $index,                                              // A: No        → integer

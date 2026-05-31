@@ -65,6 +65,7 @@ interface BundleEnrollment {
 
 interface Invoice {
     invoice_code: string;
+    nett_amount: number;
     user: User;
     course_items: EnrollmentCourse[];
     bootcamp_items: EnrollmentBootcamp[];
@@ -114,12 +115,7 @@ export const getColumns = (isAdmin: boolean): ColumnDef<Earning>[] => {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
             cell: ({ row }) => {
                 const invoice = row.original.invoice;
-                const coursePrices = invoice.course_items?.map((item) => item.price) || [];
-                const bootcampPrices = invoice.bootcamp_items?.map((item) => item.price) || [];
-                const webinarPrices = invoice.webinar_items?.map((item) => item.price) || [];
-                const bundlePrices = invoice.bundle_enrollments?.map((item) => item.price) || [];
-                const certPrices = invoice.certification_program_items?.map((item) => item.price) || [];
-                const totalPrice = [...coursePrices, ...bootcampPrices, ...webinarPrices, ...bundlePrices, ...certPrices].reduce((sum, price) => sum + price, 0);
+                const totalPrice = invoice.nett_amount;
 
                 // Format total harga sebagai mata uang Rupiah
                 const formatted = new Intl.NumberFormat('id-ID', {
