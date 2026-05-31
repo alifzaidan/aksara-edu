@@ -121,6 +121,8 @@ class AffiliateController extends Controller
             'invoice.courseItems.course',
             'invoice.bootcampItems.bootcamp',
             'invoice.webinarItems.webinar',
+            'invoice.bundleEnrollments.bundle',
+            'invoice.certificationProgramItems.certificationProgram',
         ])
             ->where('affiliate_user_id', $affiliate->id)
             ->orderBy('created_at', 'desc')
