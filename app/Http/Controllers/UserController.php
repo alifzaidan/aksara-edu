@@ -32,6 +32,11 @@ class UserController extends Controller
                     $query->whereHas('invoice', function ($q) {
                         $q->where('status', 'paid');
                     });
+                },
+                'certificationProgramEnrollments as certification_programs_count' => function ($query) {
+                    $query->whereHas('invoice', function ($q) {
+                        $q->where('status', 'paid');
+                    });
                 }
             ])
             ->with(['invoices' => function ($query) {
@@ -110,12 +115,22 @@ class UserController extends Controller
                         ];
                     }
                 }
+                foreach ($lastPurchase->certificationProgramItems as $item) {
+                    if ($item->certificationProgram) {
+                        $purchasedItems[] = [
+                            'type' => 'certification_program',
+                            'title' => $item->certificationProgram->title,
+                            'price' => $item->certificationProgram->price,
+                        ];
+                    }
+                }
             }
 
             $programTypes = [];
             if ($user->courses_count > 0) $programTypes[] = 'course';
             if ($user->bootcamps_count > 0) $programTypes[] = 'bootcamp';
             if ($user->webinars_count > 0) $programTypes[] = 'webinar';
+            if ($user->certification_programs_count > 0) $programTypes[] = 'certification_program';
 
             return [
                 'id' => $user->id,
@@ -128,13 +143,14 @@ class UserController extends Controller
                 'courses_count' => $user->courses_count,
                 'bootcamps_count' => $user->bootcamps_count,
                 'webinars_count' => $user->webinars_count,
-                'total_enrollments' => $user->courses_count + $user->bootcamps_count + $user->webinars_count,
+                'certification_programs_count' => $user->certification_programs_count,
+                'total_enrollments' => $user->courses_count + $user->bootcamps_count + $user->webinars_count + $user->certification_programs_count,
                 'program_types' => $programTypes,
                 'purchased_categories' => $purchasedCategories->unique()->values()->all(),
                 'last_purchase_date' => $lastPurchase?->paid_at,
                 'last_purchase_items' => $purchasedItems,
                 'last_purchase_total' => $lastPurchase?->nett_amount,
-                'has_enrollments' => ($user->courses_count + $user->bootcamps_count + $user->webinars_count) > 0,
+                'has_enrollments' => ($user->courses_count + $user->bootcamps_count + $user->webinars_count + $user->certification_programs_count) > 0,
             ];
         });
 

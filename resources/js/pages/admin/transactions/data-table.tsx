@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { BookText, CalendarIcon, CheckCircle, ChevronDownIcon, Clock, DollarSign, Download, Filter, Gift, MonitorPlay, Presentation, X, XCircle } from 'lucide-react';
+import { BookText, CalendarIcon, CheckCircle, ChevronDownIcon, Clock, Dock, DollarSign, Download, Filter, Gift, MonitorPlay, Presentation, X, XCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 export const status = [
@@ -80,6 +80,11 @@ export const productTypes = [
         label: 'Bundle',
         icon: Gift,
     },
+    {
+        value: 'certification_program',
+        label: 'Program Sertifikasi',
+        icon: Dock,
+    }
 ];
 
 interface DataTableProps<TData, TValue> {

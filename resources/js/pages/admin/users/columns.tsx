@@ -11,7 +11,7 @@ import { Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { BookText, Calendar, Edit, Folder, MonitorPlay, Presentation, ShoppingBag, Trash } from 'lucide-react';
+import { BookText, Calendar, Edit, Folder, GraduationCap, MonitorPlay, Presentation, ShoppingBag, Trash } from 'lucide-react';
 import { useState } from 'react';
 import EditUser from './edit';
 
@@ -26,12 +26,13 @@ export type User = {
     courses_count: number;
     bootcamps_count: number;
     webinars_count: number;
+    certification_programs_count: number;
     total_enrollments: number;
     program_types: string[];
     purchased_categories: string[];
     last_purchase_date: string | null;
     last_purchase_items: Array<{
-        type: 'course' | 'bootcamp' | 'webinar';
+        type: 'course' | 'bootcamp' | 'webinar' | 'certification_program';
         title: string;
         price: number;
     }>;
@@ -102,7 +103,7 @@ export const columns: ColumnDef<User>[] = [
         },
         cell: ({ row }) => {
             const user = row.original;
-            const hasAnyEnrollment = user.courses_count > 0 || user.bootcamps_count > 0 || user.webinars_count > 0;
+            const hasAnyEnrollment = user.courses_count > 0 || user.bootcamps_count > 0 || user.webinars_count > 0 || user.certification_programs_count > 0;
 
             return (
                 <div className="flex flex-wrap gap-1">
@@ -155,6 +156,23 @@ export const columns: ColumnDef<User>[] = [
                                             <span className="font-semibold">Webinar</span>
                                             <br />
                                             {user.webinars_count} webinar terdaftar
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            )}
+                            {user.certification_programs_count > 0 && (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Badge variant="outline" className="flex items-center gap-1 text-xs">
+                                            <GraduationCap className="h-3 w-3 text-orange-600" />
+                                            {user.certification_programs_count}
+                                        </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p className="text-xs">
+                                            <span className="font-semibold">Program Sertifikasi</span>
+                                            <br />
+                                            {user.certification_programs_count} sertifikasi terdaftar
                                         </p>
                                     </TooltipContent>
                                 </Tooltip>
@@ -246,6 +264,8 @@ export const columns: ColumnDef<User>[] = [
                         return <Presentation className="h-3 w-3 text-green-600" />;
                     case 'webinar':
                         return <MonitorPlay className="h-3 w-3 text-purple-600" />;
+                    case 'certification_program':
+                        return <GraduationCap className="h-3 w-3 text-orange-600" />;
                     default:
                         return null;
                 }
@@ -259,6 +279,8 @@ export const columns: ColumnDef<User>[] = [
                         return 'Bootcamp';
                     case 'webinar':
                         return 'Webinar';
+                    case 'certification_program':
+                        return 'Program Sertifikasi';
                     default:
                         return type;
                 }

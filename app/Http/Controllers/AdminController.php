@@ -338,7 +338,7 @@ class AdminController extends Controller
             'total_courses' => Course::count(),
             'total_bootcamps' => Bootcamp::count(),
             'total_webinars' => Webinar::count(),
-            'recent_sales' => Invoice::with(['user', 'courseItems.course', 'bootcampItems.bootcamp', 'webinarItems.webinar', 'bundleEnrollments.bundle'])
+            'recent_sales' => Invoice::with(['user', 'courseItems.course', 'bootcampItems.bootcamp', 'webinarItems.webinar', 'bundleEnrollments.bundle', 'certificationProgramItems.certificationProgram'])
                 ->where('status', 'paid')->latest()->take(5)->get(),
             'revenue_data' => $this->getRevenueData(),
             'monthly_revenue_data' => $this->getMonthlyRevenueData(),
@@ -421,7 +421,7 @@ class AdminController extends Controller
             'conversion_rate' => 0, // Data klik belum ada, jadi kita set 0
             'total_clicks' => 0, // Data klik belum ada, jadi kita set 0
             'recent_referrals' => AffiliateEarning::where('affiliate_user_id', $user->id)
-                ->with(['invoice.user', 'invoice.courseItems.course', 'invoice.bootcampItems.bootcamp', 'invoice.webinarItems.webinar'])
+                ->with(['invoice.user', 'invoice.courseItems.course', 'invoice.bootcampItems.bootcamp', 'invoice.webinarItems.webinar', 'invoice.bundleEnrollments.bundle', 'invoice.certificationProgramItems.certificationProgram'])
                 ->latest()->take(3)->get(),
             'filtered_date_range' => $startDate && $endDate ? [
                 'start' => Carbon::parse($startDate)->format('d M Y'),

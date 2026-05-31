@@ -57,6 +57,15 @@ interface BundleEnrollment {
     bundle: Bundle;
 }
 
+interface CertificationProgram {
+    id: string;
+    title: string;
+}
+
+interface CertificationProgramItem {
+    certification_program: CertificationProgram;
+}
+
 export interface Invoice {
     id: string;
     user: User;
@@ -69,6 +78,7 @@ export interface Invoice {
     bootcamp_items: EnrollmentBootcamp[];
     webinar_items: EnrollmentWebinar[];
     bundle_enrollments: BundleEnrollment[];
+    certification_program_items: CertificationProgramItem[];
     created_at: string;
 }
 
@@ -179,6 +189,7 @@ export const columns: ColumnDef<Invoice>[] = [
             if (row.bootcamp_items && row.bootcamp_items.length > 0) return 'bootcamp';
             if (row.webinar_items && row.webinar_items.length > 0) return 'webinar';
             if (row.bundle_enrollments && row.bundle_enrollments.length > 0) return 'bundle';
+            if (row.certification_program_items && row.certification_program_items.length > 0) return 'certification_program';
             return 'unknown';
         },
         header: () => null,
@@ -200,14 +211,28 @@ export const columns: ColumnDef<Invoice>[] = [
     {
         accessorKey: 'items',
         header: 'Nama Produk',
+        filterFn: (row, _columnId, filterValue) => {
+            const invoice = row.original;
+            const courseTitles = invoice.course_items?.map((item) => item.course.title) || [];
+            const bootcampTitles = invoice.bootcamp_items?.map((item) => item.bootcamp.title) || [];
+            const webinarTitles = invoice.webinar_items?.map((item) => item.webinar.title) || [];
+            const bundleTitles = invoice.bundle_enrollments?.map((item) => item.bundle.title) || [];
+            const certTitles = invoice.certification_program_items?.map((item) => item.certification_program.title) || [];
+
+            const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles, ...certTitles];
+            return allTitles.some((title) =>
+                title.toLowerCase().includes(String(filterValue).toLowerCase()),
+            );
+        },
         cell: ({ row }) => {
             const invoice = row.original;
             const courseTitles = invoice.course_items?.map((item) => item.course.title) || [];
             const bootcampTitles = invoice.bootcamp_items?.map((item) => item.bootcamp.title) || [];
             const webinarTitles = invoice.webinar_items?.map((item) => item.webinar.title) || [];
             const bundleTitles = invoice.bundle_enrollments?.map((item) => item.bundle.title) || [];
+            const certTitles = invoice.certification_program_items?.map((item) => item.certification_program.title) || [];
 
-            const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles];
+            const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles, ...certTitles];
             const fullTitleString = allTitles.join(', ');
 
             return (

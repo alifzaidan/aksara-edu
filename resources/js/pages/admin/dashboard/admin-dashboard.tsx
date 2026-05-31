@@ -38,6 +38,7 @@ interface RecentSale {
     bootcamp_items?: { bootcamp: { title: string } }[];
     webinar_items?: { webinar: { title: string } }[];
     bundle_enrollments?: { bundle: { title: string } }[];
+    certification_program_items?: { certification_program: { title: string } }[];
 }
 
 interface PopularProduct {
@@ -128,6 +129,7 @@ const getInvoiceItemName = (invoice: RecentSale): string => {
     if (invoice.bootcamp_items?.length && invoice.bootcamp_items.length > 0) return `Bootcamp: ${invoice.bootcamp_items[0].bootcamp.title}`;
     if (invoice.webinar_items?.length && invoice.webinar_items.length > 0) return `Webinar: ${invoice.webinar_items[0].webinar.title}`;
     if (invoice.bundle_enrollments?.length && invoice.bundle_enrollments.length > 0) return `Bundle: ${invoice.bundle_enrollments[0].bundle.title}`;
+    if (invoice.certification_program_items?.length && invoice.certification_program_items.length > 0) return `Sertifikasi: ${invoice.certification_program_items[0].certification_program.title}`;
     return 'Produk tidak diketahui';
 };
 
