@@ -307,8 +307,9 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::get('privates/{private}', [PrivateClassController::class, 'show'])->name('privates.show');
     });
 
-    Route::middleware(['role:affiliate|mentor'])->group(function () {
+    Route::middleware(['role:affiliate|mentor|admin'])->group(function () {
         Route::get('affiliate-earnings', [AffiliateEarningController::class, 'index'])->name('earnings.index');
+        Route::get('affiliate-earnings/export', [AffiliateEarningController::class, 'export'])->name('earnings.export');
     });
 });
 

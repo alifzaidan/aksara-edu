@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\EarningsExport;
 use App\Models\AffiliateEarning;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AffiliateEarningController extends Controller
 {
@@ -37,5 +39,25 @@ class AffiliateEarningController extends Controller
     {
         $earning->update(['status' => 'rejected']);
         return back()->with('success', 'Komisi berhasil ditolak.');
+    }
+
+    public function export(Request $request)
+    {
+        $user    = Auth::user();
+        $isAdmin = $user->hasRole('admin');
+
+        $filters = [
+            'start_date' => $request->input('start_date'),
+            'end_date'   => $request->input('end_date'),
+        ];
+
+        $startLabel = $filters['start_date'] ? \Carbon\Carbon::parse($filters['start_date'])->format('dmY') : 'all';
+        $endLabel   = $filters['end_date']   ? \Carbon\Carbon::parse($filters['end_date'])->format('dmY')   : $startLabel;
+        $filename   = "pendapatan_{$startLabel}-{$endLabel}.xlsx";
+
+        return Excel::download(
+            new EarningsExport($filters, $user->id, $isAdmin),
+            $filename
+        );
     }
 }
