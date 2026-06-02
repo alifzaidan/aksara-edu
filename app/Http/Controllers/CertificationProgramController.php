@@ -526,6 +526,62 @@ class CertificationProgramController extends Controller
         return back()->with('success', 'Pendaftaran beasiswa berhasil ditolak.');
     }
 
+    public function duplicate(string $id)
+    {
+        $program = CertificationProgram::with(['schedules', 'socializationSchedules', 'mentors'])->findOrFail($id);
+
+        $newProgram = $program->replicate();
+
+        // Copy thumbnail file if exists
+        if ($program->thumbnail && Storage::disk('public')->exists($program->thumbnail)) {
+            $originalPath = $program->thumbnail;
+            $extension = pathinfo($originalPath, PATHINFO_EXTENSION);
+            $newFileName = 'certification-programs/thumbnails/' . uniqid('copy_') . '.' . $extension;
+            Storage::disk('public')->copy($originalPath, $newFileName);
+            $newProgram->thumbnail = $newFileName;
+        } else {
+            $newProgram->thumbnail = null;
+        }
+
+        // Build unique slug
+        $slug = $this->buildSlug($newProgram->title, $newProgram->batch ?? null);
+        $newProgram->slug = $slug;
+        $newProgram->status = 'draft';
+        $newProgram->program_url = url('/certification-programs/' . $slug);
+        $newProgram->registration_url = url('/certification-programs/' . $slug . '/register');
+        $newProgram->save();
+
+        // Duplicate schedules (program sessions)
+        foreach ($program->schedules as $schedule) {
+            $newProgram->schedules()->create([
+                'title'         => $schedule->title,
+                'schedule_date' => $schedule->schedule_date,
+                'day'           => $schedule->day,
+                'start_time'    => $schedule->start_time,
+                'end_time'      => $schedule->end_time,
+            ]);
+        }
+
+        // Duplicate socialization schedules
+        foreach ($program->socializationSchedules as $schedule) {
+            $newProgram->socializationSchedules()->create([
+                'title'         => $schedule->title,
+                'schedule_date' => $schedule->schedule_date,
+                'day'           => $schedule->day,
+                'start_time'    => $schedule->start_time,
+                'end_time'      => $schedule->end_time,
+            ]);
+        }
+
+        // Duplicate mentors
+        if ($program->mentors && $program->mentors->count() > 0) {
+            $newProgram->mentors()->sync($program->mentors->pluck('id')->toArray());
+        }
+
+        return redirect()->route('certification-programs.show', $newProgram->id)
+            ->with('success', 'Program Sertifikasi berhasil diduplikasi. Silakan edit sebelum dipublikasikan.');
+    }
+
     private function buildSlug(string $title, ?string $batch = null, ?string $ignoreId = null): string
     {
         $slug = Str::slug($title);

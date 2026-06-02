@@ -253,6 +253,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/certification-programs/{program}/applications/{application}/reject', [CertificationProgramController::class, 'rejectApplication'])->name('certification-programs.applications.reject');
         Route::post('/certification-programs/{program}/scholarship-applications/{application}/approve', [CertificationProgramController::class, 'approveScholarshipApplication'])->name('certification-programs.scholarship-applications.approve');
         Route::post('/certification-programs/{program}/scholarship-applications/{application}/reject', [CertificationProgramController::class, 'rejectScholarshipApplication'])->name('certification-programs.scholarship-applications.reject');
+        Route::post('/certification-programs/{program}/duplicate', [CertificationProgramController::class, 'duplicate'])->name('certification-programs.duplicate');
 
         Route::resource('webinars', WebinarController::class);
         Route::post('/webinars/{webinar}/publish', [WebinarController::class, 'publish'])->name('webinars.publish');

@@ -8,7 +8,7 @@ import { BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { CircleX, EyeOff, Send, SquarePen, Trash } from 'lucide-react';
+import { CircleX, Copy, EyeOff, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { Invoice } from './columns-transactions';
@@ -181,6 +181,11 @@ export default function ShowCertificationProgram({ program, applications, transa
                                 <Button asChild className="w-full" variant="secondary">
                                     <Link href={route('certification-programs.edit', program.id)}>
                                         <SquarePen /> Edit
+                                    </Link>
+                                </Button>
+                                <Button asChild className="w-full" variant="secondary">
+                                    <Link method="post" href={route('certification-programs.duplicate', { program: program.id })}>
+                                        <Copy /> Duplicate
                                     </Link>
                                 </Button>
                                 <DeleteConfirmDialog
