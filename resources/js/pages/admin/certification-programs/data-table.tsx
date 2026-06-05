@@ -19,7 +19,7 @@ import { DataTableViewOptions } from '@/components/data-table-view-option';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Archive, BookMarked, Eye, EyeOff, FileEdit, GraduationCap, X } from 'lucide-react';
+import { AlertCircle, Archive, BookMarked, CheckCircle2, Eye, EyeOff, FileEdit, GraduationCap, HelpCircle, X } from 'lucide-react';
 import React from 'react';
 
 export const programTypes = [
@@ -32,6 +32,12 @@ export const programStatuses = [
     { value: 'published', label: 'Published', icon: Eye },
     { value: 'archived', label: 'Archived', icon: Archive },
     { value: 'hidden', label: 'Hidden', icon: EyeOff },
+];
+
+export const recordingStatuses = [
+    { value: 'full', label: 'Lengkap', icon: CheckCircle2 },
+    { value: 'partial', label: 'Sebagian', icon: AlertCircle },
+    { value: 'none', label: 'Belum Ada', icon: HelpCircle },
 ];
 
 type ProgramWithBatch = {
@@ -97,6 +103,9 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
                     )}
                     {table.getColumn('status') && (
                         <DataTableFacetedFilter column={table.getColumn('status')} title="Status" options={programStatuses} />
+                    )}
+                    {table.getColumn('recording_status') && (
+                        <DataTableFacetedFilter column={table.getColumn('recording_status')} title="Status Rekaman" options={recordingStatuses} />
                     )}
                     {isFiltered && (
                         <Button onClick={() => table.resetColumnFilters()} className="h-8 px-2 lg:px-3">

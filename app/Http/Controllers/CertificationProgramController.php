@@ -21,9 +21,37 @@ class CertificationProgramController extends Controller
 
     public function index(Request $request)
     {
-        $programs = CertificationProgram::with(['category', 'mentors', 'schedules'])
+        $programs = CertificationProgram::with(['category', 'mentors', 'schedules', 'socializationSchedules'])
             ->latest()
             ->get();
+
+        $programsWithRecording = 0;
+        $programsPartiallyRecorded = 0;
+        $programsWithoutRecording = 0;
+
+        foreach ($programs as $program) {
+            $schedules = $program->schedules ?? collect();
+            $socializationSchedules = ($program->type === 'scholarship' && $program->socializationSchedules)
+                ? $program->socializationSchedules
+                : collect();
+
+            $totalSchedules = $schedules->count() + $socializationSchedules->count();
+            if ($totalSchedules === 0) {
+                $programsWithoutRecording++;
+                continue;
+            }
+
+            $uploadedCount = $schedules->whereNotNull('recording_url')->where('recording_url', '!=', '')->count() +
+                $socializationSchedules->whereNotNull('recording_url')->where('recording_url', '!=', '')->count();
+
+            if ($uploadedCount === $totalSchedules) {
+                $programsWithRecording++;
+            } elseif ($uploadedCount > 0) {
+                $programsPartiallyRecorded++;
+            } else {
+                $programsWithoutRecording++;
+            }
+        }
 
         $statistics = [
             'total_programs' => $programs->count(),
@@ -32,6 +60,11 @@ class CertificationProgramController extends Controller
             'archived_programs' => $programs->where('status', 'archived')->count(),
             'regular_programs' => $programs->where('type', 'regular')->count(),
             'scholarship_programs' => $programs->where('type', 'scholarship')->count(),
+            'recording' => [
+                'with_recording' => $programsWithRecording,
+                'partially_recorded' => $programsPartiallyRecorded,
+                'without_recording' => $programsWithoutRecording,
+            ],
         ];
 
         return Inertia::render('admin/certification-programs/index', [

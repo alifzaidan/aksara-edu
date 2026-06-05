@@ -92,6 +92,15 @@ export type CertificationProgram = {
         day: string;
         start_time: string;
         end_time: string;
+        recording_url?: string | null;
+    }[];
+    socializationSchedules?: {
+        id: string;
+        schedule_date: string;
+        day: string;
+        start_time: string;
+        end_time: string;
+        recording_url?: string | null;
     }[];
     batch?: string | null;
 };
@@ -232,6 +241,42 @@ export const columns: ColumnDef<CertificationProgram>[] = [
                 </span>
             );
         },
+    },
+    {
+        id: 'recording_status',
+        accessorFn: (row) => {
+            const schedules = row.schedules ?? [];
+            const socializationSchedules = row.type === 'scholarship' ? (row.socializationSchedules ?? []) : [];
+            const totalSchedules = schedules.length + socializationSchedules.length;
+
+            if (totalSchedules === 0) {
+                return 'none';
+            }
+
+            const uploadedCount = schedules.filter((s) => s.recording_url).length +
+                socializationSchedules.filter((s) => s.recording_url).length;
+
+            if (uploadedCount === totalSchedules) {
+                return 'full';
+            } else if (uploadedCount > 0) {
+                return 'partial';
+            } else {
+                return 'none';
+            }
+        },
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Status Rekaman" />,
+        cell: ({ row }) => {
+            const status = row.getValue('recording_status') as string;
+
+            if (status === 'full') {
+                return <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">Lengkap</Badge>;
+            } else if (status === 'partial') {
+                return <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">Sebagian</Badge>;
+            } else {
+                return <Badge variant="outline" className="border-gray-200 bg-gray-50 text-gray-600">Belum Ada</Badge>;
+            }
+        },
+        enableSorting: false,
     },
     {
         accessorKey: 'status',

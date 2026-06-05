@@ -16,6 +16,7 @@ interface Schedule {
     day: string;
     start_time: string;
     end_time: string;
+    recording_url?: string | null;
 }
 
 interface Mentor {
