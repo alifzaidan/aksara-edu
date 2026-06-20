@@ -184,6 +184,7 @@ class HomeController extends Controller
                     'program_type' => $cp->type,
                     'scholarship_price' => $cp->scholarship_price,
                     'registration_deadline' => $cp->registration_deadline,
+                    'socialization_registration_deadline' => $cp->socialization_registration_deadline,
                     'category' => $cp->category,
                     'type' => 'certification-program',
                     'created_at' => $cp->created_at,

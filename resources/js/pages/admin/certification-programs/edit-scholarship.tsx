@@ -88,8 +88,8 @@ const formSchema = z
         price: z.number().min(0),
         scholarship_price: z.number().min(0),
         scholarship_flow: z.string().nullable(),
-        registration_deadline: z.string().nonempty('Deadline pendaftaran harus diisi'),
-        socialization_registration_deadline: z.string().nonempty('Deadline aplikasi beasiswa harus diisi'),
+        registration_deadline: z.string().nonempty('Deadline pembelian sertifikasi harus diisi'),
+        socialization_registration_deadline: z.string().nonempty('Deadline pendaftaran sosialisasi harus diisi'),
         group_url: z.string().nullable(),
         socialization_group_url: z.string().nullable(),
         status: z.enum(['draft', 'published', 'archived']),
@@ -142,7 +142,6 @@ function DeadlineField({
     form: ReturnType<typeof useForm<FormValues>>;
 }) {
     const [open, setOpen] = useState(false);
-    const field = form.register(name);
     const value = form.watch(name);
     const dateVal = value ? new Date(value) : null;
     const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -705,14 +704,14 @@ export default function EditScholarshipCertificationProgram({ program, categorie
                             <div className="rounded-lg border p-4">
                                 <h3 className="mb-4 font-medium">Jadwal & Deadline</h3>
                                 <div className="space-y-4">
-                                    <DeadlineField name="registration_deadline" label="Deadline Pendaftaran" form={form} />
-                                    <DeadlineField name="socialization_registration_deadline" label="Deadline Aplikasi Beasiswa" form={form} />
-                                    <CertificationProgramScheduleInput value={schedules} onChange={setSchedules} label="Jadwal Pelaksanaan" />
+                                    <DeadlineField name="socialization_registration_deadline" label="Deadline Pendaftaran Sosialisasi" form={form} />
+                                    <DeadlineField name="registration_deadline" label="Deadline Pembelian Sertifikasi" form={form} />
                                     <CertificationProgramScheduleInput
                                         value={socializationScheduleItems}
                                         onChange={setSocializationScheduleItems}
                                         label="Jadwal Sosialisasi"
                                     />
+                                    <CertificationProgramScheduleInput value={schedules} onChange={setSchedules} label="Jadwal Pelaksanaan" />
 
                                     <FormField
                                         control={form.control}

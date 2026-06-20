@@ -21,6 +21,7 @@ interface Product {
     end_date?: string;
     start_time?: string;
     registration_deadline?: string;
+    socialization_registration_deadline?: string;
     duration_days?: number;
     category?: Category;
     type: 'course' | 'bootcamp' | 'webinar' | 'bundle' | 'private' | 'certification-program';
@@ -273,6 +274,12 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                             const isScholarship = product.type === 'certification-program' && product.program_type === 'scholarship';
                             const displayPrice = isScholarship ? (product.scholarship_price ?? product.price) : product.price;
                             const discount = calculateDiscount(product.strikethrough_price, displayPrice);
+                            const certDeadline =
+                                product.type === 'certification-program'
+                                    ? product.program_type === 'scholarship'
+                                        ? product.socialization_registration_deadline
+                                        : product.registration_deadline
+                                    : undefined;
 
                             return (
                                 <Link key={product.id} href={productUrl} className="h-full">
@@ -284,7 +291,7 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                                                     <img
                                                         src={product.thumbnail ? `/storage/${product.thumbnail}` : '/assets/images/placeholder.png'}
                                                         alt={product.title}
-                                                        className="h-48 w-full rounded-t-lg object-cover"
+                                                        className="aspect-video w-full rounded-t-lg object-cover"
                                                     />
                                                     {getProductBadge(product)}
 
@@ -324,12 +331,10 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                                                             <span>{product.start_time.slice(0, 5)} WIB</span>
                                                         </div>
                                                     )}
-                                                    {product.type === 'certification-program' && product.registration_deadline && (
+                                                    {product.type === 'certification-program' && certDeadline && (
                                                         <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
                                                             <Calendar className="h-3 w-3" />
-                                                            <span>
-                                                                Daftar s/d {new Date(product.registration_deadline).toLocaleDateString('id-ID')}
-                                                            </span>
+                                                            <span>Daftar s/d {new Date(certDeadline).toLocaleDateString('id-ID')}</span>
                                                         </div>
                                                     )}
                                                 </div>

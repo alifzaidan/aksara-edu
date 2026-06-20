@@ -86,6 +86,7 @@ export type CertificationProgram = {
     strikethrough_price: number;
     thumbnail?: string | null;
     registration_deadline?: string;
+    socialization_registration_deadline?: string;
     schedules?: {
         id: string;
         schedule_date: string;
@@ -146,7 +147,7 @@ export const columns: ColumnDef<CertificationProgram>[] = [
             const type = row.original.type;
             const isScholarship = type === 'scholarship';
             return (
-                <Badge className={`capitalize border-0 ${isScholarship ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>
+                <Badge className={`border-0 capitalize ${isScholarship ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>
                     {isScholarship ? 'Beasiswa' : 'Reguler'}
                 </Badge>
             );
@@ -234,10 +235,32 @@ export const columns: ColumnDef<CertificationProgram>[] = [
         accessorKey: 'registration_deadline',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Deadline Pendaftaran" />,
         cell: ({ row }) => {
-            const deadline = row.original.registration_deadline;
+            const { type, registration_deadline, socialization_registration_deadline } = row.original;
+            const isScholarship = type === 'scholarship';
+
+            if (isScholarship) {
+                return (
+                    <div className="space-y-1">
+                        {socialization_registration_deadline && (
+                            <div className="text-sm">
+                                <div className="text-muted-foreground text-xs">Sosialisasi</div>
+                                <div>{format(new Date(socialization_registration_deadline), 'dd MMM yyyy', { locale: id })}</div>
+                            </div>
+                        )}
+                        {registration_deadline && (
+                            <div className="text-sm">
+                                <div className="text-muted-foreground text-xs">Pembelian Sertifikasi</div>
+                                <div>{format(new Date(registration_deadline), 'dd MMM yyyy', { locale: id })}</div>
+                            </div>
+                        )}
+                        {!socialization_registration_deadline && !registration_deadline && <span className="text-sm">-</span>}
+                    </div>
+                );
+            }
+
             return (
                 <span className="text-sm">
-                    {deadline ? format(new Date(deadline), 'dd MMM yyyy', { locale: id }) : '-'}
+                    {registration_deadline ? format(new Date(registration_deadline), 'dd MMM yyyy', { locale: id }) : '-'}
                 </span>
             );
         },
@@ -253,8 +276,7 @@ export const columns: ColumnDef<CertificationProgram>[] = [
                 return 'none';
             }
 
-            const uploadedCount = schedules.filter((s) => s.recording_url).length +
-                socializationSchedules.filter((s) => s.recording_url).length;
+            const uploadedCount = schedules.filter((s) => s.recording_url).length + socializationSchedules.filter((s) => s.recording_url).length;
 
             if (uploadedCount === totalSchedules) {
                 return 'full';
@@ -269,11 +291,23 @@ export const columns: ColumnDef<CertificationProgram>[] = [
             const status = row.getValue('recording_status') as string;
 
             if (status === 'full') {
-                return <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">Lengkap</Badge>;
+                return (
+                    <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+                        Lengkap
+                    </Badge>
+                );
             } else if (status === 'partial') {
-                return <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">Sebagian</Badge>;
+                return (
+                    <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                        Sebagian
+                    </Badge>
+                );
             } else {
-                return <Badge variant="outline" className="border-gray-200 bg-gray-50 text-gray-600">Belum Ada</Badge>;
+                return (
+                    <Badge variant="outline" className="border-gray-200 bg-gray-50 text-gray-600">
+                        Belum Ada
+                    </Badge>
+                );
             }
         },
         enableSorting: false,
@@ -294,7 +328,7 @@ export const columns: ColumnDef<CertificationProgram>[] = [
                 archived: 'Archived',
                 hidden: 'Hidden',
             };
-            return <Badge className={`capitalize border-0 ${color}`}>{labelMap[status] ?? status}</Badge>;
+            return <Badge className={`border-0 capitalize ${color}`}>{labelMap[status] ?? status}</Badge>;
         },
     },
     {

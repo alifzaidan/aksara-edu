@@ -11,11 +11,13 @@ interface CertificationProgram {
     short_description?: string | null;
     type: 'regular' | 'scholarship';
     registration_deadline?: string;
+    socialization_registration_deadline?: string;
     batch?: string | null;
 }
 
 export default function HeroSection({ program }: { program: CertificationProgram }) {
-    const deadlineDate = program.registration_deadline ? new Date(program.registration_deadline) : null;
+    const deadline = program.type === 'scholarship' ? program.socialization_registration_deadline : program.registration_deadline;
+    const deadlineDate = deadline ? new Date(deadline) : null;
 
     return (
         <section className="to-background from-background via-tertiary dark:via-background dark:to-background relative bg-gradient-to-b py-20 text-gray-900 dark:text-white">
@@ -31,7 +33,9 @@ export default function HeroSection({ program }: { program: CertificationProgram
                                 {program.category.name}
                             </span>
                         )}
-                        <Badge className={`border-0 ${program.type === 'scholarship' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                        <Badge
+                            className={`border-0 ${program.type === 'scholarship' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}
+                        >
                             <GraduationCap size={14} className="mr-1" />
                             {program.type === 'scholarship' ? 'Beasiswa' : 'Reguler'}
                         </Badge>
@@ -44,9 +48,7 @@ export default function HeroSection({ program }: { program: CertificationProgram
 
                     <h1 className="mb-4 text-4xl leading-tight font-bold italic sm:text-5xl">{program.title}</h1>
 
-                    {program.short_description && (
-                        <p className="mb-4 text-lg text-gray-600 dark:text-gray-400">{program.short_description}</p>
-                    )}
+                    {program.short_description && <p className="mb-4 text-lg text-gray-600 dark:text-gray-400">{program.short_description}</p>}
 
                     {deadlineDate && (
                         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">

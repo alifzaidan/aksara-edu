@@ -26,6 +26,7 @@ interface Program {
     strikethrough_price?: number;
     thumbnail?: string | null;
     registration_deadline?: string;
+    socialization_registration_deadline?: string;
 }
 
 interface MyProgramIds {
@@ -143,7 +144,8 @@ export default function CertificationProgramSection({ categories, programs, myPr
                 ) : (
                     visiblePrograms.map((program) => {
                         const displayPrice = program.type === 'scholarship' ? (program.scholarship_price ?? program.price) : program.price;
-                        const deadlineDate = program.registration_deadline ? new Date(program.registration_deadline) : null;
+                        const deadline = program.type === 'scholarship' ? program.socialization_registration_deadline : program.registration_deadline;
+                        const deadlineDate = deadline ? new Date(deadline) : null;
                         const hasAccess = hasProgramAccess(program.id);
                         const programUrl = hasAccess
                             ? `/profile/my-certification-programs/${program.slug}`
@@ -165,7 +167,7 @@ export default function CertificationProgramSection({ categories, programs, myPr
                                         <img
                                             src={program.thumbnail ? `/storage/${program.thumbnail}` : '/assets/images/placeholder.png'}
                                             alt={program.title}
-                                            className="h-48 w-full rounded-t-lg object-cover"
+                                            className="aspect-video w-full rounded-t-lg object-cover"
                                         />
                                         <div className="p-4">
                                             <div className="mb-2 flex flex-wrap gap-1">

@@ -68,8 +68,8 @@ const formSchema = z
         price: z.number().min(0),
         scholarship_price: z.number().min(0),
         scholarship_flow: z.string().nullable(),
-        registration_deadline: z.string().nonempty('Deadline pendaftaran harus diisi'),
-        socialization_registration_deadline: z.string().nonempty('Deadline aplikasi beasiswa harus diisi'),
+        registration_deadline: z.string().nonempty('Deadline pembelian sertifikasi harus diisi'),
+        socialization_registration_deadline: z.string().nonempty('Deadline pendaftaran sosialisasi harus diisi'),
         group_url: z.string().nullable(),
         socialization_group_url: z.string().nullable(),
         status: z.enum(['draft', 'published', 'archived']),
@@ -670,78 +670,6 @@ export default function CreateScholarshipCertificationProgram({ categories, ment
                                 <h3 className="mb-4 font-medium">Jadwal & Deadline</h3>
 
                                 <div className="space-y-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="registration_deadline"
-                                        render={({ field }) => {
-                                            const dateVal = field.value ? new Date(field.value) : null;
-                                            const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-                                            const dayLabel = dateVal ? dayNames[dateVal.getDay()] : null;
-                                            return (
-                                                <FormItem className="flex flex-col">
-                                                    <FormLabel>
-                                                        Deadline Pendaftaran <span className="text-red-500">*</span>
-                                                    </FormLabel>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        <Popover open={openRegDeadlineCalendar} onOpenChange={setOpenRegDeadlineCalendar}>
-                                                            <PopoverTrigger asChild>
-                                                                <FormControl>
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        type="button"
-                                                                        className="w-36 justify-between font-normal"
-                                                                    >
-                                                                        {dateVal
-                                                                            ? dateVal.toLocaleDateString('id-ID', {
-                                                                                  day: 'numeric',
-                                                                                  month: 'short',
-                                                                                  year: 'numeric',
-                                                                              })
-                                                                            : 'Pilih tanggal'}
-                                                                        <CalendarFold className="ml-auto h-4 w-4 opacity-50" />
-                                                                    </Button>
-                                                                </FormControl>
-                                                            </PopoverTrigger>
-                                                            <PopoverContent className="w-auto overflow-hidden p-0" align="start">
-                                                                <Calendar
-                                                                    mode="single"
-                                                                    selected={dateVal || undefined}
-                                                                    captionLayout="dropdown"
-                                                                    endMonth={new Date(new Date().getFullYear() + 10, 11)}
-                                                                    onSelect={(date) => {
-                                                                        const prev = field.value ? new Date(field.value) : new Date();
-                                                                        const time = prev.toTimeString().split(' ')[0];
-                                                                        const dateStr = date
-                                                                            ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-                                                                            : '';
-                                                                        field.onChange(dateStr && time ? `${dateStr}T${time}` : '');
-                                                                        setOpenRegDeadlineCalendar(false);
-                                                                    }}
-                                                                />
-                                                            </PopoverContent>
-                                                        </Popover>
-                                                        <Input
-                                                            type="time"
-                                                            step="60"
-                                                            value={dateVal ? dateVal.toTimeString().slice(0, 5) : '23:59'}
-                                                            onChange={(e) => {
-                                                                const prev = field.value ? new Date(field.value) : new Date();
-                                                                const dateStr = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`;
-                                                                field.onChange(`${dateStr}T${e.target.value || '00:00'}:00`);
-                                                            }}
-                                                            className="bg-background w-28 appearance-none [&::-webkit-calendar-picker-indicator]:hidden"
-                                                        />
-                                                        {dayLabel && (
-                                                            <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm text-blue-700">
-                                                                {dayLabel}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            );
-                                        }}
-                                    />
 
                                     <FormField
                                         control={form.control}
@@ -753,7 +681,7 @@ export default function CreateScholarshipCertificationProgram({ categories, ment
                                             return (
                                                 <FormItem className="flex flex-col">
                                                     <FormLabel>
-                                                        Deadline Aplikasi Beasiswa <span className="text-red-500">*</span>
+                                                        Deadline Pendaftaran Sosialisasi <span className="text-red-500">*</span>
                                                     </FormLabel>
                                                     <div className="flex flex-wrap gap-2">
                                                         <Popover
@@ -819,13 +747,86 @@ export default function CreateScholarshipCertificationProgram({ categories, ment
                                         }}
                                     />
 
-                                    <CertificationProgramScheduleInput value={schedules} onChange={setSchedules} label="Jadwal Pelaksanaan" />
-
+                                    <FormField
+                                        control={form.control}
+                                        name="registration_deadline"
+                                        render={({ field }) => {
+                                            const dateVal = field.value ? new Date(field.value) : null;
+                                            const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                                            const dayLabel = dateVal ? dayNames[dateVal.getDay()] : null;
+                                            return (
+                                                <FormItem className="flex flex-col">
+                                                    <FormLabel>
+                                                        Deadline Pembelian Sertifikasi <span className="text-red-500">*</span>
+                                                    </FormLabel>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <Popover open={openRegDeadlineCalendar} onOpenChange={setOpenRegDeadlineCalendar}>
+                                                            <PopoverTrigger asChild>
+                                                                <FormControl>
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        type="button"
+                                                                        className="w-36 justify-between font-normal"
+                                                                    >
+                                                                        {dateVal
+                                                                            ? dateVal.toLocaleDateString('id-ID', {
+                                                                                  day: 'numeric',
+                                                                                  month: 'short',
+                                                                                  year: 'numeric',
+                                                                              })
+                                                                            : 'Pilih tanggal'}
+                                                                        <CalendarFold className="ml-auto h-4 w-4 opacity-50" />
+                                                                    </Button>
+                                                                </FormControl>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+                                                                <Calendar
+                                                                    mode="single"
+                                                                    selected={dateVal || undefined}
+                                                                    captionLayout="dropdown"
+                                                                    endMonth={new Date(new Date().getFullYear() + 10, 11)}
+                                                                    onSelect={(date) => {
+                                                                        const prev = field.value ? new Date(field.value) : new Date();
+                                                                        const time = prev.toTimeString().split(' ')[0];
+                                                                        const dateStr = date
+                                                                            ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                                                                            : '';
+                                                                        field.onChange(dateStr && time ? `${dateStr}T${time}` : '');
+                                                                        setOpenRegDeadlineCalendar(false);
+                                                                    }}
+                                                                />
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                        <Input
+                                                            type="time"
+                                                            step="60"
+                                                            value={dateVal ? dateVal.toTimeString().slice(0, 5) : '23:59'}
+                                                            onChange={(e) => {
+                                                                const prev = field.value ? new Date(field.value) : new Date();
+                                                                const dateStr = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`;
+                                                                field.onChange(`${dateStr}T${e.target.value || '00:00'}:00`);
+                                                            }}
+                                                            className="bg-background w-28 appearance-none [&::-webkit-calendar-picker-indicator]:hidden"
+                                                        />
+                                                        {dayLabel && (
+                                                            <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm text-blue-700">
+                                                                {dayLabel}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            );
+                                        }}
+                                    />
+                                    
                                     <CertificationProgramScheduleInput
                                         value={socializationSchedules}
                                         onChange={setSocializationSchedules}
                                         label="Jadwal Sosialisasi"
                                     />
+
+                                    <CertificationProgramScheduleInput value={schedules} onChange={setSchedules} label="Jadwal Pelaksanaan" />
 
                                     <FormField
                                         control={form.control}
