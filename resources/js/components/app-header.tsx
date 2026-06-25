@@ -18,7 +18,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Album, BookText, BriefcaseBusiness, FileText, Home, MonitorPlay, Presentation, Search, User } from 'lucide-react';
+import { Album, Award, BookText, BriefcaseBusiness, FileText, Home, MonitorPlay, Presentation, Search, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SearchCommand } from './search-command';
 
@@ -229,6 +229,25 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                     )}
                                 </NavigationMenuItem>
 
+                                {/* Cek Sertifikat */}
+                                <NavigationMenuItem className="relative flex h-full items-center">
+                                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                                        <Link
+                                            href="/check-certificate"
+                                            className={cn(
+                                                'hover:bg-primary/5 dark:hover:bg-primary/40 h-9 cursor-pointer px-3',
+                                                page.url.startsWith('/check-certificate') && activeItemStyles,
+                                            )}
+                                        >
+                                            <Award className="mr-2 h-4 w-4" />
+                                            Cek Sertifikat
+                                        </Link>
+                                    </NavigationMenuLink>
+                                    {page.url.startsWith('/check-certificate') && (
+                                        <div className="bg-primary absolute bottom-0 left-0 h-0.5 w-full translate-y-px dark:bg-white"></div>
+                                    )}
+                                </NavigationMenuItem>
+
                                 {/* Profil Saya (if logged in) */}
                                 {auth.user && (
                                     <NavigationMenuItem className="relative flex h-full items-center">
@@ -401,6 +420,32 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             <p className="mb-1 text-sm leading-none font-medium">Sertifikasi</p>
                                             <p className="text-muted-foreground line-clamp-2 text-xs">
                                                 Tingkatkan kredibilitas dengan sertifikasi profesional
+                                            </p>
+                                        </div>
+                                    </Link>
+
+                                    {/* Cek Sertifikat di Mobile */}
+                                    <Link
+                                        href="/check-certificate"
+                                        onClick={() => setServicesOpen(false)}
+                                        className={cn(
+                                            'flex items-start gap-3 rounded-lg p-3 transition-colors duration-200',
+                                            page.url.startsWith('/check-certificate')
+                                                ? 'bg-primary/10 text-primary'
+                                                : 'hover:bg-muted/50 hover:text-foreground',
+                                        )}
+                                    >
+                                        <Icon
+                                            iconNode={Award}
+                                            className={cn(
+                                                'mt-0.5 h-5 w-5 flex-shrink-0',
+                                                page.url.startsWith('/check-certificate') ? 'text-primary' : 'text-muted-foreground',
+                                            )}
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="mb-1 text-sm leading-none font-medium">Cek Sertifikat</p>
+                                            <p className="text-muted-foreground line-clamp-2 text-xs">
+                                                Lihat sertifikat Anda dengan email dan nomor WA
                                             </p>
                                         </div>
                                     </Link>

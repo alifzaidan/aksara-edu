@@ -12,6 +12,7 @@ interface Certificate {
     header_bottom?: string | null;
     issued_date?: string | null;
     period?: string | null;
+    is_independent?: boolean;
     design?: { id: string; name: string; image_1: string };
     sign?: { id: string; name: string; image: string };
     course?: { id: string; title: string };
@@ -23,7 +24,9 @@ interface Certificate {
 
 export default function CertificateDetail({ certificate }: { certificate: Certificate }) {
     const getProgramInfo = () => {
-        if (certificate.course) {
+        if (certificate.is_independent) {
+            return { type: 'Sertifikat Mandiri', name: '-' };
+        } else if (certificate.course) {
             return { type: 'Kelas Online', name: certificate.course.title };
         } else if (certificate.bootcamp) {
             return { type: 'Bootcamp', name: certificate.bootcamp.title };
@@ -126,12 +129,21 @@ export default function CertificateDetail({ certificate }: { certificate: Certif
                 </TableBody>
             </Table>
 
-            <div className="mt-6 rounded-lg bg-blue-50 p-4">
-                <p className="text-sm text-blue-700">
-                    Sertifikat ini akan diberikan kepada peserta yang telah menyelesaikan program <strong>{programInfo.name}</strong> dengan kategori{' '}
-                    <strong>{programInfo.type}</strong>.
-                </p>
-            </div>
+            {certificate.is_independent ? (
+                <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                    <p className="text-sm text-amber-700">
+                        Sertifikat ini adalah <strong>Sertifikat Mandiri</strong> yang tidak terhubung dengan program apapun.
+                        Peserta ditambahkan secara manual melalui fitur Import Peserta.
+                    </p>
+                </div>
+            ) : (
+                <div className="mt-6 rounded-lg bg-blue-50 p-4">
+                    <p className="text-sm text-blue-700">
+                        Sertifikat ini akan diberikan kepada peserta yang telah menyelesaikan program <strong>{programInfo.name}</strong> dengan kategori{' '}
+                        <strong>{programInfo.type}</strong>.
+                    </p>
+                </div>
+            )}
         </div>
     );
 }

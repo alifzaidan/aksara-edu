@@ -17,6 +17,7 @@ class Certificate extends Model
         'second_page_grade' => 'boolean',
         'second_page_material' => 'boolean',
         'assessment_subjects' => 'array',
+        'is_independent' => 'boolean',
     ];
 
     public function design()

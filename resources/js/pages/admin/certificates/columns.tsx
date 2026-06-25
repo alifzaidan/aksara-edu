@@ -17,6 +17,7 @@ export interface Certificate {
     header_bottom: string;
     issued_date: string;
     period: string;
+    is_independent: boolean;
     design: {
         id: string;
         name: string;
@@ -100,6 +101,9 @@ export const columns: ColumnDef<Certificate>[] = [
         header: 'Program',
         cell: ({ row }) => {
             const certificate = row.original as Certificate;
+            if (certificate.is_independent) {
+                return <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">Mandiri</Badge>;
+            }
             if (certificate.course) {
                 return (
                     <Link

@@ -15,7 +15,9 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use ZipArchive;
 use App\Exports\CertificateGradesTemplateExport;
+use App\Exports\CertificateParticipantsTemplateExport;
 use App\Imports\CertificateGradesImport;
+use App\Imports\CertificateManualParticipantsImport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 
@@ -96,8 +98,19 @@ class CertificateController extends Controller
             'participants.user'
         ]);
 
+        $programType = '';
+        if ($certificate->is_independent) {
+            $programType = 'independent';
+        } elseif ($certificate->course_id) {
+            $programType = 'course';
+        } elseif ($certificate->bootcamp_id) {
+            $programType = 'bootcamp';
+        } elseif ($certificate->webinar_id) {
+            $programType = 'webinar';
+        }
+
         return Inertia::render('admin/certificates/show', [
-            'certificate' => $certificate
+            'certificate' => array_merge($certificate->toArray(), ['program_type' => $programType])
         ]);
     }
 
@@ -111,7 +124,7 @@ class CertificateController extends Controller
             ->get();
 
         $bootcamps = Bootcamp::whereDoesntHave('certificate')
-            ->select(['id', 'title'])
+            ->select(['id', 'title', 'curriculum'])
             ->get();
 
         $webinars = Webinar::whereDoesntHave('certificate')
@@ -156,7 +169,8 @@ class CertificateController extends Controller
                 if (!$bootcamps->contains('id', $bootcampId)) {
                     $bootcamps->push((object)[
                         'id' => $bootcamp->id,
-                        'title' => $bootcamp->title
+                        'title' => $bootcamp->title,
+                        'curriculum' => $bootcamp->curriculum,
                     ]);
                 }
             }
@@ -203,7 +217,7 @@ class CertificateController extends Controller
             'header_bottom' => 'nullable|string',
             'issued_date' => 'nullable|date',
             'period' => 'nullable|string',
-            'program_type' => 'required|in:course,bootcamp,webinar',
+            'program_type' => 'required|in:course,bootcamp,webinar,independent',
             'course_id' => 'required_if:program_type,course|nullable|exists:courses,id',
             'bootcamp_id' => 'required_if:program_type,bootcamp|nullable|exists:bootcamps,id',
             'webinar_id' => 'required_if:program_type,webinar|nullable|exists:webinars,id',
@@ -214,16 +228,27 @@ class CertificateController extends Controller
         ]);
 
         $data = $request->all();
-        if ($request->program_type !== 'course') {
-            $data['course_id'] = null;
+        $programType = $request->program_type;
+
+        // Handle is_independent flag
+        $data['is_independent'] = ($programType === 'independent');
+
+        // Always null-out program IDs first
+        $data['course_id'] = null;
+        $data['bootcamp_id'] = null;
+        $data['webinar_id'] = null;
+
+        if ($programType === 'course') {
+            $data['course_id'] = $request->course_id;
+        } elseif ($programType === 'webinar') {
+            $data['webinar_id'] = $request->webinar_id;
         }
-        if ($request->program_type !== 'bootcamp') {
-            $data['bootcamp_id'] = null;
-            $data['page_count'] = 1;
-            $data['second_page_grade'] = false;
-            $data['second_page_material'] = false;
-            $data['assessment_subjects'] = null;
-        } else {
+
+        // Page count / second page logic: applies to bootcamp and independent
+        if (in_array($programType, ['bootcamp', 'independent'])) {
+            if ($programType === 'bootcamp') {
+                $data['bootcamp_id'] = $request->bootcamp_id;
+            }
             $data['page_count'] = $request->input('page_count', 1);
             if ($data['page_count'] != 2) {
                 $data['second_page_grade'] = false;
@@ -232,15 +257,17 @@ class CertificateController extends Controller
             } else {
                 $data['second_page_grade'] = $request->boolean('second_page_grade');
                 $data['second_page_material'] = $request->boolean('second_page_material');
-                if ($data['second_page_grade']) {
+                if ($data['second_page_grade'] || $data['second_page_material']) {
                     $data['assessment_subjects'] = array_values(array_filter($request->input('assessment_subjects', [])));
                 } else {
                     $data['assessment_subjects'] = null;
                 }
             }
-        }
-        if ($request->program_type !== 'webinar') {
-            $data['webinar_id'] = null;
+        } else {
+            $data['page_count'] = 1;
+            $data['second_page_grade'] = false;
+            $data['second_page_material'] = false;
+            $data['assessment_subjects'] = null;
         }
 
         Certificate::create($data);
@@ -263,7 +290,7 @@ class CertificateController extends Controller
         $bootcamps = Bootcamp::where(function ($query) use ($certificate) {
             $query->whereDoesntHave('certificate')
                 ->orWhere('id', $certificate->bootcamp_id);
-        })->select(['id', 'title'])->get();
+        })->select(['id', 'title', 'curriculum'])->get();
 
 
         $webinars = Webinar::where(function ($query) use ($certificate) {
@@ -272,7 +299,9 @@ class CertificateController extends Controller
         })->select(['id', 'title'])->get();
 
         $programType = '';
-        if ($certificate->course_id) {
+        if ($certificate->is_independent) {
+            $programType = 'independent';
+        } elseif ($certificate->course_id) {
             $programType = 'course';
         } elseif ($certificate->bootcamp_id) {
             $programType = 'bootcamp';
@@ -302,7 +331,7 @@ class CertificateController extends Controller
             'header_bottom' => 'nullable|string',
             'issued_date' => 'nullable|date',
             'period' => 'nullable|string',
-            'program_type' => 'required|in:course,bootcamp,webinar',
+            'program_type' => 'required|in:course,bootcamp,webinar,independent',
             'course_id' => 'required_if:program_type,course|nullable|exists:courses,id',
             'bootcamp_id' => 'required_if:program_type,bootcamp|nullable|exists:bootcamps,id',
             'webinar_id' => 'required_if:program_type,webinar|nullable|exists:webinars,id',
@@ -313,16 +342,27 @@ class CertificateController extends Controller
         ]);
 
         $data = $request->all();
-        if ($request->program_type !== 'course') {
-            $data['course_id'] = null;
+        $programType = $request->program_type;
+
+        // Handle is_independent flag
+        $data['is_independent'] = ($programType === 'independent');
+
+        // Always null-out program IDs first
+        $data['course_id'] = null;
+        $data['bootcamp_id'] = null;
+        $data['webinar_id'] = null;
+
+        if ($programType === 'course') {
+            $data['course_id'] = $request->course_id;
+        } elseif ($programType === 'webinar') {
+            $data['webinar_id'] = $request->webinar_id;
         }
-        if ($request->program_type !== 'bootcamp') {
-            $data['bootcamp_id'] = null;
-            $data['page_count'] = 1;
-            $data['second_page_grade'] = false;
-            $data['second_page_material'] = false;
-            $data['assessment_subjects'] = null;
-        } else {
+
+        // Page count / second page logic: applies to bootcamp and independent
+        if (in_array($programType, ['bootcamp', 'independent'])) {
+            if ($programType === 'bootcamp') {
+                $data['bootcamp_id'] = $request->bootcamp_id;
+            }
             $data['page_count'] = $request->input('page_count', 1);
             if ($data['page_count'] != 2) {
                 $data['second_page_grade'] = false;
@@ -331,15 +371,17 @@ class CertificateController extends Controller
             } else {
                 $data['second_page_grade'] = $request->boolean('second_page_grade');
                 $data['second_page_material'] = $request->boolean('second_page_material');
-                if ($data['second_page_grade']) {
+                if ($data['second_page_grade'] || $data['second_page_material']) {
                     $data['assessment_subjects'] = array_values(array_filter($request->input('assessment_subjects', [])));
                 } else {
                     $data['assessment_subjects'] = null;
                 }
             }
-        }
-        if ($request->program_type !== 'webinar') {
-            $data['webinar_id'] = null;
+        } else {
+            $data['page_count'] = 1;
+            $data['second_page_grade'] = false;
+            $data['second_page_material'] = false;
+            $data['assessment_subjects'] = null;
         }
 
         $certificate->update($data);
@@ -480,6 +522,64 @@ class CertificateController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Gagal mengimport nilai: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download template Excel untuk import manual peserta
+     */
+    public function downloadParticipantsTemplate(Certificate $certificate)
+    {
+        $filename = 'Template_Import_Peserta_' . str_replace(' ', '_', $certificate->title) . '.xlsx';
+        return Excel::download(new CertificateParticipantsTemplateExport(), $filename);
+    }
+
+    /**
+     * Import manual peserta dari file Excel (tanpa koneksi ke program)
+     */
+    public function importManualParticipants(Request $request, Certificate $certificate)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,csv,xls',
+        ], [
+            'file.required' => 'File Excel harus dipilih.',
+            'file.mimes' => 'File harus berformat Excel (.xlsx, .xls, .csv).',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $import = new CertificateManualParticipantsImport($certificate);
+            Excel::import($import, $request->file('file'));
+
+            $errors = $import->getErrors();
+            $successCount = $import->getSuccessCount();
+            $skippedCount = $import->getSkippedCount();
+            $createdUserCount = $import->getCreatedUserCount();
+
+            if (!empty($errors) && $successCount === 0) {
+                DB::rollBack();
+                $errorMessage = "Gagal mengimport peserta:\n" . implode("\n", $errors);
+                return redirect()->back()->with('error', $errorMessage);
+            }
+
+            DB::commit();
+
+            $message = $successCount . ' peserta berhasil diimport.';
+            if ($createdUserCount > 0) {
+                $message .= "\n" . $createdUserCount . ' akun user baru dibuat otomatis.';
+            }
+            if ($skippedCount > 0) {
+                $message .= "\n" . $skippedCount . ' peserta dilewati (sudah terdaftar).';
+            }
+            if (!empty($errors)) {
+                $message .= "\n\nBeberapa data tidak dapat diproses:\n" . implode("\n", $errors);
+            }
+
+            return redirect()->back()->with('success', $message);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal mengimport peserta: ' . $e->getMessage());
         }
     }
 }

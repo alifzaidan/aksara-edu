@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignUuid('course_id')->nullable()->constrained('courses')->onDelete('cascade');
             $table->foreignUuid('bootcamp_id')->nullable()->constrained('bootcamps')->onDelete('cascade');
             $table->foreignUuid('webinar_id')->nullable()->constrained('webinars')->onDelete('cascade');
+            $table->boolean('is_independent')->default(false);
             $table->string('certificate_number')->unique();
             $table->string('title');
             $table->text('description')->nullable();

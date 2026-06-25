@@ -8,6 +8,7 @@ import { DataTable } from './data-table-participants';
 interface Certificate {
     id: string;
     title: string;
+    is_independent?: boolean;
     bootcamp_id?: string | null;
     course_id?: string | null;
     webinar_id?: string | null;
@@ -44,8 +45,8 @@ export default function CertificateParticipants({ certificate, participants, iss
         });
     };
 
-    const isGradePage = (certificate.program_type === 'bootcamp' || !!certificate.bootcamp_id) && 
-                        String(certificate.page_count) === '2' && 
+    const isGradePage = (certificate.program_type === 'bootcamp' || !!certificate.bootcamp_id || certificate.program_type === 'independent' || certificate.is_independent === true) &&
+                        String(certificate.page_count) === '2' &&
                         certificate.second_page_grade === true;
 
     return (

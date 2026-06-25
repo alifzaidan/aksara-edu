@@ -42,7 +42,7 @@ const formSchema = z.object({
     header_bottom: z.string().nullable(),
     issued_date: z.string().nullable(),
     period: z.string().nullable(),
-    program_type: z.enum(['course', 'bootcamp', 'webinar']).refine((val) => val !== undefined, {
+    program_type: z.enum(['course', 'bootcamp', 'webinar', 'independent']).refine((val) => val !== undefined, {
         message: 'Jenis program harus dipilih',
     }),
     course_id: z.string().nullable(),
@@ -59,7 +59,7 @@ interface CertificateCreateProps {
     designs: { id: string; name: string }[];
     signs: { id: string; name: string }[];
     courses: { id: string; title: string }[];
-    bootcamps: { id: string; title: string }[];
+    bootcamps: { id: string; title: string; curriculum?: string | null }[];
     webinars: { id: string; title: string }[];
     prefilledData?: {
         program_type?: string;
@@ -85,6 +85,15 @@ const generatePeriod = () => {
     return `${currentMonth} - ${futureMonth}`;
 };
 
+const parseCurriculumToList = (curriculum?: string | null): string[] => {
+    if (!curriculum) return [];
+    const matches = curriculum.match(/<li[^>]*>(.*?)<\/li>/gi);
+    if (!matches) return [];
+    return matches
+        .map((m) => m.replace(/<[^>]+>/g, '').trim())
+        .filter(Boolean);
+};
+
 export default function CreateCertificate({ designs, signs, courses, bootcamps, webinars, prefilledData = {} }: CertificateCreateProps) {
     const [isDesignPopoverOpen, setIsDesignPopoverOpen] = useState(false);
     const [isSignPopoverOpen, setIsSignPopoverOpen] = useState(false);
@@ -103,7 +112,7 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
             header_bottom: 'Alamat Permata Permadani Residence, Junrejo, Kota Batu, Jawa Timur',
             issued_date: getTodayDate(),
             period: generatePeriod(),
-            program_type: prefilledData.program_type as 'course' | 'bootcamp' | 'webinar' | undefined,
+            program_type: prefilledData.program_type as 'course' | 'bootcamp' | 'webinar' | 'independent' | undefined,
             course_id: prefilledData.course_id || '',
             bootcamp_id: prefilledData.bootcamp_id || '',
             webinar_id: prefilledData.webinar_id || '',
@@ -340,6 +349,7 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
                                                 <SelectItem value="course">Kelas Online</SelectItem>
                                                 <SelectItem value="bootcamp">Bootcamp</SelectItem>
                                                 <SelectItem value="webinar">Webinar</SelectItem>
+                                                <SelectItem value="independent">Sertifikat Mandiri</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         {isPrefilledProgram && (
@@ -352,7 +362,20 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
                                 )}
                             />
 
-                            {programType && (
+                            {programType === 'independent' && (
+                                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                                    <div className="mb-1 flex items-center gap-2">
+                                        <Award className="h-4 w-4 text-amber-600" />
+                                        <h3 className="text-sm font-medium text-amber-900">Sertifikat Mandiri</h3>
+                                    </div>
+                                    <p className="text-sm text-amber-700">
+                                        Sertifikat ini tidak terhubung dengan program apapun. Peserta hanya dapat ditambahkan melalui fitur{' '}
+                                        <strong>Import Peserta</strong> di halaman detail sertifikat.
+                                    </p>
+                                </div>
+                            )}
+
+                            {programType && programType !== 'independent' && (
                                 <FormField
                                     control={form.control}
                                     name={getProgramFieldName() as 'course_id' | 'bootcamp_id' | 'webinar_id'}
@@ -404,6 +427,12 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
                                                                                     option.id,
                                                                                 );
                                                                                 setIsProgramPopoverOpen(false);
+                                                                                // Jika konten halaman kedua material & bootcamp, auto-populate kurikulum baru
+                                                                                if (programType === 'bootcamp' && form.getValues('second_page_content') === 'material') {
+                                                                                    const selectedBootcamp = bootcamps.find((b) => b.id === option.id);
+                                                                                    const curriculumItems = parseCurriculumToList(selectedBootcamp?.curriculum);
+                                                                                    form.setValue('assessment_subjects', curriculumItems.length > 0 ? curriculumItems : ['']);
+                                                                                }
                                                                             }}
                                                                         >
                                                                             {option.title}
@@ -430,7 +459,7 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
                                 />
                             )}
 
-                            {programType === 'bootcamp' && (
+                            {(programType === 'bootcamp' || programType === 'independent') && (
                                 <>
                                     <FormField
                                         control={form.control}
@@ -486,6 +515,17 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
                                                                 } else if (value === 'material') {
                                                                     form.setValue('second_page_grade', false);
                                                                     form.setValue('second_page_material', true);
+                                                                    // Jika bootcamp: auto-populate dari kurikulum
+                                                                    if (programType === 'bootcamp') {
+                                                                        const bootcampId = form.getValues('bootcamp_id');
+                                                                        const selectedBootcamp = bootcamps.find((b) => b.id === bootcampId);
+                                                                        const curriculumItems = parseCurriculumToList(selectedBootcamp?.curriculum);
+                                                                        if (curriculumItems.length > 0) {
+                                                                            form.setValue('assessment_subjects', curriculumItems);
+                                                                        } else {
+                                                                            form.setValue('assessment_subjects', ['']);
+                                                                        }
+                                                                    }
                                                                 }
                                                             }}
                                                             value={field.value || 'grade'}
@@ -546,6 +586,77 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
                                                                         form.setValue('assessment_subjects', currentSubjects);
                                                                     }}
                                                                     placeholder={`Nama Aspek Penilaian ${index + 1} (contoh: Tugas Akhir)`}
+                                                                    className="bg-white flex-1"
+                                                                />
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    onClick={() => {
+                                                                        const currentSubjects = form.getValues('assessment_subjects') || [];
+                                                                        form.setValue(
+                                                                            'assessment_subjects',
+                                                                            currentSubjects.filter((_, i) => i !== index)
+                                                                        );
+                                                                    }}
+                                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                                    disabled={(form.watch('assessment_subjects') || []).length <= 1}
+                                                                >
+                                                                    <Trash className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {secondPageContent === 'material' && (
+                                                <div className="space-y-3 mt-4 pt-4 border-t border-gray-200">
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <FormLabel className="text-sm font-medium text-gray-900">
+                                                                Daftar Materi / Silabus
+                                                            </FormLabel>
+                                                            {programType === 'bootcamp' && (
+                                                                <p className="text-xs text-blue-600 mt-0.5">
+                                                                    ✦ Diambil otomatis dari kurikulum bootcamp. Dapat diedit.
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                const currentSubjects = form.getValues('assessment_subjects') || [];
+                                                                form.setValue('assessment_subjects', [...currentSubjects, '']);
+                                                            }}
+                                                            className="h-8 gap-1"
+                                                        >
+                                                            <Plus className="h-3.5 w-3.5" />
+                                                            Tambah Materi
+                                                        </Button>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {programType === 'bootcamp'
+                                                            ? 'Daftar materi diisi dari kurikulum bootcamp. Anda dapat mengedit, menambah, atau menghapus item di bawah ini.'
+                                                            : 'Isi daftar materi / silabus yang akan ditampilkan pada halaman kedua sertifikat.'}
+                                                    </p>
+
+                                                    <div className="space-y-2">
+                                                        {(form.watch('assessment_subjects') || []).map((subject, index) => (
+                                                            <div key={index} className="flex items-center gap-2">
+                                                                <span className="text-xs font-semibold text-muted-foreground w-6 text-center">
+                                                                    {index + 1}
+                                                                </span>
+                                                                <Input
+                                                                    value={subject}
+                                                                    onChange={(e) => {
+                                                                        const currentSubjects = [...(form.getValues('assessment_subjects') || [])];
+                                                                        currentSubjects[index] = e.target.value;
+                                                                        form.setValue('assessment_subjects', currentSubjects);
+                                                                    }}
+                                                                    placeholder={`Nama Materi ${index + 1}`}
                                                                     className="bg-white flex-1"
                                                                 />
                                                                 <Button

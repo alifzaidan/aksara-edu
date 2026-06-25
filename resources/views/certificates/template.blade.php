@@ -710,7 +710,7 @@
                 $schedules = $bootcamp && $bootcamp->schedules ? $bootcamp->schedules->sortBy('schedule_date')->values() : collect();
 
                 // Periode
-                $periodText = '-';
+                $periodText = $certificate->period ?: '-';
                 if ($schedules->count() > 0) {
                     $firstDate = \Carbon\Carbon::parse($schedules->first()->schedule_date);
                     $lastDate = \Carbon\Carbon::parse($schedules->last()->schedule_date);
@@ -741,9 +741,13 @@
                     }
                 }
 
-                $materials = $curriculumItems->isNotEmpty()
-                    ? $curriculumItems
-                    : $schedules
+                $materials = collect();
+                if (!empty($certificate->assessment_subjects)) {
+                    $materials = collect($certificate->assessment_subjects);
+                } elseif ($curriculumItems->isNotEmpty()) {
+                    $materials = $curriculumItems;
+                } else {
+                    $materials = $schedules
                         ->map(function ($schedule) {
                             $date = \Carbon\Carbon::parse($schedule->schedule_date)
                                 ->locale('id')
@@ -757,6 +761,7 @@
                             return "Sesi {$day}, {$date} ({$time})";
                         })
                         ->values();
+                }
             @endphp
 
             @if ($materials->count() > 0)

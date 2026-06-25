@@ -108,6 +108,9 @@ Route::get('/bundle/{bundle:slug}', [UserBundleController::class, 'detail'])->na
 Route::get('/certification-programs', [UserCertificationProgramController::class, 'index'])->name('certification-programs.index');
 Route::get('/certification-programs/{program:slug}', [UserCertificationProgramController::class, 'detail'])->name('certification-programs.detail');
 Route::get('/certificate/{code}', [CertificateParticipantController::class, 'show'])->name('certificate.participant.detail');
+Route::get('/certificate/{code}/pdf', [CertificateParticipantController::class, 'viewPdf'])->name('certificate.participant.pdf');
+Route::get('/certificate/{code}/download', [CertificateParticipantController::class, 'downloadPdf'])->name('certificate.participant.download.public');
+Route::get('/check-certificate', [CertificateParticipantController::class, 'checkForm'])->name('certificates.check');
 Route::get('/article', [UserArticleController::class, 'index'])->name('article.index');
 Route::get('/article/{slug}', [UserArticleController::class, 'show'])->name('article.show');
 Route::get('/mentor', [UserMentorController::class, 'index'])->name('mentor.index');
@@ -230,6 +233,8 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::get('/participant/{participant}/download', [CertificateController::class, 'downloadParticipant'])->name('certificates.participant.download');
         Route::get('/certificates/{certificate}/download-grades-template', [CertificateController::class, 'downloadGradesTemplate'])->name('certificates.download-grades-template');
         Route::post('/certificates/{certificate}/import-grades', [CertificateController::class, 'importGrades'])->name('certificates.import-grades');
+        Route::get('/certificates/{certificate}/download-participants-template', [CertificateController::class, 'downloadParticipantsTemplate'])->name('certificates.download-participants-template');
+        Route::post('/certificates/{certificate}/import-manual-participants', [CertificateController::class, 'importManualParticipants'])->name('certificates.import-manual-participants');
         Route::resource('certificate-designs', CertificateDesignController::class);
         Route::resource('certificate-signs', CertificateSignController::class);
 
