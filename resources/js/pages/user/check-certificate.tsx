@@ -201,7 +201,7 @@ export default function CheckCertificate({ participants, searched, error, filter
                                         return (
                                             <Card key={p.id} className="group flex flex-col justify-between overflow-hidden border transition-all duration-200 hover:shadow-md hover:border-primary/30">
                                                 {/* {renderCertificatePreview(p)} */}
-                                                <CardHeader className="p-4 pb-2">
+                                                <CardHeader className="">
                                                     <div className="flex items-center justify-between mb-2">
                                                         <Badge variant="outline" className={`text-[10px] uppercase font-bold tracking-wider ${details.color}`}>
                                                             {details.type}
@@ -225,7 +225,7 @@ export default function CheckCertificate({ participants, searched, error, filter
                                                         </span>
                                                     </div>
                                                 </CardContent>
-                                                <div className="border-t bg-muted/20 px-4 py-3 flex items-center justify-between gap-2">
+                                                <div className="border-t bg-muted/20 px-4 pt-3 flex items-center justify-between gap-2">
                                                     <span className="text-[10px] text-muted-foreground">
                                                         No: {p.certificate_number}
                                                     </span>
