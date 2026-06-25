@@ -200,7 +200,7 @@ export default function CheckCertificate({ participants, searched, error, filter
                                         const details = getProgramDetails(p);
                                         return (
                                             <Card key={p.id} className="group flex flex-col justify-between overflow-hidden border transition-all duration-200 hover:shadow-md hover:border-primary/30">
-                                                {renderCertificatePreview(p)}
+                                                {/* {renderCertificatePreview(p)} */}
                                                 <CardHeader className="p-4 pb-2">
                                                     <div className="flex items-center justify-between mb-2">
                                                         <Badge variant="outline" className={`text-[10px] uppercase font-bold tracking-wider ${details.color}`}>
