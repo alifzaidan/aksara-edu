@@ -15,6 +15,7 @@ interface RelatedProgram {
     category?: { name: string };
     thumbnail?: string | null;
     registration_deadline?: string;
+    socialization_registration_deadline?: string;
 }
 
 export default function RelatedPrograms({ relatedPrograms }: { relatedPrograms: RelatedProgram[] }) {
@@ -32,7 +33,8 @@ export default function RelatedPrograms({ relatedPrograms }: { relatedPrograms: 
 
             <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {relatedPrograms.map((program) => {
-                    const deadlineDate = program.registration_deadline ? new Date(program.registration_deadline) : null;
+                    const deadline = program.type === 'scholarship' ? program.socialization_registration_deadline : program.registration_deadline;
+                    const deadlineDate = deadline ? new Date(deadline) : null;
                     return (
                         <Link
                             key={program.id}
@@ -45,10 +47,12 @@ export default function RelatedPrograms({ relatedPrograms }: { relatedPrograms: 
                                     <img
                                         src={program.thumbnail ? `/storage/${program.thumbnail}` : '/assets/images/placeholder.png'}
                                         alt={program.title}
-                                        className="h-48 w-full rounded-t-lg object-cover"
+                                        className="aspect-video w-full rounded-t-lg object-cover"
                                     />
                                     <div className="p-4">
-                                        <Badge className={`mb-2 border-0 text-xs ${program.type === 'scholarship' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                                        <Badge
+                                            className={`mb-2 border-0 text-xs ${program.type === 'scholarship' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}
+                                        >
                                             <GraduationCap size={12} className="mr-1" />
                                             {program.type === 'scholarship' ? 'Beasiswa' : 'Reguler'}
                                         </Badge>
@@ -71,7 +75,8 @@ export default function RelatedPrograms({ relatedPrograms }: { relatedPrograms: 
                                         <div className="flex items-center gap-2 text-sm">
                                             <Calendar size="16" className="text-red-500" />
                                             <p className="text-gray-600 dark:text-gray-400">
-                                                Daftar sebelum: <span className="font-medium">{format(deadlineDate, 'dd MMM yyyy', { locale: id })}</span>
+                                                Daftar sebelum:{' '}
+                                                <span className="font-medium">{format(deadlineDate, 'dd MMM yyyy', { locale: id })}</span>
                                             </p>
                                         </div>
                                     )}

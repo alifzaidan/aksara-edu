@@ -169,7 +169,7 @@ export default function CoursesSection({ categories, courses, myCourseIds }: Cou
                                         <img
                                             src={course.thumbnail ? `/storage/${course.thumbnail}` : '/assets/images/placeholder.png'}
                                             alt={course.title}
-                                            className="h-48 w-full rounded-t-lg object-cover"
+                                            className="aspect-video w-full rounded-t-lg object-cover"
                                         />
                                         <h2 className="mx-4 mt-2 text-lg font-semibold">{course.title}</h2>
                                     </div>

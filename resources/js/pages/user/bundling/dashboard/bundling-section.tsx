@@ -107,7 +107,7 @@ export default function BundlingSection({ bundles }: BundlingSectionProps) {
                                         <img
                                             src={bundle.thumbnail ? `/storage/${bundle.thumbnail}` : '/assets/images/placeholder.png'}
                                             alt={bundle.title}
-                                            className="h-48 w-full object-cover transition-transform duration-300"
+                                            className="aspect-video w-full object-cover transition-transform duration-300"
                                         />
 
                                         {/* Discount Badge */}

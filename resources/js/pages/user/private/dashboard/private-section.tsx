@@ -146,7 +146,7 @@ export default function PrivateSection({ categories, privateClasses, myPrivateCl
                                             <img
                                                 src={pc.thumbnail ? `/storage/${pc.thumbnail}` : '/assets/images/placeholder.png'}
                                                 alt={pc.title}
-                                                className="h-48 w-full rounded-t-lg object-cover"
+                                                className="aspect-video w-full rounded-t-lg object-cover"
                                             />
                                             <span className="absolute top-2 left-2 rounded-full bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
                                                 Private

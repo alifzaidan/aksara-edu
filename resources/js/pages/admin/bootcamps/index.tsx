@@ -3,7 +3,7 @@ import AdminLayout from '@/layouts/admin-layout';
 import { rupiahFormatter } from '@/lib/utils';
 import { SharedData, type BreadcrumbItem } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Calendar, CheckCircle2, ChevronDown, ChevronUp, Clock, DollarSign, FileText, Plus, Presentation, TrendingUp, Users } from 'lucide-react';
+import { Calendar, CheckCircle2, ChevronDown, ChevronUp, Clock, DollarSign, FileText, Plus, Presentation, TrendingUp, Users, Video } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Bootcamp, columns } from './columns';
@@ -30,6 +30,11 @@ interface Statistics {
     completion: {
         completed: number;
         ongoing: number;
+    };
+    recording: {
+        with_recording: number;
+        partially_recorded: number;
+        without_recording: number;
     };
     performance: {
         total_enrollments: number;
@@ -177,6 +182,25 @@ export default function Bootcamps({ bootcamps, statistics, flash }: BootcampProp
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Recording Status */}
+                                <div className="rounded-lg border p-3 text-sm">
+                                    <h4 className="mb-2 text-xs font-semibold">Rekaman</h4>
+                                    <div className="space-y-1 text-xs">
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Lengkap</span>
+                                            <span className="font-medium text-green-600">{statistics.recording.with_recording}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Sebagian</span>
+                                            <span className="font-medium text-amber-600">{statistics.recording.partially_recorded}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Belum Ada</span>
+                                            <span className="font-medium text-gray-600">{statistics.recording.without_recording}</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -239,8 +263,8 @@ export default function Bootcamps({ bootcamps, statistics, flash }: BootcampProp
                         </div>
                     </div>
 
-                    {/* ✅ DESKTOP: Additional Stats (2 cards) */}
-                    <div className="hidden gap-4 md:grid md:grid-cols-2">
+                    {/* ✅ DESKTOP: Additional Stats (3 cards) */}
+                    <div className="hidden gap-4 md:grid md:grid-cols-3">
                         {/* Pricing Breakdown */}
                         <div className="rounded-lg border p-4 shadow-sm">
                             <div className="mb-3 flex items-center gap-2">
@@ -279,6 +303,28 @@ export default function Bootcamps({ bootcamps, statistics, flash }: BootcampProp
                                         <span className="text-muted-foreground">Sedang Berlangsung</span>
                                     </div>
                                     <span className="font-medium text-blue-600">{statistics.completion.ongoing}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Status Rekaman */}
+                        <div className="rounded-lg border p-4 shadow-sm">
+                            <div className="mb-3 flex items-center gap-2">
+                                <Video className="text-muted-foreground h-5 w-5" />
+                                <h4 className="font-semibold">Status Rekaman</h4>
+                            </div>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">Semua Terisi (Lengkap)</span>
+                                    <span className="font-medium text-green-600">{statistics.recording.with_recording}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">Terisi Sebagian</span>
+                                    <span className="font-medium text-amber-600">{statistics.recording.partially_recorded}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">Belum Ada Rekaman</span>
+                                    <span className="font-medium text-gray-600">{statistics.recording.without_recording}</span>
                                 </div>
                             </div>
                         </div>

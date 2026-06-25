@@ -143,7 +143,7 @@ export default function BootcampSection({ categories, bootcamps, myBootcampIds }
                                         <img
                                             src={bootcamp.thumbnail ? `/storage/${bootcamp.thumbnail}` : '/assets/images/placeholder.png'}
                                             alt={bootcamp.title}
-                                            className="h-48 w-full rounded-t-lg object-cover"
+                                            className="aspect-video w-full rounded-t-lg object-cover"
                                         />
                                         <h2 className="mx-4 mt-2 text-lg font-semibold">{bootcamp.title}</h2>
                                     </div>

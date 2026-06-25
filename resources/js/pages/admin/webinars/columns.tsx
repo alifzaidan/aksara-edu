@@ -75,6 +75,7 @@ export type Webinar = {
     start_time: string;
     end_time: string;
     status: 'draft' | 'published' | 'archived';
+    recording_url?: string | null;
     certificate?: {
         id: string;
         title: string;
@@ -163,6 +164,20 @@ export const columns: ColumnDef<Webinar>[] = [
                 </div>
             );
         },
+    },
+    {
+        id: 'recording_status',
+        accessorFn: (row) => row.recording_url ? 'yes' : 'no',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Status Rekaman" />,
+        cell: ({ row }) => {
+            const hasRecording = row.getValue('recording_status') === 'yes';
+            return (
+                <Badge variant="outline" className={hasRecording ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 bg-gray-50 text-gray-600'}>
+                    {hasRecording ? 'Ada' : 'Belum Ada'}
+                </Badge>
+            );
+        },
+        enableSorting: false,
     },
     {
         accessorKey: 'status',

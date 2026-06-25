@@ -13,11 +13,25 @@ import {
     VisibilityState,
 } from '@tanstack/react-table';
 
+import { DataTableFacetedFilter } from '@/components/data-table-faceted-filter';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { DataTableViewOptions } from '@/components/data-table-view-option';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Archive, CheckCircle2, Eye, EyeOff, FileEdit, X } from 'lucide-react';
 import React from 'react';
+
+export const webinarStatuses = [
+    { value: 'draft', label: 'Draft', icon: FileEdit },
+    { value: 'published', label: 'Published', icon: Eye },
+    { value: 'archived', label: 'Archived', icon: Archive },
+];
+
+export const recordingStatuses = [
+    { value: 'yes', label: 'Ada', icon: CheckCircle2 },
+    { value: 'no', label: 'Belum Ada', icon: EyeOff },
+];
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -48,6 +62,8 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
         },
     });
 
+    const isFiltered = table.getState().columnFilters.length > 0;
+
     return (
         <div>
             <div className="flex flex-col items-stretch gap-2 py-4 lg:flex-row lg:items-center">
@@ -57,6 +73,20 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
                     onChange={(event) => table.getColumn('title')?.setFilterValue(event.target.value)}
                     className="lg:max-w-sm"
                 />
+                <div className="flex flex-col items-center gap-2 lg:flex-row">
+                    {table.getColumn('status') && (
+                        <DataTableFacetedFilter column={table.getColumn('status')} title="Status" options={webinarStatuses} />
+                    )}
+                    {table.getColumn('recording_status') && (
+                        <DataTableFacetedFilter column={table.getColumn('recording_status')} title="Status Rekaman" options={recordingStatuses} />
+                    )}
+                    {isFiltered && (
+                        <Button onClick={() => table.resetColumnFilters()} className="h-8 px-2 lg:px-3">
+                            Reset
+                            <X />
+                        </Button>
+                    )}
+                </div>
                 <DataTableViewOptions table={table} />
             </div>
             <div className="w-[1000px] max-w-full min-w-full overflow-x-auto rounded-md border">

@@ -87,6 +87,12 @@ function parseList(items?: string | null): string[] {
     return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
 }
 
+function getYoutubeId(url: string) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? match[2] : '';
+}
+
 export default function CertificationProgramDetail({ invoice, programItem }: Props) {
     const program = programItem?.certificationProgram;
     const isScholarship = programItem?.is_scholarship;
@@ -271,67 +277,13 @@ export default function CertificationProgramDetail({ invoice, programItem }: Pro
                                                 {program.schedules.map((schedule, idx) => (
                                                     <div
                                                         key={idx}
-                                                        className="flex flex-col items-start justify-between gap-4 rounded-xl border bg-white p-4 sm:flex-row sm:items-center dark:bg-zinc-900"
+                                                        className="rounded-xl border bg-white p-4 dark:bg-zinc-900"
                                                     >
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                                                                <span className="text-xs font-medium uppercase">
-                                                                    {new Date(schedule.schedule_date).toLocaleDateString('id-ID', { month: 'short' })}
-                                                                </span>
-                                                                <span className="text-lg leading-none font-bold">
-                                                                    {new Date(schedule.schedule_date).getDate()}
-                                                                </span>
-                                                            </div>
-                                                            <div>
-                                                                <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                                                                    {schedule.title || `Sesi Kelas ${idx + 1}`}
-                                                                </h4>
-                                                                <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
-                                                                    <span className="flex items-center gap-1 capitalize">
-                                                                        <Calendar className="h-3.5 w-3.5" />
-                                                                        {schedule.day},{' '}
-                                                                        {new Date(schedule.schedule_date).toLocaleDateString('id-ID', {
-                                                                            year: 'numeric',
-                                                                        })}
-                                                                    </span>
-                                                                    <span className="flex items-center gap-1">
-                                                                        <Clock className="h-3.5 w-3.5" />
-                                                                        {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)} WIB
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        {schedule.recording_url && (
-                                                            <Button asChild size="sm" variant="outline" className="mt-2 w-full sm:mt-0 sm:w-auto">
-                                                                <a href={schedule.recording_url} target="_blank" rel="noopener noreferrer">
-                                                                    Lihat Rekaman
-                                                                </a>
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="rounded-xl border border-dashed bg-gray-50 py-8 text-center dark:bg-zinc-900/50">
-                                                <p className="text-gray-500">Belum ada jadwal kelas yang ditambahkan.</p>
-                                            </div>
-                                        )}
-                                    </TabsContent>
-                                    {isScholarship && (
-                                        <TabsContent value="socialization" className="space-y-4">
-                                            {program.socializationSchedules && program.socializationSchedules.length > 0 ? (
-                                                <div className="space-y-3">
-                                                    {program.socializationSchedules.map((schedule, idx) => (
-                                                        <div
-                                                            key={idx}
-                                                            className="flex flex-col items-start justify-between gap-4 rounded-xl border bg-white p-4 sm:flex-row sm:items-center dark:bg-zinc-900"
-                                                        >
+                                                        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                                                             <div className="flex items-center gap-4">
-                                                                <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                                                <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                                                                     <span className="text-xs font-medium uppercase">
-                                                                        {new Date(schedule.schedule_date).toLocaleDateString('id-ID', {
-                                                                            month: 'short',
-                                                                        })}
+                                                                        {new Date(schedule.schedule_date).toLocaleDateString('id-ID', { month: 'short' })}
                                                                     </span>
                                                                     <span className="text-lg leading-none font-bold">
                                                                         {new Date(schedule.schedule_date).getDate()}
@@ -339,7 +291,7 @@ export default function CertificationProgramDetail({ invoice, programItem }: Pro
                                                                 </div>
                                                                 <div>
                                                                     <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                                                                        {schedule.title || `Sesi Sosialisasi ${idx + 1}`}
+                                                                        {schedule.title || `Sesi Kelas ${idx + 1}`}
                                                                     </h4>
                                                                     <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
                                                                         <span className="flex items-center gap-1 capitalize">
@@ -359,10 +311,100 @@ export default function CertificationProgramDetail({ invoice, programItem }: Pro
                                                             {schedule.recording_url && (
                                                                 <Button asChild size="sm" variant="outline" className="mt-2 w-full sm:mt-0 sm:w-auto">
                                                                     <a href={schedule.recording_url} target="_blank" rel="noopener noreferrer">
-                                                                        Lihat Rekaman
+                                                                        <ExternalLink className="mr-1 h-3.5 w-3.5" />
+                                                                        Buka di YouTube
                                                                     </a>
                                                                 </Button>
                                                             )}
+                                                        </div>
+                                                        {schedule.recording_url && (() => {
+                                                            const videoId = getYoutubeId(schedule.recording_url!);
+                                                            const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+                                                            return embedUrl ? (
+                                                                <div className="mt-3">
+                                                                    <iframe
+                                                                        className="aspect-video w-full rounded-lg border"
+                                                                        src={embedUrl}
+                                                                        title={`Rekaman ${schedule.title || `Sesi Kelas ${idx + 1}`}`}
+                                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                                        allowFullScreen
+                                                                    />
+                                                                </div>
+                                                            ) : null;
+                                                        })()}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="rounded-xl border border-dashed bg-gray-50 py-8 text-center dark:bg-zinc-900/50">
+                                                <p className="text-gray-500">Belum ada jadwal kelas yang ditambahkan.</p>
+                                            </div>
+                                        )}
+                                    </TabsContent>
+                                    {isScholarship && (
+                                        <TabsContent value="socialization" className="space-y-4">
+                                            {program.socializationSchedules && program.socializationSchedules.length > 0 ? (
+                                                <div className="space-y-3">
+                                                    {program.socializationSchedules.map((schedule, idx) => (
+                                                        <div
+                                                            key={idx}
+                                                            className="rounded-xl border bg-white p-4 dark:bg-zinc-900"
+                                                        >
+                                                            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                                                        <span className="text-xs font-medium uppercase">
+                                                                            {new Date(schedule.schedule_date).toLocaleDateString('id-ID', {
+                                                                                month: 'short',
+                                                                            })}
+                                                                        </span>
+                                                                        <span className="text-lg leading-none font-bold">
+                                                                            {new Date(schedule.schedule_date).getDate()}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">
+                                                                            {schedule.title || `Sesi Sosialisasi ${idx + 1}`}
+                                                                        </h4>
+                                                                        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
+                                                                            <span className="flex items-center gap-1 capitalize">
+                                                                                <Calendar className="h-3.5 w-3.5" />
+                                                                                {schedule.day},{' '}
+                                                                                {new Date(schedule.schedule_date).toLocaleDateString('id-ID', {
+                                                                                    year: 'numeric',
+                                                                                })}
+                                                                            </span>
+                                                                            <span className="flex items-center gap-1">
+                                                                                <Clock className="h-3.5 w-3.5" />
+                                                                                {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)} WIB
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                {schedule.recording_url && (
+                                                                    <Button asChild size="sm" variant="outline" className="mt-2 w-full sm:mt-0 sm:w-auto">
+                                                                        <a href={schedule.recording_url} target="_blank" rel="noopener noreferrer">
+                                                                            <ExternalLink className="mr-1 h-3.5 w-3.5" />
+                                                                            Buka di YouTube
+                                                                        </a>
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                            {schedule.recording_url && (() => {
+                                                                const videoId = getYoutubeId(schedule.recording_url!);
+                                                                const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+                                                                return embedUrl ? (
+                                                                    <div className="mt-3">
+                                                                        <iframe
+                                                                            className="aspect-video w-full rounded-lg border"
+                                                                            src={embedUrl}
+                                                                            title={`Rekaman ${schedule.title || `Sesi Sosialisasi ${idx + 1}`}`}
+                                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                                            allowFullScreen
+                                                                        />
+                                                                    </div>
+                                                                ) : null;
+                                                            })()}
                                                         </div>
                                                     ))}
                                                     {program.socialization_group_url && (

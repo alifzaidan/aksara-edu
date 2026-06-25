@@ -16,6 +16,7 @@ interface Schedule {
     day: string;
     start_time: string;
     end_time: string;
+    recording_url?: string | null;
 }
 
 interface Mentor {
@@ -257,14 +258,6 @@ export default function CertificationProgramDetail({ program }: { program: Certi
                             </TableCell>
                         </TableRow>
                     )}
-                    <TableRow>
-                        <TableCell className="font-medium">Deadline Pendaftaran</TableCell>
-                        <TableCell>
-                            {program.registration_deadline
-                                ? format(new Date(program.registration_deadline), 'dd MMMM yyyy HH:mm', { locale: id })
-                                : '-'}
-                        </TableCell>
-                    </TableRow>
                     {program.type === 'scholarship' && (
                         <TableRow>
                             <TableCell className="font-medium">Deadline Sosialisasi</TableCell>
@@ -275,6 +268,14 @@ export default function CertificationProgramDetail({ program }: { program: Certi
                             </TableCell>
                         </TableRow>
                     )}
+                    <TableRow>
+                        <TableCell className="font-medium">Deadline Pembelian Sertifikasi</TableCell>
+                        <TableCell>
+                            {program.registration_deadline
+                                ? format(new Date(program.registration_deadline), 'dd MMMM yyyy HH:mm', { locale: id })
+                                : '-'}
+                        </TableCell>
+                    </TableRow>
                     <TableRow>
                         <TableCell className="font-medium">Dokumen Diperlukan</TableCell>
                         <TableCell>{program.document_required ? 'Ya' : 'Tidak'}</TableCell>

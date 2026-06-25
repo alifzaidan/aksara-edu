@@ -8,12 +8,13 @@ import { BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { CircleX, EyeOff, Send, SquarePen, Trash } from 'lucide-react';
+import { CircleX, Copy, EyeOff, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { Invoice } from './columns-transactions';
 import CertificationProgramApplications from './show-applications';
 import CertificationProgramDetail from './show-details';
+import CertificationProgramRecordings from './show-recordings';
 import CertificationProgramTransaction from './show-transactions';
 
 interface Schedule {
@@ -23,6 +24,7 @@ interface Schedule {
     day: string;
     start_time: string;
     end_time: string;
+    recording_url?: string | null;
 }
 
 interface Mentor {
@@ -106,6 +108,10 @@ export default function ShowCertificationProgram({ program, applications, transa
     const typeColor = program.type === 'scholarship' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800';
 
     const approvedApplications = applications.filter((a) => a.status === 'approved');
+    const paidTransactionsCount = transactions.filter((t) => t.status === 'paid').length;
+
+    const totalSchedules = (program.schedules?.length ?? 0) + (program.type === 'scholarship' ? (program.socializationSchedules?.length ?? 0) : 0);
+    const uploadedRecordings = (program.schedules?.filter((s) => s.recording_url).length ?? 0) + (program.type === 'scholarship' ? (program.socializationSchedules?.filter((s) => s.recording_url).length ?? 0) : 0);
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
@@ -131,7 +137,22 @@ export default function ShowCertificationProgram({ program, applications, transa
                                         </span>
                                     )}
                                 </TabsTrigger>
-                                <TabsTrigger value="transaksi">Transaksi</TabsTrigger>
+                                <TabsTrigger value="transaksi">
+                                    Transaksi
+                                    {transactions.length > 0 && (
+                                        <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">
+                                            {paidTransactionsCount}/{transactions.length}
+                                        </span>
+                                    )}
+                                </TabsTrigger>
+                                <TabsTrigger value="rekaman">
+                                    Rekaman
+                                    {totalSchedules > 0 && (
+                                        <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">
+                                            {uploadedRecordings}/{totalSchedules}
+                                        </span>
+                                    )}
+                                </TabsTrigger>
                             </TabsList>
 
                             <TabsContent value="detail">
@@ -144,6 +165,15 @@ export default function ShowCertificationProgram({ program, applications, transa
 
                             <TabsContent value="transaksi">
                                 <CertificationProgramTransaction transactions={transactions} programId={program.id} />
+                            </TabsContent>
+
+                            <TabsContent value="rekaman">
+                                <CertificationProgramRecordings
+                                    programId={program.id}
+                                    programType={program.type}
+                                    schedules={program.schedules ?? []}
+                                    socializationSchedules={program.socializationSchedules ?? []}
+                                />
                             </TabsContent>
                         </Tabs>
                     </div>
@@ -181,6 +211,11 @@ export default function ShowCertificationProgram({ program, applications, transa
                                 <Button asChild className="w-full" variant="secondary">
                                     <Link href={route('certification-programs.edit', program.id)}>
                                         <SquarePen /> Edit
+                                    </Link>
+                                </Button>
+                                <Button asChild className="w-full" variant="secondary">
+                                    <Link method="post" href={route('certification-programs.duplicate', { program: program.id })}>
+                                        <Copy /> Duplicate
                                     </Link>
                                 </Button>
                                 <DeleteConfirmDialog

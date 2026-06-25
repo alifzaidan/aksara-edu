@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { Award, BookOpen, GraduationCap, Plus, TrendingUp, Users } from 'lucide-react';
-import { useEffect } from 'react';
+import { Award, BookOpen, ChevronDown, ChevronUp, GraduationCap, Plus, TrendingUp, Users, Video } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { CertificationProgram, columns } from './columns';
 import { DataTable } from './data-table';
@@ -24,6 +24,11 @@ interface Statistics {
     archived_programs: number;
     regular_programs: number;
     scholarship_programs: number;
+    recording: {
+        with_recording: number;
+        partially_recorded: number;
+        without_recording: number;
+    };
 }
 
 interface CertificationProgramsProps {
@@ -36,6 +41,8 @@ interface CertificationProgramsProps {
 }
 
 export default function CertificationPrograms({ programs, statistics, flash }: CertificationProgramsProps) {
+    const [showMoreStats, setShowMoreStats] = useState(false);
+
     useEffect(() => {
         if (flash?.success) {
             toast.success(flash.success);
@@ -98,8 +105,67 @@ export default function CertificationPrograms({ programs, statistics, flash }: C
                         </div>
                     </div>
 
-                    {/* Desktop: Full Statistics */}
-                    <div className="hidden grid-cols-6 gap-4 md:grid">
+                    {/* MOBILE: Expandable Details */}
+                    <div className="md:hidden">
+                        <Button variant="outline" className="w-full" onClick={() => setShowMoreStats(!showMoreStats)}>
+                            {showMoreStats ? (
+                                <>
+                                    <ChevronUp className="mr-2 h-4 w-4" />
+                                    Sembunyikan Detail
+                                </>
+                            ) : (
+                                <>
+                                    <ChevronDown className="mr-2 h-4 w-4" />
+                                    Lihat Detail Statistik
+                                </>
+                            )}
+                        </Button>
+
+                        {showMoreStats && (
+                            <div className="mt-4 space-y-3">
+                                {/* Status Breakdown */}
+                                <div className="rounded-lg border p-3 text-sm">
+                                    <h4 className="mb-2 font-semibold">Status Program</h4>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground text-xs">Published</span>
+                                            <span className="text-xs font-medium text-green-600">{statistics.published_programs}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground text-xs">Draft</span>
+                                            <span className="text-xs font-medium text-gray-600">{statistics.draft_programs}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground text-xs">Archived</span>
+                                            <span className="text-xs font-medium text-gray-600">{statistics.archived_programs}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Recording Status */}
+                                <div className="rounded-lg border p-3 text-sm">
+                                    <h4 className="mb-2 text-xs font-semibold">Rekaman</h4>
+                                    <div className="space-y-1 text-xs">
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Lengkap</span>
+                                            <span className="font-medium text-green-600">{statistics.recording.with_recording}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Sebagian</span>
+                                            <span className="font-medium text-amber-600">{statistics.recording.partially_recorded}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Belum Ada</span>
+                                            <span className="font-medium text-gray-600">{statistics.recording.without_recording}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Desktop: Overview Stats (4 cards) */}
+                    <div className="hidden grid-cols-4 gap-4 md:grid">
                         <div className="dark:to-background rounded-lg border bg-gradient-to-br from-teal-50 to-white p-4 shadow-sm dark:from-teal-950/20">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -130,23 +196,56 @@ export default function CertificationPrograms({ programs, statistics, flash }: C
                             </div>
                         </div>
 
-                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm dark:from-amber-950/20">
+                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-zinc-50 to-white p-4 shadow-sm dark:from-zinc-950/20">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-muted-foreground text-sm font-medium">Reguler</p>
-                                    <h3 className="mt-1 text-2xl font-bold">{statistics.regular_programs}</h3>
+                                    <p className="text-muted-foreground text-sm font-medium">Archived</p>
+                                    <h3 className="mt-1 text-2xl font-bold">{statistics.archived_programs}</h3>
                                 </div>
-                                <Users className="h-10 w-10 text-amber-600 dark:text-amber-400" />
+                                <TrendingUp className="h-10 w-10 text-zinc-600 dark:text-zinc-400" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Desktop: Additional Stats */}
+                    <div className="hidden gap-4 md:grid md:grid-cols-2">
+                        {/* Program Types */}
+                        <div className="rounded-lg border p-4 shadow-sm">
+                            <div className="mb-3 flex items-center gap-2">
+                                <Users className="text-muted-foreground h-5 w-5" />
+                                <h4 className="font-semibold">Tipe Program</h4>
+                            </div>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">Reguler</span>
+                                    <span className="font-medium text-amber-600">{statistics.regular_programs}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">Beasiswa</span>
+                                    <span className="font-medium text-purple-600">{statistics.scholarship_programs}</span>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="dark:to-background col-span-2 rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-muted-foreground text-sm font-medium">Beasiswa</p>
-                                    <h3 className="mt-1 text-2xl font-bold">{statistics.scholarship_programs}</h3>
+                        {/* Status Rekaman */}
+                        <div className="rounded-lg border p-4 shadow-sm">
+                            <div className="mb-3 flex items-center gap-2">
+                                <Video className="text-muted-foreground h-5 w-5" />
+                                <h4 className="font-semibold">Status Rekaman</h4>
+                            </div>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">Semua Terisi (Lengkap)</span>
+                                    <span className="font-medium text-green-600">{statistics.recording.with_recording}</span>
                                 </div>
-                                <GraduationCap className="h-10 w-10 text-purple-600 dark:text-purple-400" />
+                                <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">Terisi Sebagian</span>
+                                    <span className="font-medium text-amber-600">{statistics.recording.partially_recorded}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">Belum Ada Rekaman</span>
+                                    <span className="font-medium text-gray-600">{statistics.recording.without_recording}</span>
+                                </div>
                             </div>
                         </div>
                     </div>

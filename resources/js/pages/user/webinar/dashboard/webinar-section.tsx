@@ -142,7 +142,7 @@ export default function WebinarSection({ categories, webinars, myWebinarIds }: W
                                         <img
                                             src={webinar.thumbnail ? `/storage/${webinar.thumbnail}` : '/assets/images/placeholder.png'}
                                             alt={webinar.title}
-                                            className="h-48 w-full rounded-t-lg object-cover"
+                                            className="aspect-video w-full rounded-t-lg object-cover"
                                         />
                                         <h2 className="mx-4 mt-2 text-lg font-semibold">{webinar.title}</h2>
                                     </div>
