@@ -26,4 +26,26 @@ class EnrollmentWebinar extends Model
         return $this->hasOne(FreeEnrollmentRequirement::class, 'enrollment_id')
             ->where('enrollment_type', 'webinar');
     }
+
+    /**
+     * Check if all requirements are completed for certificate
+     */
+    public function canDownloadCertificate(): bool
+    {
+        if (!$this->invoice || $this->invoice->status !== 'paid') {
+            return false;
+        }
+
+        // Must have attendance proof and verified
+        if (is_null($this->attendance_proof) || !$this->attendance_verified) {
+            return false;
+        }
+
+        // Must have rating and review
+        if (is_null($this->rating) || is_null($this->review)) {
+            return false;
+        }
+
+        return true;
+    }
 }

@@ -52,7 +52,9 @@ class CertificateParticipantController extends Controller
                 $participants = CertificateParticipant::where('user_id', $user->id)
                     ->with(['user', 'certificate.course', 'certificate.bootcamp', 'certificate.webinar', 'certificate.design'])
                     ->orderBy('created_at', 'desc')
-                    ->get();
+                    ->get()
+                    ->filter(fn($participant) => $participant->isEligible())
+                    ->values();
             } else {
                 $error = "Peserta dengan email dan nomor WhatsApp tersebut tidak ditemukan di sistem.";
             }
@@ -75,6 +77,10 @@ class CertificateParticipantController extends Controller
             $participant = CertificateParticipant::where('certificate_code', $code)
                 ->firstOrFail();
 
+            if (!$participant->isEligible()) {
+                abort(403, 'Sertifikat belum memenuhi kriteria kelulusan.');
+            }
+
             $pdfService = app(\App\Services\CertificatePdfService::class);
             $pdf = $pdfService->generateParticipantCertificate($participant);
 
@@ -84,7 +90,7 @@ class CertificateParticipantController extends Controller
                 ->header('Content-Type', 'application/pdf')
                 ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
         } catch (\Exception $e) {
-            abort(404, 'Sertifikat tidak ditemukan: ' . $e->getMessage());
+            abort($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface ? $e->getStatusCode() : 404, $e->getMessage());
         }
     }
 
@@ -93,6 +99,10 @@ class CertificateParticipantController extends Controller
         try {
             $participant = CertificateParticipant::where('certificate_code', $code)
                 ->firstOrFail();
+
+            if (!$participant->isEligible()) {
+                abort(403, 'Sertifikat belum memenuhi kriteria kelulusan.');
+            }
 
             $pdfService = app(\App\Services\CertificatePdfService::class);
             $pdf = $pdfService->generateParticipantCertificate($participant);
@@ -103,7 +113,7 @@ class CertificateParticipantController extends Controller
                 ->header('Content-Type', 'application/pdf')
                 ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
         } catch (\Exception $e) {
-            abort(404, 'Sertifikat tidak ditemukan: ' . $e->getMessage());
+            abort($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface ? $e->getStatusCode() : 404, $e->getMessage());
         }
     }
 }

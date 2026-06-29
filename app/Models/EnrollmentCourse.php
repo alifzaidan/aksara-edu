@@ -33,4 +33,16 @@ class EnrollmentCourse extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Check if all requirements are completed for certificate
+     */
+    public function canDownloadCertificate(): bool
+    {
+        if (!$this->invoice || $this->invoice->status !== 'paid') {
+            return false;
+        }
+
+        return $this->progress === 100;
+    }
 }
