@@ -57,6 +57,95 @@ const programOpts = [
     { value: 'certification', label: 'Sertifikasi', icon: Award, color: 'text-amber-600' },
 ];
 
+const htmlToWhatsapp = (html: string): string => {
+    if (!html) return '';
+
+    if (typeof document === 'undefined') {
+        let text = html;
+        text = text.replace(/<(strong|b)>(.*?)<\/\1>/gi, '*$2*');
+        text = text.replace(/<(em|i)>(.*?)<\/\1>/gi, '_$2_');
+        text = text.replace(/<(s|strike|del)>(.*?)<\/\1>/gi, '~$2~');
+        text = text.replace(/<br\s*\/?>/gi, '\n');
+        text = text.replace(/<\/p>|<\/div>|<\/li>/gi, '\n');
+        text = text.replace(/<[^>]+>/g, '');
+        text = text.replace(/&nbsp;/gi, ' ');
+        text = text.replace(/\u00a0/g, ' ');
+        return text.trim();
+    }
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+
+    const parseNode = (node: Node): string => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            return node.textContent || '';
+        }
+
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            const el = node as HTMLElement;
+            const tagName = el.tagName.toLowerCase();
+
+            let childrenText = '';
+            for (let i = 0; i < el.childNodes.length; i++) {
+                childrenText += parseNode(el.childNodes[i]);
+            }
+
+            switch (tagName) {
+                case 'p':
+                case 'div':
+                    return childrenText ? childrenText.trim() + '\n' : '\n';
+                case 'br':
+                    return '\n';
+                case 'strong':
+                case 'b':
+                    const boldVal = childrenText.trim();
+                    return boldVal ? `*${boldVal}*` : childrenText;
+                case 'em':
+                case 'i':
+                    const italicVal = childrenText.trim();
+                    return italicVal ? `_${italicVal}_` : childrenText;
+                case 's':
+                case 'strike':
+                case 'del':
+                    const strikeVal = childrenText.trim();
+                    return strikeVal ? `~${strikeVal}~` : childrenText;
+                case 'li':
+                    const trimmedChild = childrenText.trim();
+                    const startsWithListIndicator = /^[0-9]+[\.\)]|^[•\-\*\d]|^\u00a0|^\s/.test(trimmedChild);
+                    if (startsWithListIndicator || trimmedChild.startsWith('•')) {
+                        return childrenText ? trimmedChild + '\n' : '\n';
+                    }
+                    return childrenText ? `• ${trimmedChild}\n` : '\n';
+                case 'ul':
+                case 'ol':
+                    return childrenText ? childrenText.trim() + '\n' : '';
+                case 'h1':
+                case 'h2':
+                case 'h3':
+                case 'h4':
+                case 'h5':
+                case 'h6':
+                    return childrenText.trim() ? `*${childrenText.trim()}*\n` : '\n';
+                default:
+                    return childrenText;
+            }
+        }
+        return '';
+    };
+
+    let text = parseNode(tempDiv);
+    
+    text = text.replace(/\u00a0/g, ' ');
+    
+    text = text.replace(/&nbsp;/gi, ' ');
+    
+    text = text.replace(/ {2,}/g, ' ');
+    
+    text = text.replace(/\n{3,}/g, '\n\n');
+    
+    return text.trim();
+};
+
 export default function ShowBroadcast({ broadcast, categories, courses, bootcamps, webinars, certifications, flash }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Pengguna', href: '/admin/users' },
@@ -146,8 +235,7 @@ export default function ShowBroadcast({ broadcast, categories, courses, bootcamp
 
     const handleSend = () => {
         setSending(true);
-        // Strip HTML tags for plain text WA message
-        const plainMsg = broadcast.message.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
+        const plainMsg = htmlToWhatsapp(broadcast.message);
         router.post(route('broadcasts.send', broadcast.id), {
             message: plainMsg,
             from: fromIdx, to: toIdx,
@@ -159,14 +247,14 @@ export default function ShowBroadcast({ broadcast, categories, courses, bootcamp
     };
 
     const openManualWa = (user: FilteredUser) => {
-        const plain = broadcast.message.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
+        const plain = htmlToWhatsapp(broadcast.message);
         const msg = encodeURIComponent(plain.replace('{nama}', user.name));
-        window.open(`https://wa.me/${user.formatted_phone}?text=${msg}`, '_blank');
+        window.open(`https://api.whatsapp.com/send?phone=${user.formatted_phone}&text=${msg}`, '_blank');
     };
 
     const sendSingleWablas = (user: FilteredUser) => {
         setSendingSingle(user.id);
-        const plainMsg = broadcast.message.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
+        const plainMsg = htmlToWhatsapp(broadcast.message);
         router.post(route('broadcasts.send-single', broadcast.id), {
             user_id: user.id,
             message: plainMsg,

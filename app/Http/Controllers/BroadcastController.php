@@ -115,7 +115,7 @@ class BroadcastController extends Controller
                     'name' => $user->name,
                     'phone_number' => $user->phone_number,
                     'formatted_phone' => $phone,
-                    'wa_link' => $user->phone_number ? "https://wa.me/{$phone}" : null,
+                    'wa_link' => $user->phone_number ? "https://api.whatsapp.com/send?phone={$phone}" : null,
                 ];
             });
 
@@ -153,6 +153,8 @@ class BroadcastController extends Controller
         $waData = [];
         $sentCount = 0;
 
+        $plainMessage = $this->htmlToWhatsapp($message);
+
         foreach ($selectedUsers as $user) {
             $phone = preg_replace('/[^0-9]/', '', $user->phone_number);
             if (substr($phone, 0, 1) == '0') {
@@ -162,8 +164,6 @@ class BroadcastController extends Controller
                 $phone = '62' . $phone;
             }
 
-            // Strip HTML for WA plain text
-            $plainMessage = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $message));
             $personalMessage = str_replace('{nama}', $user->name, $plainMessage);
 
             $waData[] = [
@@ -221,7 +221,7 @@ class BroadcastController extends Controller
             $phone = '62' . $phone;
         }
 
-        $plainMessage = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $request->message));
+        $plainMessage = $this->htmlToWhatsapp($request->message);
         $personalMessage = str_replace('{nama}', $user->name, $plainMessage);
 
         $waData = [
@@ -331,5 +331,44 @@ class BroadcastController extends Controller
         }
 
         return $query;
+    }
+
+    /**
+     * Convert HTML content to clean WhatsApp plain text markdown
+     */
+    private function htmlToWhatsapp($html)
+    {
+        if (empty($html)) {
+            return '';
+        }
+
+        $text = $html;
+        
+        $text = preg_replace('/<(strong|b)>(.*?)<\/\1>/i', '*$2*', $text);
+        $text = preg_replace('/<(em|i)>(.*?)<\/\1>/i', '_$2_', $text);
+        $text = preg_replace('/<(s|strike|del)>(.*?)<\/\1>/i', '~$2~', $text);
+        
+        $text = preg_replace_callback('/<li>(.*?)<\/li>/i', function($matches) {
+            $content = trim($matches[1]);
+            if (preg_match('/^[0-9]+[\.\)]|^[•\-\*\d]|^\xc2\xa0|^\s/u', $content)) {
+                return $content . "\n";
+            }
+            return "• " . $content . "\n";
+        }, $text);
+        
+        $text = preg_replace('/<\/(p|div|ul|ol|h1|h2|h3|h4|h5|h6)>/i', "\n\n", $text);
+        $text = preg_replace('/<br\s*\/?>/i', "\n", $text);
+        
+        $text = strip_tags($text);
+        
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        
+        $text = str_replace(["\xc2\xa0", "\xa0", '&nbsp;'], ' ', $text);
+        
+        $text = preg_replace('/ {2,}/', ' ', $text);
+        
+        $text = preg_replace('/(\r?\n){3,}/', "\n\n", $text);
+        
+        return trim($text);
     }
 }
