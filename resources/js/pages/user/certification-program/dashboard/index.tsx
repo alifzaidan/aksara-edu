@@ -27,16 +27,22 @@ interface DashboardProps {
     categories: Category[];
     programs: Program[];
     myProgramIds: string[];
+    approvedScholarshipProgramIds?: string[];
 }
 
-export default function Dashboard({ categories, programs, myProgramIds }: DashboardProps) {
+export default function Dashboard({ categories, programs, myProgramIds, approvedScholarshipProgramIds = [] }: DashboardProps) {
     return (
         <UserLayout>
             <Head title="Program Sertifikasi" />
 
             <HeroSection />
             <FeatureSection />
-            <CertificationProgramSection categories={categories} programs={programs} myProgramIds={myProgramIds} />
+            <CertificationProgramSection 
+                categories={categories} 
+                programs={programs} 
+                myProgramIds={myProgramIds} 
+                approvedScholarshipProgramIds={approvedScholarshipProgramIds}
+            />
         </UserLayout>
     );
 }

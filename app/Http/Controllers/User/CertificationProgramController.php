@@ -45,6 +45,7 @@ class CertificationProgramController extends Controller
             ->get();
 
         $myProgramIds = [];
+        $approvedScholarshipProgramIds = [];
         if (Auth::check()) {
             $userId = Auth::id();
             $myProgramIds = Invoice::with('certificationProgramItems')
@@ -57,12 +58,18 @@ class CertificationProgramController extends Controller
                 ->unique()
                 ->values()
                 ->all();
+
+            $approvedScholarshipProgramIds = \App\Models\CertificationProgramScholarshipApplication::where('email', Auth::user()->email)
+                ->where('status', 'approved')
+                ->pluck('certification_program_id')
+                ->toArray();
         }
 
         return Inertia::render('user/certification-program/dashboard/index', [
             'categories' => $categories,
             'programs' => $programs,
             'myProgramIds' => $myProgramIds,
+            'approvedScholarshipProgramIds' => $approvedScholarshipProgramIds,
         ]);
     }
 
@@ -106,6 +113,7 @@ class CertificationProgramController extends Controller
 
         $myProgramIds = [];
         $scholarshipApplication = null;
+        $approvedScholarshipProgramIds = [];
         if (Auth::check()) {
             $userId = Auth::id();
             $myProgramIds = Invoice::with('certificationProgramItems')
@@ -125,6 +133,11 @@ class CertificationProgramController extends Controller
                     ->latest()
                     ->first();
             }
+
+            $approvedScholarshipProgramIds = \App\Models\CertificationProgramScholarshipApplication::where('email', Auth::user()->email)
+                ->where('status', 'approved')
+                ->pluck('certification_program_id')
+                ->toArray();
         }
 
         return Inertia::render('user/certification-program/detail/index', [
@@ -132,6 +145,7 @@ class CertificationProgramController extends Controller
             'relatedPrograms' => $relatedPrograms,
             'myProgramIds' => $myProgramIds,
             'scholarshipApplication' => $scholarshipApplication,
+            'approvedScholarshipProgramIds' => $approvedScholarshipProgramIds,
         ]);
     }
 

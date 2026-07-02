@@ -133,7 +133,9 @@ export default function Register({
     const formatRupiah = (amount: number) =>
         new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
-    const displayPrice = isScholarship && program.scholarship_price ? program.scholarship_price : program.price;
+    const isApprovedScholarship = scholarshipApplication?.status === 'approved' || guestScholarshipStatus === 'approved';
+    const isScholarshipNotApproved = program.type === 'scholarship' && !isApprovedScholarship;
+    const displayPrice = isScholarshipNotApproved ? 0 : (isScholarship && program.scholarship_price ? program.scholarship_price : program.price);
     const deadline = program.registration_deadline ? new Date(program.registration_deadline) : null;
     const getDate = (s: Schedule) => s.schedule_date || s.start_date || '';
     const requiresDocumentUpload = program.type === 'regular' && !!program.document_required && !isScholarship;
@@ -961,7 +963,7 @@ export default function Register({
                                 </Badge>
                             </div>
                             <Separator className="mb-4" />
-                            {program.strikethrough_price && program.strikethrough_price > 0 && (
+                            {!isScholarshipNotApproved && program.strikethrough_price && program.strikethrough_price > 0 && (
                                 <p className="text-right text-sm text-red-500 line-through">{formatRupiah(program.strikethrough_price)}</p>
                             )}
                             {discountData?.valid ? (
