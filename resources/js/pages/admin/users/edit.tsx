@@ -13,6 +13,7 @@ interface EditUserProps {
         email: string;
         phone_number: string;
         instance: string;
+        city?: string | null;
     };
     setOpen: (open: boolean) => void;
 }
@@ -22,12 +23,14 @@ export default function EditUser({ user, setOpen }: EditUserProps) {
     const emailInput = useRef<HTMLInputElement>(null);
     const phoneInput = useRef<HTMLInputElement>(null);
     const instanceInput = useRef<HTMLInputElement>(null);
+    const cityInput = useRef<HTMLInputElement>(null);
 
-    const { data, setData, put, processing, reset, errors, clearErrors } = useForm<Required<{ name: string; email: string; phone_number: string; instance: string }>>({
+    const { data, setData, put, processing, reset, errors, clearErrors } = useForm<{ name: string; email: string; phone_number: string; instance: string; city: string }>({
         name: user.name,
         email: user.email,
         phone_number: user.phone_number,
         instance: user.instance,
+        city: user.city ?? '',
     });
 
     useEffect(() => {
@@ -36,6 +39,7 @@ export default function EditUser({ user, setOpen }: EditUserProps) {
             email: user.email,
             phone_number: user.phone_number,
             instance: user.instance,
+            city: user.city ?? '',
         });
         clearErrors();
     }, [user, setData, clearErrors]);
@@ -121,6 +125,21 @@ export default function EditUser({ user, setOpen }: EditUserProps) {
                         autoComplete="off"
                     />
                     <InputError message={errors.instance} />
+
+                    <Label htmlFor="city" className="sr-only">
+                        Kota Domisili
+                    </Label>
+                    <Input
+                        id="city"
+                        type="text"
+                        name="city"
+                        ref={cityInput}
+                        value={data.city}
+                        onChange={(e) => setData('city', e.target.value)}
+                        placeholder="Kota Domisili"
+                        autoComplete="off"
+                    />
+                    <InputError message={errors.city} />
                 </div>
                 <DialogFooter className="gap-2">
                     <DialogClose asChild>

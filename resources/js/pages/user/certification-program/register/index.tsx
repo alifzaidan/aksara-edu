@@ -66,6 +66,7 @@ interface GuestFormData {
     email: string;
     phone_number: string;
     instance: string;
+    city: string;
 }
 
 interface PendingCheckoutData {
@@ -106,11 +107,12 @@ export default function Register({
               email?: string;
               phone_number?: string;
               instance?: string;
+              city?: string | null;
           }
         | null
         | undefined;
     const isLoggedIn = !!user;
-    const isProfileComplete = !!(isLoggedIn && user?.phone_number && user?.instance);
+    const isProfileComplete = !!(isLoggedIn && user?.phone_number && user?.instance && user?.city);
 
     const [isLoading, setIsLoading] = useState(false);
     const [isDocumentDialogOpen, setIsDocumentDialogOpen] = useState(false);
@@ -128,6 +130,7 @@ export default function Register({
         email: user?.email ?? '',
         phone_number: user?.phone_number ?? '',
         instance: user?.instance ?? '',
+        city: (user?.city as string) ?? '',
     });
 
     const formatRupiah = (amount: number) =>
@@ -154,9 +157,10 @@ export default function Register({
         const hasEmail = !!guestFormData.email;
         const hasPhone = !!guestFormData.phone_number;
         const hasNameOrEmailExists = !!guestFormData.name || emailExists;
-        const hasInstanceOrEmailExists = !!guestFormData.instance || emailExists || guestScholarshipStatus === 'approved';
+        const hasInstanceOrEmailExists = !!guestFormData.instance || guestScholarshipStatus === 'approved';
+        const hasCityOrEmailExists = !!guestFormData.city || guestScholarshipStatus === 'approved';
 
-        return hasEmail && hasPhone && hasNameOrEmailExists && hasInstanceOrEmailExists;
+        return hasEmail && hasPhone && hasNameOrEmailExists && hasInstanceOrEmailExists && hasCityOrEmailExists;
     }, [isLoggedIn, guestFormData, emailExists, guestScholarshipStatus]);
 
     const validatePromoCode = useCallback(async () => {
@@ -238,6 +242,8 @@ export default function Register({
                         ...prev,
                         name: data.name || prev.name,
                         phone_number: data.phone_number || prev.phone_number,
+                        instance: data.instance || prev.instance,
+                        city: data.city || prev.city,
                     }));
                 } else {
                     setEmailExists(false);
@@ -304,8 +310,13 @@ export default function Register({
             return false;
         }
 
-        if (!emailExists && !guestFormData.instance) {
+        if (!guestFormData.instance) {
             toast.error('Instansi wajib diisi.');
+            return false;
+        }
+
+        if (!guestFormData.city) {
+            toast.error('Kota domisili wajib diisi.');
             return false;
         }
 
@@ -316,6 +327,8 @@ export default function Register({
                 const loginResponse = await axios.post(route('auto-login'), {
                     email: guestFormData.email,
                     phone_number: guestFormData.phone_number,
+                    instance: guestFormData.instance,
+                    city: guestFormData.city,
                 });
 
                 const loginData = loginResponse.data;
@@ -336,6 +349,7 @@ export default function Register({
                     email: guestFormData.email,
                     phone_number: guestFormData.phone_number,
                     instance: guestFormData.instance,
+                    city: guestFormData.city,
                     password: guestFormData.phone_number,
                     password_confirmation: guestFormData.phone_number,
                 });
@@ -355,7 +369,7 @@ export default function Register({
             }
             return false;
         }
-    }, [emailExists, guestFormData.email, guestFormData.instance, guestFormData.name, guestFormData.phone_number, isLoggedIn, savePendingCheckout]);
+    }, [emailExists, guestFormData.email, guestFormData.instance, guestFormData.city, guestFormData.name, guestFormData.phone_number, isLoggedIn, savePendingCheckout]);
 
     // Show scholarship prompt only when the user hasn't applied yet or their application was rejected.
     // For guests, consider `guestScholarshipStatus` returned by `/api/check-email`.
@@ -514,8 +528,13 @@ export default function Register({
             return;
         }
 
-        if (!emailExists && !guestFormData.instance) {
+        if (!guestFormData.instance) {
             toast.error('Instansi wajib diisi.');
+            return;
+        }
+
+        if (!guestFormData.city) {
+            toast.error('Kota domisili wajib diisi.');
             return;
         }
 
@@ -526,6 +545,8 @@ export default function Register({
                 const loginResponse = await axios.post(route('auto-login'), {
                     email: guestFormData.email,
                     phone_number: guestFormData.phone_number,
+                    instance: guestFormData.instance,
+                    city: guestFormData.city,
                 });
 
                 const loginData = loginResponse.data;
@@ -546,6 +567,7 @@ export default function Register({
                     email: guestFormData.email,
                     phone_number: guestFormData.phone_number,
                     instance: guestFormData.instance,
+                    city: guestFormData.city,
                     password: guestFormData.phone_number,
                     password_confirmation: guestFormData.phone_number,
                 });
@@ -563,7 +585,7 @@ export default function Register({
                 toast.error(getErrorMessage(error, 'Gagal memproses login/registrasi otomatis.'));
             }
         }
-    }, [emailExists, guestFormData.email, guestFormData.instance, guestFormData.name, guestFormData.phone_number, savePendingCheckout]);
+    }, [emailExists, guestFormData.email, guestFormData.instance, guestFormData.city, guestFormData.name, guestFormData.phone_number, savePendingCheckout]);
 
     useEffect(() => {
         if (!isLoggedIn) return;
@@ -649,7 +671,7 @@ export default function Register({
                             <User className="mx-auto mb-4 h-16 w-16 text-amber-300" />
                             <h1 className="text-3xl font-bold text-white md:text-4xl">Profil Belum Lengkap</h1>
                             <p className="mt-2 text-blue-100 md:text-lg">
-                                Silakan lengkapi nomor telepon dan instansi terlebih dahulu sebelum melanjutkan pendaftaran.
+                                Silakan lengkapi nomor telepon, instansi, dan kota domisili terlebih dahulu sebelum melanjutkan pendaftaran.
                             </p>
                         </div>
                     </div>
@@ -772,7 +794,20 @@ export default function Register({
                                                 placeholder="Instansi / perusahaan"
                                                 value={guestFormData.instance}
                                                 onChange={(event) => updateGuestForm('instance', event.target.value)}
-                                                disabled={emailExists}
+                                                disabled={isLoading}
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="guest-city">Kota Domisili</Label>
+                                            <Input
+                                                id="guest-city"
+                                                type="text"
+                                                placeholder="Kota domisili Anda"
+                                                value={guestFormData.city}
+                                                onChange={(event) => updateGuestForm('city', event.target.value)}
+                                                disabled={isLoading}
                                                 required
                                             />
                                         </div>

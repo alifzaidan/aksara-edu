@@ -145,6 +145,7 @@ class TransactionsExport implements
             'Email',
             'No. HP',
             'Instansi',
+            'Kota Domisili',
             'Nama Produk',
             'Jenis Produk',
             'Harga Asli',
@@ -173,6 +174,7 @@ class TransactionsExport implements
             $invoice->user->email ?? '-',
             $invoice->user->phone_number ?? '-',
             $invoice->user->instance ?? '-',
+            $invoice->user->city ?? '-',
             $this->getProductNames($invoice),
             $this->getProductType($invoice),
             'Rp ' . number_format($invoice->amount, 0, ',', '.'),
@@ -198,19 +200,20 @@ class TransactionsExport implements
             'D' => 30, // Email
             'E' => 15, // No. HP
             'F' => 20, // Instansi
-            'G' => 40, // Nama Produk
-            'H' => 15, // Jenis Produk
-            'I' => 15, // Harga Asli
-            'J' => 15, // Diskon
-            'K' => 12, // Biaya Admin
-            'L' => 15, // Total Bayar
-            'M' => 10, // Status
-            'N' => 15, // Jenis Pembayaran
-            'O' => 18, // Metode Pembayaran
-            'P' => 18, // Channel Pembayaran
-            'Q' => 25, // Afiliasi
-            'R' => 20, // Tanggal Pembelian
-            'S' => 20, // Tanggal Pembayaran
+            'G' => 20, // Kota Domisili
+            'H' => 40, // Nama Produk
+            'I' => 15, // Jenis Produk
+            'J' => 15, // Harga Asli
+            'K' => 15, // Diskon
+            'L' => 12, // Biaya Admin
+            'M' => 15, // Total Bayar
+            'N' => 10, // Status
+            'O' => 15, // Jenis Pembayaran
+            'P' => 18, // Metode Pembayaran
+            'Q' => 18, // Channel Pembayaran
+            'R' => 25, // Afiliasi
+            'S' => 20, // Tanggal Pembelian
+            'T' => 20, // Tanggal Pembayaran
         ];
     }
 

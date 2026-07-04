@@ -19,6 +19,7 @@ import {
     DollarSign,
     Edit,
     Mail,
+    MapPin,
     MonitorPlay,
     Phone,
     PlayCircle,
@@ -36,6 +37,7 @@ interface UserData {
     email: string;
     phone_number?: string;
     instance?: string;
+    city?: string | null;
     avatar?: string;
     created_at: string;
     roles: Array<{ name: string }>;
@@ -444,7 +446,11 @@ export default function UserShow({ user, invoices, enrollments, stats }: UserSho
                                     )}
                                     <div className="flex items-center gap-2 text-sm">
                                         <Building className="text-muted-foreground h-4 w-4" />
-                                        <span>{user.instance}</span>
+                                        <span>{user.instance || '-'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <MapPin className="text-muted-foreground h-4 w-4" />
+                                        <span>{user.city || '-'}</span>
                                     </div>
                                     <div className="flex items-center gap-2 text-sm">
                                         <Calendar className="text-muted-foreground h-4 w-4" />

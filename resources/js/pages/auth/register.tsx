@@ -14,6 +14,7 @@ type RegisterForm = {
     email: string;
     phone_number: string;
     instance: string;
+    city: string;
     password: string;
     password_confirmation: string;
     affiliate_code?: string;
@@ -41,6 +42,7 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
         email: '',
         phone_number: '',
         instance: '',
+        city: '',
         password: '',
         password_confirmation: '',
         affiliate_code: getReferralCode(),
@@ -139,6 +141,22 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
                             placeholder="Masukkan instansi Anda"
                         />
                         <InputError message={errors.instance} />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="city">Kota Domisili</Label>
+                        <Input
+                            id="city"
+                            type="text"
+                            required
+                            tabIndex={2}
+                            autoComplete="address-level2"
+                            value={data.city}
+                            onChange={(e) => setData('city', e.target.value)}
+                            disabled={processing}
+                            placeholder="Masukkan kota domisili Anda"
+                        />
+                        <InputError message={errors.city} />
                     </div>
 
                     <div className="grid gap-2">

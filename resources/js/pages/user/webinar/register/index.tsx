@@ -52,6 +52,7 @@ interface GuestFormData {
     email: string;
     phone_number: string;
     instance: string;
+    city: string;
 }
 
 interface PendingCheckoutData {
@@ -88,7 +89,7 @@ export default function RegisterWebinar({
 }) {
     const { auth } = usePage<SharedData>().props;
     const isLoggedIn = !!auth.user;
-    const isProfileComplete = isLoggedIn && auth.user?.phone_number && auth.user?.instance;
+    const isProfileComplete = isLoggedIn && auth.user?.phone_number && auth.user?.instance && auth.user?.city;
 
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -104,6 +105,7 @@ export default function RegisterWebinar({
         email: '',
         phone_number: '',
         instance: '',
+        city: '',
     });
 
     const [showFreeForm, setShowFreeForm] = useState(false);
@@ -219,6 +221,7 @@ export default function RegisterWebinar({
                         name: data.name || prev.name,
                         phone_number: data.phone_number || prev.phone_number,
                         instance: data.instance || prev.instance,
+                        city: data.city || prev.city,
                     }));
                 } else {
                     setEmailExists(false);
@@ -275,8 +278,13 @@ export default function RegisterWebinar({
             return false;
         }
 
-        if (!emailExists && !guestFormData.instance) {
+        if (!guestFormData.instance) {
             toast.error('Instansi wajib diisi.');
+            return false;
+        }
+
+        if (!guestFormData.city) {
+            toast.error('Kota domisili wajib diisi.');
             return false;
         }
 
@@ -287,6 +295,8 @@ export default function RegisterWebinar({
                 const loginResponse = await axios.post(route('auto-login'), {
                     email: guestFormData.email,
                     phone_number: guestFormData.phone_number,
+                    instance: guestFormData.instance,
+                    city: guestFormData.city,
                 });
 
                 const loginData = loginResponse.data;
@@ -308,6 +318,7 @@ export default function RegisterWebinar({
                     email: guestFormData.email,
                     phone_number: guestFormData.phone_number,
                     instance: guestFormData.instance,
+                    city: guestFormData.city,
                     password: guestFormData.phone_number,
                     password_confirmation: guestFormData.phone_number,
                     affiliate_code: referralInfo.code,
@@ -574,7 +585,7 @@ export default function RegisterWebinar({
                         <User size={64} className="text-orange-500" />
                         <h2 className="text-xl font-bold">Profil Belum Lengkap</h2>
                         <p className="text-sm text-gray-500">
-                            Profil Anda belum lengkap! Harap lengkapi nomor telepon dan instansi terlebih dahulu untuk mendaftar webinar.
+                            Profil Anda belum lengkap! Harap lengkapi nomor telepon, instansi, dan kota domisili terlebih dahulu untuk mendaftar webinar.
                         </p>
                         <Button asChild className="w-full max-w-md">
                             <Link href={route('profile.edit', { redirect: window.location.href })}>Lengkapi Profil</Link>
@@ -705,7 +716,20 @@ export default function RegisterWebinar({
                                                 placeholder="Instansi / perusahaan"
                                                 value={guestFormData.instance}
                                                 onChange={(e) => updateGuestForm('instance', e.target.value)}
-                                                disabled={emailExists}
+                                                disabled={loading}
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="guest-city">Kota Domisili</Label>
+                                            <Input
+                                                id="guest-city"
+                                                type="text"
+                                                placeholder="Kota domisili Anda"
+                                                value={guestFormData.city}
+                                                onChange={(e) => updateGuestForm('city', e.target.value)}
+                                                disabled={loading}
                                                 required
                                             />
                                         </div>

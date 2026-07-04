@@ -57,6 +57,8 @@ Route::post('/auto-login', function (Request $request) {
         $request->validate([
             'email' => 'required|email',
             'phone_number' => 'required|string',
+            'instance' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
         ]);
 
         $user = User::where('email', $request->email)
@@ -70,6 +72,19 @@ Route::post('/auto-login', function (Request $request) {
             ], 401);
         }
 
+        $updated = false;
+        if ($request->filled('instance') && empty($user->instance)) {
+            $user->instance = $request->instance;
+            $updated = true;
+        }
+        if ($request->filled('city') && empty($user->city)) {
+            $user->city = $request->city;
+            $updated = true;
+        }
+        if ($updated) {
+            $user->save();
+        }
+
         Auth::login($user, true);
         $request->session()->regenerate();
 
@@ -81,6 +96,8 @@ Route::post('/auto-login', function (Request $request) {
                 'name' => $user->name,
                 'email' => $user->email,
                 'phone_number' => $user->phone_number,
+                'instance' => $user->instance,
+                'city' => $user->city,
             ]
         ]);
     } catch (\Exception $e) {

@@ -21,6 +21,7 @@ export type User = {
     email: string;
     phone_number: string;
     instance: string;
+    city?: string | null;
     email_verified_at: string | null;
     created_at: string;
     courses_count: number;
@@ -90,6 +91,13 @@ export const columns: ColumnDef<User>[] = [
         header: ({ column }) => <DataTableColumnHeader column={column} title="Instansi" />,
         cell: ({ row }) => {
             return <p className="text-sm">{row.original.instance || '-'}</p>;
+        },
+    },
+    {
+        accessorKey: 'city',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Kota Domisili" />,
+        cell: ({ row }) => {
+            return <p className="text-sm">{row.original.city || '-'}</p>;
         },
     },
     {

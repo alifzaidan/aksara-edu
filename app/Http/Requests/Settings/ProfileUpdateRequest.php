@@ -29,6 +29,7 @@ class ProfileUpdateRequest extends FormRequest
             ],
             'phone_number' => ['nullable', 'string', 'max:20'],
             'instance' => ['nullable', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

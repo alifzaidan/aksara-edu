@@ -15,6 +15,7 @@ export default function CreateUser({ setOpen }: CreateUserProps) {
     const emailInput = useRef<HTMLInputElement>(null);
     const phoneInput = useRef<HTMLInputElement>(null);
     const instanceInput = useRef<HTMLInputElement>(null);
+    const cityInput = useRef<HTMLInputElement>(null);
 
     const {
         data,
@@ -24,11 +25,12 @@ export default function CreateUser({ setOpen }: CreateUserProps) {
         reset,
         errors,
         clearErrors,
-    } = useForm<Required<{ name: string; email: string; phone_number: string; instance: string; password: string }>>({
+    } = useForm<{ name: string; email: string; phone_number: string; instance: string; city: string; password: string }>({
         name: '',
         email: '',
         phone_number: '',
         instance: '',
+        city: '',
         password: '',
     });
 
@@ -116,6 +118,21 @@ export default function CreateUser({ setOpen }: CreateUserProps) {
                         autoComplete="off"
                     />
                     <InputError message={errors.instance} />
+
+                    <Label htmlFor="city" className="sr-only">
+                        Kota Domisili
+                    </Label>
+                    <Input
+                        id="city"
+                        type="text"
+                        name="city"
+                        ref={cityInput}
+                        value={data.city}
+                        onChange={(e) => setData('city', e.target.value)}
+                        placeholder="Kota Domisili"
+                        autoComplete="off"
+                    />
+                    <InputError message={errors.city} />
 
                     <Label htmlFor="password" className="sr-only">
                         Password

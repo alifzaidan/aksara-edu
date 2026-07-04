@@ -24,6 +24,7 @@ type ProfileForm = {
     email: string;
     phone_number: string | null;
     instance: string | null;
+    city: string | null;
     redirect?: string;
 };
 
@@ -36,6 +37,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
         email: auth.user.email,
         phone_number: (auth.user.phone_number ?? '') as string,
         instance: (auth.user.instance ?? '') as string,
+        city: (auth.user.city ?? '') as string,
         redirect: redirectUrl || '',
     });
 
@@ -152,6 +154,22 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                             />
 
                             <InputError className="mt-2" message={errors.instance} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="city">Kota Domisili</Label>
+                            <Input
+                                id="city"
+                                type="text"
+                                className="mt-1 block w-full"
+                                value={data.city ?? ''}
+                                onChange={(e) => setData('city', e.target.value)}
+                                required
+                                autoComplete="address-level2"
+                                placeholder="Masukkan kota domisili Anda"
+                            />
+
+                            <InputError className="mt-2" message={errors.city} />
                         </div>
                         <div className="flex items-center gap-4">
                             <Button disabled={processing}>Simpan</Button>
