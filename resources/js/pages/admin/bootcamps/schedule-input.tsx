@@ -71,8 +71,8 @@ export default function BootcampScheduleInput({ value, onChange, startDate, endD
                 id: undefined,
                 schedule_date: '',
                 day: '',
-                start_time: '07:00',
-                end_time: '10:00',
+                start_time: '19:00',
+                end_time: '21:00',
             },
         ];
         setSchedules(updated);

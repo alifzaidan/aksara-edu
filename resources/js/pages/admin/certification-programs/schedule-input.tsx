@@ -78,8 +78,8 @@ export default function CertificationProgramScheduleInput({
                 title: '',
                 schedule_date: '',
                 day: '',
-                start_time: '07:00',
-                end_time: '10:00',
+                start_time: '15:00',
+                end_time: '17:00',
             },
         ];
         setSchedules(updated);

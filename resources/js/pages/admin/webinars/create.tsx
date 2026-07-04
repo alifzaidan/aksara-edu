@@ -97,7 +97,10 @@ export default function CreateWebinar({
     const [thumbnailError, setThumbnailError] = useState(false);
 
     const now = new Date();
-    const defaultStart = addDays(now, 7);
+    let defaultStart = addDays(now, 7);
+    defaultStart = setHours(defaultStart, 19);
+    defaultStart = setMinutes(defaultStart, 0);
+    defaultStart = setSeconds(defaultStart, 0);
     const defaultEnd = addHours(defaultStart, 2);
     let defaultRegDeadline = addDays(now, 6);
     defaultRegDeadline = setHours(defaultRegDeadline, 23);
