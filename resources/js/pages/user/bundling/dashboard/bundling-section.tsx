@@ -29,6 +29,7 @@ interface Bundle {
     price: number;
     strikethrough_price: number;
     registration_deadline: string | null;
+    batch?: string | null;
     status: 'draft' | 'published' | 'archived';
     bundle_items: BundleItem[];
     bundle_items_count: number;
@@ -135,6 +136,12 @@ export default function BundlingSection({ bundles }: BundlingSectionProps) {
                                     {/* Content */}
                                     <div className="flex flex-1 flex-col p-4">
                                         <h3 className="mb-2 line-clamp-2 text-lg font-semibold text-gray-900 dark:text-white">{bundle.title}</h3>
+
+                                        {bundle.batch && (
+                                            <Badge variant="outline" className="mb-2 w-fit text-xs">
+                                                Batch {bundle.batch}
+                                            </Badge>
+                                        )}
 
                                         {bundle.short_description && (
                                             <p className="text-muted-foreground mb-4 line-clamp-2 text-sm">{bundle.short_description}</p>

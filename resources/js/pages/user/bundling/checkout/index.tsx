@@ -35,6 +35,7 @@ interface Bundle {
     short_description?: string | null;
     description?: string | null;
     thumbnail?: string | null;
+    batch?: string | null;
     price: number;
     strikethrough_price: number;
     registration_deadline?: string | null;
@@ -517,6 +518,11 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
                                         Paket Bundling
                                     </Badge>
                                     <h2 className="mb-2 text-2xl font-bold text-gray-900 italic dark:text-white">{bundle.title}</h2>
+                                    {bundle.batch && (
+                                        <Badge variant="outline" className="mb-2">
+                                            {bundle.batch}
+                                        </Badge>
+                                    )}
                                     {bundle.short_description && (
                                         <p className="text-sm text-gray-600 dark:text-gray-400">{bundle.short_description}</p>
                                     )}

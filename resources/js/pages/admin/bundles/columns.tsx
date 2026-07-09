@@ -27,6 +27,7 @@ export type Bundle = {
     title: string;
     slug: string;
     thumbnail?: string | null;
+    batch?: string | null;
     price: number;
     strikethrough_price: number;
     registration_deadline?: string | null;
@@ -104,7 +105,14 @@ export const columns: ColumnDef<Bundle>[] = [
                     <Link href={route('bundles.show', row.original.id)} className="text-primary font-medium hover:underline">
                         {row.original.title}
                     </Link>
-                    <span className="text-muted-foreground text-xs">{itemCount} item</span>
+                    <div className="flex items-center gap-1">
+                        {row.original.batch && (
+                            <Badge variant="outline" className="text-xs">
+                                {row.original.batch}
+                            </Badge>
+                        )}
+                        <span className="text-muted-foreground text-xs">{itemCount} item</span>
+                    </div>
                 </div>
             );
         },

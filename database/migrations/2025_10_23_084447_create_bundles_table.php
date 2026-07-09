@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->string('short_description')->nullable();
             $table->text('description')->nullable();
+            $table->string('batch')->nullable();
             $table->text('benefits')->nullable();
             $table->string('thumbnail')->nullable();
             $table->bigInteger('price')->default(0);

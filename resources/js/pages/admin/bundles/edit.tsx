@@ -47,6 +47,7 @@ interface Bundle {
     description?: string | null;
     benefits?: string | null;
     thumbnail?: string | null;
+    batch?: string | null;
     price: number;
     registration_deadline?: string | null;
     registration_url?: string | null;
@@ -79,6 +80,7 @@ const breadcrumbs = (bundle: Bundle): BreadcrumbItem[] => [
 const formSchema = z
     .object({
         title: z.string().nonempty('Judul harus diisi'),
+        batch: z.string().nullable(),
         short_description: z.string().nullable(),
         description: z.string().nullable(),
         benefits: z.string().nullable(),
@@ -162,6 +164,7 @@ export default function EditBundle({ bundle, courses, bootcamps, webinars }: Edi
         resolver: zodResolver(formSchema),
         defaultValues: {
             title: bundle.title ?? '',
+            batch: bundle.batch ?? '',
             short_description: bundle.short_description ?? '',
             description: bundle.description ?? '',
             benefits: bundle.benefits ?? '',
@@ -282,6 +285,21 @@ export default function EditBundle({ bundle, courses, bootcamps, webinars }: Edi
                                         <FormControl>
                                             <Input placeholder="Masukkan judul bundling" {...field} autoComplete="off" />
                                         </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="batch"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Batch</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Contoh: Batch 1, Batch 2" {...field} value={field.value ?? ''} autoComplete="off" />
+                                        </FormControl>
+                                        <FormDescription>Nomor atau nama batch bundling (opsional)</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}

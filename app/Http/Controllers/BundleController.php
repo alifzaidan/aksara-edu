@@ -137,6 +137,7 @@ class BundleController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
+            'batch' => 'nullable|string|max:255',
             'short_description' => 'nullable|string|max:500',
             'description' => 'nullable|string',
             'benefits' => 'nullable|string',
@@ -184,6 +185,7 @@ class BundleController extends Controller
             $bundle = Bundle::create([
                 'user_id' => Auth::user()->id,
                 'title' => $validated['title'],
+                'batch' => $validated['batch'] ?? null,
                 'slug' => $slug,
                 'short_description' => $validated['short_description'] ?? null,
                 'description' => $validated['description'] ?? null,
@@ -304,6 +306,7 @@ class BundleController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
+            'batch' => 'nullable|string|max:255',
             'short_description' => 'nullable|string|max:500',
             'description' => 'nullable|string',
             'benefits' => 'nullable|string',
@@ -357,6 +360,7 @@ class BundleController extends Controller
 
             $bundle->update([
                 'title' => $validated['title'],
+                'batch' => $validated['batch'] ?? null,
                 'slug' => $slug,
                 'short_description' => $validated['short_description'] ?? null,
                 'description' => $validated['description'] ?? null,

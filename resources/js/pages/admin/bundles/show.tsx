@@ -64,6 +64,7 @@ interface Bundle {
     description?: string | null;
     benefits?: string | null;
     thumbnail?: string | null;
+    batch?: string | null;
     price: number;
     registration_deadline?: string | null;
     registration_url: string;
@@ -233,7 +234,10 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                     <div className="flex items-start justify-between">
                                         <div>
                                             <CardTitle>{bundle.title}</CardTitle>
-                                            <CardDescription className="mt-1">{bundle.bundle_items.length} item dalam paket</CardDescription>
+                                            <CardDescription className="mt-1">
+                                                {bundle.batch && <span className="font-medium">{bundle.batch} · </span>}
+                                                {bundle.bundle_items.length} item dalam paket
+                                            </CardDescription>
                                         </div>
                                         <Badge className={statusMap[bundle.status].color}>{statusMap[bundle.status].label}</Badge>
                                     </div>
@@ -777,6 +781,12 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
 
                                     <Separator />
 
+                                    {bundle.batch && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground text-xs">Batch:</span>
+                                            <Badge variant="outline" className="text-xs">{bundle.batch}</Badge>
+                                        </div>
+                                    )}
                                     <div className="flex items-center justify-between">
                                         <span className="text-muted-foreground text-xs">Slug:</span>
                                         <code className="text-primary rounded bg-gray-100 px-1.5 py-0.5 text-xs">{bundle.slug}</code>

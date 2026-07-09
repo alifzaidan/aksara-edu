@@ -14,6 +14,7 @@ interface Bundle {
     price: number;
     strikethrough_price: number;
     registration_deadline?: string | null;
+    batch?: string | null;
     bundle_items_count: number;
 }
 
@@ -84,7 +85,13 @@ export default function RelatedBundles({ relatedBundles }: RelatedBundlesProps) 
 
                                 {/* Content */}
                                 <div className="flex flex-1 flex-col p-4">
-                                    <h3 className="mb-3 line-clamp-2 text-lg font-semibold text-gray-900 dark:text-white">{bundle.title}</h3>
+                                    <h3 className="mb-2 line-clamp-2 text-lg font-semibold text-gray-900 dark:text-white">{bundle.title}</h3>
+
+                                    {bundle.batch && (
+                                        <Badge variant="outline" className="mb-2 w-fit text-xs">
+                                            Batch{bundle.batch}
+                                        </Badge>
+                                    )}
 
                                     {/* Price */}
                                     <div className="mt-auto">

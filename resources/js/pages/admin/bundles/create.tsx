@@ -50,6 +50,7 @@ interface CreateProps {
 const formSchema = z
     .object({
         title: z.string().nonempty('Judul harus diisi'),
+        batch: z.string().nullable(),
         short_description: z.string().nullable(),
         description: z.string().nullable(),
         benefits: z.string().nullable(),
@@ -109,6 +110,7 @@ export default function CreateBundle({ courses, bootcamps, webinars }: CreatePro
         resolver: zodResolver(formSchema),
         defaultValues: {
             title: '',
+            batch: '',
             short_description: '',
             description: '',
             benefits: '',
@@ -223,6 +225,21 @@ export default function CreateBundle({ courses, bootcamps, webinars }: CreatePro
                                         <FormControl>
                                             <Input placeholder="Masukkan judul bundle" {...field} autoComplete="off" />
                                         </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="batch"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Batch</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Contoh: Batch 1, Batch 2" {...field} value={field.value ?? ''} autoComplete="off" />
+                                        </FormControl>
+                                        <FormDescription>Nomor atau nama batch bundling (opsional)</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}

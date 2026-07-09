@@ -8,6 +8,7 @@ interface Bundle {
     thumbnail?: string | null;
     short_description?: string | null;
     registration_deadline?: string | null;
+    batch?: string | null;
     bundle_items_count: number;
 }
 
@@ -33,6 +34,11 @@ export default function HeroSection({ bundle, discountPercentage }: HeroSectionP
                             <Sparkles size={14} className="mr-1" />
                             Paket Bundling
                         </span>
+                        {bundle.batch && (
+                            <span className="text-primary border-primary bg-background mb-4 inline-flex w-fit items-center gap-2 rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
+                                Batch {bundle.batch}
+                            </span>
+                        )}
                         <span className="text-secondary border-secondary bg-background mb-4 inline-flex w-fit items-center rounded-full border bg-gradient-to-t from-[#FED6AD] to-white px-3 py-1 text-sm font-medium shadow-xs hover:text-[#FF925B]">
                             {discountPercentage > 0 && `Hemat ${discountPercentage}%`}
                         </span>
