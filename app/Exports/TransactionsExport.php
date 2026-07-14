@@ -24,6 +24,8 @@ class TransactionsExport implements
     protected $courseId;
     protected $bundleId;
     protected $certificationProgramId;
+    protected $title;
+    protected $userName;
 
     public function __construct($filters = [])
     {
@@ -37,6 +39,8 @@ class TransactionsExport implements
         $this->courseId = $filters['course_id'] ?? null;
         $this->bundleId = $filters['bundle_id'] ?? null;
         $this->certificationProgramId = $filters['certification_program_id'] ?? null;
+        $this->title = $filters['title'] ?? null;
+        $this->userName = $filters['user_name'] ?? null;
     }
 
     public function query()
@@ -130,6 +134,73 @@ class TransactionsExport implements
                         $query->whereHas('certificationProgramItems');
                     }
                     break;
+            }
+        }
+
+        // Apply user name filter
+        if ($this->userName) {
+            $query->whereHas('user', function ($q) {
+                $q->where('name', 'like', '%' . $this->userName . '%');
+            });
+        }
+
+        // Apply title filter
+        if ($this->title) {
+            $title = $this->title;
+            if ($this->productType) {
+                switch ($this->productType) {
+                    case 'course':
+                        $query->whereHas('courseItems.course', function ($q) use ($title) {
+                            $q->where('title', 'like', '%' . $title . '%');
+                        });
+                        break;
+                    case 'bootcamp':
+                        $query->whereHas('bootcampItems.bootcamp', function ($q) use ($title) {
+                            $q->where('title', 'like', '%' . $title . '%');
+                        });
+                        break;
+                    case 'webinar':
+                        $query->whereHas('webinarItems.webinar', function ($q) use ($title) {
+                            $q->where('title', 'like', '%' . $title . '%');
+                        });
+                        break;
+                    case 'private':
+                        $query->whereHas('privateItems.privateClass', function ($q) use ($title) {
+                            $q->where('title', 'like', '%' . $title . '%');
+                        });
+                        break;
+                    case 'bundle':
+                        $query->whereHas('bundleEnrollments.bundle', function ($q) use ($title) {
+                            $q->where('title', 'like', '%' . $title . '%');
+                        });
+                        break;
+                    case 'certification_program':
+                        $query->whereHas('certificationProgramItems.certificationProgram', function ($q) use ($title) {
+                            $q->where('title', 'like', '%' . $title . '%');
+                        });
+                        break;
+                }
+            } else {
+                $query->where(function ($q) use ($title) {
+                    $q->whereHas('courseItems.course', function ($q2) use ($title) {
+                        $q2->where('title', 'like', '%' . $title . '%');
+                    })
+                    ->orWhereHas('bootcampItems.bootcamp', function ($q2) use ($title) {
+                        $q2->where('title', 'like', '%' . $title . '%');
+                    })
+                    ->orWhereHas('webinarItems.webinar', function ($q2) use ($title) {
+                        $q2->where('title', 'like', '%' . $title . '%');
+                    })
+                    ->orWhereHas('privateItems.privateClass', function ($q2) use ($title) {
+                        $q2->where('title', 'like', '%' . $title . '%');
+                    })
+                    ->orWhereHas('bundleEnrollments.bundle', function ($q2) use ($title) {
+                        $q2->where('title', 'like', '%' . $title . '%');
+                    })
+                    ->orWhereHas('certificationProgramItems.certificationProgram', function ($q2) use ($title) {
+                        $q2->where('title', 'like', '%' . $title . '%');
+                    });
+                });
             }
         }
 
@@ -235,39 +306,51 @@ class TransactionsExport implements
     {
         $names = [];
 
-        if ($invoice->courseItems) {
-            foreach ($invoice->courseItems as $item) {
-                $names[] = $item->course->title ?? '-';
+        if (empty($this->productType) || $this->productType === 'course') {
+            if ($invoice->courseItems) {
+                foreach ($invoice->courseItems as $item) {
+                    $names[] = $item->course->title ?? '-';
+                }
             }
         }
 
-        if ($invoice->bootcampItems) {
-            foreach ($invoice->bootcampItems as $item) {
-                $names[] = $item->bootcamp->title ?? '-';
+        if (empty($this->productType) || $this->productType === 'bootcamp') {
+            if ($invoice->bootcampItems) {
+                foreach ($invoice->bootcampItems as $item) {
+                    $names[] = $item->bootcamp->title ?? '-';
+                }
             }
         }
 
-        if ($invoice->webinarItems) {
-            foreach ($invoice->webinarItems as $item) {
-                $names[] = $item->webinar->title ?? '-';
+        if (empty($this->productType) || $this->productType === 'webinar') {
+            if ($invoice->webinarItems) {
+                foreach ($invoice->webinarItems as $item) {
+                    $names[] = $item->webinar->title ?? '-';
+                }
             }
         }
 
-        if ($invoice->privateItems) {
-            foreach ($invoice->privateItems as $item) {
-                $names[] = $item->privateClass->title ?? '-';
+        if (empty($this->productType) || $this->productType === 'private') {
+            if ($invoice->privateItems) {
+                foreach ($invoice->privateItems as $item) {
+                    $names[] = $item->privateClass->title ?? '-';
+                }
             }
         }
 
-        if ($invoice->bundleEnrollments) {
-            foreach ($invoice->bundleEnrollments as $item) {
-                $names[] = $item->bundle->title ?? '-';
+        if (empty($this->productType) || $this->productType === 'bundle') {
+            if ($invoice->bundleEnrollments) {
+                foreach ($invoice->bundleEnrollments as $item) {
+                    $names[] = $item->bundle->title ?? '-';
+                }
             }
         }
 
-        if ($invoice->certificationProgramItems) {
-            foreach ($invoice->certificationProgramItems as $item) {
-                $names[] = $item->certificationProgram->title ?? '-';
+        if (empty($this->productType) || $this->productType === 'certification_program') {
+            if ($invoice->certificationProgramItems) {
+                foreach ($invoice->certificationProgramItems as $item) {
+                    $names[] = $item->certificationProgram->title ?? '-';
+                }
             }
         }
 
@@ -276,6 +359,17 @@ class TransactionsExport implements
 
     private function getProductType($invoice): string
     {
+        if (!empty($this->productType)) {
+            switch ($this->productType) {
+                case 'bundle': return 'Bundle';
+                case 'course': return 'Kelas Online';
+                case 'bootcamp': return 'Bootcamp';
+                case 'webinar': return 'Webinar';
+                case 'private': return 'Private Class';
+                case 'certification_program': return 'Sertifikasi';
+            }
+        }
+
         if ($invoice->bundleEnrollments && $invoice->bundleEnrollments->count() > 0) return 'Bundle';
         if ($invoice->courseItems && $invoice->courseItems->count() > 0) return 'Kelas Online';
         if ($invoice->bootcampItems && $invoice->bootcampItems->count() > 0) return 'Bootcamp';
