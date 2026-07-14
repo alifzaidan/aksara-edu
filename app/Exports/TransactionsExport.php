@@ -88,6 +88,7 @@ class TransactionsExport implements
                         // All courses
                         $query->whereHas('courseItems');
                     }
+                    $query->doesntHave('bundleEnrollments');
                     break;
                 case 'bootcamp':
                     if ($this->bootcampId) {
@@ -99,6 +100,7 @@ class TransactionsExport implements
                         // All bootcamps
                         $query->whereHas('bootcampItems');
                     }
+                    $query->doesntHave('bundleEnrollments');
                     break;
                 case 'webinar':
                     if ($this->webinarId) {
@@ -110,6 +112,7 @@ class TransactionsExport implements
                         // All webinars
                         $query->whereHas('webinarItems');
                     }
+                    $query->doesntHave('bundleEnrollments');
                     break;
                 case 'bundle':
                     if ($this->bundleId) {
@@ -124,6 +127,7 @@ class TransactionsExport implements
                     break;
                 case 'private':
                     $query->whereHas('privateItems');
+                    $query->doesntHave('bundleEnrollments');
                     break;
                 case 'certification_program':
                     if ($this->certificationProgramId) {
@@ -133,6 +137,7 @@ class TransactionsExport implements
                     } else {
                         $query->whereHas('certificationProgramItems');
                     }
+                    $query->doesntHave('bundleEnrollments');
                     break;
             }
         }
