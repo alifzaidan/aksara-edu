@@ -32,94 +32,111 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         roles: ['admin', 'mentor', 'affiliate'],
     },
     {
-        title: 'Pengguna',
-        href: '/admin/users',
-        icon: User,
-        roles: ['admin'],
-    },
-    {
-        title: 'Afiliasi',
-        href: '/admin/affiliates',
-        icon: UserCheck,
-        roles: ['admin'],
-    },
-    {
-        title: 'Mentor',
-        href: '/admin/mentors',
+        title: 'Manajemen Pengguna',
+        href: '#',
         icon: Users,
         roles: ['admin'],
+        items: [
+            {
+                title: 'Pengguna',
+                href: '/admin/users',
+                roles: ['admin'],
+            } as any,
+            {
+                title: 'Afiliasi',
+                href: '/admin/affiliates',
+                roles: ['admin'],
+            } as any,
+            {
+                title: 'Mentor',
+                href: '/admin/mentors',
+                roles: ['admin'],
+            } as any,
+        ],
     },
     {
-        title: 'Kategori',
-        href: '/admin/categories',
-        icon: List,
-        roles: ['admin', 'mentor'],
-    },
-    {
-        title: 'Tools',
-        href: '/admin/tools',
-        icon: SquareMousePointer,
-        roles: ['admin', 'mentor'],
-    },
-    {
-        title: 'Kelas Online',
-        href: '/admin/courses',
+        title: 'Program Pelatihan',
+        href: '#',
         icon: BookText,
         roles: ['admin', 'mentor', 'affiliate'],
+        items: [
+            {
+                title: 'Kelas Online',
+                href: '/admin/courses',
+                roles: ['admin', 'mentor', 'affiliate'],
+            } as any,
+            {
+                title: 'Bootcamp',
+                href: '/admin/bootcamps',
+                roles: ['admin', 'affiliate'],
+            } as any,
+            {
+                title: 'Webinar',
+                href: '/admin/webinars',
+                roles: ['admin', 'affiliate'],
+            } as any,
+            {
+                title: 'Sertifikasi Program',
+                href: '/admin/certification-programs',
+                roles: ['admin'],
+            } as any,
+            {
+                title: 'Private Class',
+                href: '/admin/privates',
+                roles: ['admin', 'affiliate'],
+            } as any,
+        ],
     },
     {
-        title: 'Bootcamp',
-        href: '/admin/bootcamps',
-        icon: Presentation,
-        roles: ['admin', 'affiliate'],
+        title: 'Data Master',
+        href: '#',
+        icon: List,
+        roles: ['admin', 'mentor'],
+        items: [
+            {
+                title: 'Kategori',
+                href: '/admin/categories',
+                roles: ['admin', 'mentor'],
+            } as any,
+            {
+                title: 'Tools',
+                href: '/admin/tools',
+                roles: ['admin', 'mentor'],
+            } as any,
+            {
+                title: 'Sertifikat',
+                href: '/admin/certificates',
+                roles: ['admin'],
+            } as any,
+        ],
     },
     {
-        title: 'Webinar',
-        href: '/admin/webinars',
-        icon: MonitorPlay,
-        roles: ['admin', 'affiliate'],
-    },
-    {
-        title: 'Sertifikasi Program',
-        href: '/admin/certification-programs',
-        icon: BriefcaseBusiness,
+        title: 'Promosi & Marketing',
+        href: '#',
+        icon: Megaphone,
         roles: ['admin'],
-    },
-    {
-        title: 'Private Class',
-        href: '/admin/privates',
-        icon: BookText,
-        roles: ['admin', 'affiliate'],
+        items: [
+            {
+                title: 'Kode Diskon',
+                href: '/admin/discount-codes',
+                roles: ['admin'],
+            } as any,
+            {
+                title: 'Flyer Promosi',
+                href: '/admin/promotions',
+                roles: ['admin'],
+            } as any,
+            {
+                title: 'Broadcast',
+                href: '/admin/broadcasts',
+                roles: ['admin'],
+            } as any,
+        ],
     },
     {
         title: 'Paket Bundling',
         href: '/admin/bundles',
         icon: Gift,
-        roles: ['admin'],
-    },
-
-    {
-        title: 'Sertifikat',
-        href: '/admin/certificates',
-        icon: Dock,
-        roles: ['admin'],
-    },
-    {
-        title: 'Kode Diskon',
-        href: '/admin/discount-codes',
-        icon: Banknote,
-        roles: ['admin'],
-    },
-    {
-        title: 'Flyer Promosi',
-        href: '/admin/promotions',
-        icon: Proportions,
-        roles: ['admin'],
-    },
-    {
-        title: 'Broadcast',
-        href: '/admin/broadcasts',
-        icon: Megaphone,
         roles: ['admin'],
     },
     {
@@ -146,7 +163,17 @@ export function AppSidebar() {
     const { auth } = usePage<SharedData>().props;
     const role = auth.role[0];
 
-    const mainNavItems = allNavItems.filter((item) => item.roles.includes(role));
+    const mainNavItems = allNavItems
+        .filter((item) => item.roles.includes(role))
+        .map((item) => {
+            if (item.items) {
+                return {
+                    ...item,
+                    items: (item.items as (NavItem & { roles: string[] })[]).filter((subItem) => subItem.roles?.includes(role) ?? true),
+                };
+            }
+            return item;
+        });
 
     return (
         <Sidebar collapsible="icon" variant="inset">
