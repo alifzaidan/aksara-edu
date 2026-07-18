@@ -180,6 +180,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile/my-webinars/{webinar}/certificate/preview', [ProfileWebinarController::class, 'previewCertificate'])->name('profile.webinar.certificate.preview');
     Route::get('/profile/transactions', [ProfileTransactionController::class, 'index'])->name('profile.transactions');
     Route::get('/profile/transactions/{invoice}', [ProfileTransactionController::class, 'show'])->name('profile.transaction.detail');
+    Route::get('/profile/referral', [ProfileController::class, 'referral'])->name('profile.referral');
 
     Route::redirect('learn', 'profile/my-courses');
     Route::redirect('learn/course', 'profile/my-courses');
@@ -209,7 +210,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/course/{course}/rating', [CourseRatingController::class, 'store'])->name('course.rating.store');
 
     Route::get('/invoice/{id}/pdf', [InvoiceController::class, 'generatePDF'])->name('invoice.pdf')->middleware('auth');
+
+    Route::get('/api/user/points', [App\Http\Controllers\ReferralController::class, 'getPoints'])->name('api.user.points');
 });
+
+Route::post('/api/referral/validate', [App\Http\Controllers\ReferralController::class, 'validateCode'])->name('api.referral.validate');
 
 Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('admin')->group(function () {
     Route::redirect('/', 'admin/dashboard');
@@ -320,6 +325,13 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::resource('promotions', PromotionController::class);
         Route::patch('promotions/{promotion}/toggle-status', [PromotionController::class, 'toggleStatus'])->name('promotions.toggle-status');
         Route::get('transactions/export', [InvoiceController::class, 'export'])->name('transactions.export');
+
+        // Referral & Reward point admin routes
+        Route::get('referral/settings', [App\Http\Controllers\Admin\ReferralAdminController::class, 'settings'])->name('admin.referral.settings');
+        Route::post('referral/settings', [App\Http\Controllers\Admin\ReferralAdminController::class, 'updateSettings'])->name('admin.referral.settings.update');
+        Route::get('referral/report', [App\Http\Controllers\Admin\ReferralAdminController::class, 'report'])->name('admin.referral.report');
+        Route::get('referral/transactions', [App\Http\Controllers\Admin\ReferralAdminController::class, 'transactions'])->name('admin.referral.transactions');
+        Route::post('referral/adjust-points', [App\Http\Controllers\Admin\ReferralAdminController::class, 'adjustPoints'])->name('admin.referral.adjust-points');
     });
 
     Route::middleware(['role:affiliate|admin'])->group(function () {

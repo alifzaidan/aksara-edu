@@ -4,7 +4,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Banknote, BookText, BriefcaseBusiness, LayoutDashboard, MonitorPlay, Presentation, Settings } from 'lucide-react';
+import { Banknote, BookText, BriefcaseBusiness, LayoutDashboard, MonitorPlay, Presentation, Settings, Gift } from 'lucide-react';
 import { type PropsWithChildren } from 'react';
 
 const sidebarNavItems: NavItem[] = [
@@ -37,6 +37,11 @@ const sidebarNavItems: NavItem[] = [
         title: 'Transaksi',
         href: '/profile/transactions',
         icon: Banknote,
+    },
+    {
+        title: 'Referral & Poin',
+        href: '/profile/referral',
+        icon: Gift,
     },
     {
         title: 'Pengaturan Akun',

@@ -241,4 +241,9 @@ class Invoice extends Model
             default => 'gray',
         };
     }
+
+    public function referralUser()
+    {
+        return $this->belongsTo(User::class, 'referral_user_id');
+    }
 }

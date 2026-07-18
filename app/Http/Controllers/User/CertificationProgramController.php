@@ -439,4 +439,15 @@ class CertificationProgramController extends Controller
 
         return $phoneNumber;
     }
+
+    /**
+     * Get referral info untuk frontend
+     */
+    private function getReferralInfo(): array
+    {
+        return [
+            'code' => session('referral_code'),
+            'hasActive' => session('referral_code') && session('referral_code') !== 'ATM2025',
+        ];
+    }
 }

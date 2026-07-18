@@ -394,6 +394,42 @@ class InvoiceController extends Controller
             }
 
             $expectedNettAmount = $itemPrice - $discountCodeAmount;
+
+            $pointsRedeemed = (int) $request->input('points_redeemed', 0);
+            if ($pointsRedeemed > 0) {
+                if ($discountCodeId) {
+                    throw new \Exception('Voucher dan Poin tidak dapat digunakan bersamaan.');
+                }
+                
+                $user = Auth::user();
+                if ($pointsRedeemed > $user->point_balance) {
+                    throw new \Exception('Saldo poin Anda tidak mencukupi.');
+                }
+                
+                if ($pointsRedeemed > $expectedNettAmount) {
+                    throw new \Exception('Poin yang digunakan melebihi harga produk.');
+                }
+                
+                $expectedNettAmount = $expectedNettAmount - $pointsRedeemed;
+            }
+
+            $referralUserId = null;
+            $referralCode = $request->input('referral_code');
+            if ($referralCode) {
+                if ($discountCodeId) {
+                    throw new \Exception('Voucher dan Referral tidak dapat digunakan bersamaan.');
+                }
+                
+                $referralService = app(\App\Services\ReferralService::class);
+                $validationResult = $referralService->validateReferralCode($referralCode, Auth::user());
+                
+                if (!$validationResult['valid']) {
+                    throw new \Exception($validationResult['message']);
+                }
+                
+                $referralUserId = $validationResult['referrer']->id;
+            }
+
             $expectedTotal = $expectedNettAmount > 0 ? $expectedNettAmount + $transactionFee : 0;
 
             if ($nettAmount != $expectedNettAmount) {
@@ -410,6 +446,9 @@ class InvoiceController extends Controller
             }
             if ($discountCodeAmount > 0) {
                 $fees[] = ['type' => 'Diskon Promo (' . $discountCode->code . ')', 'value' => -$discountCodeAmount];
+            }
+            if ($pointsRedeemed > 0) {
+                $fees[] = ['type' => 'Potongan Poin', 'value' => -$pointsRedeemed];
             }
             $fees[] = ['type' => 'Biaya Transaksi', 'value' => $transactionFee];
 
@@ -439,8 +478,14 @@ class InvoiceController extends Controller
                 'discount_amount' => $discountAmount,
                 'amount' => $totalAmount,
                 'nett_amount' => $nettAmount,
+                'points_redeemed' => $pointsRedeemed,
+                'referral_user_id' => $referralUserId,
                 'expires_at' => $expiresAt,
             ]);
+
+            if ($pointsRedeemed > 0) {
+                app(\App\Services\PointService::class)->redeemPoints(Auth::user(), $pointsRedeemed, $invoice);
+            }
 
             if ($discountCode) {
                 DiscountUsage::create([
@@ -556,7 +601,43 @@ class InvoiceController extends Controller
 
             // Validate pricing
             $expectedNettAmount = $bundle->price - $discountCodeAmount;
-            $expectedTotal = $expectedNettAmount + $transactionFee;
+
+            $pointsRedeemed = (int) $request->input('points_redeemed', 0);
+            if ($pointsRedeemed > 0) {
+                if ($discountCodeAmount > 0) {
+                    throw new \Exception('Voucher dan Poin tidak dapat digunakan bersamaan.');
+                }
+                
+                $user = Auth::user();
+                if ($pointsRedeemed > $user->point_balance) {
+                    throw new \Exception('Saldo poin Anda tidak mencukupi.');
+                }
+                
+                if ($pointsRedeemed > $expectedNettAmount) {
+                    throw new \Exception('Poin yang digunakan melebihi harga produk.');
+                }
+                
+                $expectedNettAmount = $expectedNettAmount - $pointsRedeemed;
+            }
+
+            $referralUserId = null;
+            $referralCode = $request->input('referral_code');
+            if ($referralCode) {
+                if ($discountCodeAmount > 0) {
+                    throw new \Exception('Voucher dan Referral tidak dapat digunakan bersamaan.');
+                }
+                
+                $referralService = app(\App\Services\ReferralService::class);
+                $validationResult = $referralService->validateReferralCode($referralCode, Auth::user());
+                
+                if (!$validationResult['valid']) {
+                    throw new \Exception($validationResult['message']);
+                }
+                
+                $referralUserId = $validationResult['referrer']->id;
+            }
+
+            $expectedTotal = $expectedNettAmount > 0 ? $expectedNettAmount + $transactionFee : 0;
 
             Log::info('Creating bundle invoice', [
                 'user_id' => $userId,
@@ -596,8 +677,14 @@ class InvoiceController extends Controller
                 'discount_amount' => $discountAmount,
                 'amount' => $totalAmount,
                 'nett_amount' => $nettAmount,
+                'points_redeemed' => $pointsRedeemed,
+                'referral_user_id' => $referralUserId,
                 'expires_at' => $expiresAt,
             ]);
+
+            if ($pointsRedeemed > 0) {
+                app(\App\Services\PointService::class)->redeemPoints(Auth::user(), $pointsRedeemed, $invoice);
+            }
 
             // Create bundle enrollment
             EnrollmentBundle::create([
@@ -624,6 +711,9 @@ class InvoiceController extends Controller
                 ];
             }
 
+            if ($pointsRedeemed > 0) {
+                $fees[] = ['type' => 'Potongan Poin', 'value' => -$pointsRedeemed];
+            }
             $fees[] = ['type' => 'Biaya Transaksi', 'value' => $transactionFee];
 
             // Create Xendit invoice
@@ -986,6 +1076,10 @@ class InvoiceController extends Controller
 
             $invoice->update(['status' => 'failed']);
 
+            if ($invoice->points_redeemed > 0) {
+                app(\App\Services\PointService::class)->refundPoints($invoice);
+            }
+
             DB::commit();
 
             return redirect()->back()->with('success', 'Invoice berhasil dibatalkan.');
@@ -1032,6 +1126,10 @@ class InvoiceController extends Controller
         foreach ($expiredInvoices as $invoice) {
             $this->expireInvoiceInXendit($invoice->invoice_code);
             $invoice->update(['status' => 'failed']);
+
+            if ($invoice->points_redeemed > 0) {
+                app(\App\Services\PointService::class)->refundPoints($invoice);
+            }
         }
 
         return response()->json([
@@ -1110,6 +1208,9 @@ class InvoiceController extends Controller
 
             $this->recordAffiliateCommission($invoice);
             $this->addEnrollmentToCertificateParticipants($invoice);
+
+            // Fire event for referral/rewards points
+            event(new \App\Events\TransactionPaid($invoice));
 
             // Kirim WhatsApp setelah pembayaran berhasil
             $this->sendWhatsAppNotification($invoice);
