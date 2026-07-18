@@ -373,7 +373,8 @@ class CertificationProgramController extends Controller
         if (!empty($phoneNumber)) {
             $message .= "• No. WA: {$phoneNumber}\n";
         }
-        $message .= "\nSilakan cek dashboard admin untuk verifikasi dokumen. Terima kasih 🙏\n";
+        $message .= "\nJika Anda memiliki pertanyaan atau kendala, silakan hubungi Admin kami via WhatsApp di nomor *6285142505794* (atau klik wa.me/6285142505794).\n\n";
+        $message .= "Silakan cek dashboard admin untuk verifikasi dokumen. Terima kasih 🙏\n";
 
         self::sendText([
             [
@@ -408,7 +409,7 @@ class CertificationProgramController extends Controller
             $message .= "{$socializationGroupUrl}\n\n";
         }
 
-        $message .= "Jika ada kendala, silakan balas pesan ini atau hubungi admin.\n\n";
+        $message .= "Jika Anda memiliki pertanyaan atau membutuhkan bantuan, silakan hubungi Admin kami via WhatsApp di nomor *6285142505794* (atau klik wa.me/6285142505794).\n\n";
         $message .= "Terima kasih dan selamat bergabung! 🚀\n\n";
         $message .= "*Araska - Customer Support*";
 
