@@ -17,6 +17,8 @@ return new class extends Migration
             $table->bigInteger('discount_amount')->default(0);
             $table->bigInteger('amount');
             $table->bigInteger('nett_amount');
+            $table->bigInteger('points_redeemed')->default(0);
+            $table->foreignUuid('referral_user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->enum('status', ['pending', 'paid', 'failed'])->default('pending');
             $table->string('invoice_code');
             $table->string('invoice_url')->nullable(); //xendit
