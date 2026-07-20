@@ -1140,7 +1140,13 @@ class InvoiceController extends Controller
 
     public function callbackXendit(Request $request)
     {
-        $getToken = $request->header('x-callback-token');
+        Log::info('=== XENDIT CALLBACK RECEIVED ===', [
+            'headers' => $request->headers->all(),
+            'payload' => $request->all()
+        ]);
+
+        try {
+            $getToken = $request->header('x-callback-token');
         $callbackToken = config('xendit.CALLBACK_TOKEN');
 
         if ($getToken != $callbackToken) {
@@ -1222,6 +1228,16 @@ class InvoiceController extends Controller
         }
 
         return response()->json(['message' => 'Success'], 200);
+
+        } catch (\Throwable $e) {
+            Log::error('XENDIT CALLBACK ERROR: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'message' => 'Callback processing error',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

@@ -56,10 +56,10 @@ export default function ReferralSettings({ settings, flash }: SettingsProps) {
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title="Pengaturan Referral & Poin" />
-            <div className="px-4 py-4 md:px-6 max-w-4xl">
+            <div className="px-4 py-4 md:px-6 max-w-7xl">
                 <div className="mb-6 space-y-1">
                     <h1 className="text-2xl font-semibold flex items-center gap-2">
-                        <Settings className="h-6 w-6 text-gray-700" />
+                        <Settings className="h-6 w-6 text-foreground" />
                         Pengaturan Program Referral & Koin
                     </h1>
                     <p className="text-muted-foreground text-sm">
@@ -86,10 +86,10 @@ export default function ReferralSettings({ settings, flash }: SettingsProps) {
                                             min="0"
                                             value={data.referral_reward}
                                             onChange={(e) => setData('referral_reward', parseInt(e.target.value) || 0)}
-                                            className="pr-16"
+                                            className="pr-16 bg-background"
                                             required
                                         />
-                                        <div className="absolute top-1/2 right-3 -translate-y-1/2 text-xs font-semibold text-gray-400">
+                                        <div className="absolute top-1/2 right-3 -translate-y-1/2 text-xs font-semibold text-muted-foreground">
                                             POIN
                                         </div>
                                     </div>
@@ -110,10 +110,10 @@ export default function ReferralSettings({ settings, flash }: SettingsProps) {
                                             min="0"
                                             value={data.buyer_reward}
                                             onChange={(e) => setData('buyer_reward', parseInt(e.target.value) || 0)}
-                                            className="pr-16"
+                                            className="pr-16 bg-background"
                                             required
                                         />
-                                        <div className="absolute top-1/2 right-3 -translate-y-1/2 text-xs font-semibold text-gray-400">
+                                        <div className="absolute top-1/2 right-3 -translate-y-1/2 text-xs font-semibold text-muted-foreground">
                                             POIN
                                         </div>
                                     </div>
@@ -128,7 +128,7 @@ export default function ReferralSettings({ settings, flash }: SettingsProps) {
 
                             <Separator />
 
-                            <div className="flex items-center justify-between space-y-0 bg-gray-50/50 p-4 rounded-lg border dark:bg-zinc-900/50">
+                            <div className="flex items-center justify-between space-y-0 bg-muted/40 p-4 rounded-lg border">
                                 <div className="space-y-0.5">
                                     <Label className="text-base" htmlFor="referral_only_first_purchase">
                                         Hanya Pembelian Pertama
@@ -144,7 +144,7 @@ export default function ReferralSettings({ settings, flash }: SettingsProps) {
                                 />
                             </div>
                         </CardContent>
-                        <CardFooter className="justify-end border-t bg-gray-50/30 px-6 py-4 dark:bg-zinc-900/20">
+                        <CardFooter className="justify-end border-t bg-muted/20 px-6 py-4">
                             <Button type="submit" disabled={processing} className="gap-2">
                                 <Save className="h-4 w-4" />
                                 {processing ? 'Menyimpan...' : 'Simpan Pengaturan'}

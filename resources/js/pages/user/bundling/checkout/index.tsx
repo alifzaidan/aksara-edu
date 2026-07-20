@@ -85,6 +85,8 @@ interface PendingCheckoutData {
     promoCode: string;
     discountData: DiscountData | null;
     termsAccepted: boolean;
+    codeType?: 'voucher' | 'referral';
+    referralValid?: boolean;
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -323,6 +325,8 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
             promoCode,
             discountData,
             termsAccepted,
+            codeType,
+            referralValid: codeType === 'referral' && !!referralData?.valid,
         };
 
         sessionStorage.setItem('pendingCheckoutBundle', JSON.stringify(pendingCheckoutData));
@@ -379,7 +383,7 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
                     city: guestFormData.city,
                     password: guestFormData.phone_number,
                     password_confirmation: guestFormData.phone_number,
-                    affiliate_code: referralInfo.code,
+                    affiliate_code: (codeType === 'referral' && referralData?.valid) ? promoCode : (referralInfo.code || sessionStorage.getItem('referral_code') || ''),
                 });
 
                 toast.success('Registrasi berhasil. Melanjutkan checkout...');
@@ -400,7 +404,13 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
     };
 
     const submitPayment = useCallback(
-        async (activeDiscountData: DiscountData | null, retryCount = 0): Promise<void> => {
+        async (
+            activeDiscountData: DiscountData | null,
+            overrideCodeType?: 'voucher' | 'referral',
+            overridePromoCode?: string,
+            overrideReferralValid?: boolean,
+            retryCount = 0
+        ): Promise<void> => {
             const activeDiscountAmount = activeDiscountData?.valid ? activeDiscountData.discount_amount : 0;
             const activeFinalPrice = bundle.price - activeDiscountAmount;
             
@@ -421,8 +431,12 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
                 invoiceData.discount_code_amount = activeDiscountData.discount_amount;
             }
 
-            if (codeType === 'referral' && referralData?.valid) {
-                invoiceData.referral_code = promoCode;
+            const currentCodeType = overrideCodeType || codeType;
+            const currentPromoCode = overridePromoCode || promoCode;
+            const isReferralValid = overrideReferralValid !== undefined ? overrideReferralValid : referralData?.valid;
+
+            if (currentCodeType === 'referral' && isReferralValid) {
+                invoiceData.referral_code = currentPromoCode;
             }
 
             try {
@@ -441,7 +455,7 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
 
                 if (res.status === 419 && retryCount < 2) {
                     await refreshCSRFToken();
-                    return submitPayment(activeDiscountData, retryCount + 1);
+                    return submitPayment(activeDiscountData, undefined, undefined, undefined, retryCount + 1);
                 }
 
                 const data = await res.json();
@@ -513,26 +527,38 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
                 return;
             }
 
+            // Remove immediately to prevent double submissions in StrictMode/concurrent renders
+            sessionStorage.removeItem('pendingCheckoutBundle');
+
             if (pendingCheckout.promoCode) {
                 setPromoCode(pendingCheckout.promoCode);
+            }
+            if (pendingCheckout.codeType) {
+                setCodeType(pendingCheckout.codeType);
+            }
+            if (pendingCheckout.referralValid) {
+                setReferralData({ valid: true });
             }
 
             setDiscountData(pendingCheckout.discountData || null);
             setTermsAccepted(pendingCheckout.termsAccepted || false);
 
             if (!pendingCheckout.termsAccepted) {
-                sessionStorage.removeItem('pendingCheckoutBundle');
                 setLoading(false);
                 return;
             }
 
             setLoading(true);
 
-            submitPayment(pendingCheckout.discountData || null).catch((error: unknown) => {
+            submitPayment(
+                pendingCheckout.discountData || null,
+                pendingCheckout.codeType,
+                pendingCheckout.promoCode,
+                pendingCheckout.referralValid
+            ).catch((error: unknown) => {
                 console.error('Pending checkout bundle error:', error);
                 toast.error(getErrorMessage(error, 'Gagal melanjutkan checkout bundle.'));
                 setLoading(false);
-                sessionStorage.removeItem('pendingCheckoutBundle');
             });
         } catch {
             sessionStorage.removeItem('pendingCheckoutBundle');

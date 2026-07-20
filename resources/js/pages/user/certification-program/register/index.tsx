@@ -78,6 +78,8 @@ interface PendingCheckoutData {
     termsAccepted: boolean;
     discountData: DiscountData | null;
     needsDocumentUpload?: boolean;
+    codeType?: 'voucher' | 'referral';
+    referralValid?: boolean;
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -369,11 +371,13 @@ export default function Register({
                 termsAccepted,
                 discountData,
                 needsDocumentUpload,
+                codeType,
+                referralValid: codeType === 'referral' && !!referralData?.valid,
             };
 
             sessionStorage.setItem('pendingCertificationCheckout', JSON.stringify(pendingCheckoutData));
         },
-        [discountData, program.slug, promoCode, termsAccepted],
+        [discountData, program.slug, promoCode, termsAccepted, codeType, referralData?.valid],
     );
 
     const refreshCSRFToken = useCallback(async (): Promise<string> => {
@@ -446,6 +450,7 @@ export default function Register({
                     city: guestFormData.city,
                     password: guestFormData.phone_number,
                     password_confirmation: guestFormData.phone_number,
+                    affiliate_code: (codeType === 'referral' && referralData?.valid) ? promoCode : (referralInfo.code || sessionStorage.getItem('referral_code') || ''),
                 });
 
                 toast.success('Registrasi berhasil. Melanjutkan pendaftaran...');
@@ -504,7 +509,12 @@ export default function Register({
     };
 
     const submitPayment = useCallback(
-        async (retryCount = 0): Promise<void> => {
+        async (
+            overrideCodeType?: 'voucher' | 'referral',
+            overridePromoCode?: string,
+            overrideReferralValid?: boolean,
+            retryCount = 0
+        ): Promise<void> => {
             const originalDiscountAmount =
                 program.strikethrough_price && program.strikethrough_price > 0 ? program.strikethrough_price - program.price : 0;
             const promoDiscountAmount = discountData?.valid ? discountData.discount_amount : 0;
@@ -530,8 +540,12 @@ export default function Register({
                 invoiceData.discount_code_amount = discountData.discount_amount;
             }
 
-            if (codeType === 'referral' && referralData?.valid) {
-                invoiceData.referral_code = promoCode;
+            const currentCodeType = overrideCodeType || codeType;
+            const currentPromoCode = overridePromoCode || promoCode;
+            const isReferralValid = overrideReferralValid !== undefined ? overrideReferralValid : referralData?.valid;
+
+            if (currentCodeType === 'referral' && isReferralValid) {
+                invoiceData.referral_code = currentPromoCode;
             }
 
             try {
@@ -550,7 +564,7 @@ export default function Register({
 
                 if (res.status === 419 && retryCount < 2) {
                     await refreshCSRFToken();
-                    return submitPayment(retryCount + 1);
+                    return submitPayment(undefined, undefined, undefined, retryCount + 1);
                 }
 
                 const data = await res.json();
@@ -718,19 +732,37 @@ export default function Register({
                 return;
             }
 
+            // Remove immediately to prevent double submissions in StrictMode/concurrent renders
+            sessionStorage.removeItem('pendingCertificationCheckout');
+
             if (pendingCheckout.promoCode) {
                 setPromoCode(pendingCheckout.promoCode);
+            }
+            if (pendingCheckout.codeType) {
+                setCodeType(pendingCheckout.codeType);
+            }
+            if (pendingCheckout.referralValid) {
+                setReferralData({ valid: true });
             }
 
             setTermsAccepted(pendingCheckout.termsAccepted || false);
             setDiscountData(pendingCheckout.discountData || null);
-            sessionStorage.removeItem('pendingCertificationCheckout');
 
-            void handleCheckout();
+            setIsLoading(true);
+
+            submitPayment(
+                pendingCheckout.codeType,
+                pendingCheckout.promoCode,
+                pendingCheckout.referralValid
+            ).catch((error: unknown) => {
+                console.error('Pending checkout certification error:', error);
+                toast.error(getErrorMessage(error, 'Gagal melanjutkan pendaftaran.'));
+                setIsLoading(false);
+            });
         } catch {
             sessionStorage.removeItem('pendingCertificationCheckout');
         }
-    }, [handleCheckout, isLoggedIn, program.slug]);
+    }, [isLoggedIn, program.slug, submitPayment]);
 
     if (hasAccess) {
         return (

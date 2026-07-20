@@ -27,6 +27,11 @@ class RewardReferralListener implements ShouldQueue
      */
     public function handle(TransactionPaid $event): void
     {
+        Log::info('RewardReferralListener handle triggered', [
+            'invoice_code' => $event->invoice->invoice_code,
+            'referral_user_id' => $event->invoice->referral_user_id
+        ]);
+
         try {
             $this->rewardService->processReferralReward($event->invoice);
         } catch (\Exception $e) {

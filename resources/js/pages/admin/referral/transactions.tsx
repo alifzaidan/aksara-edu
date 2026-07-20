@@ -2,16 +2,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { toast } from 'sonner';
-import { Award, Search, ArrowUpRight, ArrowDownLeft, Plus, AlertCircle, Coins } from 'lucide-react';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { Search, Plus, Coins } from 'lucide-react';
+import { columns, PointTransaction } from './transaction-columns';
+import { DataTable } from './data-table';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -31,19 +30,6 @@ interface UserSelect {
     point_balance: number;
 }
 
-interface PointTransaction {
-    id: string;
-    amount: number;
-    type: 'reward' | 'redeem' | 'adjustment';
-    source: 'referral' | 'checkout' | 'admin';
-    description: string;
-    created_at: string;
-    user: {
-        name: string;
-        email: string;
-    };
-}
-
 interface TransactionsProps {
     transactions: {
         data: PointTransaction[];
@@ -60,12 +46,31 @@ interface TransactionsProps {
 
 export default function PointTransactions({ transactions, users, filters }: TransactionsProps) {
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const suggestionRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
     
     const { data, setData, post, processing, errors, reset } = useForm({
         user_id: '',
         amount: '',
         description: '',
     });
+
+    const filteredSuggestions = data.user_id.trim() === ''
+        ? []
+        : users.filter(u =>
+            u.name.toLowerCase().includes(data.user_id.toLowerCase()) ||
+            u.email.toLowerCase().includes(data.user_id.toLowerCase())
+        ).slice(0, 5);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -105,31 +110,13 @@ export default function PointTransactions({ transactions, users, filters }: Tran
         });
     };
 
-    const getTransactionBadge = (type: string, source: string) => {
-        if (source === 'referral') {
-            return <Badge className="bg-green-100 text-green-800 border-green-200">Referral Reward</Badge>;
-        }
-        if (source === 'checkout') {
-            if (type === 'redeem') {
-                return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Diskon Pembelian</Badge>;
-            }
-            if (type === 'adjustment') {
-                return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Refund Poin</Badge>;
-            }
-        }
-        if (source === 'admin') {
-            return <Badge className="bg-purple-100 text-purple-800 border-purple-200">Koreksi Admin</Badge>;
-        }
-        return <Badge variant="outline">{type} / {source}</Badge>;
-    };
-
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title="Transaksi Koin & Penyesuaian" />
             <div className="px-4 py-4 md:px-6">
                 <div className="mb-6 space-y-1">
                     <h1 className="text-2xl font-semibold flex items-center gap-2">
-                        <Coins className="h-6 w-6 text-gray-700" />
+                        <Coins className="h-6 w-6 text-foreground" />
                         Audit Ledger Poin & Penyesuaian Manual
                     </h1>
                     <p className="text-muted-foreground text-sm">
@@ -141,98 +128,38 @@ export default function PointTransactions({ transactions, users, filters }: Tran
                     {/* Left: Point Transactions Table */}
                     <div className="lg:col-span-2 space-y-4">
                         <Card>
-                            <CardHeader className="pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div>
-                                    <CardTitle>Riwayat Ledger Poin</CardTitle>
-                                    <CardDescription>
-                                        Log mutasi koin riil di database untuk audit.
-                                    </CardDescription>
-                                </div>
-                                <form onSubmit={handleSearch} className="flex gap-2 w-full sm:w-auto">
-                                    <Input
-                                        placeholder="Cari nama / email..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="h-8 max-w-xs"
-                                    />
-                                    <Button type="submit" size="sm" variant="secondary" className="h-8">
-                                        <Search className="h-4 w-4" />
-                                    </Button>
-                                </form>
+                            <CardHeader>
+                                <CardTitle>Riwayat Ledger Poin</CardTitle>
+                                <CardDescription>
+                                    Log mutasi koin riil di database untuk audit.
+                                </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                {transactions.data.length === 0 ? (
-                                    <div className="text-center py-12 text-muted-foreground">
-                                        <Award className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-                                        <p className="text-sm">Tidak ada mutasi poin yang ditemukan.</p>
-                                    </div>
-                                ) : (
-                                    <div className="overflow-x-auto">
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>User / Tanggal</TableHead>
-                                                    <TableHead>Jenis Mutasi</TableHead>
-                                                    <TableHead>Keterangan</TableHead>
-                                                    <TableHead className="text-right">Jumlah Poin</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {transactions.data.map((tx) => (
-                                                    <TableRow key={tx.id}>
-                                                        <TableCell>
-                                                            <div className="font-semibold text-sm">{tx.user?.name || 'Deleted User'}</div>
-                                                            <div className="text-xs text-gray-500">
-                                                                {format(new Date(tx.created_at), 'dd MMM yyyy HH:mm', { locale: localeId })}
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell>{getTransactionBadge(tx.type, tx.source)}</TableCell>
-                                                        <TableCell className="text-xs max-w-[200px] truncate">{tx.description}</TableCell>
-                                                        <TableCell className={`text-right font-bold ${tx.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                            <span className="inline-flex items-center gap-0.5 text-sm">
-                                                                {tx.amount > 0 ? (
-                                                                    <>
-                                                                        <ArrowUpRight className="h-3 w-3" />
-                                                                        +{tx.amount.toLocaleString('id-ID')}
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <ArrowDownLeft className="h-3 w-3" />
-                                                                        {tx.amount.toLocaleString('id-ID')}
-                                                                    </>
-                                                                )}
-                                                            </span>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
+                                <DataTable columns={columns} data={transactions.data} searchKey="user" searchPlaceholder="Cari nama..." />
 
-                                        {/* Pagination */}
-                                        {transactions.last_page > 1 && (
-                                            <div className="flex items-center justify-between pt-4 mt-4 border-t">
-                                                <span className="text-xs text-muted-foreground">
-                                                    Halaman {transactions.current_page} dari {transactions.last_page}
-                                                </span>
-                                                <div className="flex gap-2">
-                                                    {transactions.links.map((link, idx) => {
-                                                        if (link.url === null) return null;
-                                                        return (
-                                                            <Link
-                                                                key={idx}
-                                                                href={link.url}
-                                                                className={`px-2.5 py-1 text-xs border rounded-md ${
-                                                                    link.active
-                                                                        ? 'bg-primary text-white font-bold'
-                                                                        : 'bg-white text-gray-700 hover:bg-gray-50'
-                                                                }`}
-                                                                dangerouslySetInnerHTML={{ __html: link.label }}
-                                                            />
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )}
+                                {/* Pagination */}
+                                {transactions.last_page > 1 && (
+                                    <div className="flex items-center justify-between pt-4 mt-4 border-t">
+                                        <span className="text-xs text-muted-foreground">
+                                            Halaman {transactions.current_page} dari {transactions.last_page}
+                                        </span>
+                                        <div className="flex gap-2">
+                                            {transactions.links.map((link, idx) => {
+                                                if (link.url === null) return null;
+                                                return (
+                                                    <Link
+                                                        key={idx}
+                                                        href={link.url}
+                                                        className={`px-2.5 py-1 text-xs border rounded-md ${
+                                                            link.active
+                                                                ? 'bg-primary text-primary-foreground font-bold'
+                                                                : 'bg-background text-foreground hover:bg-muted'
+                                                        }`}
+                                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                                    />
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 )}
                             </CardContent>
@@ -242,9 +169,9 @@ export default function PointTransactions({ transactions, users, filters }: Tran
                     {/* Right: Manual Adjustment Form */}
                     <div className="space-y-4">
                         <form onSubmit={handleAdjust}>
-                            <Card className="border-indigo-100 dark:border-zinc-800">
+                            <Card className="border-border">
                                 <CardHeader>
-                                    <CardTitle className="text-indigo-900 dark:text-indigo-400 flex items-center gap-2">
+                                    <CardTitle className="text-foreground flex items-center gap-2">
                                         <Plus className="h-5 w-5" />
                                         Penyesuaian Saldo Poin
                                     </CardTitle>
@@ -253,22 +180,41 @@ export default function PointTransactions({ transactions, users, filters }: Tran
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="user_id">Pilih Pengguna</Label>
-                                        <select
-                                            id="user_id"
-                                            value={data.user_id}
-                                            onChange={(e) => setData('user_id', e.target.value)}
-                                            className="w-full border rounded-md px-3 py-2 text-sm bg-white dark:bg-zinc-950"
-                                            required
-                                        >
-                                            <option value="">-- Pilih Pengguna --</option>
-                                            {users.map((u) => (
-                                                <option key={u.id} value={u.id}>
-                                                    {u.name} ({u.email}) - Saldo: {u.point_balance.toLocaleString('id-ID')}
-                                                </option>
-                                            ))}
-                                        </select>
+                                    <div className="space-y-2" ref={suggestionRef}>
+                                        <Label htmlFor="user_id">Nama / Email / ID Pengguna</Label>
+                                        <div className="relative">
+                                            <Input
+                                                id="user_id"
+                                                placeholder="Masukkan nama, email, atau ID pengguna..."
+                                                value={data.user_id}
+                                                onChange={(e) => {
+                                                    setData('user_id', e.target.value);
+                                                    setShowSuggestions(true);
+                                                }}
+                                                onFocus={() => setShowSuggestions(true)}
+                                                className="bg-background"
+                                                required
+                                                autoComplete="off"
+                                            />
+                                            {showSuggestions && filteredSuggestions.length > 0 && (
+                                                <div className="absolute z-50 w-full mt-1 bg-popover text-popover-foreground border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                                    {filteredSuggestions.map((u) => (
+                                                        <button
+                                                            key={u.id}
+                                                            type="button"
+                                                            className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground flex flex-col border-b border-border/50 last:border-b-0"
+                                                            onClick={() => {
+                                                                setData('user_id', u.email); // Gunakan email agar unik
+                                                                setShowSuggestions(false);
+                                                            }}
+                                                        >
+                                                            <span className="font-medium text-foreground">{u.name}</span>
+                                                            <span className="text-xs text-muted-foreground">{u.email}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
                                         {errors.user_id && <p className="text-xs text-red-600">{errors.user_id}</p>}
                                     </div>
 
@@ -280,6 +226,7 @@ export default function PointTransactions({ transactions, users, filters }: Tran
                                             placeholder="Gunakan tanda minus (-) untuk mengurangi"
                                             value={data.amount}
                                             onChange={(e) => setData('amount', e.target.value)}
+                                            className="bg-background"
                                             required
                                         />
                                         <p className="text-[11px] text-muted-foreground">
@@ -290,19 +237,19 @@ export default function PointTransactions({ transactions, users, filters }: Tran
 
                                     <div className="space-y-2">
                                         <Label htmlFor="description">Alasan / Keterangan Penyesuaian</Label>
-                                        <textarea
+                                        <Textarea
                                             id="description"
                                             placeholder="Contoh: Bonus pendaftaran webinar khusus atau koreksi saldo kesalahan sistem."
                                             value={data.description}
                                             onChange={(e) => setData('description', e.target.value)}
-                                            className="w-full border rounded-md px-3 py-2 text-sm bg-white dark:bg-zinc-950 h-20"
+                                            className="bg-background h-20"
                                             required
                                         />
                                         {errors.description && <p className="text-xs text-red-600">{errors.description}</p>}
                                     </div>
                                 </CardContent>
-                                <CardFooter className="bg-indigo-50/20 border-t px-6 py-4 dark:bg-zinc-900/10">
-                                    <Button type="submit" disabled={processing} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+                                <CardFooter className="bg-muted/20 border-t px-6 py-4">
+                                    <Button type="submit" disabled={processing} className="w-full">
                                         {processing ? 'Memproses...' : 'Terapkan Penyesuaian'}
                                     </Button>
                                 </CardFooter>

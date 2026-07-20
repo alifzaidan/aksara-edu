@@ -26,14 +26,27 @@ class RewardService
      */
     public function processReferralReward(Invoice $invoice): void
     {
+        Log::info('processReferralReward started', [
+            'invoice_code' => $invoice->invoice_code,
+            'status' => $invoice->status,
+            'referral_user_id' => $invoice->referral_user_id
+        ]);
+
         DB::transaction(function () use ($invoice) {
             // Ensure invoice is paid
             if ($invoice->status !== 'paid') {
+                Log::warning('processReferralReward skipped: invoice status is not paid', [
+                    'invoice_code' => $invoice->invoice_code,
+                    'status' => $invoice->status
+                ]);
                 return;
             }
 
             // Check if there is an associated referrer
             if (!$invoice->referral_user_id) {
+                Log::warning('processReferralReward skipped: no referral_user_id on invoice', [
+                    'invoice_code' => $invoice->invoice_code
+                ]);
                 return;
             }
 
@@ -52,17 +65,31 @@ class RewardService
             $referrer = User::find($invoice->referral_user_id);
 
             if (!$buyer || !$referrer) {
+                Log::error('processReferralReward skipped: buyer or referrer user not found', [
+                    'buyer_id' => $invoice->user_id,
+                    'referrer_id' => $invoice->referral_user_id
+                ]);
                 return;
             }
 
             // Check if referral reward is only allowed on first purchase
             $onlyFirstPurchase = Setting::get('referral_only_first_purchase', true);
+            Log::info('Referral configurations', [
+                'only_first_purchase' => $onlyFirstPurchase,
+                'buyer_id' => $buyer->id,
+                'referrer_id' => $referrer->id
+            ]);
 
             if ($onlyFirstPurchase) {
                 // Since this invoice is already marked as paid, the count will be 1 if it's the first purchase
                 $paidInvoicesCount = Invoice::where('user_id', $buyer->id)
                     ->where('status', 'paid')
                     ->count();
+
+                Log::info('Buyer paid invoices count', [
+                    'buyer_id' => $buyer->id,
+                    'paid_count' => $paidInvoicesCount
+                ]);
 
                 if ($paidInvoicesCount > 1) {
                     Log::info('Referral reward skipped: not the buyer\'s first purchase', [

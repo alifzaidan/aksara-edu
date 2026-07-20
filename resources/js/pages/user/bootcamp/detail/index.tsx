@@ -39,6 +39,12 @@ interface Bootcamp {
         bio?: string;
         avatar?: string;
     };
+    mentors?: {
+        id: string;
+        name: string;
+        bio?: string;
+        avatar?: string;
+    }[];
     created_at: string | Date;
 }
 

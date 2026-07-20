@@ -106,13 +106,22 @@ class ReferralAdminController extends Controller
     public function adjustPoints(Request $request)
     {
         $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'user_id' => 'required|string',
             'amount' => 'required|integer',
             'description' => 'required|string|max:255',
         ]);
 
         try {
-            $user = User::findOrFail($request->user_id);
+            $user = User::where('id', $request->user_id)
+                ->orWhere('name', $request->user_id)
+                ->orWhere('email', $request->user_id)
+                ->first();
+
+            if (!$user) {
+                return redirect()->back()->withErrors([
+                    'user_id' => 'Pengguna dengan ID, nama, atau email tersebut tidak ditemukan.'
+                ]);
+            }
             
             // Check for negative point balance
             if ($request->amount < 0 && $user->point_balance < abs($request->amount)) {

@@ -72,6 +72,8 @@ interface PendingCheckoutData {
     discountData: DiscountData | null;
     termsAccepted: boolean;
     isFree: boolean;
+    codeType?: 'voucher' | 'referral';
+    referralValid?: boolean;
 }
 
 function getYoutubeId(url: string) {
@@ -339,6 +341,8 @@ export default function CheckoutCourse({
             discountData,
             termsAccepted,
             isFree,
+            codeType,
+            referralValid: codeType === 'referral' && !!referralData?.valid,
         };
 
         sessionStorage.setItem('pendingCheckoutCourse', JSON.stringify(pendingCheckoutData));
@@ -395,7 +399,7 @@ export default function CheckoutCourse({
                     city: guestFormData.city,
                     password: guestFormData.phone_number,
                     password_confirmation: guestFormData.phone_number,
-                    affiliate_code: referralInfo.code,
+                    affiliate_code: (codeType === 'referral' && referralData?.valid) ? promoCode : (referralInfo.code || sessionStorage.getItem('referral_code') || ''),
                 });
 
                 toast.success('Registrasi berhasil. Melanjutkan checkout...');
@@ -437,7 +441,13 @@ export default function CheckoutCourse({
     }, [course.id]);
 
     const submitPayment = useCallback(
-        async (activeDiscountData: DiscountData | null, retryCount = 0): Promise<void> => {
+        async (
+            activeDiscountData: DiscountData | null,
+            overrideCodeType?: 'voucher' | 'referral',
+            overridePromoCode?: string,
+            overrideReferralValid?: boolean,
+            retryCount = 0
+        ): Promise<void> => {
             const originalDiscountAmount = course.strikethrough_price > 0 ? course.strikethrough_price - course.price : 0;
             const promoDiscountAmount = activeDiscountData?.discount_amount || 0;
             const activeFinalPrice = basePrice - promoDiscountAmount;
@@ -461,8 +471,12 @@ export default function CheckoutCourse({
                 invoiceData.discount_code_amount = activeDiscountData.discount_amount;
             }
 
-            if (codeType === 'referral' && referralData?.valid) {
-                invoiceData.referral_code = promoCode;
+            const currentCodeType = overrideCodeType || codeType;
+            const currentPromoCode = overridePromoCode || promoCode;
+            const isReferralValid = overrideReferralValid !== undefined ? overrideReferralValid : referralData?.valid;
+
+            if (currentCodeType === 'referral' && isReferralValid) {
+                invoiceData.referral_code = currentPromoCode;
             }
 
             try {
@@ -481,7 +495,7 @@ export default function CheckoutCourse({
 
                 if (res.status === 419 && retryCount < 2) {
                     await refreshCSRFToken();
-                    return submitPayment(activeDiscountData, retryCount + 1);
+                    return submitPayment(activeDiscountData, undefined, undefined, undefined, retryCount + 1);
                 }
 
                 const data = await res.json();
@@ -558,26 +572,38 @@ export default function CheckoutCourse({
                 return;
             }
 
+            // Remove immediately to prevent double submissions in StrictMode/concurrent renders
+            sessionStorage.removeItem('pendingCheckoutCourse');
+
             if (pendingCheckout.promoCode) {
                 setPromoCode(pendingCheckout.promoCode);
+            }
+            if (pendingCheckout.codeType) {
+                setCodeType(pendingCheckout.codeType);
+            }
+            if (pendingCheckout.referralValid) {
+                setReferralData({ valid: true });
             }
 
             setDiscountData(pendingCheckout.discountData || null);
             setTermsAccepted(pendingCheckout.termsAccepted || false);
 
             if (pendingCheckout.isFree) {
-                sessionStorage.removeItem('pendingCheckoutCourse');
                 enrollFreeCourse();
                 return;
             }
 
             setLoading(true);
 
-            submitPayment(pendingCheckout.discountData || null).catch((error: unknown) => {
+            submitPayment(
+                pendingCheckout.discountData || null,
+                pendingCheckout.codeType,
+                pendingCheckout.promoCode,
+                pendingCheckout.referralValid
+            ).catch((error: unknown) => {
                 console.error('Pending checkout course error:', error);
                 toast.error(getErrorMessage(error, 'Gagal melanjutkan checkout course.'));
                 setLoading(false);
-                sessionStorage.removeItem('pendingCheckoutCourse');
             });
         } catch {
             sessionStorage.removeItem('pendingCheckoutCourse');
