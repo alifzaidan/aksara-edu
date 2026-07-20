@@ -1318,6 +1318,7 @@ class InvoiceController extends Controller
             $message .= "Hai *{$user->name}*,\n\n";
             $message .= "Maaf, pembayaran {$itemType} untuk invoice *{$invoice->invoice_code}* tidak berhasil atau telah kadaluarsa.\n\n";
             $message .= "Silakan melakukan pembelian ulang jika Anda masih berminat.\n\n";
+            $message .= "Jika Anda memiliki pertanyaan atau membutuhkan bantuan, silakan hubungi Admin kami via WhatsApp di nomor *6285142505794* (atau klik wa.me/6285142505794).\n\n";
             $message .= "Terima kasih atas perhatiannya.\n\n";
             $message .= "*Araska - Customer Support*";
 
@@ -1556,10 +1557,10 @@ class InvoiceController extends Controller
             }
         }
 
+        $message .= "Jika Anda memiliki pertanyaan atau membutuhkan bantuan, silakan hubungi Admin kami via WhatsApp di nomor *6285142505794* (atau klik wa.me/6285142505794).\n\n";
         if ($isFreePurchase) {
             $message .= "Terima kasih telah bergabung dengan Aksademy! 🚀\n\n";
         } else {
-            $message .= "Jika ada pertanyaan, jangan ragu untuk menghubungi kami.\n\n";
             $message .= "Selamat belajar! 🚀\n\n";
         }
 

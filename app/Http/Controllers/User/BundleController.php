@@ -212,12 +212,12 @@ class BundleController extends Controller
         // }
 
         if ($bundle->registration_deadline && now()->gt($bundle->registration_deadline)) {
-            return redirect()->route('bundle.show', $bundle->slug)
+            return redirect()->route('bundle.detail', $bundle->slug)
                 ->with('error', 'Pendaftaran untuk bundle ini sudah ditutup.');
         }
 
         if ($bundle->price === 0) {
-            return redirect()->route('bundle.show', $bundle->slug)
+            return redirect()->route('bundle.detail', $bundle->slug)
                 ->with('error', 'Bundle ini gratis, tidak perlu checkout.');
         }
 
