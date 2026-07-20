@@ -331,6 +331,12 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
 
         Route::get('privates', [PrivateClassController::class, 'index'])->name('privates.index');
         Route::get('privates/{private}', [PrivateClassController::class, 'show'])->name('privates.show');
+
+        Route::get('certification-programs', [CertificationProgramController::class, 'index'])->name('certification-programs.index');
+        Route::get('certification-programs/{program}', [CertificationProgramController::class, 'show'])->name('certification-programs.show');
+
+        Route::get('bundles', [BundleController::class, 'index'])->name('bundles.index');
+        Route::get('bundles/{bundle}', [BundleController::class, 'show'])->name('bundles.show');
     });
 
     Route::middleware(['role:affiliate|mentor|admin'])->group(function () {

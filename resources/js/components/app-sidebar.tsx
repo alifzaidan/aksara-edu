@@ -78,7 +78,7 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
             {
                 title: 'Sertifikasi Program',
                 href: '/admin/certification-programs',
-                roles: ['admin'],
+                roles: ['admin', 'affiliate'],
             } as any,
             {
                 title: 'Private Class',
@@ -137,7 +137,7 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         title: 'Paket Bundling',
         href: '/admin/bundles',
         icon: Gift,
-        roles: ['admin'],
+        roles: ['admin', 'affiliate'],
     },
     {
         title: 'Transaksi',

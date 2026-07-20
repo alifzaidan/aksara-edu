@@ -8,6 +8,9 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { LinkIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { SharedData } from '@/types';
+import { usePage } from '@inertiajs/react';
+import { useMemo } from 'react';
 
 interface Schedule {
     id: string;
@@ -57,14 +60,47 @@ interface CertificationProgram {
 }
 
 export default function CertificationProgramDetail({ program }: { program: CertificationProgram }) {
+    const { auth } = usePage<SharedData>().props;
+    const isAffiliate = auth.role.includes('affiliate');
     const getInitials = useInitials();
     const socializationSchedules =
         program.socializationSchedules ?? (program as CertificationProgram & { socialization_schedules?: Schedule[] }).socialization_schedules ?? [];
 
+    const affiliateUrls = useMemo(() => {
+        const affiliateCode = auth.user.affiliate_code;
+
+        const appendAffiliateCode = (url: string, code: string) => {
+            try {
+                const urlObj = new URL(url);
+                urlObj.searchParams.set('ref', code);
+                return urlObj.toString();
+            } catch {
+                const separator = url.includes('?') ? '&' : '?';
+                return `${url}${separator}ref=${code}`;
+            }
+        };
+
+        if (isAffiliate && affiliateCode) {
+            return {
+                registrationUrl: appendAffiliateCode(program.registration_url, affiliateCode),
+                programUrl: appendAffiliateCode(program.program_url, affiliateCode),
+            };
+        }
+
+        return {
+            registrationUrl: program.registration_url,
+            programUrl: program.program_url,
+        };
+    }, [program.registration_url, program.program_url, auth.user.affiliate_code, isAffiliate]);
+
     const handleCopyRegistrationLink = async () => {
         try {
-            await navigator.clipboard.writeText(program.registration_url);
-            toast.success('Link pendaftaran berhasil disalin!');
+            await navigator.clipboard.writeText(affiliateUrls.registrationUrl);
+            if (isAffiliate) {
+                toast.success('Link pendaftaran dengan kode afiliasi berhasil disalin!');
+            } else {
+                toast.success('Link pendaftaran berhasil disalin!');
+            }
         } catch {
             toast.error('Gagal menyalin link pendaftaran');
         }
@@ -72,8 +108,12 @@ export default function CertificationProgramDetail({ program }: { program: Certi
 
     const handleCopyProgramLink = async () => {
         try {
-            await navigator.clipboard.writeText(program.program_url);
-            toast.success('Link program berhasil disalin!');
+            await navigator.clipboard.writeText(affiliateUrls.programUrl);
+            if (isAffiliate) {
+                toast.success('Link program dengan kode afiliasi berhasil disalin!');
+            } else {
+                toast.success('Link program berhasil disalin!');
+            }
         } catch {
             toast.error('Gagal menyalin link program');
         }
@@ -113,13 +153,32 @@ export default function CertificationProgramDetail({ program }: { program: Certi
         <div className="space-y-6 rounded-lg border p-4">
             {/* Share Link Section */}
             <div>
-                <h2 className="mb-4 text-lg font-medium">Share Link untuk Menerima Pendaftaran</h2>
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-medium">Share Link untuk Menerima Pendaftaran</h2>
+                    {isAffiliate && <div className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">Mode Afiliasi</div>}
+                </div>
+
+                {/* Info banner untuk affiliate */}
+                {isAffiliate && (
+                    <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+                        <div className="flex items-start gap-3">
+                            <div className="flex-1">
+                                <h4 className="font-medium text-blue-800 dark:text-blue-200">Link Afiliasi Otomatis</h4>
+                                <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
+                                    Link di bawah sudah menyertakan kode afiliasi Anda ({auth.user.affiliate_code}). Setiap pendaftaran melalui link ini
+                                    akan memberikan komisi untuk Anda.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex flex-col gap-4 md:flex-row">
                     <div className="flex-1 space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Link Pendaftaran</label>
+                        <label className="text-sm font-medium text-gray-700">Link Pendaftaran {isAffiliate && '(dengan kode afiliasi)'}</label>
                         <Input
                             type="text"
-                            value={program.registration_url}
+                            value={affiliateUrls.registrationUrl}
                             readOnly
                             className="rounded border p-2 text-sm"
                             placeholder="Link Pendaftaran"
@@ -130,26 +189,33 @@ export default function CertificationProgramDetail({ program }: { program: Certi
                             className="w-full hover:cursor-pointer"
                             disabled={program.status === 'draft' || program.status === 'archived'}
                         >
-                            Salin Link Pendaftaran <LinkIcon className="ml-1" />
+                            {isAffiliate ? 'Salin Link Afiliasi Pendaftaran' : 'Salin Link Pendaftaran'} <LinkIcon className="ml-1" />
                         </Button>
                     </div>
                     <div className="flex-1 space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Link Program</label>
-                        <Input type="text" value={program.program_url} readOnly className="rounded border p-2 text-sm" placeholder="Link Program" />
+                        <label className="text-sm font-medium text-gray-700">Link Program {isAffiliate && '(dengan kode afiliasi)'}</label>
+                        <Input
+                            type="text"
+                            value={affiliateUrls.programUrl}
+                            readOnly
+                            className="rounded border p-2 text-sm"
+                            placeholder="Link Program"
+                        />
                         <Button
                             type="button"
                             onClick={handleCopyProgramLink}
                             className="w-full hover:cursor-pointer"
                             disabled={program.status === 'draft' || program.status === 'archived'}
                         >
-                            Salin Link Program <LinkIcon className="ml-1" />
+                            {isAffiliate ? 'Salin Link Afiliasi Program' : 'Salin Link Program'} <LinkIcon className="ml-1" />
                         </Button>
                     </div>
                 </div>
                 {program.status === 'published' || program.status === 'hidden' ? (
                     <p className="text-muted-foreground mt-3 text-center text-sm">
-                        Share link diatas ke sosial media, whatsapp, tiktok, landing page, email ataupun channel penjualan lainnya untuk menerima
-                        order dan pembayaran
+                        {isAffiliate
+                            ? 'Share link afiliasi diatas ke sosial media, whatsapp, tiktok, landing page, email ataupun channel penjualan lainnya untuk mendapatkan komisi dari setiap pendaftaran'
+                            : 'Share link diatas ke sosial media, whatsapp, tiktok, landing page, email ataupun channel penjualan lainnya untuk menerima order dan pembayaran'}
                     </p>
                 ) : (
                     <p className="mt-3 text-center text-sm text-red-500">
@@ -162,6 +228,28 @@ export default function CertificationProgramDetail({ program }: { program: Certi
                         <p className="mt-1 text-sm text-yellow-700">
                             Peserta hanya dapat mengakses program melalui link langsung, namun program ini tidak akan muncul di halaman publik.
                         </p>
+                    </div>
+                )}
+
+                {/* Detail komisi untuk affiliate */}
+                {isAffiliate && program.status === 'published' && (
+                    <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800">
+                        <h4 className="mb-2 text-sm font-medium">Detail Komisi:</h4>
+                        <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+                            <div>
+                                <span className="font-medium">Harga Program:</span> {rupiahFormatter.format(program.type === 'scholarship' ? (program.scholarship_price ?? 0) : program.price)}
+                            </div>
+                            <div>
+                                <span className="font-medium">Rate Komisi:</span> {auth.user.commission}%
+                            </div>
+                            <div>
+                                <span className="font-medium">Komisi per Penjualan:</span>{' '}
+                                {rupiahFormatter.format((program.type === 'scholarship' ? (program.scholarship_price ?? 0) : program.price) * (auth.user.commission / 100))}
+                            </div>
+                            <div>
+                                <span className="font-medium">Kode Afiliasi:</span> {auth.user.affiliate_code}
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>

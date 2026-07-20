@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminLayout from '@/layouts/admin-layout';
-import { BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
+import { BreadcrumbItem, SharedData } from '@/types';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { CircleX, Copy, EyeOff, Send, SquarePen, Trash } from 'lucide-react';
@@ -82,6 +82,10 @@ interface ShowCertificationProgramProps {
 }
 
 export default function ShowCertificationProgram({ program, applications, transactions, flash }: ShowCertificationProgramProps) {
+    const { auth } = usePage<SharedData>().props;
+    const role = auth.role[0];
+    const isAffiliate = role === 'affiliate';
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Program Sertifikasi', href: route('certification-programs.index') },
         { title: program.title, href: route('certification-programs.show', program.id) },
@@ -123,36 +127,40 @@ export default function ShowCertificationProgram({ program, applications, transa
                     <Badge className={`border-0 ${statusInfo.color}`}>{statusInfo.label}</Badge>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
+                <div className={`${!isAffiliate ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
                     {/* Main Content */}
                     <div className="lg:col-span-2">
                         <Tabs defaultValue="detail">
                             <TabsList>
                                 <TabsTrigger value="detail">Detail</TabsTrigger>
-                                <TabsTrigger value="pendaftar">
-                                    Pendaftar
-                                    {applications.length > 0 && (
-                                        <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">
-                                            {approvedApplications.length}/{applications.length}
-                                        </span>
-                                    )}
-                                </TabsTrigger>
-                                <TabsTrigger value="transaksi">
-                                    Transaksi
-                                    {transactions.length > 0 && (
-                                        <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">
-                                            {paidTransactionsCount}/{transactions.length}
-                                        </span>
-                                    )}
-                                </TabsTrigger>
-                                <TabsTrigger value="rekaman">
-                                    Rekaman
-                                    {totalSchedules > 0 && (
-                                        <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">
-                                            {uploadedRecordings}/{totalSchedules}
-                                        </span>
-                                    )}
-                                </TabsTrigger>
+                                {!isAffiliate && (
+                                    <>
+                                        <TabsTrigger value="pendaftar">
+                                            Pendaftar
+                                            {applications.length > 0 && (
+                                                <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">
+                                                    {approvedApplications.length}/{applications.length}
+                                                </span>
+                                            )}
+                                        </TabsTrigger>
+                                        <TabsTrigger value="transaksi">
+                                            Transaksi
+                                            {transactions.length > 0 && (
+                                                <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">
+                                                    {paidTransactionsCount}/{transactions.length}
+                                                </span>
+                                            )}
+                                        </TabsTrigger>
+                                        <TabsTrigger value="rekaman">
+                                            Rekaman
+                                            {totalSchedules > 0 && (
+                                                <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">
+                                                    {uploadedRecordings}/{totalSchedules}
+                                                </span>
+                                            )}
+                                        </TabsTrigger>
+                                    </>
+                                )}
                             </TabsList>
 
                             <TabsContent value="detail">
@@ -179,58 +187,60 @@ export default function ShowCertificationProgram({ program, applications, transa
                     </div>
 
                     {/* Sidebar Actions */}
-                    <div>
-                        <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
-                        <div className="space-y-4 rounded-lg border p-4">
-                            {/* Publish / Hide / Archive actions */}
-                            {(program.status === 'draft' || program.status === 'archived' || program.status === 'hidden') && (
-                                <Button asChild className="w-full">
-                                    <Link method="post" href={route('certification-programs.publish', { program: program.id })}>
-                                        <Send /> Terbitkan
-                                    </Link>
-                                </Button>
-                            )}
-                            {program.status === 'published' && (
-                                <Button asChild className="w-full">
-                                    <Link method="post" href={route('certification-programs.hidden', { program: program.id })}>
-                                        <EyeOff /> Sembunyikan
-                                    </Link>
-                                </Button>
-                            )}
-                            {(program.status === 'published' || program.status === 'hidden') && (
-                                <Button asChild className="w-full">
-                                    <Link method="post" href={route('certification-programs.archive', { program: program.id })}>
-                                        <CircleX /> Tutup
-                                    </Link>
-                                </Button>
-                            )}
+                    {!isAffiliate && (
+                        <div>
+                            <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
+                            <div className="space-y-4 rounded-lg border p-4">
+                                {/* Publish / Hide / Archive actions */}
+                                {(program.status === 'draft' || program.status === 'archived' || program.status === 'hidden') && (
+                                    <Button asChild className="w-full">
+                                        <Link method="post" href={route('certification-programs.publish', { program: program.id })}>
+                                            <Send /> Terbitkan
+                                        </Link>
+                                    </Button>
+                                )}
+                                {program.status === 'published' && (
+                                    <Button asChild className="w-full">
+                                        <Link method="post" href={route('certification-programs.hidden', { program: program.id })}>
+                                            <EyeOff /> Sembunyikan
+                                        </Link>
+                                    </Button>
+                                )}
+                                {(program.status === 'published' || program.status === 'hidden') && (
+                                    <Button asChild className="w-full">
+                                        <Link method="post" href={route('certification-programs.archive', { program: program.id })}>
+                                            <CircleX /> Tutup
+                                        </Link>
+                                    </Button>
+                                )}
 
-                            <Separator />
+                                <Separator />
 
-                            <div className="space-y-2">
-                                <Button asChild className="w-full" variant="secondary">
-                                    <Link href={route('certification-programs.edit', program.id)}>
-                                        <SquarePen /> Edit
-                                    </Link>
-                                </Button>
-                                <Button asChild className="w-full" variant="secondary">
-                                    <Link method="post" href={route('certification-programs.duplicate', { program: program.id })}>
-                                        <Copy /> Duplicate
-                                    </Link>
-                                </Button>
-                                <DeleteConfirmDialog
-                                    trigger={
-                                        <Button variant="destructive" className="w-full">
-                                            <Trash /> Hapus
-                                        </Button>
-                                    }
-                                    title="Apakah Anda yakin ingin menghapus program ini?"
-                                    itemName={program.title}
-                                    onConfirm={handleDelete}
-                                />
+                                <div className="space-y-2">
+                                    <Button asChild className="w-full" variant="secondary">
+                                        <Link href={route('certification-programs.edit', program.id)}>
+                                            <SquarePen /> Edit
+                                        </Link>
+                                    </Button>
+                                    <Button asChild className="w-full" variant="secondary">
+                                        <Link method="post" href={route('certification-programs.duplicate', { program: program.id })}>
+                                            <Copy /> Duplicate
+                                        </Link>
+                                    </Button>
+                                    <DeleteConfirmDialog
+                                        trigger={
+                                            <Button variant="destructive" className="w-full">
+                                                <Trash /> Hapus
+                                            </Button>
+                                        }
+                                        title="Apakah Anda yakin ingin menghapus program ini?"
+                                        itemName={program.title}
+                                        onConfirm={handleDelete}
+                                    />
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 <div className="mt-4 rounded-lg border p-4">

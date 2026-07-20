@@ -2,8 +2,8 @@
 
 import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/admin-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { type BreadcrumbItem, SharedData } from '@/types';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { Award, BookOpen, ChevronDown, ChevronUp, GraduationCap, Plus, TrendingUp, Users, Video } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -41,6 +41,8 @@ interface CertificationProgramsProps {
 }
 
 export default function CertificationPrograms({ programs, statistics, flash }: CertificationProgramsProps) {
+    const { auth } = usePage<SharedData>().props;
+    const isAffiliate = auth.role.includes('affiliate');
     const [showMoreStats, setShowMoreStats] = useState(false);
 
     useEffect(() => {
@@ -61,20 +63,22 @@ export default function CertificationPrograms({ programs, statistics, flash }: C
                         <h1 className="text-2xl font-semibold">Program Sertifikasi</h1>
                         <p className="text-muted-foreground text-sm">Ringkasan dan daftar semua program sertifikasi.</p>
                     </div>
-                    <div className="flex gap-2">
-                        <Button asChild variant="outline">
-                            <Link href={route('certification-programs.create', { type: 'scholarship' })}>
-                                <Plus />
-                                Beasiswa
-                            </Link>
-                        </Button>
-                        <Button asChild className="hover:cursor-pointer">
-                            <Link href={route('certification-programs.create', { type: 'regular' })}>
-                                <Plus />
-                                Reguler
-                            </Link>
-                        </Button>
-                    </div>
+                    {!isAffiliate && (
+                        <div className="flex gap-2">
+                            <Button asChild variant="outline">
+                                <Link href={route('certification-programs.create', { type: 'scholarship' })}>
+                                    <Plus />
+                                    Beasiswa
+                                </Link>
+                            </Button>
+                            <Button asChild className="hover:cursor-pointer">
+                                <Link href={route('certification-programs.create', { type: 'regular' })}>
+                                    <Plus />
+                                    Reguler
+                                </Link>
+                            </Button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Statistics Cards */}
