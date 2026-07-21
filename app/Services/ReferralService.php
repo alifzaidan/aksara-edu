@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Models\Invoice;
+use App\Models\Setting;
 
 class ReferralService
 {
@@ -63,16 +64,18 @@ class ReferralService
             // }
 
             // Check if it is the user's first purchase
-            $hasPaidInvoice = Invoice::where('user_id', $user->id)
-                ->where('status', 'paid')
-                ->exists();
+            if (Setting::get('referral_only_first_purchase', true)) {
+                $hasPaidInvoice = Invoice::where('user_id', $user->id)
+                    ->where('status', 'paid')
+                    ->exists();
 
-            if ($hasPaidInvoice) {
-                return [
-                    'valid' => false,
-                    'message' => 'Referral hanya berlaku untuk pembelian pertama Anda.',
-                    'referrer' => null
-                ];
+                if ($hasPaidInvoice) {
+                    return [
+                        'valid' => false,
+                        'message' => 'Referral hanya berlaku untuk pembelian pertama Anda.',
+                        'referrer' => null
+                    ];
+                }
             }
         } else {
             // If email is provided but no user exists in the DB, it's a guest registration.
