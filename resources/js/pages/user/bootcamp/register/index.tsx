@@ -69,6 +69,8 @@ interface PendingCheckoutData {
     isFree: boolean;
     codeType?: 'voucher' | 'referral';
     referralValid?: boolean;
+    pointsChecked?: boolean;
+    pointsToUse?: number;
 }
 
 function parseList(items?: string | null): string[] {
@@ -302,11 +304,18 @@ export default function RegisterBootcamp({
                         instance: data.instance || prev.instance,
                         city: data.city || prev.city,
                     }));
+                    setUserPoints(data.point_balance || 0);
                 } else {
                     setEmailExists(false);
+                    setUserPoints(0);
+                    setPointsChecked(false);
+                    setPointsToUse(0);
                 }
             } catch {
                 setEmailExists(false);
+                setUserPoints(0);
+                setPointsChecked(false);
+                setPointsToUse(0);
             } finally {
                 setCheckingEmail(false);
             }
@@ -345,6 +354,8 @@ export default function RegisterBootcamp({
             isFree,
             codeType,
             referralValid: codeType === 'referral' && !!referralData?.valid,
+            pointsChecked,
+            pointsToUse,
         };
 
         sessionStorage.setItem('pendingCheckout', JSON.stringify(pendingCheckoutData));
@@ -427,13 +438,15 @@ export default function RegisterBootcamp({
             overrideCodeType?: 'voucher' | 'referral',
             overridePromoCode?: string,
             overrideReferralValid?: boolean,
+            overridePointsChecked?: boolean,
+            overridePointsToUse?: number,
             retryCount = 0
         ): Promise<void> => {
             const originalDiscountAmount = bootcamp.strikethrough_price > 0 ? bootcamp.strikethrough_price - bootcamp.price : 0;
             const promoDiscountAmount = activeDiscountData?.discount_amount || 0;
             const activeFinalPrice = basePrice - promoDiscountAmount;
             
-            const pointsDeduction = pointsChecked ? pointsToUse : 0;
+            const pointsDeduction = overridePointsChecked !== undefined ? (overridePointsChecked ? (overridePointsToUse || 0) : 0) : (pointsChecked ? pointsToUse : 0);
             const finalNettAmount = activeFinalPrice - pointsDeduction;
             const activeTotalPrice = isFree ? 0 : finalNettAmount + transactionFee;
 
@@ -476,7 +489,15 @@ export default function RegisterBootcamp({
 
                 if (res.status === 419 && retryCount < 2) {
                     await refreshCSRFToken();
-                    return submitPayment(activeDiscountData, undefined, undefined, undefined, retryCount + 1);
+                    return submitPayment(
+                        activeDiscountData,
+                        overrideCodeType,
+                        overridePromoCode,
+                        overrideReferralValid,
+                        overridePointsChecked,
+                        overridePointsToUse,
+                        retryCount + 1
+                    );
                 }
 
                 const data = await res.json();
@@ -601,6 +622,13 @@ export default function RegisterBootcamp({
                 setReferralData({ valid: true });
             }
 
+            if (pendingCheckout.pointsChecked) {
+                setPointsChecked(true);
+            }
+            if (pendingCheckout.pointsToUse) {
+                setPointsToUse(pendingCheckout.pointsToUse);
+            }
+
             setDiscountData(pendingCheckout.discountData || null);
             setTermsAccepted(pendingCheckout.termsAccepted || false);
 
@@ -616,7 +644,9 @@ export default function RegisterBootcamp({
                 pendingCheckout.discountData || null,
                 pendingCheckout.codeType,
                 pendingCheckout.promoCode,
-                pendingCheckout.referralValid
+                pendingCheckout.referralValid,
+                pendingCheckout.pointsChecked,
+                pendingCheckout.pointsToUse
             ).catch((error: unknown) => {
                 console.error('Pending checkout error:', error);
                 toast.error(getErrorMessage(error, 'Gagal melanjutkan checkout.'));
@@ -990,7 +1020,7 @@ export default function RegisterBootcamp({
                                         </div>
 
                                         {/* Point Reward/Redeem Section */}
-                                        {isLoggedIn && userPoints > 0 && (
+                                        {(isLoggedIn || emailExists) && userPoints > 0 && (
                                             <div className="space-y-4 rounded-lg border p-4">
                                                 <div className="flex items-center justify-between">
                                                     <div className="space-y-0.5">
