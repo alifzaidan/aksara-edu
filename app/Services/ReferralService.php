@@ -53,14 +53,14 @@ class ReferralService
                 ];
             }
 
-            // Check if user already has a permanent referrer assigned
-            if ($user->referred_by_user_id) {
-                return [
-                    'valid' => false,
-                    'message' => 'Anda sudah terdaftar menggunakan referral lain sebelumnya.',
-                    'referrer' => null
-                ];
-            }
+            // // Check if user already has a permanent referrer assigned
+            // if ($user->referred_by_user_id) {
+            //     return [
+            //         'valid' => false,
+            //         'message' => 'Anda sudah terdaftar menggunakan referral lain sebelumnya.',
+            //         'referrer' => null
+            //     ];
+            // }
 
             // Check if it is the user's first purchase
             $hasPaidInvoice = Invoice::where('user_id', $user->id)
