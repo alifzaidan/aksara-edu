@@ -225,11 +225,22 @@ class CertificationProgramController extends Controller
             ? 'admin/certification-programs/edit-scholarship'
             : 'admin/certification-programs/edit-regular';
 
-        return Inertia::render($view, [
+        $data = [
             'program' => $program,
             'categories' => $categories,
             'mentors' => $mentors,
-        ]);
+        ];
+
+        if ($program->type === 'scholarship') {
+            $data['regular_programs'] = CertificationProgram::where('type', 'regular')
+                ->with(['schedules' => function ($q) {
+                    $q->orderBy('schedule_date');
+                }])
+                ->orderByRaw('CAST(batch AS UNSIGNED) ASC')
+                ->get(['id', 'title', 'batch']);
+        }
+
+        return Inertia::render($view, $data);
     }
 
     public function update(Request $request, string $id)

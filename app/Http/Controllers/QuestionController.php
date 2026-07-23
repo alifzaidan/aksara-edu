@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\QuestionExport;
 use App\Imports\QuestionImport;
 use App\Models\Course;
 use App\Models\Question;
 use App\Models\Quiz;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
@@ -263,5 +265,11 @@ class QuestionController extends Controller
                 ->with('error', 'Import gagal! ' . $e->getMessage())
                 ->withInput();
         }
+    }
+
+    public function export(Course $course, Quiz $quiz)
+    {
+        $filename = 'Export_Soal_' . Str::slug($quiz->title, '_') . '.xlsx';
+        return Excel::download(new QuestionExport($quiz->id), $filename);
     }
 }

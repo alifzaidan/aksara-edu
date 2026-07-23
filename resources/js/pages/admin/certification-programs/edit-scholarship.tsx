@@ -9,6 +9,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useInitials } from '@/hooks/use-initials';
 import AdminLayout from '@/layouts/admin-layout';
@@ -43,6 +44,20 @@ interface Schedule {
     end_time: string;
 }
 
+interface RegularProgram {
+    id: string;
+    title: string;
+    batch: string | null;
+    schedules: {
+        id?: string;
+        title?: string;
+        schedule_date: string;
+        day: string;
+        start_time: string;
+        end_time: string;
+    }[];
+}
+
 interface Program {
     id: string;
     title: string;
@@ -71,6 +86,7 @@ interface EditScholarshipProps {
     program: Program;
     categories: Category[];
     mentors: Mentor[];
+    regular_programs?: RegularProgram[];
 }
 
 const formSchema = z
@@ -210,7 +226,12 @@ function DeadlineField({
     );
 }
 
-export default function EditScholarshipCertificationProgram({ program, categories, mentors }: EditScholarshipProps) {
+export default function EditScholarshipCertificationProgram({
+    program,
+    categories,
+    mentors,
+    regular_programs = [],
+}: EditScholarshipProps) {
     const socializationSchedules =
         program.socializationSchedules ?? (program as Program & { socialization_schedules?: Schedule[] }).socialization_schedules ?? [];
 
@@ -222,6 +243,7 @@ export default function EditScholarshipCertificationProgram({ program, categorie
 
     const [preview, setPreview] = useState<string | null>(program.thumbnail ? `/storage/${program.thumbnail}` : null);
     const [thumbnailError, setThumbnailError] = useState(false);
+    const [selectedRegularProgramId, setSelectedRegularProgramId] = useState('');
     const [schedules, setSchedules] = useState<BootcampSchedule[]>(
         (program.schedules ?? []).map((s) => ({
             id: s.id,
@@ -269,6 +291,12 @@ export default function EditScholarshipCertificationProgram({ program, categorie
             socialization_group_url: program.socialization_group_url ?? '',
             status: program.status,
         },
+    });
+
+    const scholarshipBatch = parseInt(form.watch('batch') ?? '', 10);
+    const filteredRegularPrograms = regular_programs.filter((p) => {
+        const regularBatch = parseInt(p.batch ?? '', 10);
+        return !isNaN(scholarshipBatch) && !isNaN(regularBatch) && regularBatch > scholarshipBatch;
     });
 
     function onSubmit(values: FormValues) {
@@ -591,19 +619,84 @@ export default function EditScholarshipCertificationProgram({ program, categorie
                                         </div>
                                     )}
 
-                                    <FormField
-                                        control={form.control}
-                                        name="batch"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Batch</FormLabel>
-                                                <FormControl>
-                                                    <Input placeholder="e.g., 22" {...field} value={field.value || ''} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <FormField
+                                            control={form.control}
+                                            name="batch"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Batch</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            placeholder="e.g., 22"
+                                                            {...field}
+                                                            value={field.value || ''}
+                                                            onChange={(e) => {
+                                                                field.onChange(e);
+                                                                // Reset pilihan program regular jika batch berubah
+                                                                setSelectedRegularProgramId('');
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <div className="space-y-2">
+                                            <Label className="text-sm font-medium">
+                                                Ambil Jadwal Pelaksanaan dari Program Regular
+                                            </Label>
+                                            <Select
+                                                value={selectedRegularProgramId}
+                                                onValueChange={(val) => {
+                                                    setSelectedRegularProgramId(val);
+                                                    const chosen = regular_programs.find((p) => p.id === val);
+                                                    if (chosen) {
+                                                        const mapped: BootcampSchedule[] = chosen.schedules.map((s) => ({
+                                                            id: undefined,
+                                                            title: s.title ?? '',
+                                                            schedule_date: s.schedule_date,
+                                                            day: s.day,
+                                                            start_time: s.start_time,
+                                                            end_time: s.end_time,
+                                                        }));
+                                                        setSchedules(mapped);
+                                                    }
+                                                }}
+                                                disabled={isNaN(scholarshipBatch) || filteredRegularPrograms.length === 0}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue
+                                                        placeholder={
+                                                            isNaN(scholarshipBatch)
+                                                                ? 'Isi batch dulu'
+                                                                : filteredRegularPrograms.length === 0
+                                                                  ? 'Tidak ada program'
+                                                                  : 'Pilih program regular'
+                                                        }
+                                                    />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {filteredRegularPrograms.map((p) => (
+                                                        <SelectItem key={p.id} value={p.id}>
+                                                            {p.title} {p.batch ? `(Batch ${p.batch})` : ''}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            {selectedRegularProgramId && (
+                                                <p className="text-muted-foreground text-xs">
+                                                    ✓ Jadwal pelaksanaan telah diisi otomatis. Anda masih bisa mengeditnya.
+                                                </p>
+                                            )}
+                                            {!isNaN(scholarshipBatch) && filteredRegularPrograms.length === 0 && (
+                                                <p className="text-muted-foreground text-xs">
+                                                    Tidak ada program regular dengan batch &gt; {scholarshipBatch}.
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
 
                                     <FormField
                                         control={form.control}
