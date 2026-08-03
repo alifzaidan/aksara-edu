@@ -99,7 +99,17 @@ class InvoiceController extends Controller
 
         // Apply product type filter
         if ($productType && !empty($productType)) {
-            $invoicesQuery->whereHas($productType . 'Items');
+            $relationMap = [
+                'course' => 'courseItems',
+                'bootcamp' => 'bootcampItems',
+                'webinar' => 'webinarItems',
+                'private' => 'privateItems',
+                'bundle' => 'bundleEnrollments',
+                'certification_program' => 'certificationProgramItems',
+                'certification' => 'certificationProgramItems',
+            ];
+            $relation = $relationMap[$productType] ?? (\Illuminate\Support\Str::camel($productType) . 'Items');
+            $invoicesQuery->whereHas($relation);
         }
 
         // Get filtered invoices
