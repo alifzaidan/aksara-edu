@@ -253,10 +253,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('broadcasts/{broadcast}/filtered-users', [BroadcastController::class, 'filteredUsers'])->name('broadcasts.filtered-users');
         Route::post('broadcasts/{broadcast}/send', [BroadcastController::class, 'send'])->name('broadcasts.send');
         Route::post('broadcasts/{broadcast}/send-single', [BroadcastController::class, 'sendSingle'])->name('broadcasts.send-single');
-        Route::resource('certificates', CertificateController::class);
-        Route::get('/{certificate}/preview', [CertificateController::class, 'preview'])->name('certificates.preview');
-        Route::get('/{certificate}/download-all', [CertificateController::class, 'downloadAll'])->name('certificates.download.all');
-        Route::get('/participant/{participant}/download', [CertificateController::class, 'downloadParticipant'])->name('certificates.participant.download');
+        Route::resource('certificates', CertificateController::class)->except(['show']);
         Route::get('/certificates/{certificate}/download-grades-template', [CertificateController::class, 'downloadGradesTemplate'])->name('certificates.download-grades-template');
         Route::post('/certificates/{certificate}/import-grades', [CertificateController::class, 'importGrades'])->name('certificates.import-grades');
         Route::get('/certificates/{certificate}/download-participants-template', [CertificateController::class, 'downloadParticipantsTemplate'])->name('certificates.download-participants-template');
@@ -264,7 +261,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::resource('certificate-designs', CertificateDesignController::class);
         Route::resource('certificate-signs', CertificateSignController::class);
 
-        Route::resource('bootcamps', BootcampController::class);
+        Route::resource('bootcamps', BootcampController::class)->except(['index', 'show']);
         Route::post('/bootcamps/{bootcamp}/publish', [BootcampController::class, 'publish'])->name('bootcamps.publish');
         Route::post('/bootcamps/{bootcamp}/archive', [BootcampController::class, 'archive'])->name('bootcamps.archive');
         Route::post('/bootcamps/{bootcamp}/duplicate', [BootcampController::class, 'duplicate'])->name('bootcamps.duplicate');
@@ -272,7 +269,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/bootcamps/{bootcamp}/schedules/{schedule}/recording', [BootcampController::class, 'addScheduleRecording'])->name('bootcamps.add-recording');
         Route::delete('/bootcamps/{bootcamp}/schedules/{schedule}/recording', [BootcampController::class, 'removeScheduleRecording'])->name('bootcamps.remove-recording');
 
-        Route::resource('certification-programs', CertificationProgramController::class);
+        Route::resource('certification-programs', CertificationProgramController::class)->except(['index', 'show']);
         Route::post('/certification-programs/{program}/publish', [CertificationProgramController::class, 'publish'])->name('certification-programs.publish');
         Route::post('/certification-programs/{program}/archive', [CertificationProgramController::class, 'archive'])->name('certification-programs.archive');
         Route::post('/certification-programs/{program}/hidden', [CertificationProgramController::class, 'hidden'])->name('certification-programs.hidden');
@@ -286,19 +283,19 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/certification-programs/{program}/scholarship-applications/{application}/reject', [CertificationProgramController::class, 'rejectScholarshipApplication'])->name('certification-programs.scholarship-applications.reject');
         Route::post('/certification-programs/{program}/duplicate', [CertificationProgramController::class, 'duplicate'])->name('certification-programs.duplicate');
 
-        Route::resource('webinars', WebinarController::class);
+        Route::resource('webinars', WebinarController::class)->except(['index', 'show']);
         Route::post('/webinars/{webinar}/publish', [WebinarController::class, 'publish'])->name('webinars.publish');
         Route::post('/webinars/{webinar}/archive', [WebinarController::class, 'archive'])->name('webinars.archive');
         Route::post('/webinars/{webinar}/duplicate', [WebinarController::class, 'duplicate'])->name('webinars.duplicate');
         Route::patch('webinars/{webinar}/add-recording', [WebinarController::class, 'addRecording'])->name('webinars.add-recording');
         Route::delete('/webinars/{id}/recording', [WebinarController::class, 'removeRecording'])->name('webinars.recording.remove');
 
-        Route::resource('privates', PrivateClassController::class);
+        Route::resource('privates', PrivateClassController::class)->except(['index', 'show']);
         Route::post('/privates/{private}/publish', [PrivateClassController::class, 'publish'])->name('privates.publish');
         Route::post('/privates/{private}/archive', [PrivateClassController::class, 'archive'])->name('privates.archive');
         Route::post('/privates/{private}/duplicate', [PrivateClassController::class, 'duplicate'])->name('privates.duplicate');
 
-        Route::resource('bundles', BundleController::class);
+        Route::resource('bundles', BundleController::class)->except(['index', 'show']);
         Route::post('/bundles/{bundle}/publish', [BundleController::class, 'publish'])->name('bundles.publish');
         Route::post('/bundles/{bundle}/archive', [BundleController::class, 'archive'])->name('bundles.archive');
         Route::post('/bundles/{bundle}/duplicate', [BundleController::class, 'duplicate'])->name('bundles.duplicate');
@@ -350,6 +347,11 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
 
         Route::get('bundles', [BundleController::class, 'index'])->name('bundles.index');
         Route::get('bundles/{bundle}', [BundleController::class, 'show'])->name('bundles.show');
+
+        Route::get('certificates/{certificate}', [CertificateController::class, 'show'])->name('certificates.show');
+        Route::get('/{certificate}/preview', [CertificateController::class, 'preview'])->name('certificates.preview');
+        Route::get('/{certificate}/download-all', [CertificateController::class, 'downloadAll'])->name('certificates.download.all');
+        Route::get('/participant/{participant}/download', [CertificateController::class, 'downloadParticipant'])->name('certificates.participant.download');
     });
 
     Route::middleware(['role:affiliate|mentor|admin'])->group(function () {

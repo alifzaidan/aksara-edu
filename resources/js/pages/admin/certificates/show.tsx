@@ -4,8 +4,8 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminLayout from '@/layouts/admin-layout';
-import { BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
+import { BreadcrumbItem, SharedData } from '@/types';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Download, Eye, SquarePen, Trash } from 'lucide-react';
@@ -64,12 +64,14 @@ interface CertificateProps {
 }
 
 export default function ShowCertificate({ certificate, flash }: CertificateProps) {
+    const { auth } = usePage<SharedData>().props;
+    const isAffiliate = auth.role.includes('affiliate');
     const [isLoading, setIsLoading] = useState(true);
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Sertifikat',
-            href: route('certificates.index'),
+            href: isAffiliate ? route('certification-programs.index') : route('certificates.index'),
         },
         {
             title: certificate.title,
@@ -128,7 +130,8 @@ export default function ShowCertificate({ certificate, flash }: CertificateProps
                             </Button>
 
                             <Separator />
-
+                            {!isAffiliate && (
+                                <>
                             <div className="space-y-2">
                                 <Button asChild className="w-full" variant="secondary">
                                     <Link href={route('certificates.edit', { certificate: certificate.id })}>
@@ -151,6 +154,8 @@ export default function ShowCertificate({ certificate, flash }: CertificateProps
                                     onConfirm={handleDelete}
                                 />
                             </div>
+                            </>
+                            )}
                         </div>
 
                         <div className="mt-4 space-y-4 rounded-lg border p-4">
