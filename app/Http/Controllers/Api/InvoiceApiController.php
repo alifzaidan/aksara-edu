@@ -30,8 +30,24 @@ class InvoiceApiController extends Controller
                 'courseItems.course:id,title,slug,price,thumbnail',
                 'bootcampItems.bootcamp:id,title,slug,price,thumbnail',
                 'webinarItems.webinar:id,title,slug,price,thumbnail',
-                'bundleEnrollments.bundle:id,title,slug,price,thumbnail'
+                'bundleEnrollments.bundle:id,title,slug,price,thumbnail',
+                'privateItems.privateClass:id,title,slug,price,thumbnail',
+                'certificationProgramItems.certificationProgram:id,title,slug,price,thumbnail',
             ]);
+
+        // Filter by product_type
+        if ($request->has('product_type') && $request->product_type) {
+            $type = $request->product_type;
+            match ($type) {
+                'course' => $query->whereHas('courseItems'),
+                'bootcamp' => $query->whereHas('bootcampItems'),
+                'webinar' => $query->whereHas('webinarItems'),
+                'bundle' => $query->whereHas('bundleEnrollments'),
+                'private' => $query->whereHas('privateItems'),
+                'certification_program', 'certification' => $query->whereHas('certificationProgramItems'),
+                default => null,
+            };
+        }
 
         // By default return all statuses, but allow explicit status filter.
         if (!empty($validated['status'])) {
@@ -146,7 +162,9 @@ class InvoiceApiController extends Controller
                 'courseItems.course:id,title,slug,price,thumbnail',
                 'bootcampItems.bootcamp:id,title,slug,price,thumbnail',
                 'webinarItems.webinar:id,title,slug,price,thumbnail',
-                'bundleEnrollments.bundle:id,title,slug,price,thumbnail'
+                'bundleEnrollments.bundle:id,title,slug,price,thumbnail',
+                'privateItems.privateClass:id,title,slug,price,thumbnail',
+                'certificationProgramItems.certificationProgram:id,title,slug,price,thumbnail',
             ])->find($id);
 
         if (!$invoice) {
@@ -404,6 +422,38 @@ class InvoiceApiController extends Controller
             }
         }
 
+        // Check for private items
+        if ($invoice->privateItems && $invoice->privateItems->count() > 0) {
+            $productType = $productType ?? 'private';
+            foreach ($invoice->privateItems as $item) {
+                $products[] = [
+                    'type' => 'private',
+                    'type_label' => 'Private Class',
+                    'id' => $item->privateClass->id ?? null,
+                    'title' => $item->privateClass->title ?? null,
+                    'slug' => $item->privateClass->slug ?? null,
+                    'price' => $item->privateClass->price ?? null,
+                    'thumbnail' => $item->privateClass->thumbnail ?? null,
+                ];
+            }
+        }
+
+        // Check for certification program items
+        if ($invoice->certificationProgramItems && $invoice->certificationProgramItems->count() > 0) {
+            $productType = $productType ?? 'certification_program';
+            foreach ($invoice->certificationProgramItems as $item) {
+                $products[] = [
+                    'type' => 'certification_program',
+                    'type_label' => 'Program Sertifikasi',
+                    'id' => $item->certificationProgram->id ?? null,
+                    'title' => $item->certificationProgram->title ?? null,
+                    'slug' => $item->certificationProgram->slug ?? null,
+                    'price' => $item->certificationProgram->price ?? null,
+                    'thumbnail' => $item->certificationProgram->thumbnail ?? null,
+                ];
+            }
+        }
+
         return [
             'id' => $invoice->id,
             'invoice_code' => $invoice->invoice_code,
@@ -444,6 +494,8 @@ class InvoiceApiController extends Controller
             'bootcamp' => 'Bootcamp',
             'webinar' => 'Webinar',
             'bundle' => 'Bundle',
+            'private' => 'Private Class',
+            'certification_program', 'certification' => 'Program Sertifikasi',
             default => 'Unknown',
         };
     }

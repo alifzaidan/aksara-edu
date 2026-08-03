@@ -238,6 +238,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::put('/questions/{question}', [QuestionController::class, 'update'])->name('questions.update');
         Route::delete('/questions/{question}', [QuestionController::class, 'destroy'])->name('questions.destroy');
         Route::post('/questions/import', [QuestionController::class, 'import'])->name('questions.import');
+        Route::get('/courses/{course}/quizzes/{quiz}/export', [QuestionController::class, 'export'])->name('questions.export');
 
         Route::resource('articles', ArticleController::class);
         Route::post('/articles/{article}/duplicate', [ArticleController::class, 'duplicate'])->name('articles.duplicate');

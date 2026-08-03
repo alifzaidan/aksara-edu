@@ -8,7 +8,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Download, FileUp, LoaderCircle, Plus, Upload } from 'lucide-react';
+import { Download, FileOutput, FileUp, LoaderCircle, Plus, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import QuizQuestion from './show-questions';
@@ -132,21 +132,21 @@ export default function Quizzes({ course, quiz, submissions = [], flash }: Quizz
                                     <Plus />
                                 </Link>
                             </Button>
-                            <div className="mt-2 flex items-center justify-between gap-2">
+                            <div className="mt-2 grid grid-cols-3 gap-2">
                                 <Button
                                     variant="outline"
                                     asChild
-                                    className="w-full border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700"
+                                    className="w-full border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 text-xs px-2 sm:text-sm"
                                 >
                                     <a href="/assets/templates/template_import_soal.xlsx" className="">
-                                        <Download className="h-4 w-4" />
+                                        <Download className="mr-1 h-4 w-4" />
                                         Template
                                     </a>
                                 </Button>
                                 <Dialog open={importModalOpen} onOpenChange={setImportModalOpen}>
                                     <DialogTrigger asChild>
-                                        <Button variant="outline" className="w-full">
-                                            <FileUp className="mr-2 h-4 w-4" />
+                                        <Button variant="outline" className="w-full text-xs px-2 sm:text-sm">
+                                            <FileUp className="mr-1 h-4 w-4" />
                                             Import
                                         </Button>
                                     </DialogTrigger>
@@ -211,6 +211,16 @@ export default function Quizzes({ course, quiz, submissions = [], flash }: Quizz
                                         </form>
                                     </DialogContent>
                                 </Dialog>
+                                <Button
+                                    variant="outline"
+                                    asChild
+                                    className="w-full border-green-200 bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 text-xs px-2 sm:text-sm"
+                                >
+                                    <a href={route('questions.export', { course: course.id, quiz: quiz.id })}>
+                                        <FileOutput className="mr-1 h-4 w-4" />
+                                        Export
+                                    </a>
+                                </Button>
                             </div>
                             <h3 className="mt-4 text-lg font-semibold">{quiz.title}</h3>
                             <p className="text-muted-foreground text-sm">
