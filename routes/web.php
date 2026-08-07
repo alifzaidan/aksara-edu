@@ -329,6 +329,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('referral/settings', [App\Http\Controllers\Admin\ReferralAdminController::class, 'updateSettings'])->name('admin.referral.settings.update');
         Route::get('referral/report', [App\Http\Controllers\Admin\ReferralAdminController::class, 'report'])->name('admin.referral.report');
         Route::get('referral/transactions', [App\Http\Controllers\Admin\ReferralAdminController::class, 'transactions'])->name('admin.referral.transactions');
+        Route::get('referral/search-users', [App\Http\Controllers\Admin\ReferralAdminController::class, 'searchUsers'])->name('admin.referral.search-users');
         Route::post('referral/adjust-points', [App\Http\Controllers\Admin\ReferralAdminController::class, 'adjustPoints'])->name('admin.referral.adjust-points');
     });
 

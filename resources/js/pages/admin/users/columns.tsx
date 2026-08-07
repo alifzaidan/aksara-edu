@@ -22,6 +22,8 @@ export type User = {
     phone_number: string;
     instance: string;
     city?: string | null;
+    referral_code?: string | null;
+    point_balance?: number;
     email_verified_at: string | null;
     created_at: string;
     courses_count: number;
@@ -98,6 +100,36 @@ export const columns: ColumnDef<User>[] = [
         header: ({ column }) => <DataTableColumnHeader column={column} title="Kota Domisili" />,
         cell: ({ row }) => {
             return <p className="text-sm">{row.original.city || '-'}</p>;
+        },
+    },
+    {
+        accessorKey: 'referral_code',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Kode Referral" />,
+        cell: ({ row }) => {
+            const code = row.original.referral_code;
+            return (
+                <div className="font-mono text-xs font-semibold">
+                    {code ? (
+                        <Badge variant="outline" className="bg-muted/50 font-mono text-xs">
+                            {code}
+                        </Badge>
+                    ) : (
+                        <span className="text-gray-400 font-normal">-</span>
+                    )}
+                </div>
+            );
+        },
+    },
+    {
+        accessorKey: 'point_balance',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Poin" />,
+        cell: ({ row }) => {
+            const points = row.original.point_balance ?? 0;
+            return (
+                <div className="font-mono text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                    {points.toLocaleString('id-ID')}
+                </div>
+            );
         },
     },
     {
