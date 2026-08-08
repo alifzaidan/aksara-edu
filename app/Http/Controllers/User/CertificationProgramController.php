@@ -315,6 +315,8 @@ class CertificationProgramController extends Controller
             'instagram_follow_photo' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
             'tiktok_follow_photo' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
             'comment_tag_photo' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
+            'whatsapp_share_photo' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
+            'instagram_story_photo' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
         ]);
 
         $ktmPath = $request->file('ktm_photo')->store('certification-programs/scholarships/ktm', 'public');
@@ -322,6 +324,8 @@ class CertificationProgramController extends Controller
         $instagramPath = $request->file('instagram_follow_photo')->store('certification-programs/scholarships/instagram', 'public');
         $tiktokPath = $request->file('tiktok_follow_photo')->store('certification-programs/scholarships/tiktok', 'public');
         $commentPath = $request->file('comment_tag_photo')->store('certification-programs/scholarships/comment', 'public');
+        $waSharePath = $request->file('whatsapp_share_photo')->store('certification-programs/scholarships/whatsapp', 'public');
+        $igStoryPath = $request->file('instagram_story_photo')->store('certification-programs/scholarships/story', 'public');
 
         CertificationProgramScholarshipApplication::create([
             'certification_program_id' => $program->id,
@@ -337,6 +341,8 @@ class CertificationProgramController extends Controller
             'instagram_follow_photo' => $instagramPath,
             'tiktok_follow_photo' => $tiktokPath,
             'comment_tag_photo' => $commentPath,
+            'whatsapp_share_photo' => $waSharePath,
+            'instagram_story_photo' => $igStoryPath,
             'status' => 'pending',
         ]);
 

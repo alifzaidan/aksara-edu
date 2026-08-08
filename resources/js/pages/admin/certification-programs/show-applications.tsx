@@ -39,6 +39,8 @@ interface ScholarshipApplication {
     instagram_follow_photo?: string | null;
     tiktok_follow_photo?: string | null;
     comment_tag_photo?: string | null;
+    whatsapp_share_photo?: string | null;
+    instagram_story_photo?: string | null;
     status: string;
     created_at: string;
 }
@@ -473,6 +475,8 @@ function ScholarshipDetailModal({
         { label: 'Follow Instagram', path: app.instagram_follow_photo },
         { label: 'Follow TikTok', path: app.tiktok_follow_photo },
         { label: 'Komentar & Tag', path: app.comment_tag_photo },
+        { label: 'Share WA Group', path: app.whatsapp_share_photo },
+        { label: 'Story Instagram', path: app.instagram_story_photo },
     ];
 
     return (

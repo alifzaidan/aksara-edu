@@ -30,6 +30,8 @@ return new class extends Migration
             $table->string('instagram_follow_photo');
             $table->string('tiktok_follow_photo');
             $table->string('comment_tag_photo');
+            $table->string('whatsapp_share_photo')->nullable();
+            $table->string('instagram_story_photo')->nullable();
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->timestamp('approved_at')->nullable();
             $table->timestamp('rejected_at')->nullable();

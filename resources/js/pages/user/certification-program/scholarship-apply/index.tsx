@@ -31,11 +31,13 @@ const formSchema = z.object({
     university: z.string().nonempty('Nama universitas harus diisi'),
     major: z.string().nonempty('Program studi harus diisi'),
     semester: z.string().nonempty('Semester harus dipilih'),
-    ktm_photo: z.instanceof(File, { message: 'Foto KTM harus diunggah' }).optional(),
-    transcript_photo: z.instanceof(File, { message: 'Foto transkrip nilai harus diunggah' }).optional(),
-    instagram_follow_photo: z.instanceof(File, { message: 'Foto bukti follow Instagram harus diunggah' }).optional(),
-    tiktok_follow_photo: z.instanceof(File, { message: 'Foto bukti follow TikTok harus diunggah' }).optional(),
-    comment_tag_photo: z.instanceof(File, { message: 'Foto bukti komentar & tag harus diunggah' }).optional(),
+    ktm_photo: z.instanceof(File, { message: 'Foto KTM harus diunggah' }),
+    transcript_photo: z.instanceof(File, { message: 'Foto transkrip nilai harus diunggah' }),
+    instagram_follow_photo: z.instanceof(File, { message: 'Foto bukti follow Instagram harus diunggah' }),
+    tiktok_follow_photo: z.instanceof(File, { message: 'Foto bukti follow TikTok harus diunggah' }),
+    comment_tag_photo: z.instanceof(File, { message: 'Foto bukti komentar & tag harus diunggah' }),
+    whatsapp_share_photo: z.instanceof(File, { message: 'Foto bukti share ke grup WhatsApp harus diunggah' }),
+    instagram_story_photo: z.instanceof(File, { message: 'Foto bukti story Instagram harus diunggah' }),
 });
 
 export default function ScholarshipApply({ program }: { program: Program }) {
@@ -45,6 +47,8 @@ export default function ScholarshipApply({ program }: { program: Program }) {
     const [igFollowPreview, setIgFollowPreview] = useState<string | null>(null);
     const [tiktokFollowPreview, setTiktokFollowPreview] = useState<string | null>(null);
     const [commentTagPreview, setCommentTagPreview] = useState<string | null>(null);
+    const [waSharePreview, setWaSharePreview] = useState<string | null>(null);
+    const [igStoryPreview, setIgStoryPreview] = useState<string | null>(null);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -66,6 +70,8 @@ export default function ScholarshipApply({ program }: { program: Program }) {
         if (values.instagram_follow_photo) formData.append('instagram_follow_photo', values.instagram_follow_photo);
         if (values.tiktok_follow_photo) formData.append('tiktok_follow_photo', values.tiktok_follow_photo);
         if (values.comment_tag_photo) formData.append('comment_tag_photo', values.comment_tag_photo);
+        if (values.whatsapp_share_photo) formData.append('whatsapp_share_photo', values.whatsapp_share_photo);
+        if (values.instagram_story_photo) formData.append('instagram_story_photo', values.instagram_story_photo);
 
         router.post(route('certification-programs.scholarship-store', program.slug), formData, {
             onSuccess: () => { toast.success('Pengajuan beasiswa berhasil dikirim!'); setIsLoading(false); },
@@ -202,6 +208,22 @@ export default function ScholarshipApply({ program }: { program: Program }) {
                                             <FormItem><FormLabel className="flex items-center gap-2"><span>👥</span> Screenshot Komentar & Tag 3 Teman *</FormLabel><FormControl><div className="space-y-3">
                                                 {commentTagPreview && <div className="relative overflow-hidden rounded-lg border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-violet-50 p-2 dark:from-purple-950/30 dark:to-violet-950/30"><img src={commentTagPreview} alt="Comment Tag Preview" className="h-40 w-full rounded object-contain" /><div className="absolute top-2 right-2 rounded-full bg-purple-500 px-2 py-1 text-xs font-semibold text-white">✓ Terpilih</div></div>}
                                                 <Input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) { onChange(file); handleFilePreview(e, setCommentTagPreview); }}} className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-purple-400 dark:border-zinc-600" {...field} />
+                                            </div></FormControl><FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription><FormMessage /></FormItem>
+                                        ); }} />
+
+                                        {/* WhatsApp Group Share */}
+                                        <FormField control={form.control} name="whatsapp_share_photo" render={({ field: { onChange, value, ...field } }) => { void value; return (
+                                            <FormItem><FormLabel className="flex items-center gap-2"><span>📲</span> Screenshot Share Postingan Instagram ke 1 Grup WhatsApp *</FormLabel><FormControl><div className="space-y-3">
+                                                {waSharePreview && <div className="relative overflow-hidden rounded-lg border-2 border-emerald-300 bg-gradient-to-br from-emerald-50 to-teal-50 p-2 dark:from-emerald-950/30 dark:to-teal-950/30"><img src={waSharePreview} alt="WA Share Preview" className="h-40 w-full rounded object-contain" /><div className="absolute top-2 right-2 rounded-full bg-emerald-500 px-2 py-1 text-xs font-semibold text-white">✓ Terpilih</div></div>}
+                                                <Input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) { onChange(file); handleFilePreview(e, setWaSharePreview); }}} className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-emerald-400 dark:border-zinc-600" {...field} />
+                                            </div></FormControl><FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription><FormMessage /></FormItem>
+                                        ); }} />
+
+                                        {/* Instagram Story */}
+                                        <FormField control={form.control} name="instagram_story_photo" render={({ field: { onChange, value, ...field } }) => { void value; return (
+                                            <FormItem><FormLabel className="flex items-center gap-2"><span>📸</span> Screenshot Share Postingan ke Story Instagram *</FormLabel><FormControl><div className="space-y-3">
+                                                {igStoryPreview && <div className="relative overflow-hidden rounded-lg border-2 border-fuchsia-300 bg-gradient-to-br from-fuchsia-50 to-pink-50 p-2 dark:from-fuchsia-950/30 dark:to-pink-950/30"><img src={igStoryPreview} alt="IG Story Preview" className="h-40 w-full rounded object-contain" /><div className="absolute top-2 right-2 rounded-full bg-fuchsia-500 px-2 py-1 text-xs font-semibold text-white">✓ Terpilih</div></div>}
+                                                <Input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) { onChange(file); handleFilePreview(e, setIgStoryPreview); }}} className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-fuchsia-400 dark:border-zinc-600" {...field} />
                                             </div></FormControl><FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription><FormMessage /></FormItem>
                                         ); }} />
                                     </div>
