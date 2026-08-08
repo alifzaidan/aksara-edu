@@ -225,11 +225,22 @@ class CertificationProgramController extends Controller
             ? 'admin/certification-programs/edit-scholarship'
             : 'admin/certification-programs/edit-regular';
 
-        return Inertia::render($view, [
+        $data = [
             'program' => $program,
             'categories' => $categories,
             'mentors' => $mentors,
-        ]);
+        ];
+
+        if ($program->type === 'scholarship') {
+            $data['regular_programs'] = CertificationProgram::where('type', 'regular')
+                ->with(['schedules' => function ($q) {
+                    $q->orderBy('schedule_date');
+                }])
+                ->orderByRaw('CAST(batch AS UNSIGNED) ASC')
+                ->get(['id', 'title', 'batch']);
+        }
+
+        return Inertia::render($view, $data);
     }
 
     public function update(Request $request, string $id)
@@ -432,6 +443,7 @@ class CertificationProgramController extends Controller
                 $message .= "{$program->socialization_group_url}\n";
             }
             $message .= "\nJika sudah selesai, silakan lanjutkan ke tahap berikutnya sesuai instruksi.\n\n";
+            $message .= "Jika Anda memiliki pertanyaan atau membutuhkan bantuan, silakan hubungi Admin kami via WhatsApp di nomor *6285142505794* (atau klik wa.me/6285142505794).\n\n";
             $message .= "Terima kasih dan selamat bergabung! 🚀\n\n";
             $message .= "*Araska - Customer Support*";
 
@@ -471,6 +483,7 @@ class CertificationProgramController extends Controller
             $message = "*[Aksademy - Pendaftaran Sertifikasi Ditolak]*\n\n";
             $message .= "Hai *{$application->user->name}*,\n\n";
             $message .= "Mohon maaf, pendaftaran Sertifikasi *{$program->title}* Anda belum dapat kami terima.\n\n";
+            $message .= "Jika Anda memiliki pertanyaan atau membutuhkan bantuan, silakan hubungi Admin kami via WhatsApp di nomor *6285142505794* (atau klik wa.me/6285142505794).\n\n";
             $message .= "Terima kasih atas ketertarikannya.\n\n";
             $message .= "*Araska - Customer Support*";
 
@@ -517,7 +530,8 @@ class CertificationProgramController extends Controller
                 $message .= "2. Bergabung ke grup sosialisasi agar update informasi lebih cepat diterima:\n";
                 $message .= "{$program->socialization_group_url}\n";
             }
-            $message .= "\nTerima kasih dan selamat bergabung! 🚀\n\n";
+            $message .= "Jika Anda memiliki pertanyaan atau membutuhkan bantuan, silakan hubungi Admin kami via WhatsApp di nomor *6285142505794* (atau klik wa.me/6285142505794).\n\n";
+            $message .= "Terima kasih dan selamat bergabung! 🚀\n\n";
             $message .= "*Araska - Customer Support*";
 
             self::sendText([
@@ -555,6 +569,7 @@ class CertificationProgramController extends Controller
             $message = "*[Aksademy - Pengumuman Beasiswa]*\n\n";
             $message .= "Hai Kak *{$application->name}*,\n\n";
             $message .= "Mohon maaf, Anda belum lolos sebagai penerima Beasiswa *{$program->title}*.\n\n";
+            $message .= "Jika Anda memiliki pertanyaan atau membutuhkan bantuan, silakan hubungi Admin kami via WhatsApp di nomor *6285142505794* (atau klik wa.me/6285142505794).\n\n";
             $message .= "Terima kasih atas partisipasi dan ketertarikannya pada program ini.\n\n";
             $message .= "*Araska - Customer Support*";
 

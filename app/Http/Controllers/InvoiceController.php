@@ -99,7 +99,17 @@ class InvoiceController extends Controller
 
         // Apply product type filter
         if ($productType && !empty($productType)) {
-            $invoicesQuery->whereHas($productType . 'Items');
+            $relationMap = [
+                'course' => 'courseItems',
+                'bootcamp' => 'bootcampItems',
+                'webinar' => 'webinarItems',
+                'private' => 'privateItems',
+                'bundle' => 'bundleEnrollments',
+                'certification_program' => 'certificationProgramItems',
+                'certification' => 'certificationProgramItems',
+            ];
+            $relation = $relationMap[$productType] ?? (\Illuminate\Support\Str::camel($productType) . 'Items');
+            $invoicesQuery->whereHas($relation);
         }
 
         // Get filtered invoices
@@ -394,6 +404,42 @@ class InvoiceController extends Controller
             }
 
             $expectedNettAmount = $itemPrice - $discountCodeAmount;
+
+            $pointsRedeemed = (int) $request->input('points_redeemed', 0);
+            if ($pointsRedeemed > 0) {
+                if ($discountCodeId) {
+                    throw new \Exception('Voucher dan Poin tidak dapat digunakan bersamaan.');
+                }
+                
+                $user = Auth::user();
+                if ($pointsRedeemed > $user->point_balance) {
+                    throw new \Exception('Saldo poin Anda tidak mencukupi.');
+                }
+                
+                if ($pointsRedeemed > $expectedNettAmount) {
+                    throw new \Exception('Poin yang digunakan melebihi harga produk.');
+                }
+                
+                $expectedNettAmount = $expectedNettAmount - $pointsRedeemed;
+            }
+
+            $referralUserId = null;
+            $referralCode = $request->input('referral_code');
+            if ($referralCode) {
+                if ($discountCodeId) {
+                    throw new \Exception('Voucher dan Referral tidak dapat digunakan bersamaan.');
+                }
+                
+                $referralService = app(\App\Services\ReferralService::class);
+                $validationResult = $referralService->validateReferralCode($referralCode, null, Auth::user());
+                
+                if (!$validationResult['valid']) {
+                    throw new \Exception($validationResult['message']);
+                }
+                
+                $referralUserId = $validationResult['referrer']->id;
+            }
+
             $expectedTotal = $expectedNettAmount > 0 ? $expectedNettAmount + $transactionFee : 0;
 
             if ($nettAmount != $expectedNettAmount) {
@@ -410,6 +456,9 @@ class InvoiceController extends Controller
             }
             if ($discountCodeAmount > 0) {
                 $fees[] = ['type' => 'Diskon Promo (' . $discountCode->code . ')', 'value' => -$discountCodeAmount];
+            }
+            if ($pointsRedeemed > 0) {
+                $fees[] = ['type' => 'Potongan Poin', 'value' => -$pointsRedeemed];
             }
             $fees[] = ['type' => 'Biaya Transaksi', 'value' => $transactionFee];
 
@@ -439,8 +488,14 @@ class InvoiceController extends Controller
                 'discount_amount' => $discountAmount,
                 'amount' => $totalAmount,
                 'nett_amount' => $nettAmount,
+                'points_redeemed' => $pointsRedeemed,
+                'referral_user_id' => $referralUserId,
                 'expires_at' => $expiresAt,
             ]);
+
+            if ($pointsRedeemed > 0) {
+                app(\App\Services\PointService::class)->redeemPoints(Auth::user(), $pointsRedeemed, $invoice);
+            }
 
             if ($discountCode) {
                 DiscountUsage::create([
@@ -556,7 +611,43 @@ class InvoiceController extends Controller
 
             // Validate pricing
             $expectedNettAmount = $bundle->price - $discountCodeAmount;
-            $expectedTotal = $expectedNettAmount + $transactionFee;
+
+            $pointsRedeemed = (int) $request->input('points_redeemed', 0);
+            if ($pointsRedeemed > 0) {
+                if ($discountCodeAmount > 0) {
+                    throw new \Exception('Voucher dan Poin tidak dapat digunakan bersamaan.');
+                }
+                
+                $user = Auth::user();
+                if ($pointsRedeemed > $user->point_balance) {
+                    throw new \Exception('Saldo poin Anda tidak mencukupi.');
+                }
+                
+                if ($pointsRedeemed > $expectedNettAmount) {
+                    throw new \Exception('Poin yang digunakan melebihi harga produk.');
+                }
+                
+                $expectedNettAmount = $expectedNettAmount - $pointsRedeemed;
+            }
+
+            $referralUserId = null;
+            $referralCode = $request->input('referral_code');
+            if ($referralCode) {
+                if ($discountCodeAmount > 0) {
+                    throw new \Exception('Voucher dan Referral tidak dapat digunakan bersamaan.');
+                }
+                
+                $referralService = app(\App\Services\ReferralService::class);
+                $validationResult = $referralService->validateReferralCode($referralCode, null, Auth::user());
+                
+                if (!$validationResult['valid']) {
+                    throw new \Exception($validationResult['message']);
+                }
+                
+                $referralUserId = $validationResult['referrer']->id;
+            }
+
+            $expectedTotal = $expectedNettAmount > 0 ? $expectedNettAmount + $transactionFee : 0;
 
             Log::info('Creating bundle invoice', [
                 'user_id' => $userId,
@@ -596,8 +687,14 @@ class InvoiceController extends Controller
                 'discount_amount' => $discountAmount,
                 'amount' => $totalAmount,
                 'nett_amount' => $nettAmount,
+                'points_redeemed' => $pointsRedeemed,
+                'referral_user_id' => $referralUserId,
                 'expires_at' => $expiresAt,
             ]);
+
+            if ($pointsRedeemed > 0) {
+                app(\App\Services\PointService::class)->redeemPoints(Auth::user(), $pointsRedeemed, $invoice);
+            }
 
             // Create bundle enrollment
             EnrollmentBundle::create([
@@ -624,6 +721,9 @@ class InvoiceController extends Controller
                 ];
             }
 
+            if ($pointsRedeemed > 0) {
+                $fees[] = ['type' => 'Potongan Poin', 'value' => -$pointsRedeemed];
+            }
             $fees[] = ['type' => 'Biaya Transaksi', 'value' => $transactionFee];
 
             // Create Xendit invoice
@@ -986,6 +1086,10 @@ class InvoiceController extends Controller
 
             $invoice->update(['status' => 'failed']);
 
+            if ($invoice->points_redeemed > 0) {
+                app(\App\Services\PointService::class)->refundPoints($invoice);
+            }
+
             DB::commit();
 
             return redirect()->back()->with('success', 'Invoice berhasil dibatalkan.');
@@ -1032,6 +1136,10 @@ class InvoiceController extends Controller
         foreach ($expiredInvoices as $invoice) {
             $this->expireInvoiceInXendit($invoice->invoice_code);
             $invoice->update(['status' => 'failed']);
+
+            if ($invoice->points_redeemed > 0) {
+                app(\App\Services\PointService::class)->refundPoints($invoice);
+            }
         }
 
         return response()->json([
@@ -1042,7 +1150,13 @@ class InvoiceController extends Controller
 
     public function callbackXendit(Request $request)
     {
-        $getToken = $request->header('x-callback-token');
+        Log::info('=== XENDIT CALLBACK RECEIVED ===', [
+            'headers' => $request->headers->all(),
+            'payload' => $request->all()
+        ]);
+
+        try {
+            $getToken = $request->header('x-callback-token');
         $callbackToken = config('xendit.CALLBACK_TOKEN');
 
         if ($getToken != $callbackToken) {
@@ -1111,6 +1225,9 @@ class InvoiceController extends Controller
             $this->recordAffiliateCommission($invoice);
             $this->addEnrollmentToCertificateParticipants($invoice);
 
+            // Fire event for referral/rewards points
+            event(new \App\Events\TransactionPaid($invoice));
+
             // Kirim WhatsApp setelah pembayaran berhasil
             $this->sendWhatsAppNotification($invoice);
         } else {
@@ -1121,6 +1238,16 @@ class InvoiceController extends Controller
         }
 
         return response()->json(['message' => 'Success'], 200);
+
+        } catch (\Throwable $e) {
+            Log::error('XENDIT CALLBACK ERROR: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'message' => 'Callback processing error',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -1201,6 +1328,7 @@ class InvoiceController extends Controller
             $message .= "Hai *{$user->name}*,\n\n";
             $message .= "Maaf, pembayaran {$itemType} untuk invoice *{$invoice->invoice_code}* tidak berhasil atau telah kadaluarsa.\n\n";
             $message .= "Silakan melakukan pembelian ulang jika Anda masih berminat.\n\n";
+            $message .= "Jika Anda memiliki pertanyaan atau membutuhkan bantuan, silakan hubungi Admin kami via WhatsApp di nomor *6285142505794* (atau klik wa.me/6285142505794).\n\n";
             $message .= "Terima kasih atas perhatiannya.\n\n";
             $message .= "*Araska - Customer Support*";
 
@@ -1439,10 +1567,10 @@ class InvoiceController extends Controller
             }
         }
 
+        $message .= "Jika Anda memiliki pertanyaan atau membutuhkan bantuan, silakan hubungi Admin kami via WhatsApp di nomor *6285142505794* (atau klik wa.me/6285142505794).\n\n";
         if ($isFreePurchase) {
             $message .= "Terima kasih telah bergabung dengan Aksademy! 🚀\n\n";
         } else {
-            $message .= "Jika ada pertanyaan, jangan ragu untuk menghubungi kami.\n\n";
             $message .= "Selamat belajar! 🚀\n\n";
         }
 

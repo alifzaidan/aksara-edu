@@ -38,7 +38,24 @@ class User extends Authenticatable
         'commission',
         'avatar',
         'email_verified_at',
+        'referral_code',
+        'point_balance',
     ];
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted()
+    {
+        static::creating(function ($user) {
+            if (empty($user->referral_code)) {
+                do {
+                    $code = 'AKSA-' . strtoupper(\Illuminate\Support\Str::random(6));
+                } while (static::where('referral_code', $code)->exists());
+                $user->referral_code = $code;
+            }
+        });
+    }
 
     /**
      * The attributes that should be hidden for serialization.
@@ -120,6 +137,11 @@ class User extends Authenticatable
         return $this->hasMany(Invoice::class);
     }
 
+    public function referredInvoices()
+    {
+        return $this->hasMany(Invoice::class, 'referral_user_id');
+    }
+
     public function courseEnrollments()
     {
         return $this->hasManyThrough(
@@ -166,5 +188,10 @@ class User extends Authenticatable
             'id',
             'id'
         );
+    }
+
+    public function pointTransactions()
+    {
+        return $this->hasMany(PointTransaction::class);
     }
 }

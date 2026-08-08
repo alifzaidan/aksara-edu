@@ -78,7 +78,7 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
             {
                 title: 'Sertifikasi Program',
                 href: '/admin/certification-programs',
-                roles: ['admin'],
+                roles: ['admin', 'affiliate'],
             } as any,
             {
                 title: 'Private Class',
@@ -137,7 +137,30 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         title: 'Paket Bundling',
         href: '/admin/bundles',
         icon: Gift,
+        roles: ['admin', 'affiliate'],
+    },
+    {
+        title: 'Referral & Poin',
+        href: '#',
+        icon: Gift,
         roles: ['admin'],
+        items: [
+            {
+                title: 'Pengaturan',
+                href: '/admin/referral/settings',
+                roles: ['admin'],
+            } as any,
+            {
+                title: 'Laporan Performa',
+                href: '/admin/referral/report',
+                roles: ['admin'],
+            } as any,
+            {
+                title: 'Riwayat Transaksi',
+                href: '/admin/referral/transactions',
+                roles: ['admin'],
+            } as any,
+        ],
     },
     {
         title: 'Transaksi',

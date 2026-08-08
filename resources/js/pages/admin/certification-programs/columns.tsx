@@ -6,13 +6,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { rupiahFormatter } from '@/lib/utils';
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { SharedData } from '@/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Edit, Folder, Trash } from 'lucide-react';
 
 export default function CertificationProgramActions({ program }: { program: CertificationProgram }) {
+    const { auth } = usePage<SharedData>().props;
+    const isAffiliate = auth.role.includes('affiliate');
+
     const handleDelete = () => {
         router.delete(route('certification-programs.destroy', program.id));
     };
@@ -33,40 +37,44 @@ export default function CertificationProgramActions({ program }: { program: Cert
                 </TooltipContent>
             </Tooltip>
 
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="link" size="icon" className="size-8" asChild>
-                        <Link href={route('certification-programs.edit', program.id)}>
-                            <Edit />
-                            <span className="sr-only">Edit Program</span>
-                        </Link>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Edit</p>
-                </TooltipContent>
-            </Tooltip>
+            {!isAffiliate && (
+                <>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="link" size="icon" className="size-8" asChild>
+                                <Link href={route('certification-programs.edit', program.id)}>
+                                    <Edit />
+                                    <span className="sr-only">Edit Program</span>
+                                </Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Edit</p>
+                        </TooltipContent>
+                    </Tooltip>
 
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div>
-                        <DeleteConfirmDialog
-                            trigger={
-                                <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
-                                    <Trash />
-                                    <span className="sr-only">Hapus Program</span>
-                                </Button>
-                            }
-                            title="Apakah Anda yakin ingin menghapus program ini?"
-                            itemName={program.title}
-                            onConfirm={handleDelete}
-                        />
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Hapus</p>
-                </TooltipContent>
-            </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div>
+                                <DeleteConfirmDialog
+                                    trigger={
+                                        <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
+                                            <Trash />
+                                            <span className="sr-only">Hapus Program</span>
+                                        </Button>
+                                    }
+                                    title="Apakah Anda yakin ingin menghapus program ini?"
+                                    itemName={program.title}
+                                    onConfirm={handleDelete}
+                                />
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Hapus</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </>
+            )}
         </div>
     );
 }

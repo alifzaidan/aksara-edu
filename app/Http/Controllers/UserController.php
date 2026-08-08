@@ -139,6 +139,8 @@ class UserController extends Controller
                 'phone_number' => $user->phone_number,
                 'instance' => $user->instance,
                 'city' => $user->city,
+                'referral_code' => $user->referral_code,
+                'point_balance' => (int) ($user->point_balance ?? 0),
                 'email_verified_at' => $user->email_verified_at,
                 'created_at' => $user->created_at,
                 'courses_count' => $user->courses_count,

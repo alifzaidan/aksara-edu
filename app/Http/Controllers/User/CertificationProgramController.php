@@ -75,6 +75,8 @@ class CertificationProgramController extends Controller
 
     public function detail(Request $request, CertificationProgram $program)
     {
+        $this->handleReferralCode($request);
+
         if (!in_array($program->status, ['published', 'hidden'], true)) {
             return Inertia::render('user/unavailable/index', [
                 'title' => 'Program Tidak Tersedia',
@@ -146,11 +148,14 @@ class CertificationProgramController extends Controller
             'myProgramIds' => $myProgramIds,
             'scholarshipApplication' => $scholarshipApplication,
             'approvedScholarshipProgramIds' => $approvedScholarshipProgramIds,
+            'referralInfo' => $this->getReferralInfo(),
         ]);
     }
 
     public function showRegister(Request $request, CertificationProgram $program)
     {
+        $this->handleReferralCode($request);
+
         if (!in_array($program->status, ['published', 'hidden'], true)) {
             return Inertia::render('user/unavailable/index', [
                 'title' => 'Program Tidak Tersedia',
@@ -220,6 +225,7 @@ class CertificationProgramController extends Controller
             'regularApplication' => $regularApplication,
             'scholarshipApplication' => $scholarshipApplication,
             'isScholarship' => $isScholarship,
+            'referralInfo' => $this->getReferralInfo(),
         ]);
     }
 
@@ -373,7 +379,8 @@ class CertificationProgramController extends Controller
         if (!empty($phoneNumber)) {
             $message .= "• No. WA: {$phoneNumber}\n";
         }
-        $message .= "\nSilakan cek dashboard admin untuk verifikasi dokumen. Terima kasih 🙏\n";
+        $message .= "\nJika Anda memiliki pertanyaan atau kendala, silakan hubungi Admin kami via WhatsApp di nomor *6285142505794* (atau klik wa.me/6285142505794).\n\n";
+        $message .= "Silakan cek dashboard admin untuk verifikasi dokumen. Terima kasih 🙏\n";
 
         self::sendText([
             [
@@ -408,7 +415,7 @@ class CertificationProgramController extends Controller
             $message .= "{$socializationGroupUrl}\n\n";
         }
 
-        $message .= "Jika ada kendala, silakan balas pesan ini atau hubungi admin.\n\n";
+        $message .= "Jika Anda memiliki pertanyaan atau membutuhkan bantuan, silakan hubungi Admin kami via WhatsApp di nomor *6285142505794* (atau klik wa.me/6285142505794).\n\n";
         $message .= "Terima kasih dan selamat bergabung! 🚀\n\n";
         $message .= "*Araska - Customer Support*";
 
@@ -438,5 +445,29 @@ class CertificationProgramController extends Controller
         }
 
         return $phoneNumber;
+    }
+
+    /**
+     * Get referral info untuk frontend
+     */
+    private function getReferralInfo(): array
+    {
+        return [
+            'code' => session('referral_code'),
+            'hasActive' => session('referral_code') && session('referral_code') !== 'ATM2025',
+        ];
+    }
+
+    /**
+     * Handle referral code dari URL parameter
+     */
+    private function handleReferralCode(Request $request): void
+    {
+        $referralCode = $request->query('ref');
+        if ($referralCode) {
+            session([
+                'referral_code' => $referralCode,
+            ]);
+        }
     }
 }

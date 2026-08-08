@@ -136,4 +136,30 @@ class ProfileController extends Controller
             'recentProducts' => $recentProducts,
         ]);
     }
+
+    public function referral()
+    {
+        $user = Auth::user();
+        $userId = $user->id;
+
+        $transactions = \App\Models\PointTransaction::where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $totalReferralsCount = \App\Models\Invoice::where('referral_user_id', $userId)
+            ->where('status', 'paid')
+            ->count();
+
+        $totalPointsEarned = \App\Models\PointTransaction::where('user_id', $userId)
+            ->where('amount', '>', 0)
+            ->sum('amount');
+
+        return Inertia::render('user/profile/referral', [
+            'referralCode' => $user->referral_code,
+            'pointBalance' => (int) $user->point_balance,
+            'totalReferrals' => $totalReferralsCount,
+            'totalEarned' => (int) $totalPointsEarned,
+            'transactions' => $transactions,
+        ]);
+    }
 }

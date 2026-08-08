@@ -20,7 +20,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Head, router } from '@inertiajs/react';
 import { Editor } from '@tinymce/tinymce-react';
 import { BookMarked, CalendarFold, Check, ChevronsUpDown, GraduationCap } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -113,6 +113,22 @@ export default function CreateScholarshipCertificationProgram({ categories, ment
     const [schedules, setSchedules] = useState<BootcampSchedule[]>([]);
     const [socializationSchedules, setSocializationSchedules] = useState<BootcampSchedule[]>([]);
     const [showStrikethroughPrice, setShowStrikethroughPrice] = useState(false);
+    const [biinspiraPrograms, setBiinspiraPrograms] = useState<any[]>([]);
+    const [isBiinspiraPopoverOpen, setIsBiinspiraPopoverOpen] = useState(false);
+    const [selectedBiinspiraProgram, setSelectedBiinspiraProgram] = useState<any | null>(null);
+
+    useEffect(() => {
+        fetch(route('admin.biinsight-import.programs') + '?type=certification_program')
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.success) {
+                    // Filter scholarship only
+                    const scholarshipPrograms = (res.data || []).filter((p: any) => p.certif_type === 'scholarship');
+                    setBiinspiraPrograms(scholarshipPrograms);
+                }
+            })
+            .catch((err) => console.error(err));
+    }, []);
     const [openRegDeadlineCalendar, setOpenRegDeadlineCalendar] = useState(false);
     const [openScholarshipDeadlineCalendar, setOpenScholarshipDeadlineCalendar] = useState(false);
     const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
@@ -206,6 +222,111 @@ export default function CreateScholarshipCertificationProgram({ categories, ment
                             <div className="flex items-center gap-2">
                                 <BookMarked size={16} />
                                 <h3 className="font-medium">Informasi Program</h3>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <Label>Ambil Data dari Biinsight (Opsional)</Label>
+                                <Popover open={isBiinspiraPopoverOpen} onOpenChange={setIsBiinspiraPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className={cn(
+                                                'justify-between',
+                                                !selectedBiinspiraProgram && 'text-muted-foreground'
+                                            )}
+                                        >
+                                            {selectedBiinspiraProgram
+                                                ? `${selectedBiinspiraProgram.title} ${selectedBiinspiraProgram.batch ? `(${selectedBiinspiraProgram.batch})` : ''}`
+                                                : 'Pilih program Biinsight...'}
+                                            <ChevronsUpDown className="opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Cari program..." />
+                                            <CommandList>
+                                                <CommandEmpty>Program tidak ditemukan.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {biinspiraPrograms.map((program) => (
+                                                        <CommandItem
+                                                            key={program.id}
+                                                            value={program.title.toLowerCase()}
+                                                            onSelect={() => {
+                                                                try {
+                                                                    setSelectedBiinspiraProgram(program);
+                                                                    form.setValue('title', program.title || '');
+                                                                    if (program.description) form.setValue('description', program.description);
+                                                                    if (program.short_description) form.setValue('short_description', program.short_description);
+                                                                    if (program.benefits) form.setValue('benefits', program.benefits);
+                                                                    if (program.terms_conditions) form.setValue('terms_conditions', program.terms_conditions);
+                                                                    if (program.price !== undefined) form.setValue('price', program.price);
+                                                                    if (program.strikethrough_price !== undefined) form.setValue('strikethrough_price', program.strikethrough_price);
+                                                                    if (program.scholarship_price !== undefined) form.setValue('scholarship_price', program.scholarship_price);
+                                                                    if (program.batch) form.setValue('batch', program.batch);
+                                                                    
+                                                                    const isValidDate = (d: any) => d && !isNaN(Date.parse(d));
+                                                                    
+                                                                    if (isValidDate(program.registration_deadline)) {
+                                                                        form.setValue('registration_deadline', new Date(program.registration_deadline).toISOString());
+                                                                    }
+                                                                    if (isValidDate(program.socialization_registration_deadline)) {
+                                                                        form.setValue('socialization_registration_deadline', new Date(program.socialization_registration_deadline).toISOString());
+                                                                    }
+                                                                    if (program.group_url) {
+                                                                        form.setValue('group_url', program.group_url);
+                                                                    }
+
+                                                                    if (program.category && typeof program.category === 'string') {
+                                                                        const matchedCategory = categories.find(
+                                                                            (c) => c.name.toLowerCase() === program.category.toLowerCase()
+                                                                        );
+                                                                        if (matchedCategory) {
+                                                                            form.setValue('category_id', matchedCategory.id);
+                                                                        }
+                                                                    }
+
+                                                                    // Populate schedules
+                                                                    if (program.schedules && Array.isArray(program.schedules)) {
+                                                                        const mappedSchedules = program.schedules
+                                                                            .filter((s: any) => s && s.schedule_type === 'main')
+                                                                            .map((s: any) => ({
+                                                                                schedule_date: s.schedule_date || '',
+                                                                                day: s.day || '',
+                                                                                start_time: s.start_time && typeof s.start_time === 'string' ? s.start_time.substring(0, 5) : '00:00',
+                                                                                end_time: s.end_time && typeof s.end_time === 'string' ? s.end_time.substring(0, 5) : '00:00',
+                                                                                title: s.title || ''
+                                                                            }));
+                                                                        setSchedules(mappedSchedules);
+
+                                                                        const mappedSocialization = program.schedules
+                                                                            .filter((s: any) => s && s.schedule_type === 'socialization')
+                                                                            .map((s: any) => ({
+                                                                                schedule_date: s.schedule_date || '',
+                                                                                day: s.day || '',
+                                                                                start_time: s.start_time && typeof s.start_time === 'string' ? s.start_time.substring(0, 5) : '00:00',
+                                                                                end_time: s.end_time && typeof s.end_time === 'string' ? s.end_time.substring(0, 5) : '00:00',
+                                                                                title: s.title || ''
+                                                                            }));
+                                                                        setSocializationSchedules(mappedSocialization);
+                                                                    }
+
+                                                                    setIsBiinspiraPopoverOpen(false);
+                                                                    toast.success(`Berhasil mengambil data "${program.title}" dari Biinsight!`);
+                                                                } catch (err: any) {
+                                                                    console.error(err);
+                                                                    toast.error(`Gagal memproses data: ${err.message}`);
+                                                                }
+                                                            }}
+                                                        >
+                                                            {program.title} {program.batch ? `(${program.batch})` : ''}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
                             </div>
 
                             <FormField

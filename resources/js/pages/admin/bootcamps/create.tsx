@@ -100,6 +100,20 @@ export default function CreateBootcamp({
     const [preview, setPreview] = useState<string | null>(null);
     const [thumbnailError, setThumbnailError] = useState(false);
     const [schedules, setSchedules] = useState<BootcampSchedule[]>([]);
+    const [biinspiraPrograms, setBiinspiraPrograms] = useState<any[]>([]);
+    const [isBiinspiraPopoverOpen, setIsBiinspiraPopoverOpen] = useState(false);
+    const [selectedBiinspiraProgram, setSelectedBiinspiraProgram] = useState<any | null>(null);
+
+    useEffect(() => {
+        fetch(route('admin.biinsight-import.programs') + '?type=bootcamp')
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.success) {
+                    setBiinspiraPrograms(res.data);
+                }
+            })
+            .catch((err) => console.error(err));
+    }, []);
 
     const now = new Date();
     const defaultStart = addDays(now, 7);
@@ -213,6 +227,104 @@ export default function CreateBootcamp({
                                 <BookMarked size={16} />
                                 <h3 className="font-medium">Detail Informasi Bootcamp</h3>
                             </div>
+
+                            <div className="flex flex-col gap-2">
+                                <Label>Ambil Data dari Biinsight (Opsional)</Label>
+                                <Popover open={isBiinspiraPopoverOpen} onOpenChange={setIsBiinspiraPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className={cn('justify-between', !selectedBiinspiraProgram && 'text-muted-foreground')}
+                                        >
+                                            {selectedBiinspiraProgram
+                                                ? `${selectedBiinspiraProgram.title} ${selectedBiinspiraProgram.batch ? `(${selectedBiinspiraProgram.batch})` : ''}`
+                                                : 'Pilih program Biinsight...'}
+                                            <ChevronsUpDown className="opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Cari program..." />
+                                            <CommandList>
+                                                <CommandEmpty>Program tidak ditemukan.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {biinspiraPrograms.map((program) => (
+                                                        <CommandItem
+                                                            key={program.id}
+                                                            value={program.title.toLowerCase()}
+                                                            onSelect={() => {
+                                                                try {
+                                                                    setSelectedBiinspiraProgram(program);
+                                                                    form.setValue('title', program.title || '');
+                                                                    if (program.description) form.setValue('description', program.description);
+                                                                    if (program.benefits) form.setValue('benefits', program.benefits);
+                                                                    if (program.requirements) form.setValue('requirements', program.requirements);
+                                                                    if (program.curriculum) form.setValue('curriculum', program.curriculum);
+                                                                    if (program.price !== undefined) form.setValue('price', program.price);
+                                                                    if (program.strikethrough_price !== undefined) form.setValue('strikethrough_price', program.strikethrough_price);
+                                                                    if (program.quota !== undefined) form.setValue('quota', program.quota);
+                                                                    if (program.batch) {
+                                                                        const batchStr = String(program.batch);
+                                                                        const numericBatch = parseInt(batchStr.replace(/\D/g, '')) || 1;
+                                                                        form.setValue('batch', numericBatch);
+                                                                    }
+                                                                    
+                                                                    const isValidDate = (d: any) => d && !isNaN(Date.parse(d));
+                                                                    
+                                                                    if (isValidDate(program.start_date)) {
+                                                                        form.setValue('start_date', new Date(program.start_date).toISOString());
+                                                                    }
+                                                                    if (isValidDate(program.end_date)) {
+                                                                        form.setValue('end_date', new Date(program.end_date).toISOString());
+                                                                    }
+                                                                    if (isValidDate(program.registration_deadline)) {
+                                                                        form.setValue('registration_deadline', new Date(program.registration_deadline).toISOString());
+                                                                    }
+                                                                    if (program.group_url) {
+                                                                        form.setValue('group_url', program.group_url);
+                                                                    }
+
+                                                                    if (program.category && typeof program.category === 'string') {
+                                                                        const matchedCategory = categories.find(
+                                                                            (c) => c.name.toLowerCase() === program.category.toLowerCase()
+                                                                        );
+                                                                        if (matchedCategory) {
+                                                                            form.setValue('category_id', matchedCategory.id);
+                                                                        }
+                                                                    }
+
+                                                                    // Populate schedules
+                                                                    if (program.schedules && Array.isArray(program.schedules)) {
+                                                                        const mappedSchedules = program.schedules
+                                                                            .filter((s: any) => s && s.schedule_type === 'main')
+                                                                            .map((s: any) => ({
+                                                                                schedule_date: s.schedule_date || '',
+                                                                                day: s.day || '',
+                                                                                start_time: s.start_time && typeof s.start_time === 'string' ? s.start_time.substring(0, 5) : '00:00',
+                                                                                end_time: s.end_time && typeof s.end_time === 'string' ? s.end_time.substring(0, 5) : '00:00'
+                                                                            }));
+                                                                        setSchedules(mappedSchedules);
+                                                                    }
+
+                                                                    setIsBiinspiraPopoverOpen(false);
+                                                                    toast.success(`Berhasil mengambil data "${program.title}" dari Biinsight!`);
+                                                                } catch (err: any) {
+                                                                    console.error(err);
+                                                                    toast.error(`Gagal memproses data: ${err.message}`);
+                                                                }
+                                                            }}
+                                                        >
+                                                            {program.title} {program.batch ? `(${program.batch})` : ''}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+
                             <FormField
                                 control={form.control}
                                 name="title"
