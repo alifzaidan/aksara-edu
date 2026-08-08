@@ -25,7 +25,7 @@ use App\Models\PrivateClass;
 use App\Models\PrivateClassSchedule;
 use App\Models\User;
 use App\Models\Webinar;
-use App\Traits\WablasTrait;
+use App\Traits\MessaraTrait;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -41,7 +41,7 @@ use Xendit\Invoice\InvoiceApi;
 
 class InvoiceController extends Controller
 {
-    use WablasTrait;
+    use MessaraTrait;
 
     public function __construct()
     {

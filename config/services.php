@@ -45,4 +45,23 @@ return [
         'redirect' => env('GITHUB_REDIRECT_URI'),
     ],
 
+    'wablas' => [
+        'domain' => env('DOMAIN_SERVER_WABLAS'),
+        'token'  => env('SECURITY_TOKEN_WABLAS_AI'),
+        'secret' => env('SECRET_KEY_WABLAS_AI'),
+    ],
+
+    'evolution' => [
+        'url' => env('EVOLUTION_API_URL'),
+        'key' => env('EVOLUTION_API_KEY'),
+        'instance' => env('EVOLUTION_INSTANCE', 'sekolah-pajak'),
+    ],
+
+    'default_wa_gateway' => env('DEFAULT_WA_GATEWAY', 'wablas'),
+
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+        'model' => env('OPENAI_MODEL', 'gpt-3.5-turbo'),
+    ],
+
 ];

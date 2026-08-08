@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Broadcast;
 use App\Models\Category;
 use App\Models\User;
-use App\Traits\WablasTrait;
+use App\Traits\MessaraTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -13,7 +13,7 @@ use Inertia\Inertia;
 
 class BroadcastController extends Controller
 {
-    use WablasTrait;
+    use MessaraTrait;
 
     public function index()
     {

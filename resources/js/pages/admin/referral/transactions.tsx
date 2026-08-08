@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,9 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useEffect, useState, useRef } from 'react';
+import axios from 'axios';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Search, Plus, Coins } from 'lucide-react';
+import { Search, Plus, Coins, X } from 'lucide-react';
 import { columns, PointTransaction } from './transaction-columns';
 import { DataTable } from './data-table';
 
@@ -44,9 +46,13 @@ interface TransactionsProps {
     };
 }
 
-export default function PointTransactions({ transactions, users, filters }: TransactionsProps) {
+export default function PointTransactions({ transactions, users: initialUsers, filters }: TransactionsProps) {
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [dynamicSuggestions, setDynamicSuggestions] = useState<UserSelect[]>([]);
+    const [selectedUser, setSelectedUser] = useState<{ name: string; email: string; point_balance: number } | null>(null);
+
     const suggestionRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -65,24 +71,67 @@ export default function PointTransactions({ transactions, users, filters }: Tran
         description: '',
     });
 
-    const filteredSuggestions = data.user_id.trim() === ''
-        ? []
-        : users.filter(u =>
-            u.name.toLowerCase().includes(data.user_id.toLowerCase()) ||
-            u.email.toLowerCase().includes(data.user_id.toLowerCase())
-        ).slice(0, 5);
+    // Dynamic user search & check-email effect
+    useEffect(() => {
+        const query = data.user_id.trim();
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        // Trigger page load with search parameter
-        const url = new URL(window.location.href);
-        if (searchQuery.trim()) {
-            url.searchParams.set('search', searchQuery);
-        } else {
-            url.searchParams.delete('search');
+        if (!query) {
+            setDynamicSuggestions([]);
+            setSelectedUser(null);
+            return;
         }
-        window.location.href = url.pathname + url.search;
-    };
+
+        // Check if query matches selected user email
+        if (selectedUser && selectedUser.email.toLowerCase() === query.toLowerCase()) {
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            setSearchLoading(true);
+
+            try {
+                // 1. Search endpoint for suggestions (searches all registered users in DB)
+                const searchRes = await axios.get('/admin/referral/search-users', {
+                    params: { q: query },
+                });
+                const fetchedUsers: UserSelect[] = searchRes.data || [];
+                setDynamicSuggestions(fetchedUsers);
+
+                // Check exact match from fetched users
+                const exactMatch = fetchedUsers.find(
+                    (u) => u.email.toLowerCase() === query.toLowerCase() || u.id === query
+                );
+                if (exactMatch) {
+                    setSelectedUser({
+                        name: exactMatch.name,
+                        email: exactMatch.email,
+                        point_balance: exactMatch.point_balance || 0,
+                    });
+                } else if (query.includes('@')) {
+                    // 2. Check-email endpoint (register implementation)
+                    const checkRes = await axios.post('/api/check-email', { email: query });
+                    if (checkRes.data?.exists) {
+                        setSelectedUser({
+                            name: checkRes.data.name || 'Pengguna Terdaftar',
+                            email: query,
+                            point_balance: checkRes.data.point_balance || 0,
+                        });
+                    } else {
+                        setSelectedUser(null);
+                    }
+                } else {
+                    setSelectedUser(null);
+                }
+            } catch {
+                setDynamicSuggestions([]);
+                setSelectedUser(null);
+            } finally {
+                setSearchLoading(false);
+            }
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [data.user_id, selectedUser]);
 
     const handleAdjust = (e: React.FormEvent) => {
         e.preventDefault();
@@ -103,6 +152,8 @@ export default function PointTransactions({ transactions, users, filters }: Tran
             onSuccess: () => {
                 toast.success('Poin berhasil disesuaikan secara manual!');
                 reset();
+                setSelectedUser(null);
+                setDynamicSuggestions([]);
             },
             onError: (err) => {
                 toast.error(err.amount || err.error || 'Gagal menyesuaikan poin.');
@@ -181,11 +232,11 @@ export default function PointTransactions({ transactions, users, filters }: Tran
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="space-y-2" ref={suggestionRef}>
-                                        <Label htmlFor="user_id">Nama / Email / ID Pengguna</Label>
+                                        <Label htmlFor="user_id">Nama / Email Pengguna</Label>
                                         <div className="relative">
                                             <Input
                                                 id="user_id"
-                                                placeholder="Masukkan nama, email, atau ID pengguna..."
+                                                placeholder="Masukkan nama atau email pengguna terdaftar..."
                                                 value={data.user_id}
                                                 onChange={(e) => {
                                                     setData('user_id', e.target.value);
@@ -196,25 +247,69 @@ export default function PointTransactions({ transactions, users, filters }: Tran
                                                 required
                                                 autoComplete="off"
                                             />
-                                            {showSuggestions && filteredSuggestions.length > 0 && (
+                                            {showSuggestions && dynamicSuggestions.length > 0 && (
                                                 <div className="absolute z-50 w-full mt-1 bg-popover text-popover-foreground border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
-                                                    {filteredSuggestions.map((u) => (
+                                                    {dynamicSuggestions.map((u) => (
                                                         <button
                                                             key={u.id}
                                                             type="button"
                                                             className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground flex flex-col border-b border-border/50 last:border-b-0"
                                                             onClick={() => {
-                                                                setData('user_id', u.email); // Gunakan email agar unik
+                                                                setData('user_id', u.email);
+                                                                setSelectedUser({
+                                                                    name: u.name,
+                                                                    email: u.email,
+                                                                    point_balance: u.point_balance || 0,
+                                                                });
                                                                 setShowSuggestions(false);
                                                             }}
                                                         >
-                                                            <span className="font-medium text-foreground">{u.name}</span>
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="font-medium text-foreground">{u.name}</span>
+                                                                <span className="text-xs text-emerald-600 font-semibold">{u.point_balance.toLocaleString('id-ID')} poin</span>
+                                                            </div>
                                                             <span className="text-xs text-muted-foreground">{u.email}</span>
                                                         </button>
                                                     ))}
                                                 </div>
                                             )}
                                         </div>
+
+                                        {searchLoading && <p className="text-xs text-muted-foreground">Mencari pengguna terdaftar...</p>}
+
+                                        {/* Selected User Badge */}
+                                        {selectedUser && (
+                                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="px-3 py-1.5 text-xs font-medium border border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 flex items-center gap-2"
+                                                >
+                                                    <span className="font-semibold">{selectedUser.email}</span>
+                                                    <span className="text-muted-foreground">|</span>
+                                                    <span>
+                                                        point :{' '}
+                                                        <strong className="text-emerald-700 dark:text-emerald-300 font-bold">
+                                                            {selectedUser.point_balance.toLocaleString('id-ID')}
+                                                        </strong>
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setData('user_id', '');
+                                                            setSelectedUser(null);
+                                                        }}
+                                                        className="ml-1 text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-100"
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </button>
+                                                </Badge>
+                                            </div>
+                                        )}
+
+                                        {!searchLoading && data.user_id.includes('@') && !selectedUser && (
+                                            <p className="text-xs text-amber-600">Email tidak ditemukan di sistem.</p>
+                                        )}
+
                                         {errors.user_id && <p className="text-xs text-red-600">{errors.user_id}</p>}
                                     </div>
 
