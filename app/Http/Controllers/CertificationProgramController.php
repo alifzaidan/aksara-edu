@@ -8,7 +8,7 @@ use App\Models\CertificationProgramScholarshipApplication;
 use App\Models\Category;
 use App\Models\Invoice;
 use App\Models\User;
-use App\Traits\WablasTrait;
+use App\Traits\MessaraTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -17,7 +17,7 @@ use Inertia\Inertia;
 
 class CertificationProgramController extends Controller
 {
-    use WablasTrait;
+    use MessaraTrait;
 
     public function index(Request $request)
     {

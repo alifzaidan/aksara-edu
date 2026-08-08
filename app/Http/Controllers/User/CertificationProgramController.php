@@ -8,7 +8,7 @@ use App\Models\CertificationProgram;
 use App\Models\CertificationProgramApplication;
 use App\Models\CertificationProgramScholarshipApplication;
 use App\Models\Invoice;
-use App\Traits\WablasTrait;
+use App\Traits\MessaraTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -16,7 +16,7 @@ use Inertia\Inertia;
 
 class CertificationProgramController extends Controller
 {
-    use WablasTrait;
+    use MessaraTrait;
 
     private const ADMIN_WHATSAPP_URL = 'https://wa.me/+6285142505794';
     private const ADMIN_WHATSAPP_NUMBER = '6285142505794';
