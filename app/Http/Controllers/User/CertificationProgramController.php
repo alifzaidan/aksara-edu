@@ -458,9 +458,10 @@ class CertificationProgramController extends Controller
      */
     private function getReferralInfo(): array
     {
+        $code = session('affiliate_code') ?? session('referral_code');
         return [
-            'code' => session('referral_code'),
-            'hasActive' => session('referral_code') && session('referral_code') !== 'ATM2025',
+            'code' => $code,
+            'hasActive' => $code && $code !== 'ATM2025',
         ];
     }
 
@@ -472,6 +473,7 @@ class CertificationProgramController extends Controller
         $referralCode = $request->query('ref');
         if ($referralCode) {
             session([
+                'affiliate_code' => $referralCode,
                 'referral_code' => $referralCode,
             ]);
         }

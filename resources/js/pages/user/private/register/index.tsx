@@ -98,9 +98,9 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
         const refFromUrl = urlParams.get('ref');
 
         if (refFromUrl) {
-            sessionStorage.setItem('referral_code', refFromUrl);
-        } else if (referralInfo.code) {
-            sessionStorage.setItem('referral_code', referralInfo.code);
+            sessionStorage.setItem('affiliate_code', refFromUrl);
+        } else if (referralInfo?.code) {
+            sessionStorage.setItem('affiliate_code', referralInfo.code);
         }
     }, [referralInfo]);
 
@@ -205,7 +205,7 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                     city: guestFormData.city,
                     password: guestFormData.phone_number,
                     password_confirmation: guestFormData.phone_number,
-                    affiliate_code: referralInfo.code || sessionStorage.getItem('referral_code'),
+                    affiliate_code: sessionStorage.getItem('affiliate_code') || urlParams.get('ref') || referralInfo?.code || '',
                 });
 
                 toast.success('Registrasi berhasil. Melanjutkan checkout...');

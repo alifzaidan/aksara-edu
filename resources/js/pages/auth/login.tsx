@@ -49,6 +49,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                 const refFromRedirect = redirectUrlObj.searchParams.get('ref');
 
                 if (refFromRedirect) {
+                    sessionStorage.setItem('affiliate_code', refFromRedirect);
                     sessionStorage.setItem('referral_code', refFromRedirect);
                     setReferralCode(refFromRedirect);
                 }
@@ -57,7 +58,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
             }
         }
 
-        const storedReferral = sessionStorage.getItem('referral_code');
+        const storedReferral = sessionStorage.getItem('affiliate_code') || sessionStorage.getItem('referral_code');
         if (storedReferral && !referralCode) {
             setReferralCode(storedReferral);
         }

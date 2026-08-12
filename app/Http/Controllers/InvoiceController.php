@@ -803,11 +803,11 @@ class InvoiceController extends Controller
             $privateClassScheduleId = $request->input('private_class_schedule_id');
             $selectedPrivateSchedule = null;
 
-            $referralCode = session('referral_code');
+            $affiliateCode = session('affiliate_code') ?? session('referral_code');
             $referredByUserId = null;
 
-            if ($referralCode && $referralCode !== 'AKS2025') {
-                $referrer = User::where('affiliate_code', $referralCode)->first();
+            if ($affiliateCode && $affiliateCode !== 'AKS2025') {
+                $referrer = User::where('affiliate_code', $affiliateCode)->first();
                 if ($referrer && $referrer->id !== $userId) {
                     $referredByUserId = $referrer->id;
                 }

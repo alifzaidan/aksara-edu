@@ -231,6 +231,7 @@ class PrivateController extends Controller
 
         if ($referralCode) {
             session([
+                'affiliate_code' => $referralCode,
                 'referral_code' => $referralCode,
             ]);
         }
@@ -238,9 +239,10 @@ class PrivateController extends Controller
 
     private function getReferralInfo(): array
     {
+        $code = session('affiliate_code') ?? session('referral_code');
         return [
-            'code' => session('referral_code'),
-            'hasActive' => session('referral_code') && session('referral_code') !== 'ATM2025',
+            'code' => $code,
+            'hasActive' => $code && $code !== 'ATM2025',
         ];
     }
 }

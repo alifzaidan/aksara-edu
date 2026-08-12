@@ -15,7 +15,10 @@ class SocialiteController extends Controller
     public function redirectToGoogle()
     {
         if (request()->has('ref')) {
-            session(['referral_code' => request('ref')]);
+            session([
+                'affiliate_code' => request('ref'),
+                'referral_code' => request('ref'),
+            ]);
         }
 
         return Socialite::driver('google')->redirect();
@@ -24,7 +27,10 @@ class SocialiteController extends Controller
     public function redirectToGitHub()
     {
         if (request()->has('ref')) {
-            session(['referral_code' => request('ref')]);
+            session([
+                'affiliate_code' => request('ref'),
+                'referral_code' => request('ref'),
+            ]);
         }
 
         return Socialite::driver('github')->redirect();
@@ -74,8 +80,8 @@ class SocialiteController extends Controller
                     throw new \Exception('Akun dengan provider ini sudah terhubung ke user lain.');
                 }
             } else {
-                $referralCode = session('referral_code', 'ATM2025');
-                $referrer = User::where('affiliate_code', $referralCode)->first();
+                $affiliateCode = session('affiliate_code') ?? session('referral_code') ?? 'ATM2025';
+                $referrer = User::where('affiliate_code', $affiliateCode)->first();
 
                 if (!$referrer) {
                     $referrer = User::where('affiliate_code', 'ATM2025')->first();
@@ -90,7 +96,7 @@ class SocialiteController extends Controller
                     'referred_by_user_id' => $referrer?->id,
                 ]);
 
-                session()->forget('referral_code');
+                session()->forget(['affiliate_code', 'referral_code']);
             }
         }
 

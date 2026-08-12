@@ -172,13 +172,9 @@ export default function RegisterWebinar({
         const refFromUrl = urlParams.get('ref');
 
         if (refFromUrl) {
-            sessionStorage.setItem('referral_code', refFromUrl);
-            setCodeType('referral');
-            setPromoCode(refFromUrl);
-        } else if (referralInfo.code) {
-            sessionStorage.setItem('referral_code', referralInfo.code);
-            setCodeType('referral');
-            setPromoCode(referralInfo.code);
+            sessionStorage.setItem('affiliate_code', refFromUrl);
+        } else if (referralInfo?.code) {
+            sessionStorage.setItem('affiliate_code', referralInfo.code);
         }
     }, [referralInfo]);
 
@@ -408,7 +404,7 @@ export default function RegisterWebinar({
                     city: guestFormData.city,
                     password: guestFormData.phone_number,
                     password_confirmation: guestFormData.phone_number,
-                    affiliate_code: (codeType === 'referral' && referralData?.valid) ? promoCode : (referralInfo.code || sessionStorage.getItem('referral_code') || ''),
+                    affiliate_code: sessionStorage.getItem('affiliate_code') || urlParams.get('ref') || referralInfo?.code || '',
                 });
 
                 toast.success('Registrasi berhasil. Melanjutkan checkout...');

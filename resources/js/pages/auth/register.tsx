@@ -25,11 +25,12 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
 
     const getReferralCode = (): string => {
         if (affiliate_code) {
+            sessionStorage.setItem('affiliate_code', affiliate_code);
             sessionStorage.setItem('referral_code', affiliate_code);
             return affiliate_code;
         }
 
-        const storedReferral = sessionStorage.getItem('referral_code');
+        const storedReferral = sessionStorage.getItem('affiliate_code') || sessionStorage.getItem('referral_code');
         if (storedReferral) {
             return storedReferral;
         }
@@ -53,10 +54,11 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
         const refFromUrl = urlParams.get('ref');
 
         if (refFromUrl) {
+            sessionStorage.setItem('affiliate_code', refFromUrl);
             sessionStorage.setItem('referral_code', refFromUrl);
             setData('affiliate_code', refFromUrl);
         } else {
-            const storedReferral = sessionStorage.getItem('referral_code');
+            const storedReferral = sessionStorage.getItem('affiliate_code') || sessionStorage.getItem('referral_code');
             if (storedReferral) {
                 setData('affiliate_code', storedReferral);
             }
