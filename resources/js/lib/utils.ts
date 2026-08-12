@@ -28,3 +28,52 @@ export const rupiahFormatter = new Intl.NumberFormat('id-ID', {
 export const parseRupiah = (value: string) => {
     return Number(value.replace(/[^0-9,-]+/g, '').replace(',', '.'));
 };
+
+export function parseHtmlList(items?: string | null): string[] {
+    if (!items) return [];
+
+    const raw = String(items).trim();
+    if (!raw) return [];
+
+    const liMatches = raw.match(/<li[^>]*>[\s\S]*?<\/li>/gi);
+
+    if (liMatches?.length) {
+        return liMatches
+            .map((li) =>
+                li
+                    .replace(/<li[^>]*>/gi, '')
+                    .replace(/<\/li>/gi, '')
+                    .replace(/<br\s*\/?\s*>/gi, '\n')
+                    .replace(/<[^>]+>/g, '')
+                    .replace(/&nbsp;/gi, ' ')
+                    .replace(/&amp;/gi, '&')
+                    .replace(/&lt;/gi, '<')
+                    .replace(/&gt;/gi, '>')
+                    .replace(/&quot;/gi, '"')
+                    .replace(/&#39;/gi, "'")
+                    .trim(),
+            )
+            .filter(Boolean);
+    }
+
+    const normalized = raw
+        .replace(/<br\s*\/?\s*>/gi, '\n')
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<\/div>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/gi, "'")
+        .replace(/\r\n?/g, '\n');
+
+    return normalized
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => s.replace(/^[-*•–—\u2022]+\s+/, '').trim())
+        .filter(Boolean);
+}
+

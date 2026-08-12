@@ -1,19 +1,13 @@
 import { Button } from '@/components/ui/button';
+import { parseHtmlList } from '@/lib/utils';
 import { File } from 'lucide-react';
 
 interface Bootcamp {
     curriculum?: string | null;
 }
 
-function parseCurriculum(curriculum?: string | null): string[] {
-    if (!curriculum) return [];
-    const matches = curriculum.match(/<li>(.*?)<\/li>/g);
-    if (!matches) return [];
-    return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
-}
-
 export default function TimelineSection({ bootcamp }: { bootcamp: Bootcamp }) {
-    const curriculumList = parseCurriculum(bootcamp.curriculum);
+    const curriculumList = parseHtmlList(bootcamp.curriculum);
 
     return (
         <section className="to-primary mt-8 w-full bg-gradient-to-tl from-black px-4">

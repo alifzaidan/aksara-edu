@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
+import { parseHtmlList } from '@/lib/utils';
 import UserLayout from '@/layouts/user-layout';
 import { SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
@@ -71,10 +72,7 @@ interface PendingCheckoutData {
 }
 
 function parseList(items?: string | null): string[] {
-    if (!items) return [];
-    const matches = items.match(/<li>(.*?)<\/li>/g);
-    if (!matches) return [];
-    return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
+    return parseHtmlList(items);
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
