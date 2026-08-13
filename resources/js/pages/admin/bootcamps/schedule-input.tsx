@@ -6,7 +6,7 @@ import { FormLabel } from '@/components/ui/form';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { CalendarIcon, Plus, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export type BootcampSchedule = {
     id?: string;
@@ -26,6 +26,10 @@ interface BootcampScheduleInputProps {
 export default function BootcampScheduleInput({ value, onChange, startDate, endDate }: BootcampScheduleInputProps) {
     const [schedules, setSchedules] = useState<BootcampSchedule[]>(value);
     const [openCalendars, setOpenCalendars] = useState<{ [key: number]: boolean }>({});
+
+    useEffect(() => {
+        setSchedules(value);
+    }, [value]);
 
     function ymdToDate(ymd?: string) {
         if (!ymd) return undefined;

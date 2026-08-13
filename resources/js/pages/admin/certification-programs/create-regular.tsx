@@ -100,6 +100,35 @@ const formSchema = z
 
 type FormValues = z.infer<typeof formSchema>;
 
+const extractDate = (val: any): string => {
+    if (!val) return '';
+    if (typeof val === 'string') {
+        const datePart = val.split('T')[0].split(' ')[0];
+        if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return datePart;
+    }
+    const d = new Date(val);
+    if (!isNaN(d.getTime())) {
+        return d.toISOString().split('T')[0];
+    }
+    return '';
+};
+
+const extractTime = (val: any): string => {
+    if (!val || typeof val !== 'string') return '00:00';
+    const match = val.match(/(\d{2}:\d{2})/);
+    return match ? match[1] : '00:00';
+};
+
+const getDayFromDateStr = (dateStr: string): string => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length < 3) return '';
+    const dt = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    if (isNaN(dt.getTime())) return '';
+    const days = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
+    return days[dt.getDay()] || '';
+};
+
 export default function CreateRegularCertificationProgram({ categories, mentors }: CreateRegularProps) {
     const [preview, setPreview] = useState<string | null>(null);
     const [thumbnailError, setThumbnailError] = useState(false);
@@ -254,18 +283,48 @@ export default function CreateRegularCertificationProgram({ categories, mentors 
                                                                     }
 
                                                                     // Populate schedules
-                                                                    if (program.schedules && Array.isArray(program.schedules)) {
-                                                                        const mappedSchedules = program.schedules
-                                                                            .filter((s: any) => s && s.schedule_type === 'main')
-                                                                            .map((s: any) => ({
-                                                                                schedule_date: s.schedule_date || '',
-                                                                                day: s.day || '',
-                                                                                start_time: s.start_time && typeof s.start_time === 'string' ? s.start_time.substring(0, 5) : '00:00',
-                                                                                end_time: s.end_time && typeof s.end_time === 'string' ? s.end_time.substring(0, 5) : '00:00',
-                                                                                title: s.title || ''
-                                                                            }));
-                                                                        setSchedules(mappedSchedules);
+                                                                    const rawSchedules = Array.isArray(program.schedules)
+                                                                        ? program.schedules
+                                                                        : Array.isArray(program.event_schedules)
+                                                                        ? program.event_schedules
+                                                                        : Array.isArray(program.program_schedules)
+                                                                        ? program.program_schedules
+                                                                        : [];
+
+                                                                    let mappedSchedules: BootcampSchedule[] = rawSchedules
+                                                                        .filter((s: any) => s && (!s.schedule_type || s.schedule_type === 'main' || s.schedule_type === 'pelaksanaan' || s.schedule_type === 'session'))
+                                                                        .map((s: any) => {
+                                                                            const scheduleDate = extractDate(s.schedule_date || s.date || s.event_date || s.start_date || s.start_time);
+                                                                            const day = s.day ? String(s.day).toLowerCase() : getDayFromDateStr(scheduleDate);
+                                                                            const startTime = extractTime(s.start_time || s.time_start || s.jam_mulai);
+                                                                            const endTime = extractTime(s.end_time || s.time_end || s.jam_selesai);
+                                                                            return {
+                                                                                schedule_date: scheduleDate,
+                                                                                day: day,
+                                                                                start_time: startTime,
+                                                                                end_time: endTime,
+                                                                                title: s.title || s.name || s.session_title || 'Sesi Pelaksanaan'
+                                                                            };
+                                                                        })
+                                                                        .filter((s: BootcampSchedule) => Boolean(s.schedule_date));
+
+                                                                    if (mappedSchedules.length === 0 && (program.start_date || program.start_time)) {
+                                                                        const startDateStr = extractDate(program.start_date || program.start_time);
+                                                                        if (startDateStr) {
+                                                                            const startTime = extractTime(program.start_time || program.start_date);
+                                                                            const endTime = extractTime(program.end_time || program.end_date) || '23:59';
+                                                                            const day = getDayFromDateStr(startDateStr);
+                                                                            mappedSchedules.push({
+                                                                                schedule_date: startDateStr,
+                                                                                day: day,
+                                                                                start_time: startTime,
+                                                                                end_time: endTime,
+                                                                                title: program.title ? `Pelaksanaan ${program.title}` : 'Jadwal Pelaksanaan'
+                                                                            });
+                                                                        }
                                                                     }
+
+                                                                    setSchedules(mappedSchedules);
 
                                                                     setIsBiinspiraPopoverOpen(false);
                                                                     toast.success(`Berhasil mengambil data "${program.title}" dari Biinsight!`);
