@@ -67,6 +67,15 @@ interface Promotion {
     is_active: boolean;
 }
 
+interface CarouselData {
+    id: string;
+    title: string | null;
+    image_path: string;
+    target_url: string | null;
+    order: number;
+    is_active: boolean;
+}
+
 interface HomeProps {
     tools: Tool[];
     latestProducts: Product[];
@@ -78,10 +87,11 @@ interface HomeProps {
         price: number;
     }>;
     activePromotion?: Promotion | null;
+    carousels?: CarouselData[];
     referralInfo: ReferralInfo;
 }
 
-export default function Home({ tools, latestProducts, myProductIds, allProducts, activePromotion, referralInfo }: HomeProps) {
+export default function Home({ tools, latestProducts, myProductIds, allProducts, activePromotion, carousels, referralInfo }: HomeProps) {
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const refFromUrl = urlParams.get('ref');
@@ -101,7 +111,7 @@ export default function Home({ tools, latestProducts, myProductIds, allProducts,
 
             {activePromotion && <PromotionPopup promotion={activePromotion} suppressDuration={3} />}
 
-            <CarouselSection />
+            <CarouselSection carousels={carousels} />
             <AboutSection />
             <ProgramSection />
             <ToolsSection tools={tools} />

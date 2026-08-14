@@ -324,6 +324,12 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::patch('promotions/{promotion}/toggle-status', [PromotionController::class, 'toggleStatus'])->name('promotions.toggle-status');
         Route::get('transactions/export', [InvoiceController::class, 'export'])->name('transactions.export');
 
+        Route::get('carousels', [\App\Http\Controllers\Admin\CarouselAdminController::class, 'index'])->name('carousels.index');
+        Route::post('carousels', [\App\Http\Controllers\Admin\CarouselAdminController::class, 'store'])->name('carousels.store');
+        Route::post('carousels/{carousel}/update', [\App\Http\Controllers\Admin\CarouselAdminController::class, 'update'])->name('carousels.update');
+        Route::delete('carousels/{carousel}', [\App\Http\Controllers\Admin\CarouselAdminController::class, 'destroy'])->name('carousels.destroy');
+        Route::patch('carousels/{carousel}/toggle-status', [\App\Http\Controllers\Admin\CarouselAdminController::class, 'toggleStatus'])->name('carousels.toggle-status');
+
         // Referral & Reward point admin routes
         Route::get('referral/settings', [App\Http\Controllers\Admin\ReferralAdminController::class, 'settings'])->name('admin.referral.settings');
         Route::post('referral/settings', [App\Http\Controllers\Admin\ReferralAdminController::class, 'updateSettings'])->name('admin.referral.settings.update');

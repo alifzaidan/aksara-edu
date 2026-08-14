@@ -127,6 +127,11 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
                 roles: ['admin'],
             } as any,
             {
+                title: 'Banner Carousel',
+                href: '/admin/carousels',
+                roles: ['admin'],
+            } as any,
+            {
                 title: 'Broadcast',
                 href: '/admin/broadcasts',
                 roles: ['admin'],
