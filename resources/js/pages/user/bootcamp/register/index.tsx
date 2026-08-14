@@ -406,7 +406,7 @@ export default function RegisterBootcamp({
                     city: guestFormData.city,
                     password: guestFormData.phone_number,
                     password_confirmation: guestFormData.phone_number,
-                    affiliate_code: sessionStorage.getItem('affiliate_code') || urlParams.get('ref') || referralInfo?.code || '',
+                    affiliate_code: sessionStorage.getItem('affiliate_code') || new URLSearchParams(window.location.search).get('ref') || referralInfo?.code || '',
                 });
 
                 toast.success('Registrasi berhasil. Melanjutkan checkout...');
