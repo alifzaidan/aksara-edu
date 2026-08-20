@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\Bootcamp;
 use App\Models\Bundle;
+use App\Models\Carousel;
 use App\Models\CertificationProgram;
 use App\Models\Course;
 use App\Models\EnrollmentPrivate;
@@ -306,6 +307,7 @@ class HomeController extends Controller
                 'certificationPrograms' => $myCertificationProgramIds,
             ];
         }
+        $carousels = Carousel::where('is_active', true)->orderBy('order', 'asc')->orderBy('created_at', 'desc')->get();
 
         return Inertia::render('user/home/index', [
             'tools' => $tools,
@@ -313,6 +315,7 @@ class HomeController extends Controller
             'myProductIds' => $myProductIds,
             'allProducts' => $allProducts,
             'activePromotion' => $activePromotion,
+            'carousels' => $carousels,
             'referralInfo' => [
                 'code' => session('affiliate_code') ?? session('referral_code'),
                 'hasActive' => (session('affiliate_code') ?? session('referral_code')) && (session('affiliate_code') ?? session('referral_code')) !== 'ATM2025',
