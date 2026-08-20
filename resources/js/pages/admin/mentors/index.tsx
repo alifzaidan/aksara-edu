@@ -49,16 +49,22 @@ interface Statistics {
     };
 }
 
+import { PaginatedData } from '@/types/pagination';
+
 interface MentorProps {
-    mentors: Mentor[];
+    mentors: PaginatedData<Mentor>;
     statistics: Statistics;
     flash?: {
         success?: string;
         error?: string;
     };
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
-export default function Mentors({ mentors, statistics, flash }: MentorProps) {
+export default function Mentors({ mentors, statistics, flash, filters }: MentorProps) {
     const [open, setOpen] = useState(false);
     const [showMoreStats, setShowMoreStats] = useState(false);
 
@@ -320,7 +326,7 @@ export default function Mentors({ mentors, statistics, flash }: MentorProps) {
                 </div>
 
                 {/* Data Table */}
-                <DataTable columns={columns} data={mentors} />
+                <DataTable columns={columns} pagination={mentors} filters={filters} />
             </div>
         </AdminLayout>
     );

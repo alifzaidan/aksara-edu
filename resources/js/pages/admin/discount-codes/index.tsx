@@ -52,16 +52,22 @@ interface Statistics {
     };
 }
 
+import { PaginatedData } from '@/types/pagination';
+
 interface DiscountCodesProps {
-    discountCodes: DiscountCode[];
+    discountCodes: PaginatedData<DiscountCode>;
     statistics: Statistics;
     flash?: {
         success?: string;
         error?: string;
     };
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
-export default function DiscountCodes({ discountCodes, statistics, flash }: DiscountCodesProps) {
+export default function DiscountCodes({ discountCodes, statistics, flash, filters }: DiscountCodesProps) {
     const [showMoreStats, setShowMoreStats] = useState(false);
 
     useEffect(() => {
@@ -351,7 +357,7 @@ export default function DiscountCodes({ discountCodes, statistics, flash }: Disc
                 </div>
 
                 {/* Data Table */}
-                <DataTable columns={columns} data={discountCodes} />
+                <DataTable columns={columns} pagination={discountCodes} filters={filters} />
             </div>
         </AdminLayout>
     );

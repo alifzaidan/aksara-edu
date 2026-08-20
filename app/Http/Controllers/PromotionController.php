@@ -11,110 +11,70 @@ use Illuminate\Support\Str;
 
 class PromotionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $promotions = Promotion::orderBy('created_at', 'desc')->get();
+        $query = Promotion::orderBy('created_at', 'desc');
 
-        $totalPromotions = $promotions->count();
-        $today = Carbon::today();
-
-        $activePromotions = $promotions->where('is_active', true)->count();
-        $inactivePromotions = $promotions->where('is_active', false)->count();
-
-        $runningNow = $promotions->filter(function ($promo) use ($today) {
-            $startDate = Carbon::parse($promo->start_date);
-            $endDate = Carbon::parse($promo->end_date);
-            return $promo->is_active &&
-                $startDate->lte($today) &&
-                $endDate->gte($today);
-        })->count();
-
-        $upcoming = $promotions->filter(function ($promo) use ($today) {
-            $startDate = Carbon::parse($promo->start_date);
-            return $promo->is_active && $startDate->gt($today);
-        })->count();
-
-        $expired = $promotions->filter(function ($promo) use ($today) {
-            $endDate = Carbon::parse($promo->end_date);
-            return $endDate->lt($today);
-        })->count();
-
-        $totalDuration = 0;
-        $shortTerm = 0;
-        $mediumTerm = 0;
-        $longTerm = 0;
-
-        foreach ($promotions as $promo) {
-            $start = Carbon::parse($promo->start_date);
-            $end = Carbon::parse($promo->end_date);
-            $duration = $start->diffInDays($end) + 1;
-            $totalDuration += $duration;
-
-            if ($duration <= 7) {
-                $shortTerm++;
-            } elseif ($duration <= 30) {
-                $mediumTerm++;
-            } else {
-                $longTerm++;
-            }
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
         }
 
-        $averageDuration = $totalPromotions > 0 ? round($totalDuration / $totalPromotions, 1) : 0;
+        $today = Carbon::today();
+        $totalPromotions = Promotion::count();
+        $activePromotions = Promotion::where('is_active', true)->count();
+        $inactivePromotions = Promotion::where('is_active', false)->count();
 
-        $withRedirect = $promotions->whereNotNull('url_redirect')
-            ->filter(fn($p) => !empty(trim($p->url_redirect)))
+        $runningNow = Promotion::where('is_active', true)
+            ->whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today)
             ->count();
-        $withoutRedirect = $totalPromotions - $withRedirect;
 
-        $recentPromotions = $promotions->filter(function ($promo) {
-            return Carbon::parse($promo->created_at)->isAfter(now()->subDays(30));
-        })->count();
+        $upcoming = Promotion::where('is_active', true)
+            ->whereDate('start_date', '>', $today)
+            ->count();
 
-        $upcomingSoon = $promotions->filter(function ($promo) use ($today) {
-            $startDate = Carbon::parse($promo->start_date);
-            $nextWeek = $today->copy()->addDays(7);
-            return $promo->is_active &&
-                $startDate->gt($today) &&
-                $startDate->lte($nextWeek);
-        })->count();
-
-        $expiringSoon = $promotions->filter(function ($promo) use ($today) {
-            $endDate = Carbon::parse($promo->end_date);
-            $nextWeek = $today->copy()->addDays(7);
-            return $promo->is_active &&
-                $endDate->gte($today) &&
-                $endDate->lte($nextWeek);
-        })->count();
+        $expired = Promotion::whereDate('end_date', '<', $today)->count();
 
         $statistics = [
             'overview' => [
                 'total_promotions' => $totalPromotions,
                 'active_promotions' => $activePromotions,
                 'inactive_promotions' => $inactivePromotions,
-                'recent_promotions' => $recentPromotions,
+                'recent_promotions' => 0,
             ],
             'status' => [
                 'running_now' => $runningNow,
                 'upcoming' => $upcoming,
                 'expired' => $expired,
-                'upcoming_soon' => $upcomingSoon,
-                'expiring_soon' => $expiringSoon,
+                'upcoming_soon' => 0,
+                'expiring_soon' => 0,
             ],
             'duration' => [
-                'average_duration' => $averageDuration,
-                'short_term' => $shortTerm,
-                'medium_term' => $mediumTerm,
-                'long_term' => $longTerm,
+                'average_duration' => 0,
+                'short_term' => 0,
+                'medium_term' => 0,
+                'long_term' => 0,
             ],
             'redirect' => [
-                'with_redirect' => $withRedirect,
-                'without_redirect' => $withoutRedirect,
+                'with_redirect' => 0,
+                'without_redirect' => 0,
             ],
         ];
+
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $promotions = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('admin/promotions/index', [
             'promotions' => $promotions,
             'statistics' => $statistics,
+            'filters' => [
+                'search' => $request->input('search'),
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

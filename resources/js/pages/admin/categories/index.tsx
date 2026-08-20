@@ -21,16 +21,22 @@ interface Statistics {
     total_categories: number;
 }
 
+import { PaginatedData } from '@/types/pagination';
+
 interface CategoriesProps {
-    categories: Category[];
+    categories: PaginatedData<Category>;
     statistics: Statistics;
     flash?: {
         success?: string;
         error?: string;
     };
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
-export default function Categories({ categories, statistics, flash }: CategoriesProps) {
+export default function Categories({ categories, statistics, flash, filters }: CategoriesProps) {
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
@@ -76,7 +82,7 @@ export default function Categories({ categories, statistics, flash }: Categories
                     </div>
                 </div>
 
-                <DataTable columns={columns} data={categories} />
+                <DataTable columns={columns} pagination={categories} filters={filters} />
             </div>
         </AdminLayout>
     );

@@ -15,7 +15,9 @@ import {
 
 import { DataTableFacetedFilter } from '@/components/data-table-faceted-filter';
 import { DataTablePagination } from '@/components/data-table-pagination';
+import { DataTableServerPagination } from '@/components/data-table-server-pagination';
 import { DataTableViewOptions } from '@/components/data-table-view-option';
+import { PaginatedData } from '@/types/pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -46,10 +48,17 @@ type ProgramWithBatch = {
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
-    data: TData[];
+    data?: TData[] | PaginatedData<TData>;
+    pagination?: PaginatedData<TData>;
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
-export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({ columns, data, pagination }: DataTableProps<TData, TValue>) {
+    const paginationObj = pagination || (data && typeof data === 'object' && !Array.isArray(data) && 'data' in data ? (data as unknown as PaginatedData<TData>) : undefined);
+    const tableData = paginationObj ? (paginationObj.data || []) : (Array.isArray(data) ? data : []);
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -57,32 +66,32 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
 
     const batchOptions = React.useMemo(() => {
         const batches = new Set<string>();
-        data.forEach((item) => {
+        tableData.forEach((item) => {
             const program = item as TData & ProgramWithBatch;
             if (program.batch) {
                 batches.add(program.batch);
             }
         });
-        return Array.from(batches)
-            .sort()
-            .map((batch) => ({
-                label: batch,
-                value: batch,
-            }));
-    }, [data]);
+        return Array.from(batches).map((b) => ({ value: b, label: b }));
+    }, [tableData]);
 
     const table = useReactTable({
-        data,
+        data: tableData,
         columns,
         onSortingChange: setSorting,
         getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
+        getPaginationRowModel: paginationObj ? undefined : getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         onColumnFiltersChange: setColumnFilters,
         getFilteredRowModel: getFilteredRowModel(),
         onColumnVisibilityChange: setColumnVisibility,
         onRowSelectionChange: setRowSelection,
-        state: { sorting, columnFilters, columnVisibility, rowSelection },
+        state: {
+            sorting,
+            columnFilters,
+            columnVisibility,
+            rowSelection,
+        },
     });
 
     const isFiltered = table.getState().columnFilters.length > 0;
@@ -91,42 +100,46 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
         <div>
             <div className="flex flex-col items-stretch gap-2 py-4 lg:flex-row lg:items-center">
                 <Input
-                    placeholder="Cari judul program..."
+                    placeholder="Cari program sertifikasi..."
                     value={(table.getColumn('title')?.getFilterValue() as string) ?? ''}
                     onChange={(event) => table.getColumn('title')?.setFilterValue(event.target.value)}
                     className="lg:max-w-sm"
                 />
                 <div className="flex flex-col items-center gap-2 lg:flex-row">
-                    {table.getColumn('type') && <DataTableFacetedFilter column={table.getColumn('type')} title="Tipe" options={programTypes} />}
-                    {table.getColumn('batch') && batchOptions.length > 0 && (
-                        <DataTableFacetedFilter column={table.getColumn('batch')} title="Batch" options={batchOptions} />
-                    )}
                     {table.getColumn('status') && (
                         <DataTableFacetedFilter column={table.getColumn('status')} title="Status" options={programStatuses} />
                     )}
+                    {table.getColumn('batch') && batchOptions.length > 0 && (
+                        <DataTableFacetedFilter column={table.getColumn('batch')} title="Batch" options={batchOptions} />
+                    )}
                     {table.getColumn('recording_status') && (
-                        <DataTableFacetedFilter column={table.getColumn('recording_status')} title="Status Rekaman" options={recordingStatuses} />
+                        <DataTableFacetedFilter
+                            column={table.getColumn('recording_status')}
+                            title="Rekaman"
+                            options={recordingStatuses}
+                        />
                     )}
                     {isFiltered && (
-                        <Button onClick={() => table.resetColumnFilters()} className="h-8 px-2 lg:px-3">
+                        <Button variant="ghost" onClick={() => table.resetColumnFilters()} className="h-8 px-2 lg:px-3">
                             Reset
-                            <X />
+                            <X className="ml-2 h-4 w-4" />
                         </Button>
                     )}
                 </div>
                 <DataTableViewOptions table={table} />
             </div>
-
             <div className="w-[1000px] max-w-full min-w-full overflow-x-auto rounded-md border">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => (
-                                    <TableHead key={header.id}>
-                                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                    </TableHead>
-                                ))}
+                                {headerGroup.headers.map((header) => {
+                                    return (
+                                        <TableHead key={header.id}>
+                                            {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                        </TableHead>
+                                    );
+                                })}
                             </TableRow>
                         ))}
                     </TableHeader>
@@ -150,7 +163,11 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
                 </Table>
             </div>
             <div className="py-4">
-                <DataTablePagination table={table} />
+                {paginationObj ? (
+                    <DataTableServerPagination pagination={paginationObj} />
+                ) : (
+                    <DataTablePagination table={table} />
+                )}
             </div>
         </div>
     );

@@ -27,12 +27,18 @@ interface Statistics {
     revenue: number;
 }
 
+import { PaginatedData } from '@/types/pagination';
+
 interface Props {
-    privateClasses: PrivateClass[];
+    privateClasses: PaginatedData<PrivateClass>;
     statistics: Statistics;
     flash?: {
         success?: string;
         error?: string;
+    };
+    filters?: {
+        search?: string;
+        per_page?: number;
     };
 }
 
@@ -43,7 +49,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function PrivateIndex({ privateClasses, statistics, flash }: Props) {
+export default function PrivateIndex({ privateClasses, statistics, flash, filters }: Props) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
     const [showMoreStats, setShowMoreStats] = useState(false);
@@ -256,7 +262,7 @@ export default function PrivateIndex({ privateClasses, statistics, flash }: Prop
                     </div>
                 </div>
 
-                <DataTable columns={columns} data={privateClasses} />
+                <DataTable columns={columns} pagination={privateClasses} filters={filters} />
             </div>
         </AdminLayout>
     );

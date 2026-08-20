@@ -15,7 +15,9 @@ import {
 
 import { DataTableFacetedFilter } from '@/components/data-table-faceted-filter';
 import { DataTablePagination } from '@/components/data-table-pagination';
+import { DataTableServerPagination } from '@/components/data-table-server-pagination';
 import { DataTableViewOptions } from '@/components/data-table-view-option';
+import { PaginatedData } from '@/types/pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -35,20 +37,27 @@ export const recordingStatuses = [
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
-    data: TData[];
+    data?: TData[] | PaginatedData<TData>;
+    pagination?: PaginatedData<TData>;
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
-export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({ columns, data, pagination }: DataTableProps<TData, TValue>) {
+    const paginationObj = pagination || (data && typeof data === 'object' && !Array.isArray(data) && 'data' in data ? (data as unknown as PaginatedData<TData>) : undefined);
+    const tableData = paginationObj ? (paginationObj.data || []) : (Array.isArray(data) ? data : []);
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
     const [rowSelection, setRowSelection] = React.useState({});
     const table = useReactTable({
-        data,
+        data: tableData,
         columns,
         onSortingChange: setSorting,
         getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
+        getPaginationRowModel: paginationObj ? undefined : getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         onColumnFiltersChange: setColumnFilters,
         getFilteredRowModel: getFilteredRowModel(),
@@ -68,7 +77,7 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
         <div>
             <div className="flex flex-col items-stretch gap-2 py-4 lg:flex-row lg:items-center">
                 <Input
-                    placeholder="Cari judul webinar..."
+                    placeholder="Cari webinar..."
                     value={(table.getColumn('title')?.getFilterValue() as string) ?? ''}
                     onChange={(event) => table.getColumn('title')?.setFilterValue(event.target.value)}
                     className="lg:max-w-sm"
@@ -77,13 +86,17 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
                     {table.getColumn('status') && (
                         <DataTableFacetedFilter column={table.getColumn('status')} title="Status" options={webinarStatuses} />
                     )}
-                    {table.getColumn('recording_status') && (
-                        <DataTableFacetedFilter column={table.getColumn('recording_status')} title="Status Rekaman" options={recordingStatuses} />
+                    {table.getColumn('has_recording') && (
+                        <DataTableFacetedFilter
+                            column={table.getColumn('has_recording')}
+                            title="Rekaman"
+                            options={recordingStatuses}
+                        />
                     )}
                     {isFiltered && (
-                        <Button onClick={() => table.resetColumnFilters()} className="h-8 px-2 lg:px-3">
+                        <Button variant="ghost" onClick={() => table.resetColumnFilters()} className="h-8 px-2 lg:px-3">
                             Reset
-                            <X />
+                            <X className="ml-2 h-4 w-4" />
                         </Button>
                     )}
                 </div>
@@ -124,7 +137,11 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
                 </Table>
             </div>
             <div className="py-4">
-                <DataTablePagination table={table} />
+                {paginationObj ? (
+                    <DataTableServerPagination pagination={paginationObj} />
+                ) : (
+                    <DataTablePagination table={table} />
+                )}
             </div>
         </div>
     );

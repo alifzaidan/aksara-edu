@@ -56,16 +56,22 @@ interface Statistics {
     };
 }
 
+import { PaginatedData } from '@/types/pagination';
+
 interface WebinarProps {
-    webinars: Webinar[];
+    webinars: PaginatedData<Webinar>;
     statistics: Statistics;
     flash?: {
         success?: string;
         error?: string;
     };
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
-export default function Webinars({ webinars, statistics, flash }: WebinarProps) {
+export default function Webinars({ webinars, statistics, flash, filters }: WebinarProps) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
     const [showMoreStats, setShowMoreStats] = useState(false);
@@ -342,7 +348,7 @@ export default function Webinars({ webinars, statistics, flash }: WebinarProps) 
                     </div>
                 </div>
 
-                <DataTable columns={columns} data={webinars} />
+                <DataTable columns={columns} pagination={webinars} filters={filters} />
             </div>
         </AdminLayout>
     );

@@ -9,12 +9,24 @@ use Inertia\Inertia;
 
 class CertificateDesignController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $designs = CertificateDesign::latest()->get();
+        $query = CertificateDesign::latest();
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $designs = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('admin/certificates/designs/index', [
-            'designs' => $designs
+            'designs' => $designs,
+            'filters' => [
+                'search' => $request->input('search'),
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

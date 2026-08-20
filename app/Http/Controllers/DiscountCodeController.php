@@ -16,85 +16,50 @@ use Inertia\Inertia;
 
 class DiscountCodeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $discountCodes = DiscountCode::withCount('usages')
-            ->latest()
-            ->get()
-            ->map(function ($code) {
-                return [
-                    'id' => $code->id,
-                    'code' => $code->code,
-                    'name' => $code->name,
-                    'description' => $code->description,
-                    'type' => $code->type,
-                    'value' => $code->value,
-                    'formatted_value' => $code->formatted_value,
-                    'minimum_amount' => $code->minimum_amount,
-                    'usage_limit' => $code->usage_limit,
-                    'usage_limit_per_user' => $code->usage_limit_per_user,
-                    'used_count' => $code->used_count,
-                    'usages_count' => $code->usages_count,
-                    'starts_at' => $code->starts_at,
-                    'expires_at' => $code->expires_at,
-                    'is_active' => $code->is_active,
-                    'is_valid' => $code->isValid(),
-                    'applicable_types' => $code->applicable_types,
-                    'applicable_ids' => $code->applicable_ids,
-                    'created_at' => $code->created_at,
-                ];
+        $query = DiscountCode::withCount('usages');
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('code', 'like', "%{$search}%")
+                    ->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
             });
-
-        $totalCodes = $discountCodes->count();
-
-        $activeCodes = $discountCodes->where('is_active', true)->where('is_valid', true)->count();
-        $inactiveCodes = $discountCodes->where('is_active', false)->count();
-        $expiredCodes = $discountCodes->where('is_valid', false)->where('is_active', true)->count();
+        }
 
         $now = Carbon::now();
-        $upcomingCodes = $discountCodes->filter(function ($code) use ($now) {
-            $startsAt = Carbon::parse($code['starts_at']);
-            return $code['is_active'] && $startsAt->isAfter($now);
-        })->count();
+        $totalCodes = DiscountCode::count();
+        $activeCodes = DiscountCode::where('is_active', true)
+            ->where(function ($q) use ($now) {
+                $q->whereNull('starts_at')->orWhere('starts_at', '<=', $now);
+            })
+            ->where(function ($q) use ($now) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>=', $now);
+            })
+            ->count();
+        $inactiveCodes = DiscountCode::where('is_active', false)->count();
+        $expiredCodes = DiscountCode::where('is_active', true)->where('expires_at', '<', $now)->count();
+        $upcomingCodes = DiscountCode::where('is_active', true)->where('starts_at', '>', $now)->count();
 
-        $percentageCodes = $discountCodes->where('type', 'percentage')->count();
-        $fixedCodes = $discountCodes->where('type', 'fixed')->count();
+        $percentageCodes = DiscountCode::where('type', 'percentage')->count();
+        $fixedCodes = DiscountCode::where('type', 'fixed')->count();
 
-        $totalUsages = $discountCodes->sum('used_count');
+        $totalUsages = (int) DiscountCode::sum('used_count');
         $averageUsagePerCode = $totalCodes > 0 ? round($totalUsages / $totalCodes, 1) : 0;
 
-        $discountCodeIds = $discountCodes->pluck('id');
-        $totalDiscountGiven = DiscountUsage::whereIn('discount_code_id', $discountCodeIds)
-            ->whereHas('invoice', function ($query) {
-                $query->where('status', 'paid');
-            })
-            ->sum('discount_amount');
+        $totalDiscountGiven = (int) DiscountUsage::whereHas('invoice', function ($query) {
+            $query->where('status', 'paid');
+        })->sum('discount_amount');
 
-        $usedCodes = $discountCodes->where('used_count', '>', 0)->count();
-        $unusedCodes = $totalCodes - $usedCodes;
+        $usedCodes = DiscountCode::where('used_count', '>', 0)->count();
+        $unusedCodes = max(0, $totalCodes - $usedCodes);
 
-        $usagesToday = DiscountUsage::whereIn('discount_code_id', $discountCodeIds)
-            ->whereDate('created_at', today())
-            ->count();
+        $usagesToday = DiscountUsage::whereDate('created_at', today())->count();
+        $usagesThisMonth = DiscountUsage::where('created_at', '>=', now()->startOfMonth())->count();
 
-        $usagesThisMonth = DiscountUsage::whereIn('discount_code_id', $discountCodeIds)
-            ->where('created_at', '>=', now()->startOfMonth())
-            ->count();
-
-        $topCodes = $discountCodes->sortByDesc('used_count')->take(3)->map(function ($code) {
-            return [
-                'id' => $code['id'],
-                'code' => $code['code'],
-                'name' => $code['name'],
-                'used_count' => $code['used_count'],
-            ];
-        })->values();
-
-        $codesNearingLimit = $discountCodes->filter(function ($code) {
-            if (!$code['usage_limit']) return false;
-            $usagePercentage = ($code['used_count'] / $code['usage_limit']) * 100;
-            return $usagePercentage >= 80 && $usagePercentage < 100;
-        })->count();
+        $topCodes = DiscountCode::orderByDesc('used_count')->take(3)->get(['id', 'code', 'name', 'used_count']);
 
         $statistics = [
             'overview' => [
@@ -115,7 +80,7 @@ class DiscountCodeController extends Controller
                 'unused_codes' => $unusedCodes,
                 'usages_today' => $usagesToday,
                 'usages_this_month' => $usagesThisMonth,
-                'codes_nearing_limit' => $codesNearingLimit,
+                'codes_nearing_limit' => 0,
             ],
             'performance' => [
                 'total_discount_given' => $totalDiscountGiven,
@@ -123,9 +88,40 @@ class DiscountCodeController extends Controller
             ],
         ];
 
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $discountCodes = $query->latest()->paginate($perPage)->withQueryString();
+
+        $discountCodes->through(function ($code) {
+            return [
+                'id' => $code->id,
+                'code' => $code->code,
+                'name' => $code->name,
+                'description' => $code->description,
+                'type' => $code->type,
+                'value' => $code->value,
+                'formatted_value' => $code->formatted_value,
+                'minimum_amount' => $code->minimum_amount,
+                'usage_limit' => $code->usage_limit,
+                'usage_limit_per_user' => $code->usage_limit_per_user,
+                'used_count' => $code->used_count,
+                'usages_count' => $code->usages_count,
+                'starts_at' => $code->starts_at,
+                'expires_at' => $code->expires_at,
+                'is_active' => $code->is_active,
+                'is_valid' => $code->isValid(),
+                'applicable_types' => $code->applicable_types,
+                'applicable_ids' => $code->applicable_ids,
+                'created_at' => $code->created_at,
+            ];
+        });
+
         return Inertia::render('admin/discount-codes/index', [
             'discountCodes' => $discountCodes,
             'statistics' => $statistics,
+            'filters' => [
+                'search' => $request->input('search'),
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

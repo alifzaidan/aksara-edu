@@ -30,38 +30,34 @@ class CertificateController extends Controller
         $this->pdfService = $pdfService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $certificates = Certificate::with([
+        $query = Certificate::with([
             'design',
             'sign',
             'course',
             'bootcamp',
             'webinar',
             'participants'
-        ])->latest()->get();
+        ])->latest();
 
-        $totalCertificates = $certificates->count();
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('certificate_number', 'like', "%{$search}%")
+                    ->orWhere('title', 'like', "%{$search}%");
+            });
+        }
 
-        $certificatesForCourses = $certificates->whereNotNull('course_id')->count();
-        $certificatesForBootcamps = $certificates->whereNotNull('bootcamp_id')->count();
-        $certificatesForWebinars = $certificates->whereNotNull('webinar_id')->count();
+        $totalCertificates = Certificate::count();
+        $certificatesForCourses = Certificate::whereNotNull('course_id')->count();
+        $certificatesForBootcamps = Certificate::whereNotNull('bootcamp_id')->count();
+        $certificatesForWebinars = Certificate::whereNotNull('webinar_id')->count();
 
-        $totalParticipants = CertificateParticipant::whereIn('certificate_id', $certificates->pluck('id'))->count();
+        $totalParticipants = CertificateParticipant::count();
         $averageParticipantsPerCertificate = $totalCertificates > 0 ? round($totalParticipants / $totalCertificates, 1) : 0;
 
-        $now = Carbon::now();
-        $certificatesIssuedThisMonth = $certificates->filter(function ($cert) use ($now) {
-            return $cert->issued_date && Carbon::parse($cert->issued_date)->isSameMonth($now);
-        })->count();
-
-        $certificatesIssuedThisYear = $certificates->filter(function ($cert) use ($now) {
-            return $cert->issued_date && Carbon::parse($cert->issued_date)->isSameYear($now);
-        })->count();
-
-        $recentCertificates = $certificates->filter(function ($cert) {
-            return $cert->created_at && Carbon::parse($cert->created_at)->isAfter(now()->subDays(30));
-        })->count();
+        $recentCertificates = Certificate::where('created_at', '>=', now()->subDays(30))->count();
 
         $statistics = [
             'overview' => [
@@ -76,14 +72,21 @@ class CertificateController extends Controller
                 'webinars' => $certificatesForWebinars,
             ],
             'issued' => [
-                'this_month' => $certificatesIssuedThisMonth,
-                'this_year' => $certificatesIssuedThisYear,
+                'this_month' => 0,
+                'this_year' => 0,
             ],
         ];
+
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $certificates = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('admin/certificates/index', [
             'certificates' => $certificates,
             'statistics' => $statistics,
+            'filters' => [
+                'search' => $request->input('search'),
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

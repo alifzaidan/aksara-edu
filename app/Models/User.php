@@ -190,6 +190,18 @@ class User extends Authenticatable
         );
     }
 
+    public function privateEnrollments()
+    {
+        return $this->hasManyThrough(
+            EnrollmentPrivate::class,
+            Invoice::class,
+            'user_id',
+            'invoice_id',
+            'id',
+            'id'
+        );
+    }
+
     public function pointTransactions()
     {
         return $this->hasMany(PointTransaction::class);

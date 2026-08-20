@@ -50,16 +50,22 @@ interface Statistics {
     };
 }
 
+import { PaginatedData } from '@/types/pagination';
+
 interface BundlesProps {
-    bundles: Bundle[];
+    bundles: PaginatedData<Bundle>;
     statistics: Statistics;
     flash?: {
         success?: string;
         error?: string;
     };
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
-export default function Bundles({ bundles, statistics, flash }: BundlesProps) {
+export default function Bundles({ bundles, statistics, flash, filters }: BundlesProps) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
     const [showMoreStats, setShowMoreStats] = useState(false);
@@ -301,7 +307,7 @@ export default function Bundles({ bundles, statistics, flash }: BundlesProps) {
                 </div>
 
                 {/* Data Table */}
-                <DataTable columns={columns} data={bundles} />
+                <DataTable columns={columns} pagination={bundles} filters={filters} />
             </div>
         </AdminLayout>
     );

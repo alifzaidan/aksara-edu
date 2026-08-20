@@ -21,55 +21,51 @@ class CertificationProgramController extends Controller
 
     public function index(Request $request)
     {
-        $programs = CertificationProgram::with(['category', 'mentors', 'schedules', 'socializationSchedules'])
-            ->latest()
-            ->get();
+        $query = CertificationProgram::with(['category', 'mentors', 'schedules', 'socializationSchedules'])->latest();
 
-        $programsWithRecording = 0;
-        $programsPartiallyRecorded = 0;
-        $programsWithoutRecording = 0;
-
-        foreach ($programs as $program) {
-            $schedules = $program->schedules ?? collect();
-            $socializationSchedules = ($program->type === 'scholarship' && $program->socializationSchedules)
-                ? $program->socializationSchedules
-                : collect();
-
-            $totalSchedules = $schedules->count() + $socializationSchedules->count();
-            if ($totalSchedules === 0) {
-                $programsWithoutRecording++;
-                continue;
-            }
-
-            $uploadedCount = $schedules->whereNotNull('recording_url')->where('recording_url', '!=', '')->count() +
-                $socializationSchedules->whereNotNull('recording_url')->where('recording_url', '!=', '')->count();
-
-            if ($uploadedCount === $totalSchedules) {
-                $programsWithRecording++;
-            } elseif ($uploadedCount > 0) {
-                $programsPartiallyRecorded++;
-            } else {
-                $programsWithoutRecording++;
-            }
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('category', function ($cq) use ($search) {
+                        $cq->where('name', 'like', "%{$search}%");
+                    });
+            });
         }
 
+        $baseStats = CertificationProgram::query();
+        $totalPrograms = (clone $baseStats)->count();
+        $publishedPrograms = (clone $baseStats)->where('status', 'published')->count();
+        $draftPrograms = (clone $baseStats)->where('status', 'draft')->count();
+        $archivedPrograms = (clone $baseStats)->where('status', 'archived')->count();
+        $regularPrograms = (clone $baseStats)->where('type', 'regular')->count();
+        $scholarshipPrograms = (clone $baseStats)->where('type', 'scholarship')->count();
+
         $statistics = [
-            'total_programs' => $programs->count(),
-            'published_programs' => $programs->where('status', 'published')->count(),
-            'draft_programs' => $programs->where('status', 'draft')->count(),
-            'archived_programs' => $programs->where('status', 'archived')->count(),
-            'regular_programs' => $programs->where('type', 'regular')->count(),
-            'scholarship_programs' => $programs->where('type', 'scholarship')->count(),
+            'total_programs' => $totalPrograms,
+            'published_programs' => $publishedPrograms,
+            'draft_programs' => $draftPrograms,
+            'archived_programs' => $archivedPrograms,
+            'regular_programs' => $regularPrograms,
+            'scholarship_programs' => $scholarshipPrograms,
             'recording' => [
-                'with_recording' => $programsWithRecording,
-                'partially_recorded' => $programsPartiallyRecorded,
-                'without_recording' => $programsWithoutRecording,
+                'with_recording' => 0,
+                'partially_recorded' => 0,
+                'without_recording' => 0,
             ],
         ];
+
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $programs = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('admin/certification-programs/index', [
             'programs' => $programs,
             'statistics' => $statistics,
+            'filters' => [
+                'search' => $request->input('search'),
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

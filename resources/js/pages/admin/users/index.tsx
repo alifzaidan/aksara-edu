@@ -34,17 +34,23 @@ interface Statistics {
     };
 }
 
+import { PaginatedData } from '@/types/pagination';
+
 interface UserProps {
-    users: User[];
+    users: PaginatedData<User>;
     statistics: Statistics;
     flash?: {
         success?: string;
         error?: string;
     };
     categories: { id: string; name: string }[];
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
-export default function Users({ users, statistics, flash, categories }: UserProps) {
+export default function Users({ users, statistics, flash, categories, filters }: UserProps) {
     const [open, setOpen] = useState(false);
     const [showMoreStats, setShowMoreStats] = useState(false);
 
@@ -233,7 +239,7 @@ export default function Users({ users, statistics, flash, categories }: UserProp
                 </div>
 
                 {/* Data Table */}
-                <DataTable columns={columns} data={users} categories={categories} />
+                <DataTable columns={columns} pagination={users} categories={categories} filters={filters} />
             </div>
         </AdminLayout>
     );

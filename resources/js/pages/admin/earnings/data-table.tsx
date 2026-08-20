@@ -14,7 +14,9 @@ import {
 } from '@tanstack/react-table';
 
 import { DataTablePagination } from '@/components/data-table-pagination';
+import { DataTableServerPagination } from '@/components/data-table-server-pagination';
 import { DataTableViewOptions } from '@/components/data-table-view-option';
+import { PaginatedData } from '@/types/pagination';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
@@ -30,7 +32,8 @@ import { Earning } from './columns';
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
-    data: TData[];
+    data?: TData[] | PaginatedData<TData>;
+    pagination?: PaginatedData<TData>;
 }
 
 function exportToExcel(dateRange: DateRange | undefined) {
@@ -43,7 +46,9 @@ function exportToExcel(dateRange: DateRange | undefined) {
     window.location.href = route('earnings.export') + query;
 }
 
-export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({ columns, data, pagination }: DataTableProps<TData, TValue>) {
+    const paginationObj = pagination || (data && typeof data === 'object' && !Array.isArray(data) && 'data' in data ? (data as unknown as PaginatedData<TData>) : undefined);
+    const rawData = paginationObj ? (paginationObj.data || []) : (Array.isArray(data) ? data : []);
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -52,21 +57,21 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
     const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
 
     const filteredData = React.useMemo(() => {
-        if (!dateRange?.from) return data;
-        return (data as Earning[]).filter((item) => {
+        if (!dateRange?.from) return rawData;
+        return (rawData as Earning[]).filter((item) => {
             const date = parseISO(item.created_at);
             const from = startOfDay(dateRange.from!);
             const to = endOfDay(dateRange.to ?? dateRange.from!);
             return isWithinInterval(date, { start: from, end: to });
         }) as TData[];
-    }, [data, dateRange]);
+    }, [rawData, dateRange]);
 
     const table = useReactTable({
         data: filteredData,
         columns,
         onSortingChange: setSorting,
         getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
+        getPaginationRowModel: paginationObj ? undefined : getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         onColumnFiltersChange: setColumnFilters,
         getFilteredRowModel: getFilteredRowModel(),
@@ -164,7 +169,7 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
                 <div className="bg-muted/50 mb-3 flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
                     <CalendarIcon className="text-muted-foreground size-3.5" />
                     <span>
-                        Menampilkan <strong>{filteredData.length}</strong> dari <strong>{data.length}</strong> data
+                        Menampilkan <strong>{filteredData.length}</strong> dari <strong>{paginationObj ? paginationObj.total : rawData.length}</strong> data
                         {dateRange.from && (
                             <>
                                 {' '}untuk periode{' '}
@@ -215,7 +220,11 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
                 </Table>
             </div>
             <div className="py-4">
-                <DataTablePagination table={table} />
+                {paginationObj ? (
+                    <DataTableServerPagination pagination={paginationObj} />
+                ) : (
+                    <DataTablePagination table={table} />
+                )}
             </div>
         </div>
     );

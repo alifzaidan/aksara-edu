@@ -8,16 +8,19 @@ import { FormEventHandler, useState } from 'react';
 import { toast } from 'sonner';
 import { Promotion } from './columns';
 
+import { PaginatedData } from '@/types/pagination';
+
 interface CreatePromotionModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    promotions: Promotion[];
+    promotions?: Promotion[] | PaginatedData<Promotion>;
 }
 
-export default function CreatePromotionModal({ open, onOpenChange, promotions }: CreatePromotionModalProps) {
+export default function CreatePromotionModal({ open, onOpenChange, promotions = [] }: CreatePromotionModalProps) {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-    const hasActivePromotion = promotions.some((promotion) => promotion.is_active === true);
+    const promoList = Array.isArray(promotions) ? promotions : (promotions?.data || []);
+    const hasActivePromotion = promoList.some((promotion) => promotion.is_active === true);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         promotion_flyer: null as File | null,

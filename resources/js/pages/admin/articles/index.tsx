@@ -55,16 +55,22 @@ interface Statistics {
     };
 }
 
+import { PaginatedData } from '@/types/pagination';
+
 interface ArticlesProps {
-    articles: Article[];
+    articles: PaginatedData<Article>;
     statistics: Statistics;
     flash?: {
         success?: string;
         error?: string;
     };
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
-export default function Articles({ articles, statistics, flash }: ArticlesProps) {
+export default function Articles({ articles, statistics, flash, filters }: ArticlesProps) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
     const [showMoreStats, setShowMoreStats] = useState(false);
@@ -407,7 +413,7 @@ export default function Articles({ articles, statistics, flash }: ArticlesProps)
                 </div>
 
                 {/* Data Table */}
-                <DataTable columns={columns} data={articles} />
+                <DataTable columns={columns} pagination={articles} filters={filters} />
             </div>
         </AdminLayout>
     );

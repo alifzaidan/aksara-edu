@@ -22,6 +22,7 @@ export interface NavItem {
     icon?: LucideIcon | null;
     isActive?: boolean;
     items?: NavItem[];
+    activeUrls?: string[];
 }
 
 export interface ProductItem {

@@ -18,60 +18,29 @@ use Inertia\Inertia;
 
 class BundleController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $bundles = Bundle::with(['user', 'bundleItems.bundleable'])
+        $query = Bundle::with(['user', 'bundleItems.bundleable'])
             ->withCount('enrollments')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($bundle) {
-                $totalOriginalPrice = $bundle->bundleItems->sum('price');
-                $bundle->strikethrough_price = $totalOriginalPrice;
-                return $bundle;
+            ->orderBy('created_at', 'desc');
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
             });
-
-        $totalBundles = $bundles->count();
-        $publishedBundles = $bundles->where('status', 'published')->count();
-        $draftBundles = $bundles->where('status', 'draft')->count();
-        $archivedBundles = $bundles->where('status', 'archived')->count();
-
-        $bundlesWithCourses = 0;
-        $bundlesWithBootcamps = 0;
-        $bundlesWithWebinars = 0;
-
-        foreach ($bundles as $bundle) {
-            $items = $bundle->bundleItems;
-            $hasCourse = $items->contains(fn($item) => str_contains($item->bundleable_type, 'Course'));
-            $hasBootcamp = $items->contains(fn($item) => str_contains($item->bundleable_type, 'Bootcamp'));
-            $hasWebinar = $items->contains(fn($item) => str_contains($item->bundleable_type, 'Webinar'));
-
-            if ($hasCourse) $bundlesWithCourses++;
-            if ($hasBootcamp) $bundlesWithBootcamps++;
-            if ($hasWebinar) $bundlesWithWebinars++;
         }
 
-        $totalItems = 0;
-        foreach ($bundles as $bundle) {
-            $totalItems += $bundle->bundleItems->count();
-        }
-        $averageItemsPerBundle = $totalBundles > 0 ? round($totalItems / $totalBundles, 1) : 0;
+        $baseStats = Bundle::query();
+        $totalBundles = (clone $baseStats)->count();
+        $publishedBundles = (clone $baseStats)->where('status', 'published')->count();
+        $draftBundles = (clone $baseStats)->where('status', 'draft')->count();
+        $archivedBundles = (clone $baseStats)->where('status', 'archived')->count();
 
-        $totalSales = $bundles->sum('enrollments_count');
-
-        $bundleIds = $bundles->pluck('id');
         $totalRevenue = Invoice::where('status', 'paid')
-            ->whereHas('bundleEnrollments', function ($query) use ($bundleIds) {
-                $query->whereIn('bundle_id', $bundleIds);
-            })
+            ->whereHas('bundleEnrollments')
             ->sum('nett_amount');
-
-        $totalSavings = 0;
-        foreach ($bundles as $bundle) {
-            $originalPrice = $bundle->strikethrough_price;
-            $bundlePrice = $bundle->price;
-            $savings = $originalPrice - $bundlePrice;
-            $totalSavings += ($savings * ($bundle->enrollments_count ?? 0));
-        }
 
         $statistics = [
             'overview' => [
@@ -81,21 +50,34 @@ class BundleController extends Controller
                 'archived_bundles' => $archivedBundles,
             ],
             'content' => [
-                'with_courses' => $bundlesWithCourses,
-                'with_bootcamps' => $bundlesWithBootcamps,
-                'with_webinars' => $bundlesWithWebinars,
-                'average_items' => $averageItemsPerBundle,
+                'with_courses' => 0,
+                'with_bootcamps' => 0,
+                'with_webinars' => 0,
+                'average_items' => 0,
             ],
             'performance' => [
-                'total_sales' => $totalSales,
+                'total_sales' => 0,
                 'total_revenue' => $totalRevenue,
-                'total_savings' => $totalSavings,
+                'total_savings' => 0,
             ],
         ];
+
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $bundles = $query->paginate($perPage)->withQueryString();
+
+        $bundles->through(function ($bundle) {
+            $totalOriginalPrice = $bundle->bundleItems->sum('price');
+            $bundle->strikethrough_price = $totalOriginalPrice;
+            return $bundle;
+        });
 
         return Inertia::render('admin/bundles/index', [
             'bundles' => $bundles,
             'statistics' => $statistics,
+            'filters' => [
+                'search' => $request->input('search'),
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

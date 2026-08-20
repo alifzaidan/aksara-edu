@@ -25,56 +25,40 @@ class ArticleController extends Controller
             $query->where('status', 'published');
         }
 
-        $articles = $query->get();
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('content', 'like', "%{$search}%")
+                    ->orWhereHas('category', function ($cq) use ($search) {
+                        $cq->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
 
-        $totalArticles = $articles->count();
+        $baseStats = Article::query();
+        if ($user->hasRole('mentor')) {
+            $baseStats->where('user_id', $user->id);
+        } elseif ($isAffiliate) {
+            $baseStats->where('status', 'published');
+        }
 
-        $draftArticles = $articles->where('status', 'draft')->count();
-        $publishedArticles = $articles->where('status', 'published')->count();
-        $archivedArticles = $articles->where('status', 'archived')->count();
+        $totalArticles = (clone $baseStats)->count();
+        $draftArticles = (clone $baseStats)->where('status', 'draft')->count();
+        $publishedArticles = (clone $baseStats)->where('status', 'published')->count();
+        $archivedArticles = (clone $baseStats)->where('status', 'archived')->count();
+        $featuredArticles = 0;
+        $recentArticles = (clone $baseStats)->where('created_at', '>=', now()->subDays(30))->count();
 
-        $featuredArticles = $articles->where('is_featured', true)->count();
-
-        $totalViews = $articles->sum('views');
+        $totalViews = (int) (clone $baseStats)->sum('views');
         $averageViews = $totalArticles > 0 ? round($totalViews / $totalArticles, 0) : 0;
+        $mostViewedArticles = (clone $baseStats)->orderByDesc('views')->take(3)->get(['id', 'title', 'views', 'thumbnail']);
 
-        $mostViewedArticles = $articles->sortByDesc('views')->take(3)->map(function ($article) {
-            return [
-                'id' => $article->id,
-                'title' => $article->title,
-                'views' => $article->views,
-                'thumbnail' => $article->thumbnail,
-            ];
-        })->values();
-
-        $totalReadTime = $articles->sum('read_time');
+        $totalReadTime = (int) (clone $baseStats)->sum('read_time');
         $averageReadTime = $totalArticles > 0 ? round($totalReadTime / $totalArticles, 1) : 0;
+        $withoutThumbnail = (clone $baseStats)->whereNull('thumbnail')->count();
 
-        $categoryDistribution = $articles->groupBy('category_id')->map(function ($group) {
-            return [
-                'category_name' => $group->first()->category->name,
-                'count' => $group->count(),
-            ];
-        })->sortByDesc('count')->take(5)->values();
-
-        $authorStats = $articles->groupBy('user_id')->map(function ($group) {
-            return [
-                'author_name' => $group->first()->user->name,
-                'article_count' => $group->count(),
-                'total_views' => $group->sum('views'),
-            ];
-        })->sortByDesc('article_count')->take(3)->values();
-
-        $recentArticles = $articles->filter(function ($article) {
-            return Carbon::parse($article->created_at)->isAfter(now()->subDays(30));
-        })->count();
-
-        $publishedThisMonth = $articles->filter(function ($article) {
-            return $article->published_at &&
-                Carbon::parse($article->published_at)->isSameMonth(now());
-        })->count();
-
-        $withoutThumbnail = $articles->whereNull('thumbnail')->count();
+        $publishedThisMonth = (clone $baseStats)->whereNotNull('published_at')->where('published_at', '>=', now()->startOfMonth())->count();
 
         $statistics = [
             'overview' => [
@@ -96,17 +80,24 @@ class ArticleController extends Controller
                 'without_thumbnail' => $withoutThumbnail,
             ],
             'distribution' => [
-                'categories' => $categoryDistribution,
-                'authors' => $authorStats,
+                'categories' => [],
+                'authors' => [],
             ],
             'activity' => [
                 'published_this_month' => $publishedThisMonth,
             ],
         ];
 
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $articles = $query->paginate($perPage)->withQueryString();
+
         return Inertia::render('admin/articles/index', [
             'articles' => $articles,
             'statistics' => $statistics,
+            'filters' => [
+                'search' => $request->input('search'),
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

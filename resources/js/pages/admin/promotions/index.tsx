@@ -46,16 +46,22 @@ interface Statistics {
     };
 }
 
+import { PaginatedData } from '@/types/pagination';
+
 interface PromotionsProps {
-    promotions: Promotion[];
+    promotions: PaginatedData<Promotion>;
     statistics: Statistics;
     flash?: {
         success?: string;
         error?: string;
     };
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
-export default function Promotions({ promotions, statistics, flash }: PromotionsProps) {
+export default function Promotions({ promotions, statistics, flash, filters }: PromotionsProps) {
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [showMoreStats, setShowMoreStats] = useState(false);
 
@@ -380,7 +386,7 @@ export default function Promotions({ promotions, statistics, flash }: Promotions
                 </div>
 
                 {/* Data Table */}
-                <DataTable columns={columns} data={promotions} />
+                <DataTable columns={columns} pagination={promotions} filters={filters} />
 
                 <CreatePromotionModal open={createModalOpen} onOpenChange={setCreateModalOpen} promotions={promotions} />
             </div>

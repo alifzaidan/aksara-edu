@@ -8,15 +8,33 @@ use Inertia\Inertia;
 
 class CategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $categories = Category::latest()->get();
+        $query = Category::latest();
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where('name', 'like', "%{$search}%")
+                ->orWhere('slug', 'like', "%{$search}%");
+        }
+
+        $totalCategories = Category::count();
 
         $statistics = [
-            'total_categories' => $categories->count(),
+            'total_categories' => $totalCategories,
         ];
 
-        return Inertia::render('admin/categories/index', ['categories' => $categories, 'statistics' => $statistics]);
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $categories = $query->paginate($perPage)->withQueryString();
+
+        return Inertia::render('admin/categories/index', [
+            'categories' => $categories,
+            'statistics' => $statistics,
+            'filters' => [
+                'search' => $request->input('search'),
+                'per_page' => $perPage,
+            ],
+        ]);
     }
 
     public function create()

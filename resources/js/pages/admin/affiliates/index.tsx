@@ -32,16 +32,22 @@ interface Statistics {
     };
 }
 
+import { PaginatedData } from '@/types/pagination';
+
 interface AffiliateProps {
-    affiliates: Affiliate[];
+    affiliates: PaginatedData<Affiliate>;
     statistics: Statistics;
     flash?: {
         success?: string;
         error?: string;
     };
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
-export default function Affiliates({ affiliates, statistics, flash }: AffiliateProps) {
+export default function Affiliates({ affiliates, statistics, flash, filters }: AffiliateProps) {
     const [open, setOpen] = useState(false);
     const [showMoreStats, setShowMoreStats] = useState(false);
 
@@ -224,7 +230,7 @@ export default function Affiliates({ affiliates, statistics, flash }: AffiliateP
                 </div>
 
                 {/* Data Table */}
-                <DataTable columns={columns} data={affiliates} />
+                <DataTable columns={columns} pagination={affiliates} filters={filters} />
             </div>
         </AdminLayout>
     );

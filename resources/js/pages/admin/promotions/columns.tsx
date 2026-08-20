@@ -5,6 +5,8 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import ActionCell from './action-cell';
 
+import { PaginatedData } from '@/types/pagination';
+
 export interface Promotion {
     id: string;
     promotion_flyer: string;
@@ -14,7 +16,7 @@ export interface Promotion {
     url_redirect: string;
 }
 
-export const getColumns = (promotions: Promotion[]): ColumnDef<Promotion>[] => [
+export const getColumns = (promotions?: Promotion[] | PaginatedData<Promotion>): ColumnDef<Promotion>[] => [
     {
         id: 'number',
         header: 'No',

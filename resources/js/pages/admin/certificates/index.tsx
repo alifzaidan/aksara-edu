@@ -48,16 +48,22 @@ interface Statistics {
     };
 }
 
+import { PaginatedData } from '@/types/pagination';
+
 interface CertificateProps {
-    certificates: Certificate[];
+    certificates: PaginatedData<Certificate>;
     statistics: Statistics;
     flash?: {
         success?: string;
         error?: string;
     };
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
-export default function Certificates({ certificates, statistics, flash }: CertificateProps) {
+export default function Certificates({ certificates, statistics, flash, filters }: CertificateProps) {
     const [showMoreStats, setShowMoreStats] = useState(false);
 
     useEffect(() => {
@@ -303,7 +309,7 @@ export default function Certificates({ certificates, statistics, flash }: Certif
                 </div>
 
                 {/* Data Table */}
-                <DataTable columns={columns} data={certificates} />
+                <DataTable columns={columns} pagination={certificates} filters={filters} />
             </div>
         </AdminLayout>
     );

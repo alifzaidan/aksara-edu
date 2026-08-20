@@ -31,16 +31,22 @@ interface Statistics {
     };
 }
 
+import { PaginatedData } from '@/types/pagination';
+
 interface CertificationProgramsProps {
-    programs: CertificationProgram[];
+    programs: PaginatedData<CertificationProgram>;
     statistics: Statistics;
     flash?: {
         success?: string;
         error?: string;
     };
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
-export default function CertificationPrograms({ programs, statistics, flash }: CertificationProgramsProps) {
+export default function CertificationPrograms({ programs, statistics, flash, filters }: CertificationProgramsProps) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
     const [showMoreStats, setShowMoreStats] = useState(false);
@@ -257,7 +263,7 @@ export default function CertificationPrograms({ programs, statistics, flash }: C
 
                 {/* Programs Table */}
                 <div className="bg-card rounded-lg border p-4">
-                    <DataTable columns={columns} data={programs} />
+                    <DataTable columns={columns} pagination={programs} filters={filters} />
                 </div>
             </div>
         </AdminLayout>

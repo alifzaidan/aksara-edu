@@ -9,15 +9,33 @@ use Inertia\Inertia;
 
 class ToolController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $tools = Tool::latest()->get();
+        $query = Tool::latest();
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where('name', 'like', "%{$search}%")
+                ->orWhere('slug', 'like', "%{$search}%");
+        }
+
+        $totalTools = Tool::count();
 
         $statistics = [
-            'total_tools' => $tools->count(),
+            'total_tools' => $totalTools,
         ];
 
-        return Inertia::render('admin/tools/index', ['tools' => $tools, 'statistics' => $statistics]);
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $tools = $query->paginate($perPage)->withQueryString();
+
+        return Inertia::render('admin/tools/index', [
+            'tools' => $tools,
+            'statistics' => $statistics,
+            'filters' => [
+                'search' => $request->input('search'),
+                'per_page' => $perPage,
+            ],
+        ]);
     }
 
     public function create()

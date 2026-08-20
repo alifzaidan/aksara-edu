@@ -16,40 +16,61 @@ use Inertia\Inertia;
 
 class PrivateClassController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = User::find(Auth::id());
         $isAffiliate = $user && $user->hasRole('affiliate');
 
-        $query = PrivateClass::with(['category', 'user', 'schedules']);
+        $query = PrivateClass::with(['category', 'user', 'schedules'])->latest();
         if ($isAffiliate) {
             $query->where('status', 'published');
         }
 
-        $privateClasses = $query->latest()->get();
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('category', function ($cq) use ($search) {
+                        $cq->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
 
-        $privateIds = $privateClasses->pluck('id');
+        $baseStats = PrivateClass::query();
+        if ($isAffiliate) {
+            $baseStats->where('status', 'published');
+        }
+
+        $total = (clone $baseStats)->count();
+        $published = (clone $baseStats)->where('status', 'published')->count();
+        $draft = (clone $baseStats)->where('status', 'draft')->count();
+        $archived = (clone $baseStats)->where('status', 'archived')->count();
+
         $totalParticipants = Invoice::where('status', 'paid')
-            ->whereHas('privateItems', function ($q) use ($privateIds) {
-                $q->whereIn('private_class_id', $privateIds);
-            })
+            ->whereHas('privateItems')
             ->count();
 
         $totalRevenue = Invoice::where('status', 'paid')
-            ->whereHas('privateItems', function ($q) use ($privateIds) {
-                $q->whereIn('private_class_id', $privateIds);
-            })
+            ->whereHas('privateItems')
             ->sum('nett_amount');
+
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $privateClasses = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('admin/privates/index', [
             'privateClasses' => $privateClasses,
             'statistics' => [
-                'total' => $privateClasses->count(),
-                'published' => $privateClasses->where('status', 'published')->count(),
-                'draft' => $privateClasses->where('status', 'draft')->count(),
-                'archived' => $privateClasses->where('status', 'archived')->count(),
+                'total' => $total,
+                'published' => $published,
+                'draft' => $draft,
+                'archived' => $archived,
                 'participants' => $totalParticipants,
                 'revenue' => $totalRevenue,
+            ],
+            'filters' => [
+                'search' => $request->input('search'),
+                'per_page' => $perPage,
             ],
         ]);
     }

@@ -42,16 +42,22 @@ interface Statistics {
     };
 }
 
+import { PaginatedData } from '@/types/pagination';
+
 interface BootcampProps {
-    bootcamps: Bootcamp[];
+    bootcamps: PaginatedData<Bootcamp>;
     statistics: Statistics;
     flash?: {
         success?: string;
         error?: string;
     };
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
-export default function Bootcamps({ bootcamps, statistics, flash }: BootcampProps) {
+export default function Bootcamps({ bootcamps, statistics, flash, filters }: BootcampProps) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
     const [showMoreStats, setShowMoreStats] = useState(false);
@@ -332,7 +338,7 @@ export default function Bootcamps({ bootcamps, statistics, flash }: BootcampProp
                 </div>
 
                 {/* Data Table */}
-                <DataTable columns={columns} data={bootcamps} />
+                <DataTable columns={columns} pagination={bootcamps} filters={filters} />
             </div>
         </AdminLayout>
     );

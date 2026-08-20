@@ -16,17 +16,20 @@ interface Promotion {
     url_redirect: string;
 }
 
+import { PaginatedData } from '@/types/pagination';
+
 interface EditPromotionModalProps {
     promotion: Promotion;
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    promotions: Promotion[];
+    promotions?: Promotion[] | PaginatedData<Promotion>;
 }
 
-export default function EditPromotionModal({ promotion, open, onOpenChange, promotions }: EditPromotionModalProps) {
+export default function EditPromotionModal({ promotion, open, onOpenChange, promotions = [] }: EditPromotionModalProps) {
     const [imagePreview, setImagePreview] = useState<string | null>(promotion.promotion_flyer);
 
-    const hasOtherActivePromotion = promotions.some((p) => p.is_active === true && p.id !== promotion.id);
+    const promoList = Array.isArray(promotions) ? promotions : (promotions?.data || []);
+    const hasOtherActivePromotion = promoList.some((p) => p.is_active === true && p.id !== promotion.id);
 
     const formatDateForInput = (dateString: string) => {
         if (!dateString) return '';

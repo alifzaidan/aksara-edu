@@ -13,11 +13,17 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+import { PaginatedData } from '@/types/pagination';
+
 interface AffiliateEarningProps {
-    earnings: Earning[];
+    earnings: PaginatedData<Earning>;
     flash?: {
         success?: string;
         error?: string;
+    };
+    filters?: {
+        search?: string;
+        per_page?: number;
     };
 }
 
@@ -47,7 +53,7 @@ export default function AffiliateEarnings({ earnings, flash }: AffiliateEarningP
                     </div>
                 </div>
 
-                <DataTable columns={columns} data={earnings} />
+                <DataTable columns={columns} pagination={earnings} />
             </div>
         </AdminLayout>
     );

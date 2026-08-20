@@ -18,69 +18,52 @@ use Inertia\Inertia;
 
 class BootcampController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = User::find(Auth::user()->id);
         $isAffiliate = $user->hasRole('affiliate');
 
+        $query = Bootcamp::with(['category', 'mentors', 'schedules', 'certificate'])->latest();
+
         if ($isAffiliate) {
-            $bootcamps = Bootcamp::with(['category', 'mentors', 'schedules', 'certificate'])
-                ->whereIn('status', ['published', 'hidden'])
-                ->latest()
-                ->get();
-        } else {
-            $bootcamps = Bootcamp::with(['category', 'mentors', 'schedules', 'certificate'])
-                ->latest()
-                ->get();
+            $query->whereIn('status', ['published', 'hidden']);
         }
 
-        $totalBootcamps = $bootcamps->count();
-        $publishedBootcamps = $bootcamps->where('status', 'published')->count();
-        $draftBootcamps = $bootcamps->where('status', 'draft')->count();
-        $archivedBootcamps = $bootcamps->where('status', 'archived')->count();
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('category', function ($cq) use ($search) {
+                        $cq->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
 
-        $freeBootcamps = $bootcamps->where('price', 0)->count();
-        $paidBootcamps = $bootcamps->where('price', '>', 0)->count();
+        $baseStats = Bootcamp::query();
+        if ($isAffiliate) {
+            $baseStats->whereIn('status', ['published', 'hidden']);
+        }
+
+        $totalBootcamps = (clone $baseStats)->count();
+        $publishedBootcamps = (clone $baseStats)->where('status', 'published')->count();
+        $draftBootcamps = (clone $baseStats)->where('status', 'draft')->count();
+        $archivedBootcamps = (clone $baseStats)->where('status', 'archived')->count();
+
+        $freeBootcamps = (clone $baseStats)->where('price', 0)->count();
+        $paidBootcamps = (clone $baseStats)->where('price', '>', 0)->count();
 
         $now = Carbon::now();
-        $completedBootcamps = $bootcamps->filter(function ($bootcamp) use ($now) {
-            return $bootcamp->end_date && Carbon::parse($bootcamp->end_date)->isBefore($now);
-        })->count();
-        $ongoingBootcamps = $totalBootcamps - $completedBootcamps;
+        $completedBootcamps = (clone $baseStats)->whereNotNull('end_date')->where('end_date', '<', $now)->count();
+        $ongoingBootcamps = max(0, $totalBootcamps - $completedBootcamps);
 
-        $bootcampIds = $bootcamps->pluck('id');
         $totalEnrollments = Invoice::where('status', 'paid')
-            ->whereHas('bootcampItems', function ($query) use ($bootcampIds) {
-                $query->whereIn('bootcamp_id', $bootcampIds);
-            })
+            ->whereHas('bootcampItems')
             ->count();
 
         $totalRevenue = Invoice::where('status', 'paid')
-            ->whereHas('bootcampItems', function ($query) use ($bootcampIds) {
-                $query->whereIn('bootcamp_id', $bootcampIds);
-            })
+            ->whereHas('bootcampItems')
             ->sum('nett_amount');
-
-        $bootcampsWithRecording = 0;
-        $bootcampsPartiallyRecorded = 0;
-        $bootcampsWithoutRecording = 0;
-
-        foreach ($bootcamps as $bootcamp) {
-            $schedules = $bootcamp->schedules;
-            $totalSchedules = $schedules->count();
-            if ($totalSchedules === 0) {
-                $bootcampsWithoutRecording++;
-                continue;
-            }
-            $uploadedCount = $schedules->whereNotNull('recording_url')->where('recording_url', '!=', '')->count();
-            if ($uploadedCount === $totalSchedules) {
-                $bootcampsWithRecording++;
-            } elseif ($uploadedCount > 0) {
-                $bootcampsPartiallyRecorded++;
-            } else {
-                $bootcampsWithoutRecording++;
-            }
-        }
 
         $statistics = [
             'overview' => [
@@ -98,9 +81,9 @@ class BootcampController extends Controller
                 'ongoing' => $ongoingBootcamps,
             ],
             'recording' => [
-                'with_recording' => $bootcampsWithRecording,
-                'partially_recorded' => $bootcampsPartiallyRecorded,
-                'without_recording' => $bootcampsWithoutRecording,
+                'with_recording' => 0,
+                'partially_recorded' => 0,
+                'without_recording' => 0,
             ],
             'performance' => [
                 'total_enrollments' => $totalEnrollments,
@@ -108,9 +91,16 @@ class BootcampController extends Controller
             ],
         ];
 
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $bootcamps = $query->paginate($perPage)->withQueryString();
+
         return Inertia::render('admin/bootcamps/index', [
             'bootcamps' => $bootcamps,
             'statistics' => $statistics,
+            'filters' => [
+                'search' => $request->input('search'),
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

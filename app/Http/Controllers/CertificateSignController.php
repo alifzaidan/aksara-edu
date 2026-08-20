@@ -9,12 +9,25 @@ use Inertia\Inertia;
 
 class CertificateSignController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $signs = CertificateSign::latest()->get();
+        $query = CertificateSign::latest();
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where('name', 'like', "%{$search}%")
+                ->orWhere('position', 'like', "%{$search}%");
+        }
+
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $signs = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('admin/certificates/signs/index', [
-            'signs' => $signs
+            'signs' => $signs,
+            'filters' => [
+                'search' => $request->input('search'),
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

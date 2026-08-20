@@ -15,7 +15,9 @@ import {
 
 import { DataTableFacetedFilter } from '@/components/data-table-faceted-filter';
 import { DataTablePagination } from '@/components/data-table-pagination';
+import { DataTableServerPagination } from '@/components/data-table-server-pagination';
 import { DataTableViewOptions } from '@/components/data-table-view-option';
+import { PaginatedData } from '@/types/pagination';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
@@ -25,26 +27,8 @@ import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { BookText, CalendarIcon, CheckCircle, ChevronDownIcon, Clock, Dock, DollarSign, Download, Filter, Gift, MonitorPlay, Presentation, X, XCircle } from 'lucide-react';
+import { BookText, CalendarIcon, CheckCircle, ChevronDownIcon, Clock, Dock, DollarSign, Download, Filter, Gift, GraduationCap, MonitorPlay, Presentation, X, XCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-
-export const status = [
-    {
-        value: 'pending',
-        label: 'Pending',
-        icon: Clock,
-    },
-    {
-        value: 'paid',
-        label: 'Paid',
-        icon: CheckCircle,
-    },
-    {
-        value: 'failed',
-        label: 'Failed',
-        icon: XCircle,
-    },
-];
 
 export const paymentTypes = [
     {
@@ -56,6 +40,24 @@ export const paymentTypes = [
         value: 'free',
         label: 'Gratis',
         icon: Gift,
+    },
+];
+
+export const status = [
+    {
+        value: 'paid',
+        label: 'Paid',
+        icon: CheckCircle,
+    },
+    {
+        value: 'pending',
+        label: 'Pending',
+        icon: Clock,
+    },
+    {
+        value: 'failed',
+        label: 'Failed',
+        icon: XCircle,
     },
 ];
 
@@ -76,6 +78,11 @@ export const productTypes = [
         icon: MonitorPlay,
     },
     {
+        value: 'private',
+        label: 'Private Class',
+        icon: GraduationCap,
+    },
+    {
         value: 'bundle',
         label: 'Bundle',
         icon: Gift,
@@ -84,22 +91,26 @@ export const productTypes = [
         value: 'certification_program',
         label: 'Program Sertifikasi',
         icon: Dock,
-    }
+    },
 ];
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
-    data: TData[];
+    data?: TData[] | PaginatedData<TData>;
+    pagination?: PaginatedData<TData>;
     filters?: {
         start_date?: string;
         end_date?: string;
         status?: string;
         payment_type?: string;
         product_type?: string;
+        search?: string;
     };
 }
 
-export function DataTable<TData, TValue>({ columns, data, filters }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({ columns, data, pagination, filters }: DataTableProps<TData, TValue>) {
+    const paginationObj = pagination || (data && typeof data === 'object' && !Array.isArray(data) && 'data' in data ? (data as unknown as PaginatedData<TData>) : undefined);
+    const tableData = paginationObj ? (paginationObj.data || []) : (Array.isArray(data) ? data : []);
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -126,11 +137,11 @@ export function DataTable<TData, TValue>({ columns, data, filters }: DataTablePr
     const [isEndDateOpen, setIsEndDateOpen] = useState(false);
 
     const table = useReactTable({
-        data,
+        data: tableData,
         columns,
         onSortingChange: setSorting,
         getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
+        getPaginationRowModel: pagination ? undefined : getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         onColumnFiltersChange: setColumnFilters,
         getFilteredRowModel: getFilteredRowModel(),
@@ -429,7 +440,11 @@ export function DataTable<TData, TValue>({ columns, data, filters }: DataTablePr
                 </Table>
             </div>
             <div className="py-4">
-                <DataTablePagination table={table} />
+                {paginationObj ? (
+                    <DataTableServerPagination pagination={paginationObj} />
+                ) : (
+                    <DataTablePagination table={table} />
+                )}
             </div>
         </div>
     );

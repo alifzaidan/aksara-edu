@@ -11,22 +11,46 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class AffiliateEarningController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $userId = Auth::user()->id;
-        $earnings = AffiliateEarning::with([
+        $user = Auth::user();
+        $query = AffiliateEarning::with([
+            'affiliateUser',
             'invoice.user',
             'invoice.courseItems.course',
             'invoice.bootcampItems.bootcamp',
             'invoice.webinarItems.webinar',
             'invoice.bundleEnrollments.bundle',
             'invoice.certificationProgramItems.certificationProgram',
-        ])
-            ->where('affiliate_user_id', $userId)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        ]);
 
-        return Inertia::render('admin/earnings/index', ['earnings' => $earnings]);
+        if (!$user->hasRole('admin')) {
+            $query->where('affiliate_user_id', $user->id);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('invoice', function ($iq) use ($search) {
+                    $iq->where('invoice_number', 'like', "%{$search}%")
+                        ->orWhereHas('user', fn ($uq) => $uq->where('name', 'like', "%{$search}%"));
+                })->orWhereHas('affiliateUser', function ($aq) use ($search) {
+                    $aq->where('name', 'like', "%{$search}%")
+                        ->orWhere('affiliate_code', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $earnings = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
+
+        return Inertia::render('admin/earnings/index', [
+            'earnings' => $earnings,
+            'filters' => [
+                'search' => $request->input('search'),
+                'per_page' => $perPage,
+            ],
+        ]);
     }
 
     public function approveEarning(AffiliateEarning $earning)

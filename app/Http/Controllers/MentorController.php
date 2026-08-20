@@ -4,43 +4,45 @@ namespace App\Http\Controllers;
 
 use App\Models\AffiliateEarning;
 use App\Models\AffiliateWithdrawal;
+use App\Models\Article;
+use App\Models\Bootcamp;
+use App\Models\Course;
 use App\Models\User;
+use App\Models\Webinar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 
 class MentorController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $mentors = User::role('mentor')
-            ->withSum('affiliateEarnings', 'amount')
-            ->withCount('courses as total_courses')
-            ->withCount('articles as total_articles')
-            ->withCount('webinars as total_webinars')
-            ->withCount('bootcamps as total_bootcamps')
-            ->latest()
-            ->get()
-            ->map(function ($mentor) {
-                $mentor->total_earnings = $mentor->affiliate_earnings_sum_amount ?? 0;
-                unset($mentor->affiliate_earnings_sum_amount);
-                return $mentor;
+        $query = User::role('mentor');
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone_number', 'like', "%{$search}%");
             });
+        }
 
-        $totalMentors = $mentors->count();
-        $activeMentors = $mentors->where('affiliate_status', 'Active')->count();
-        $inactiveMentors = $mentors->where('affiliate_status', 'Not Active')->count();
+        $baseQuery = User::role('mentor');
+        $totalMentors = (clone $baseQuery)->count();
+        $activeMentors = (clone $baseQuery)->where('affiliate_status', 'Active')->count();
+        $inactiveMentors = (clone $baseQuery)->where(function ($q) {
+            $q->where('affiliate_status', '!=', 'Active')->orWhereNull('affiliate_status');
+        })->count();
 
-        $totalCourses = $mentors->sum('total_courses');
-        $totalArticles = $mentors->sum('total_articles');
-        $totalWebinars = $mentors->sum('total_webinars');
-        $totalBootcamps = $mentors->sum('total_bootcamps');
+        $totalCourses = Course::count();
+        $totalArticles = Article::count();
+        $totalWebinars = Webinar::count();
+        $totalBootcamps = Bootcamp::count();
 
-        $totalEarnings = $mentors->sum('total_earnings');
-
-        $allEarnings = AffiliateEarning::whereIn('affiliate_user_id', $mentors->pluck('id'))->get();
-        $paidCommission = $allEarnings->where('status', 'paid')->sum('amount');
-        $pendingCommission = $allEarnings->where('status', 'approved')->sum('amount');
+        $totalEarnings = (int) AffiliateEarning::sum('amount');
+        $paidCommission = (int) AffiliateWithdrawal::sum('amount');
+        $pendingCommission = max(0, $totalEarnings - $paidCommission);
 
         $statistics = [
             'overview' => [
@@ -61,9 +63,29 @@ class MentorController extends Controller
             ],
         ];
 
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $mentors = $query->withSum('affiliateEarnings', 'amount')
+            ->withCount('courses as total_courses')
+            ->withCount('articles as total_articles')
+            ->withCount('webinars as total_webinars')
+            ->withCount('bootcamps as total_bootcamps')
+            ->latest()
+            ->paginate($perPage)
+            ->withQueryString();
+
+        $mentors->through(function ($mentor) {
+            $mentor->total_earnings = $mentor->affiliate_earnings_sum_amount ?? 0;
+            unset($mentor->affiliate_earnings_sum_amount);
+            return $mentor;
+        });
+
         return Inertia::render('admin/mentors/index', [
             'mentors' => $mentors,
             'statistics' => $statistics,
+            'filters' => [
+                'search' => $request->input('search'),
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

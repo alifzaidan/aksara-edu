@@ -15,12 +15,27 @@ class BroadcastController extends Controller
 {
     use MessaraTrait;
 
-    public function index()
+    public function index(Request $request)
     {
-        $broadcasts = Broadcast::latest()->get();
+        $query = Broadcast::latest();
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('message', 'like', "%{$search}%");
+            });
+        }
+
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $broadcasts = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('admin/broadcasts/index', [
             'broadcasts' => $broadcasts,
+            'filters' => [
+                'search' => $request->input('search'),
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

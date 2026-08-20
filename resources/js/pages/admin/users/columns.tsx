@@ -30,12 +30,13 @@ export type User = {
     bootcamps_count: number;
     webinars_count: number;
     certification_programs_count: number;
+    privates_count?: number;
     total_enrollments: number;
     program_types: string[];
     purchased_categories: string[];
     last_purchase_date: string | null;
     last_purchase_items: Array<{
-        type: 'course' | 'bootcamp' | 'webinar' | 'certification_program';
+        type: 'course' | 'bootcamp' | 'webinar' | 'certification_program' | 'private';
         title: string;
         price: number;
     }>;
@@ -143,7 +144,12 @@ export const columns: ColumnDef<User>[] = [
         },
         cell: ({ row }) => {
             const user = row.original;
-            const hasAnyEnrollment = user.courses_count > 0 || user.bootcamps_count > 0 || user.webinars_count > 0 || user.certification_programs_count > 0;
+            const hasAnyEnrollment =
+                user.courses_count > 0 ||
+                user.bootcamps_count > 0 ||
+                user.webinars_count > 0 ||
+                user.certification_programs_count > 0 ||
+                (user.privates_count !== undefined && user.privates_count > 0);
 
             return (
                 <div className="flex flex-wrap gap-1">
@@ -213,6 +219,23 @@ export const columns: ColumnDef<User>[] = [
                                             <span className="font-semibold">Program Sertifikasi</span>
                                             <br />
                                             {user.certification_programs_count} sertifikasi terdaftar
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            )}
+                            {user.privates_count !== undefined && user.privates_count > 0 && (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Badge variant="outline" className="flex items-center gap-1 text-xs">
+                                            <Presentation className="h-3 w-3 text-amber-600" />
+                                            {user.privates_count}
+                                        </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p className="text-xs">
+                                            <span className="font-semibold">Private Class</span>
+                                            <br />
+                                            {user.privates_count} private class terdaftar
                                         </p>
                                     </TooltipContent>
                                 </Tooltip>
@@ -306,6 +329,8 @@ export const columns: ColumnDef<User>[] = [
                         return <MonitorPlay className="h-3 w-3 text-purple-600" />;
                     case 'certification_program':
                         return <GraduationCap className="h-3 w-3 text-orange-600" />;
+                    case 'private':
+                        return <Presentation className="h-3 w-3 text-amber-600" />;
                     default:
                         return null;
                 }
@@ -321,6 +346,8 @@ export const columns: ColumnDef<User>[] = [
                         return 'Webinar';
                     case 'certification_program':
                         return 'Program Sertifikasi';
+                    case 'private':
+                        return 'Private Class';
                     default:
                         return type;
                 }

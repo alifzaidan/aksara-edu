@@ -61,12 +61,16 @@ interface Statistics {
     };
 }
 
+import { PaginatedData } from '@/types/pagination';
+
 interface TransactionProps {
-    invoices: Invoice[];
+    invoices: PaginatedData<Invoice>;
     statistics: Statistics;
     filters?: {
         start_date?: string;
         end_date?: string;
+        search?: string;
+        per_page?: number;
     };
     flash?: {
         success?: string;
@@ -368,7 +372,7 @@ export default function Transactions({ invoices, statistics, filters, flash }: T
                 </div>
 
                 {/* Data Table */}
-                <DataTable columns={columns} data={invoices} filters={filters} />
+                <DataTable columns={columns} pagination={invoices} filters={filters} />
             </div>
         </AdminLayout>
     );

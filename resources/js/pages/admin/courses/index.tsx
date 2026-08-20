@@ -38,16 +38,22 @@ interface Statistics {
     };
 }
 
+import { PaginatedData } from '@/types/pagination';
+
 interface CourseProps {
-    courses: Course[];
+    courses: PaginatedData<Course>;
     statistics: Statistics;
     flash?: {
         success?: string;
         error?: string;
     };
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
-export default function Courses({ courses, statistics, flash }: CourseProps) {
+export default function Courses({ courses, statistics, flash, filters }: CourseProps) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
     const [showMoreStats, setShowMoreStats] = useState(false);
@@ -287,7 +293,7 @@ export default function Courses({ courses, statistics, flash }: CourseProps) {
                 </div>
 
                 {/* Data Table */}
-                <DataTable columns={columns} data={courses} />
+                <DataTable columns={columns} pagination={courses} filters={filters} />
             </div>
         </AdminLayout>
     );

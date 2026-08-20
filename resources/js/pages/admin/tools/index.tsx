@@ -21,16 +21,22 @@ interface Statistics {
     total_tools: number;
 }
 
+import { PaginatedData } from '@/types/pagination';
+
 interface ToolProps {
-    tools: Tool[];
+    tools: PaginatedData<Tool>;
     statistics: Statistics;
     flash?: {
         success?: string;
         error?: string;
     };
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
-export default function Tools({ tools, statistics, flash }: ToolProps) {
+export default function Tools({ tools, statistics, flash, filters }: ToolProps) {
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
@@ -76,7 +82,7 @@ export default function Tools({ tools, statistics, flash }: ToolProps) {
                     </div>
                 </div>
 
-                <DataTable columns={columns} data={tools} />
+                <DataTable columns={columns} pagination={tools} filters={filters} />
             </div>
         </AdminLayout>
     );

@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem } from '@/types';
+import { PaginatedData } from '@/types/pagination';
 import { Head } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -22,14 +23,18 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface CertificateDesignProps {
-    designs: CertificateDesign[];
+    designs: PaginatedData<CertificateDesign>;
     flash?: {
         success?: string;
         error?: string;
     };
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
-export default function CertificateDesigns({ designs, flash }: CertificateDesignProps) {
+export default function CertificateDesigns({ designs, flash, filters }: CertificateDesignProps) {
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
@@ -61,7 +66,7 @@ export default function CertificateDesigns({ designs, flash }: CertificateDesign
                     </Dialog>
                 </div>
 
-                <DataTable columns={columns} data={designs} />
+                <DataTable columns={columns} pagination={designs} filters={filters} />
             </div>
         </AdminLayout>
     );
