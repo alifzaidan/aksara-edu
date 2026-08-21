@@ -29,6 +29,15 @@ class DiscountCodeController extends Controller
             });
         }
 
+        if ($request->filled('type') && $request->input('type') !== 'all') {
+            $query->where('type', $request->input('type'));
+        }
+
+        if ($request->filled('is_active') && $request->input('is_active') !== 'all') {
+            $isActive = filter_var($request->input('is_active'), FILTER_VALIDATE_BOOLEAN);
+            $query->where('is_active', $isActive);
+        }
+
         $now = Carbon::now();
         $totalCodes = DiscountCode::count();
         $activeCodes = DiscountCode::where('is_active', true)
@@ -120,6 +129,8 @@ class DiscountCodeController extends Controller
             'statistics' => $statistics,
             'filters' => [
                 'search' => $request->input('search'),
+                'type' => $request->input('type'),
+                'is_active' => $request->input('is_active'),
                 'per_page' => $perPage,
             ],
         ]);

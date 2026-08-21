@@ -23,11 +23,13 @@ interface AffiliateEarningProps {
     };
     filters?: {
         search?: string;
+        start_date?: string;
+        end_date?: string;
         per_page?: number;
     };
 }
 
-export default function AffiliateEarnings({ earnings, flash }: AffiliateEarningProps) {
+export default function AffiliateEarnings({ earnings, flash, filters }: AffiliateEarningProps) {
     const { auth } = usePage<SharedData>().props;
     const role = auth.role[0];
     const isAdmin = role === 'admin';
@@ -53,7 +55,7 @@ export default function AffiliateEarnings({ earnings, flash }: AffiliateEarningP
                     </div>
                 </div>
 
-                <DataTable columns={columns} pagination={earnings} />
+                <DataTable columns={columns} pagination={earnings} filters={filters} />
             </div>
         </AdminLayout>
     );

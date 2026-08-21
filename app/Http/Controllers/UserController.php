@@ -29,6 +29,52 @@ class UserController extends Controller
             });
         }
 
+        if ($request->filled('program_type')) {
+            $programTypes = explode(',', $request->input('program_type'));
+            $query->where(function ($q) use ($programTypes) {
+                $hasCondition = false;
+                if (in_array('courses', $programTypes) || in_array('course', $programTypes)) {
+                    $q->whereHas('courseEnrollments.invoice', fn($iq) => $iq->where('status', 'paid'));
+                    $hasCondition = true;
+                }
+                if (in_array('bootcamps', $programTypes) || in_array('bootcamp', $programTypes)) {
+                    $method = $hasCondition ? 'orWhereHas' : 'whereHas';
+                    $q->$method('bootcampEnrollments.invoice', fn($iq) => $iq->where('status', 'paid'));
+                    $hasCondition = true;
+                }
+                if (in_array('webinars', $programTypes) || in_array('webinar', $programTypes)) {
+                    $method = $hasCondition ? 'orWhereHas' : 'whereHas';
+                    $q->$method('webinarEnrollments.invoice', fn($iq) => $iq->where('status', 'paid'));
+                    $hasCondition = true;
+                }
+                if (in_array('certification', $programTypes) || in_array('certification_program', $programTypes)) {
+                    $method = $hasCondition ? 'orWhereHas' : 'whereHas';
+                    $q->$method('certificationProgramEnrollments.invoice', fn($iq) => $iq->where('status', 'paid'));
+                }
+            });
+        }
+
+        if ($request->filled('category')) {
+            $categoryNames = explode(',', $request->input('category'));
+            $query->whereHas('invoices', function ($iq) use ($categoryNames) {
+                $iq->where('status', 'paid')->where(function ($sub) use ($categoryNames) {
+                    $sub->whereHas('courseItems.course.category', fn($cq) => $cq->whereIn('name', $categoryNames))
+                        ->orWhereHas('bootcampItems.bootcamp.category', fn($cq) => $cq->whereIn('name', $categoryNames))
+                        ->orWhereHas('webinarItems.webinar.category', fn($cq) => $cq->whereIn('name', $categoryNames))
+                        ->orWhereHas('certificationProgramItems.certificationProgram.category', fn($cq) => $cq->whereIn('name', $categoryNames));
+                });
+            });
+        }
+
+        if ($request->filled('purchase_status')) {
+            $purchaseStatuses = explode(',', $request->input('purchase_status'));
+            if (in_array('has_purchase', $purchaseStatuses) && !in_array('never_purchased', $purchaseStatuses)) {
+                $query->whereHas('invoices', fn($iq) => $iq->where('status', 'paid'));
+            } elseif (in_array('never_purchased', $purchaseStatuses) && !in_array('has_purchase', $purchaseStatuses)) {
+                $query->whereDoesntHave('invoices', fn($iq) => $iq->where('status', 'paid'));
+            }
+        }
+
         // ✅ Calculate Statistics efficiently using database aggregates
         $baseQuery = User::role('user');
         $totalUsers = (clone $baseQuery)->count();
@@ -228,6 +274,9 @@ class UserController extends Controller
             'categories' => \App\Models\Category::select('id', 'name')->get(),
             'filters' => [
                 'search' => $request->input('search'),
+                'program_type' => $request->input('program_type'),
+                'category' => $request->input('category'),
+                'purchase_status' => $request->input('purchase_status'),
                 'per_page' => $perPage,
             ],
         ]);

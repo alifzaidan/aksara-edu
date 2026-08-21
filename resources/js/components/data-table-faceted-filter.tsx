@@ -17,11 +17,24 @@ interface DataTableFacetedFilterProps<TData, TValue> {
         value: string;
         icon?: React.ComponentType<{ className?: string }>;
     }[];
+    selectedValues?: string[];
+    onFilterChange?: (values: string[]) => void;
 }
 
-export function DataTableFacetedFilter<TData, TValue>({ column, title, options }: DataTableFacetedFilterProps<TData, TValue>) {
+export function DataTableFacetedFilter<TData, TValue>({
+    column,
+    title,
+    options,
+    selectedValues: propSelectedValues,
+    onFilterChange,
+}: DataTableFacetedFilterProps<TData, TValue>) {
     const facets = column?.getFacetedUniqueValues();
-    const selectedValues = new Set(column?.getFilterValue() as string[]);
+    const columnFilterValue = column?.getFilterValue();
+    const currentValues = propSelectedValues !== undefined
+        ? propSelectedValues
+        : (Array.isArray(columnFilterValue) ? columnFilterValue : columnFilterValue ? [columnFilterValue as string] : []);
+
+    const selectedValues = new Set(currentValues);
 
     return (
         <Popover>
@@ -66,13 +79,18 @@ export function DataTableFacetedFilter<TData, TValue>({ column, title, options }
                                     <CommandItem
                                         key={option.value}
                                         onSelect={() => {
+                                            const next = new Set(selectedValues);
                                             if (isSelected) {
-                                                selectedValues.delete(option.value);
+                                                next.delete(option.value);
                                             } else {
-                                                selectedValues.add(option.value);
+                                                next.add(option.value);
                                             }
-                                            const filterValues = Array.from(selectedValues);
-                                            column?.setFilterValue(filterValues.length ? filterValues : undefined);
+                                            const nextArr = Array.from(next);
+                                            if (onFilterChange) {
+                                                onFilterChange(nextArr);
+                                            } else if (column) {
+                                                column.setFilterValue(nextArr.length ? nextArr : undefined);
+                                            }
                                         }}
                                     >
                                         <div
@@ -98,7 +116,16 @@ export function DataTableFacetedFilter<TData, TValue>({ column, title, options }
                             <>
                                 <CommandSeparator />
                                 <CommandGroup>
-                                    <CommandItem onSelect={() => column?.setFilterValue(undefined)} className="justify-center text-center">
+                                    <CommandItem
+                                        onSelect={() => {
+                                            if (onFilterChange) {
+                                                onFilterChange([]);
+                                            } else if (column) {
+                                                column.setFilterValue(undefined);
+                                            }
+                                        }}
+                                        className="justify-center text-center"
+                                    >
                                         Hapus filter
                                     </CommandItem>
                                 </CommandGroup>

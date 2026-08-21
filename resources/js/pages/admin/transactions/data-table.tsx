@@ -28,7 +28,7 @@ import { router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { BookText, CalendarIcon, CheckCircle, ChevronDownIcon, Clock, Dock, DollarSign, Download, Filter, Gift, GraduationCap, MonitorPlay, Presentation, X, XCircle } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 export const paymentTypes = [
     {
@@ -136,6 +136,34 @@ export function DataTable<TData, TValue>({ columns, data, pagination, filters }:
     const [isStartDateOpen, setIsStartDateOpen] = useState(false);
     const [isEndDateOpen, setIsEndDateOpen] = useState(false);
 
+    // Server-side search state
+    const [searchValue, setSearchValue] = useState(filters?.search ?? '');
+    const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleSearch = useCallback((value: string) => {
+        setSearchValue(value);
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        debounceTimer.current = setTimeout(() => {
+            const searchParams = new URLSearchParams(window.location.search);
+            if (value) {
+                searchParams.set('search', value);
+            } else {
+                searchParams.delete('search');
+            }
+            searchParams.set('page', '1');
+            router.get(
+                `${window.location.pathname}?${searchParams.toString()}`,
+                {},
+                { preserveState: true, preserveScroll: true, replace: true },
+            );
+        }, 400);
+    }, []);
+
+    // Sync searchValue when filters prop changes
+    useEffect(() => {
+        setSearchValue(filters?.search ?? '');
+    }, [filters?.search]);
+
     const table = useReactTable({
         data: tableData,
         columns,
@@ -155,54 +183,74 @@ export function DataTable<TData, TValue>({ columns, data, pagination, filters }:
         },
     });
 
-    const isFiltered = table.getState().columnFilters.length > 0;
-    const hasDateFilter = startDate && endDate;
+    const selectedStatuses = React.useMemo(() => {
+        return filters?.status ? filters.status.split(',') : [];
+    }, [filters?.status]);
+
+    const selectedPaymentTypes = React.useMemo(() => {
+        return filters?.payment_type ? filters.payment_type.split(',') : [];
+    }, [filters?.payment_type]);
+
+    const selectedProductTypes = React.useMemo(() => {
+        return filters?.product_type ? filters.product_type.split(',') : [];
+    }, [filters?.product_type]);
+
+    const updateFilter = useCallback((key: string, values: string[]) => {
+        const searchParams = new URLSearchParams(window.location.search);
+        if (values.length > 0) {
+            searchParams.set(key, values.join(','));
+        } else {
+            searchParams.delete(key);
+        }
+        searchParams.set('page', '1');
+        router.get(
+            `${window.location.pathname}?${searchParams.toString()}`,
+            {},
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    }, []);
+
+    const hasDateFilter = !!(startDate && endDate);
+    const isFiltered =
+        searchValue.length > 0 ||
+        selectedStatuses.length > 0 ||
+        selectedPaymentTypes.length > 0 ||
+        selectedProductTypes.length > 0 ||
+        hasDateFilter ||
+        table.getState().columnFilters.length > 0;
 
     // Apply date filter
     const handleApplyDateFilter = () => {
-        const params: Record<string, string> = {};
-
+        const searchParams = new URLSearchParams(window.location.search);
         if (startDate) {
-            params.start_date = format(startDate, 'yyyy-MM-dd');
+            searchParams.set('start_date', format(startDate, 'yyyy-MM-dd'));
+        } else {
+            searchParams.delete('start_date');
         }
         if (endDate) {
-            params.end_date = format(endDate, 'yyyy-MM-dd');
+            searchParams.set('end_date', format(endDate, 'yyyy-MM-dd'));
+        } else {
+            searchParams.delete('end_date');
         }
-
-        // Tambahkan filter kolom yang sedang aktif
-        const statusFilter = table.getColumn('status')?.getFilterValue();
-        if (statusFilter) {
-            params.status = String(statusFilter);
-        }
-
-        const paymentTypeFilter = table.getColumn('payment_type')?.getFilterValue();
-        if (paymentTypeFilter) {
-            params.payment_type = String(paymentTypeFilter);
-        }
-
-        const productTypeFilter = table.getColumn('product_type')?.getFilterValue();
-        if (productTypeFilter) {
-            params.product_type = String(productTypeFilter);
-        }
-
-        router.get(route('transactions.index'), params, {
-            preserveState: false,
-            preserveScroll: true,
-        });
+        searchParams.set('page', '1');
+        router.get(
+            `${window.location.pathname}?${searchParams.toString()}`,
+            {},
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
     };
 
     // Clear all filters including date
     const handleClearAllFilters = () => {
+        setSearchValue('');
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
         table.resetColumnFilters();
         setStartDate(undefined);
         setEndDate(undefined);
         router.get(
-            route('transactions.index'),
+            window.location.pathname,
             {},
-            {
-                preserveState: false,
-                preserveScroll: true,
-            },
+            { preserveState: true, preserveScroll: true, replace: true },
         );
     };
 
@@ -225,24 +273,7 @@ export function DataTable<TData, TValue>({ columns, data, pagination, filters }:
         } else {
             setEndDate(undefined);
         }
-
-        // Sync column filters from URL
-        const newColumnFilters: ColumnFiltersState = [];
-
-        if (filters?.status) {
-            newColumnFilters.push({ id: 'status', value: filters.status });
-        }
-
-        if (filters?.payment_type) {
-            newColumnFilters.push({ id: 'payment_type', value: filters.payment_type });
-        }
-
-        if (filters?.product_type) {
-            newColumnFilters.push({ id: 'product_type', value: filters.product_type });
-        }
-
-        setColumnFilters(newColumnFilters);
-    }, [filters?.start_date, filters?.end_date, filters?.status, filters?.payment_type, filters?.product_type]);
+    }, [filters?.start_date, filters?.end_date]);
 
     const handleExportToExcel = () => {
         const params = new URLSearchParams();
@@ -372,34 +403,47 @@ export function DataTable<TData, TValue>({ columns, data, pagination, filters }:
             {/* Existing Filters */}
             <div className="flex flex-col items-stretch gap-2 py-4 lg:flex-row lg:items-center">
                 <Input
-                    placeholder="Cari nama pembeli..."
-                    value={(table.getColumn('user_name')?.getFilterValue() as string) ?? ''}
-                    onChange={(event) => table.getColumn('user_name')?.setFilterValue(event.target.value)}
-                    className="lg:max-w-sm"
-                />
-                <Input
-                    placeholder="Cari nama produk..."
-                    value={(table.getColumn('items')?.getFilterValue() as string) ?? ''}
-                    onChange={(event) => table.getColumn('items')?.setFilterValue(event.target.value)}
+                    placeholder="Cari nama pembeli / invoice..."
+                    value={searchValue}
+                    onChange={(event) => handleSearch(event.target.value)}
                     className="lg:max-w-sm"
                 />
                 <div className="flex flex-col items-center gap-2 lg:flex-row">
-                    {table.getColumn('status') && <DataTableFacetedFilter column={table.getColumn('status')} title="Status" options={status} />}
+                    {table.getColumn('status') && (
+                        <DataTableFacetedFilter
+                            column={table.getColumn('status')}
+                            title="Status"
+                            options={status}
+                            selectedValues={selectedStatuses}
+                            onFilterChange={(values) => updateFilter('status', values)}
+                        />
+                    )}
                     {table.getColumn('payment_type') && (
-                        <DataTableFacetedFilter column={table.getColumn('payment_type')} title="Jenis Bayar" options={paymentTypes} />
+                        <DataTableFacetedFilter
+                            column={table.getColumn('payment_type')}
+                            title="Jenis Bayar"
+                            options={paymentTypes}
+                            selectedValues={selectedPaymentTypes}
+                            onFilterChange={(values) => updateFilter('payment_type', values)}
+                        />
                     )}
                     {table.getColumn('product_type') && (
-                        <DataTableFacetedFilter column={table.getColumn('product_type')} title="Jenis Produk" options={productTypes} />
+                        <DataTableFacetedFilter
+                            column={table.getColumn('product_type')}
+                            title="Jenis Produk"
+                            options={productTypes}
+                            selectedValues={selectedProductTypes}
+                            onFilterChange={(values) => updateFilter('product_type', values)}
+                        />
                     )}
                     {isFiltered && (
                         <Button
-                            onClick={() => {
-                                table.resetColumnFilters();
-                            }}
+                            variant="ghost"
+                            onClick={handleClearAllFilters}
                             className="h-8 px-2 lg:px-3"
                         >
                             Reset
-                            <X />
+                            <X className="ml-2 h-4 w-4" />
                         </Button>
                     )}
                 </div>

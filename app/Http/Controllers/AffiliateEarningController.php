@@ -32,13 +32,19 @@ class AffiliateEarningController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->whereHas('invoice', function ($iq) use ($search) {
-                    $iq->where('invoice_number', 'like', "%{$search}%")
+                    $iq->where('invoice_code', 'like', "%{$search}%")
                         ->orWhereHas('user', fn ($uq) => $uq->where('name', 'like', "%{$search}%"));
                 })->orWhereHas('affiliateUser', function ($aq) use ($search) {
                     $aq->where('name', 'like', "%{$search}%")
                         ->orWhere('affiliate_code', 'like', "%{$search}%");
                 });
             });
+        }
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $startDate = \Carbon\Carbon::parse($request->input('start_date'))->startOfDay();
+            $endDate = \Carbon\Carbon::parse($request->input('end_date'))->endOfDay();
+            $query->whereBetween('created_at', [$startDate, $endDate]);
         }
 
         $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
@@ -48,6 +54,8 @@ class AffiliateEarningController extends Controller
             'earnings' => $earnings,
             'filters' => [
                 'search' => $request->input('search'),
+                'start_date' => $request->input('start_date'),
+                'end_date' => $request->input('end_date'),
                 'per_page' => $perPage,
             ],
         ]);

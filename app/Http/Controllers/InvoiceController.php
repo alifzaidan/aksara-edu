@@ -85,20 +85,27 @@ class InvoiceController extends Controller
             });
         }
 
-        // ✅ PERBAIKAN: Apply status filter HANYA jika ada status yang dipilih
+        // Apply status filter
         if ($status && !empty($status)) {
-            $invoicesQuery->where('status', $status);
+            $statuses = is_array($status) ? $status : explode(',', $status);
+            $invoicesQuery->whereIn('status', $statuses);
         }
 
         // Apply payment type filter (free vs paid)
-        if ($paymentType === 'free') {
-            $invoicesQuery->where('nett_amount', 0);
-        } elseif ($paymentType === 'paid') {
-            $invoicesQuery->where('nett_amount', '>', 0);
+        if ($paymentType && !empty($paymentType)) {
+            $types = is_array($paymentType) ? $paymentType : explode(',', $paymentType);
+            if (in_array('free', $types) && in_array('paid', $types)) {
+                // both selected, no filter needed
+            } elseif (in_array('free', $types)) {
+                $invoicesQuery->where('nett_amount', 0);
+            } elseif (in_array('paid', $types)) {
+                $invoicesQuery->where('nett_amount', '>', 0);
+            }
         }
 
         // Apply product type filter
         if ($productType && !empty($productType)) {
+            $productTypes = is_array($productType) ? $productType : explode(',', $productType);
             $relationMap = [
                 'course' => 'courseItems',
                 'bootcamp' => 'bootcampItems',
@@ -108,15 +115,23 @@ class InvoiceController extends Controller
                 'certification_program' => 'certificationProgramItems',
                 'certification' => 'certificationProgramItems',
             ];
-            $relation = $relationMap[$productType] ?? (\Illuminate\Support\Str::camel($productType) . 'Items');
-            $invoicesQuery->whereHas($relation);
+            $invoicesQuery->where(function ($q) use ($productTypes, $relationMap) {
+                foreach ($productTypes as $idx => $pType) {
+                    $relation = $relationMap[$pType] ?? (\Illuminate\Support\Str::camel($pType) . 'Items');
+                    if ($idx === 0) {
+                        $q->whereHas($relation);
+                    } else {
+                        $q->orWhereHas($relation);
+                    }
+                }
+            });
         }
 
         // Search filter
         if ($request->filled('search')) {
             $search = $request->input('search');
             $invoicesQuery->where(function ($q) use ($search) {
-                $q->where('invoice_number', 'like', "%{$search}%")
+                $q->where('invoice_code', 'like', "%{$search}%")
                     ->orWhereHas('user', function ($uq) use ($search) {
                         $uq->where('name', 'like', "%{$search}%")
                             ->orWhere('email', 'like', "%{$search}%")

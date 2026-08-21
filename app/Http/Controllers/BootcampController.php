@@ -40,6 +40,45 @@ class BootcampController extends Controller
             });
         }
 
+        if ($request->filled('status')) {
+            $statuses = explode(',', $request->input('status'));
+            $query->whereIn('status', $statuses);
+        }
+
+        if ($request->filled('recording_status')) {
+            $recordingStatuses = explode(',', $request->input('recording_status'));
+            $query->where(function ($q) use ($recordingStatuses) {
+                $hasCondition = false;
+                if (in_array('full', $recordingStatuses)) {
+                    $q->whereHas('schedules', function ($sq) {
+                        $sq->whereNotNull('recording_url')->where('recording_url', '!=', '');
+                    })->whereDoesntHave('schedules', function ($sq) {
+                        $sq->whereNull('recording_url')->orWhere('recording_url', '');
+                    });
+                    $hasCondition = true;
+                }
+                if (in_array('partial', $recordingStatuses)) {
+                    $method = $hasCondition ? 'orWhere' : 'where';
+                    $q->$method(function ($sub) {
+                        $sub->whereHas('schedules', function ($sq) {
+                            $sq->whereNotNull('recording_url')->where('recording_url', '!=', '');
+                        })->whereHas('schedules', function ($sq) {
+                            $sq->whereNull('recording_url')->orWhere('recording_url', '');
+                        });
+                    });
+                    $hasCondition = true;
+                }
+                if (in_array('none', $recordingStatuses)) {
+                    $method = $hasCondition ? 'orWhere' : 'where';
+                    $q->$method(function ($sub) {
+                        $sub->whereDoesntHave('schedules', function ($sq) {
+                            $sq->whereNotNull('recording_url')->where('recording_url', '!=', '');
+                        });
+                    });
+                }
+            });
+        }
+
         $baseStats = Bootcamp::query();
         if ($isAffiliate) {
             $baseStats->whereIn('status', ['published', 'hidden']);
@@ -99,6 +138,8 @@ class BootcampController extends Controller
             'statistics' => $statistics,
             'filters' => [
                 'search' => $request->input('search'),
+                'status' => $request->input('status'),
+                'recording_status' => $request->input('recording_status'),
                 'per_page' => $perPage,
             ],
         ]);

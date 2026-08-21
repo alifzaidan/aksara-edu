@@ -36,6 +36,7 @@ import { PaginatedData } from '@/types/pagination';
 interface CertificationProgramsProps {
     programs: PaginatedData<CertificationProgram>;
     statistics: Statistics;
+    available_batches?: string[];
     flash?: {
         success?: string;
         error?: string;
@@ -46,7 +47,7 @@ interface CertificationProgramsProps {
     };
 }
 
-export default function CertificationPrograms({ programs, statistics, flash, filters }: CertificationProgramsProps) {
+export default function CertificationPrograms({ programs, statistics, available_batches, flash, filters }: CertificationProgramsProps) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
     const [showMoreStats, setShowMoreStats] = useState(false);
@@ -263,7 +264,7 @@ export default function CertificationPrograms({ programs, statistics, flash, fil
 
                 {/* Programs Table */}
                 <div className="bg-card rounded-lg border p-4">
-                    <DataTable columns={columns} pagination={programs} filters={filters} />
+                    <DataTable columns={columns} pagination={programs} availableBatches={available_batches} filters={filters} />
                 </div>
             </div>
         </AdminLayout>

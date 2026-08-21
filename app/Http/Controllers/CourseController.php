@@ -39,6 +39,16 @@ class CourseController extends Controller
             });
         }
 
+        if ($request->filled('status')) {
+            $statuses = explode(',', $request->input('status'));
+            $query->whereIn('status', $statuses);
+        }
+
+        if ($request->filled('level')) {
+            $levels = explode(',', $request->input('level'));
+            $query->whereIn('level', $levels);
+        }
+
         // Compute statistics via SQL aggregates
         $baseStats = Course::query();
         if ($user->hasRole('mentor')) {
@@ -97,6 +107,8 @@ class CourseController extends Controller
             'statistics' => $statistics,
             'filters' => [
                 'search' => $request->input('search'),
+                'status' => $request->input('status'),
+                'level' => $request->input('level'),
                 'per_page' => $perPage,
             ],
         ]);

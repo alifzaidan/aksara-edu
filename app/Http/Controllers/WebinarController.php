@@ -39,6 +39,28 @@ class WebinarController extends Controller
             });
         }
 
+        if ($request->filled('status')) {
+            $statuses = explode(',', $request->input('status'));
+            $query->whereIn('status', $statuses);
+        }
+
+        if ($request->filled('has_recording')) {
+            $recordingFilters = explode(',', $request->input('has_recording'));
+            $query->where(function ($q) use ($recordingFilters) {
+                $hasCondition = false;
+                if (in_array('recorded', $recordingFilters)) {
+                    $q->whereNotNull('recording_url')->where('recording_url', '!=', '');
+                    $hasCondition = true;
+                }
+                if (in_array('unrecorded', $recordingFilters)) {
+                    $method = $hasCondition ? 'orWhere' : 'where';
+                    $q->$method(function ($sub) {
+                        $sub->whereNull('recording_url')->orWhere('recording_url', '');
+                    });
+                }
+            });
+        }
+
         $baseStats = Webinar::query();
         if ($isAffiliate) {
             $baseStats->where('status', 'published');
@@ -102,6 +124,8 @@ class WebinarController extends Controller
             'statistics' => $statistics,
             'filters' => [
                 'search' => $request->input('search'),
+                'status' => $request->input('status'),
+                'has_recording' => $request->input('has_recording'),
                 'per_page' => $perPage,
             ],
         ]);

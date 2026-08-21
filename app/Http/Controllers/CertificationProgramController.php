@@ -34,6 +34,50 @@ class CertificationProgramController extends Controller
             });
         }
 
+        if ($request->filled('status')) {
+            $statuses = explode(',', $request->input('status'));
+            $query->whereIn('status', $statuses);
+        }
+
+        if ($request->filled('batch')) {
+            $batches = explode(',', $request->input('batch'));
+            $query->whereIn('batch', $batches);
+        }
+
+        if ($request->filled('recording_status')) {
+            $recordingStatuses = explode(',', $request->input('recording_status'));
+            $query->where(function ($q) use ($recordingStatuses) {
+                $hasCondition = false;
+                if (in_array('full', $recordingStatuses)) {
+                    $q->whereHas('schedules', function ($sq) {
+                        $sq->whereNotNull('recording_url')->where('recording_url', '!=', '');
+                    })->whereDoesntHave('schedules', function ($sq) {
+                        $sq->whereNull('recording_url')->orWhere('recording_url', '');
+                    });
+                    $hasCondition = true;
+                }
+                if (in_array('partial', $recordingStatuses)) {
+                    $method = $hasCondition ? 'orWhere' : 'where';
+                    $q->$method(function ($sub) {
+                        $sub->whereHas('schedules', function ($sq) {
+                            $sq->whereNotNull('recording_url')->where('recording_url', '!=', '');
+                        })->whereHas('schedules', function ($sq) {
+                            $sq->whereNull('recording_url')->orWhere('recording_url', '');
+                        });
+                    });
+                    $hasCondition = true;
+                }
+                if (in_array('none', $recordingStatuses)) {
+                    $method = $hasCondition ? 'orWhere' : 'where';
+                    $q->$method(function ($sub) {
+                        $sub->whereDoesntHave('schedules', function ($sq) {
+                            $sq->whereNotNull('recording_url')->where('recording_url', '!=', '');
+                        });
+                    });
+                }
+            });
+        }
+
         $baseStats = CertificationProgram::query();
         $totalPrograms = (clone $baseStats)->count();
         $publishedPrograms = (clone $baseStats)->where('status', 'published')->count();
@@ -56,14 +100,20 @@ class CertificationProgramController extends Controller
             ],
         ];
 
+        $availableBatches = CertificationProgram::whereNotNull('batch')->distinct()->pluck('batch')->toArray();
+
         $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
         $programs = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('admin/certification-programs/index', [
             'programs' => $programs,
             'statistics' => $statistics,
+            'available_batches' => $availableBatches,
             'filters' => [
                 'search' => $request->input('search'),
+                'status' => $request->input('status'),
+                'batch' => $request->input('batch'),
+                'recording_status' => $request->input('recording_status'),
                 'per_page' => $perPage,
             ],
         ]);

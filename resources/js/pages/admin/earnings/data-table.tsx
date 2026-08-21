@@ -26,7 +26,8 @@ import { cn } from '@/lib/utils';
 import { format, isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { CalendarIcon, Download, X } from 'lucide-react';
-import React from 'react';
+import { router } from '@inertiajs/react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 import { Earning } from './columns';
 
@@ -34,6 +35,10 @@ interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data?: TData[] | PaginatedData<TData>;
     pagination?: PaginatedData<TData>;
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }
 
 function exportToExcel(dateRange: DateRange | undefined) {
@@ -46,7 +51,7 @@ function exportToExcel(dateRange: DateRange | undefined) {
     window.location.href = route('earnings.export') + query;
 }
 
-export function DataTable<TData, TValue>({ columns, data, pagination }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({ columns, data, pagination, filters }: DataTableProps<TData, TValue>) {
     const paginationObj = pagination || (data && typeof data === 'object' && !Array.isArray(data) && 'data' in data ? (data as unknown as PaginatedData<TData>) : undefined);
     const rawData = paginationObj ? (paginationObj.data || []) : (Array.isArray(data) ? data : []);
     const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -55,6 +60,34 @@ export function DataTable<TData, TValue>({ columns, data, pagination }: DataTabl
     const [rowSelection, setRowSelection] = React.useState({});
     const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined);
     const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+
+    // Server-side search state
+    const [searchValue, setSearchValue] = useState(filters?.search ?? '');
+    const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleSearch = useCallback((value: string) => {
+        setSearchValue(value);
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        debounceTimer.current = setTimeout(() => {
+            const searchParams = new URLSearchParams(window.location.search);
+            if (value) {
+                searchParams.set('search', value);
+            } else {
+                searchParams.delete('search');
+            }
+            searchParams.set('page', '1');
+            router.get(
+                `${window.location.pathname}?${searchParams.toString()}`,
+                {},
+                { preserveState: true, preserveScroll: true, replace: true },
+            );
+        }, 400);
+    }, []);
+
+    // Sync searchValue when filters prop changes (e.g. navigating back)
+    useEffect(() => {
+        setSearchValue(filters?.search ?? '');
+    }, [filters?.search]);
 
     const filteredData = React.useMemo(() => {
         if (!dateRange?.from) return rawData;
@@ -95,9 +128,9 @@ export function DataTable<TData, TValue>({ columns, data, pagination }: DataTabl
         <div>
             <div className="flex flex-col items-stretch gap-2 py-4 lg:flex-row lg:items-center">
                 <Input
-                    placeholder="Cari kode invoice..."
-                    value={(table.getColumn('invoice.invoice_code')?.getFilterValue() as string) ?? ''}
-                    onChange={(event) => table.getColumn('invoice.invoice_code')?.setFilterValue(event.target.value)}
+                    placeholder="Cari invoice / nama user / afiliator..."
+                    value={searchValue}
+                    onChange={(event) => handleSearch(event.target.value)}
                     className="lg:max-w-sm"
                 />
 
