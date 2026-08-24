@@ -61,7 +61,11 @@ interface PromotionsProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function Promotions({ promotions, statistics, flash, filters }: PromotionsProps) {
+    const { canManage } = usePermission();
+    const canManagePromotion = canManage('promotions');
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [showMoreStats, setShowMoreStats] = useState(false);
 
@@ -86,10 +90,12 @@ export default function Promotions({ promotions, statistics, flash, filters }: P
                         <h1 className="text-2xl font-semibold">Flyer Promosi</h1>
                         <p className="text-muted-foreground text-sm">Kelola dan monitor flyer promosi untuk produk Anda.</p>
                     </div>
-                    <Button className="hover:cursor-pointer" onClick={() => setCreateModalOpen(true)}>
-                        <Plus />
-                        Tambah Flyer
-                    </Button>
+                    {canManagePromotion && (
+                        <Button className="hover:cursor-pointer" onClick={() => setCreateModalOpen(true)}>
+                            <Plus />
+                            Tambah Flyer
+                        </Button>
+                    )}
                 </div>
 
                 {/* Statistics Cards */}

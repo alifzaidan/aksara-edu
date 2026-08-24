@@ -47,9 +47,13 @@ interface Props {
     flash?: { success?: string; error?: string };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function ShowPrivate({ privateClass, transactions, flash }: Props) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManagePrivate = canManage('privates') && !isAffiliate;
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Private Class', href: route('privates.index') },
@@ -76,8 +80,8 @@ export default function ShowPrivate({ privateClass, transactions, flash }: Props
             <div className="px-4 py-4 md:px-6">
                 <h1 className="mb-4 text-2xl font-semibold">{`Detail ${privateClass.title}`}</h1>
 
-                <div className={`${!isAffiliate ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
-                    <Tabs defaultValue="detail" className="lg:col-span-2">
+                <div className={`${canManagePrivate ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
+                    <Tabs defaultValue="detail" className={canManagePrivate ? "lg:col-span-2" : "w-full"}>
                         <TabsList>
                             <TabsTrigger value="detail">Detail</TabsTrigger>
                             {!isAffiliate && (
@@ -190,7 +194,7 @@ export default function ShowPrivate({ privateClass, transactions, flash }: Props
                     </Tabs>
 
                     {/* Sidebar Actions */}
-                    {!isAffiliate && (
+                    {canManagePrivate && (
                         <div>
                             <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
                             <div className="space-y-4 rounded-lg border p-4">

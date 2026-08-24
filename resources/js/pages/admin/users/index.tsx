@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { columns, User } from './columns';
 import CreateUser from './create';
 import { DataTable } from './data-table';
+import { usePermission } from '@/hooks/use-permission';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -51,6 +52,9 @@ interface UserProps {
 }
 
 export default function Users({ users, statistics, flash, categories, filters }: UserProps) {
+    const { canManage, canView } = usePermission();
+    const canManageUsers = canManage('users');
+    const canViewBroadcasts = canView('broadcasts');
     const [open, setOpen] = useState(false);
     const [showMoreStats, setShowMoreStats] = useState(false);
 
@@ -73,21 +77,25 @@ export default function Users({ users, statistics, flash, categories, filters }:
                         <p className="text-muted-foreground text-sm">Ringkasan dan daftar semua pengguna.</p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" asChild>
-                            <Link href={route('broadcasts.index')}>
-                                <Megaphone className="mr-1 h-4 w-4" />
-                                Broadcast
-                            </Link>
-                        </Button>
-                        <Dialog open={open} onOpenChange={setOpen}>
-                            <DialogTrigger asChild>
-                                <Button className="hover:cursor-pointer">
-                                    Tambah Pengguna
-                                    <Plus />
-                                </Button>
-                            </DialogTrigger>
-                            <CreateUser setOpen={setOpen} />
-                        </Dialog>
+                        {canViewBroadcasts && (
+                            <Button variant="outline" asChild>
+                                <Link href={route('broadcasts.index')}>
+                                    <Megaphone className="mr-1 h-4 w-4" />
+                                    Broadcast
+                                </Link>
+                            </Button>
+                        )}
+                        {canManageUsers && (
+                            <Dialog open={open} onOpenChange={setOpen}>
+                                <DialogTrigger asChild>
+                                    <Button className="hover:cursor-pointer">
+                                        Tambah Pengguna
+                                        <Plus />
+                                    </Button>
+                                </DialogTrigger>
+                                <CreateUser setOpen={setOpen} />
+                            </Dialog>
+                        )}
                     </div>
                 </div>
 

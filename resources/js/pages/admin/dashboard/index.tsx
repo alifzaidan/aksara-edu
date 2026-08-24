@@ -4,6 +4,7 @@ import { Head, usePage } from '@inertiajs/react';
 import AdminDashboard from './admin-dashboard';
 import AffiliateDashboard from './affiliate-dashboard';
 import MentorDashboard from './mentor-dashboard';
+import StaffDashboard from './staff-dashboard';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -24,6 +25,12 @@ export default function Dashboard() {
                     <AdminDashboard
                         stats={stats as Parameters<typeof AdminDashboard>[0]['stats']}
                         filters={filters as Parameters<typeof AdminDashboard>[0]['filters']}
+                    />
+                );
+            case 'staff':
+                return (
+                    <StaffDashboard
+                        stats={stats as Parameters<typeof StaffDashboard>[0]['stats']}
                     />
                 );
             case 'mentor':

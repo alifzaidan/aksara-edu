@@ -102,9 +102,13 @@ function CertificateCell({ row }: { row: Row<Course> }) {
     );
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function CourseActions({ course }: { course: Course }) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManageCourse = canManage('courses') && !isAffiliate;
 
     const handleDelete = () => {
         router.delete(route('courses.destroy', course.id));
@@ -125,7 +129,7 @@ export default function CourseActions({ course }: { course: Course }) {
                     <p>Lihat Kelas</p>
                 </TooltipContent>
             </Tooltip>
-            {!isAffiliate && (
+            {canManageCourse && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div>

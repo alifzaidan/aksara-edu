@@ -14,6 +14,7 @@ import { id } from 'date-fns/locale';
 import { BookText, Calendar, Edit, Folder, GraduationCap, MonitorPlay, Presentation, ShoppingBag, Trash } from 'lucide-react';
 import { useState } from 'react';
 import EditUser from './edit';
+import { usePermission } from '@/hooks/use-permission';
 
 export type User = {
     id: string;
@@ -403,6 +404,8 @@ export const columns: ColumnDef<User>[] = [
         id: 'actions',
         header: () => <div className="text-center">Aksi</div>,
         cell: function Cell({ row }) {
+            const { canManage } = usePermission();
+            const canManageUser = canManage('users');
             const [open, setOpen] = useState(false);
             const user = row.original;
             let whatsappUrl = '';
@@ -452,44 +455,48 @@ export const columns: ColumnDef<User>[] = [
                         </TooltipContent>
                     </Tooltip>
 
-                    <Dialog open={open} onOpenChange={setOpen}>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <DialogTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                        <Edit className="size-4" />
-                                    </Button>
-                                </DialogTrigger>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Edit Pengguna</p>
-                            </TooltipContent>
-                        </Tooltip>
-                        <DialogContent>
-                            <EditUser user={user} setOpen={setOpen} />
-                        </DialogContent>
-                    </Dialog>
+                    {canManageUser && (
+                        <>
+                            <Dialog open={open} onOpenChange={setOpen}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <DialogTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <Edit className="size-4" />
+                                            </Button>
+                                        </DialogTrigger>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Edit Pengguna</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                                <DialogContent>
+                                    <EditUser user={user} setOpen={setOpen} />
+                                </DialogContent>
+                            </Dialog>
 
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <div>
-                                <DeleteConfirmDialog
-                                    trigger={
-                                        <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
-                                            <Trash />
-                                            <span className="sr-only">Hapus Pengguna</span>
-                                        </Button>
-                                    }
-                                    title="Apakah Anda yakin ingin menghapus pengguna ini?"
-                                    itemName={user.name}
-                                    onConfirm={handleDelete}
-                                />
-                            </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Hapus Pengguna</p>
-                        </TooltipContent>
-                    </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div>
+                                        <DeleteConfirmDialog
+                                            trigger={
+                                                <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
+                                                    <Trash />
+                                                    <span className="sr-only">Hapus Pengguna</span>
+                                                </Button>
+                                            }
+                                            title="Apakah Anda yakin ingin menghapus pengguna ini?"
+                                            itemName={user.name}
+                                            onConfirm={handleDelete}
+                                        />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Hapus Pengguna</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </>
+                    )}
                 </div>
             );
         },

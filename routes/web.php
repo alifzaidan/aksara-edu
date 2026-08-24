@@ -216,17 +216,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 Route::post('/api/referral/validate', [App\Http\Controllers\ReferralController::class, 'validateCode'])->name('api.referral.validate');
 
-Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->prefix('admin')->group(function () {
     Route::redirect('/', 'admin/dashboard');
     Route::get('dashboard', [AdminController::class, 'index'])->name('dashboard');
 
-    // dapat diakses oleh admin, mentor, dan affiliate
-    Route::resource('courses', CourseController::class);
+    // Staff Management (Admin only)
+    Route::middleware(['role:admin'])->group(function () {
+        Route::resource('staff', \App\Http\Controllers\StaffController::class);
+    });
 
-    Route::middleware(['role:admin|mentor'])->group(function () {
-        Route::resource('categories', CategoryController::class);
-        Route::resource('tools', ToolController::class);
-        Route::post('/tools/{id}', [ToolController::class, 'update'])->name('tools.update');
+    // Courses
+    Route::middleware(['role_or_permission:admin|mentor|affiliate|courses.view'])->group(function () {
+        Route::get('courses', [CourseController::class, 'index'])->name('courses.index');
+        Route::get('courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+    });
+    Route::middleware(['role_or_permission:admin|mentor|courses.manage'])->group(function () {
+        Route::get('courses/create', [CourseController::class, 'create'])->name('courses.create');
+        Route::post('courses', [CourseController::class, 'store'])->name('courses.store');
+        Route::get('courses/{course}/edit', [CourseController::class, 'edit'])->name('courses.edit');
+        Route::put('courses/{course}', [CourseController::class, 'update'])->name('courses.update');
+        Route::delete('courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
 
         Route::post('/courses/{course}/publish', [CourseController::class, 'publish'])->name('courses.publish');
         Route::post('/courses/{course}/archive', [CourseController::class, 'archive'])->name('courses.archive');
@@ -240,36 +249,132 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/questions/import', [QuestionController::class, 'import'])->name('questions.import');
         Route::get('/courses/{course}/quizzes/{quiz}/export', [QuestionController::class, 'export'])->name('questions.export');
 
-        Route::resource('articles', ArticleController::class);
-        Route::post('/articles/{article}/duplicate', [ArticleController::class, 'duplicate'])->name('articles.duplicate');
+        Route::post('/course-ratings/{rating}/approve', [CourseRatingController::class, 'approve'])->name('course-ratings.approve');
+        Route::post('/course-ratings/{rating}/reject', [CourseRatingController::class, 'reject'])->name('course-ratings.reject');
+        Route::post('/lesson-assignment-submissions/{submission}/approve', [LessonAssignmentController::class, 'approve'])->name('lesson-assignments.approve');
+        Route::post('/lesson-assignment-submissions/{submission}/reject', [LessonAssignmentController::class, 'reject'])->name('lesson-assignments.reject');
     });
 
-    Route::middleware(['role:admin'])->group(function () {
-        Route::resource('users', UserController::class);
+    // Categories
+    Route::middleware(['role_or_permission:admin|mentor|categories.view'])->group(function () {
+        Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
+        Route::get('categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
+    });
+    Route::middleware(['role_or_permission:admin|mentor|categories.manage'])->group(function () {
+        Route::get('categories/create', [CategoryController::class, 'create'])->name('categories.create');
+        Route::post('categories', [CategoryController::class, 'store'])->name('categories.store');
+        Route::get('categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
+        Route::put('categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+        Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+    });
 
-        Route::get('/biinsight-import/programs', [BiinsightImportController::class, 'getPrograms'])->name('admin.biinsight-import.programs');
+    // Tools
+    Route::middleware(['role_or_permission:admin|mentor|tools.view'])->group(function () {
+        Route::get('tools', [ToolController::class, 'index'])->name('tools.index');
+        Route::get('tools/{tool}', [ToolController::class, 'show'])->name('tools.show');
+    });
+    Route::middleware(['role_or_permission:admin|mentor|tools.manage'])->group(function () {
+        Route::get('tools/create', [ToolController::class, 'create'])->name('tools.create');
+        Route::post('tools', [ToolController::class, 'store'])->name('tools.store');
+        Route::get('tools/{tool}/edit', [ToolController::class, 'edit'])->name('tools.edit');
+        Route::put('tools/{tool}', [ToolController::class, 'update'])->name('tools.update');
+        Route::delete('tools/{tool}', [ToolController::class, 'destroy'])->name('tools.destroy');
+        Route::post('/tools/{id}', [ToolController::class, 'update'])->name('tools.update');
+    });
 
-        Route::resource('broadcasts', BroadcastController::class);
+    // Articles
+    Route::middleware(['role_or_permission:admin|mentor|articles.view'])->group(function () {
+        Route::get('articles', [ArticleController::class, 'index'])->name('articles.index');
+        Route::get('articles/{article}', [ArticleController::class, 'show'])->name('articles.show');
+    });
+    Route::middleware(['role_or_permission:admin|mentor|articles.manage'])->group(function () {
+        Route::get('articles/create', [ArticleController::class, 'create'])->name('articles.create');
+        Route::post('articles', [ArticleController::class, 'store'])->name('articles.store');
+        Route::get('articles/{article}/edit', [ArticleController::class, 'edit'])->name('articles.edit');
+        Route::put('articles/{article}', [ArticleController::class, 'update'])->name('articles.update');
+        Route::delete('articles/{article}', [ArticleController::class, 'destroy'])->name('articles.destroy');
+        Route::post('/articles/{article}/duplicate', [ArticleController::class, 'duplicate'])->name('articles.duplicate');
+        Route::post('/articles/{article}/publish', [ArticleController::class, 'publish'])->name('articles.publish');
+        Route::post('/articles/{article}/archive', [ArticleController::class, 'archive'])->name('articles.archive');
+    });
+
+    // Users
+    Route::middleware(['role_or_permission:admin|users.view'])->group(function () {
+        Route::get('users', [UserController::class, 'index'])->name('users.index');
+        Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
+    });
+    Route::middleware(['role_or_permission:admin|users.manage'])->group(function () {
+        Route::get('users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('users', [UserController::class, 'store'])->name('users.store');
+        Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    });
+
+    // Broadcasts
+    Route::middleware(['role_or_permission:admin|broadcasts.view'])->group(function () {
+        Route::get('broadcasts', [BroadcastController::class, 'index'])->name('broadcasts.index');
+        Route::get('broadcasts/{broadcast}', [BroadcastController::class, 'show'])->name('broadcasts.show');
+    });
+    Route::middleware(['role_or_permission:admin|broadcasts.manage'])->group(function () {
+        Route::get('broadcasts/create', [BroadcastController::class, 'create'])->name('broadcasts.create');
+        Route::post('broadcasts', [BroadcastController::class, 'store'])->name('broadcasts.store');
+        Route::get('broadcasts/{broadcast}/edit', [BroadcastController::class, 'edit'])->name('broadcasts.edit');
+        Route::put('broadcasts/{broadcast}', [BroadcastController::class, 'update'])->name('broadcasts.update');
+        Route::delete('broadcasts/{broadcast}', [BroadcastController::class, 'destroy'])->name('broadcasts.destroy');
         Route::post('broadcasts/{broadcast}/filtered-users', [BroadcastController::class, 'filteredUsers'])->name('broadcasts.filtered-users');
         Route::post('broadcasts/{broadcast}/send', [BroadcastController::class, 'send'])->name('broadcasts.send');
         Route::post('broadcasts/{broadcast}/send-single', [BroadcastController::class, 'sendSingle'])->name('broadcasts.send-single');
-        Route::resource('certificates', CertificateController::class)->except(['show']);
+    });
+
+    // Certificates
+    Route::middleware(['role_or_permission:admin|certificates.view'])->group(function () {
+        Route::get('certificates', [CertificateController::class, 'index'])->name('certificates.index');
+        Route::get('certificates/{certificate}', [CertificateController::class, 'show'])->name('certificates.show');
+        Route::get('/{certificate}/preview', [CertificateController::class, 'preview'])->name('certificates.preview');
+        Route::get('/{certificate}/download-all', [CertificateController::class, 'downloadAll'])->name('certificates.download.all');
+        Route::get('/participant/{participant}/download', [CertificateController::class, 'downloadParticipant'])->name('certificates.participant.download');
+    });
+    Route::middleware(['role_or_permission:admin|certificates.manage'])->group(function () {
+        Route::get('certificates/create', [CertificateController::class, 'create'])->name('certificates.create');
+        Route::post('certificates', [CertificateController::class, 'store'])->name('certificates.store');
+        Route::get('certificates/{certificate}/edit', [CertificateController::class, 'edit'])->name('certificates.edit');
+        Route::put('certificates/{certificate}', [CertificateController::class, 'update'])->name('certificates.update');
+        Route::delete('certificates/{certificate}', [CertificateController::class, 'destroy'])->name('certificates.destroy');
         Route::get('/certificates/{certificate}/download-grades-template', [CertificateController::class, 'downloadGradesTemplate'])->name('certificates.download-grades-template');
         Route::post('/certificates/{certificate}/import-grades', [CertificateController::class, 'importGrades'])->name('certificates.import-grades');
         Route::get('/certificates/{certificate}/download-participants-template', [CertificateController::class, 'downloadParticipantsTemplate'])->name('certificates.download-participants-template');
         Route::post('/certificates/{certificate}/import-manual-participants', [CertificateController::class, 'importManualParticipants'])->name('certificates.import-manual-participants');
         Route::resource('certificate-designs', CertificateDesignController::class);
         Route::resource('certificate-signs', CertificateSignController::class);
+    });
 
-        Route::resource('bootcamps', BootcampController::class)->except(['index', 'show']);
+    // Bootcamps
+    Route::middleware(['role_or_permission:admin|bootcamps.manage'])->group(function () {
+        Route::get('bootcamps/create', [BootcampController::class, 'create'])->name('bootcamps.create');
+        Route::post('bootcamps', [BootcampController::class, 'store'])->name('bootcamps.store');
+        Route::get('bootcamps/{bootcamp}/edit', [BootcampController::class, 'edit'])->name('bootcamps.edit');
+        Route::put('bootcamps/{bootcamp}', [BootcampController::class, 'update'])->name('bootcamps.update');
+        Route::delete('bootcamps/{bootcamp}', [BootcampController::class, 'destroy'])->name('bootcamps.destroy');
         Route::post('/bootcamps/{bootcamp}/publish', [BootcampController::class, 'publish'])->name('bootcamps.publish');
         Route::post('/bootcamps/{bootcamp}/archive', [BootcampController::class, 'archive'])->name('bootcamps.archive');
         Route::post('/bootcamps/{bootcamp}/duplicate', [BootcampController::class, 'duplicate'])->name('bootcamps.duplicate');
         Route::post('/bootcamps/{bootcamp}/hidden', [BootcampController::class, 'hidden'])->name('bootcamps.hidden');
         Route::post('/bootcamps/{bootcamp}/schedules/{schedule}/recording', [BootcampController::class, 'addScheduleRecording'])->name('bootcamps.add-recording');
         Route::delete('/bootcamps/{bootcamp}/schedules/{schedule}/recording', [BootcampController::class, 'removeScheduleRecording'])->name('bootcamps.remove-recording');
+    });
+    Route::middleware(['role_or_permission:admin|affiliate|bootcamps.view'])->group(function () {
+        Route::get('bootcamps', [BootcampController::class, 'index'])->name('bootcamps.index');
+        Route::get('bootcamps/{bootcamp}', [BootcampController::class, 'show'])->name('bootcamps.show');
+    });
 
-        Route::resource('certification-programs', CertificationProgramController::class)->except(['index', 'show']);
+    // Certification Programs
+    Route::middleware(['role_or_permission:admin|certification-programs.manage'])->group(function () {
+        Route::get('certification-programs/create', [CertificationProgramController::class, 'create'])->name('certification-programs.create');
+        Route::post('certification-programs', [CertificationProgramController::class, 'store'])->name('certification-programs.store');
+        Route::get('certification-programs/{program}/edit', [CertificationProgramController::class, 'edit'])->name('certification-programs.edit');
+        Route::put('certification-programs/{program}', [CertificationProgramController::class, 'update'])->name('certification-programs.update');
+        Route::delete('certification-programs/{program}', [CertificationProgramController::class, 'destroy'])->name('certification-programs.destroy');
         Route::post('/certification-programs/{program}/publish', [CertificationProgramController::class, 'publish'])->name('certification-programs.publish');
         Route::post('/certification-programs/{program}/archive', [CertificationProgramController::class, 'archive'])->name('certification-programs.archive');
         Route::post('/certification-programs/{program}/hidden', [CertificationProgramController::class, 'hidden'])->name('certification-programs.hidden');
@@ -282,88 +387,155 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/certification-programs/{program}/scholarship-applications/{application}/approve', [CertificationProgramController::class, 'approveScholarshipApplication'])->name('certification-programs.scholarship-applications.approve');
         Route::post('/certification-programs/{program}/scholarship-applications/{application}/reject', [CertificationProgramController::class, 'rejectScholarshipApplication'])->name('certification-programs.scholarship-applications.reject');
         Route::post('/certification-programs/{program}/duplicate', [CertificationProgramController::class, 'duplicate'])->name('certification-programs.duplicate');
+        Route::get('/biinsight-import/programs', [BiinsightImportController::class, 'getPrograms'])->name('admin.biinsight-import.programs');
+    });
+    Route::middleware(['role_or_permission:admin|affiliate|certification-programs.view'])->group(function () {
+        Route::get('certification-programs', [CertificationProgramController::class, 'index'])->name('certification-programs.index');
+        Route::get('certification-programs/{program}', [CertificationProgramController::class, 'show'])->name('certification-programs.show');
+    });
 
-        Route::resource('webinars', WebinarController::class)->except(['index', 'show']);
+    // Webinars
+    Route::middleware(['role_or_permission:admin|webinars.manage'])->group(function () {
+        Route::get('webinars/create', [WebinarController::class, 'create'])->name('webinars.create');
+        Route::post('webinars', [WebinarController::class, 'store'])->name('webinars.store');
+        Route::get('webinars/{webinar}/edit', [WebinarController::class, 'edit'])->name('webinars.edit');
+        Route::put('webinars/{webinar}', [WebinarController::class, 'update'])->name('webinars.update');
+        Route::delete('webinars/{webinar}', [WebinarController::class, 'destroy'])->name('webinars.destroy');
         Route::post('/webinars/{webinar}/publish', [WebinarController::class, 'publish'])->name('webinars.publish');
         Route::post('/webinars/{webinar}/archive', [WebinarController::class, 'archive'])->name('webinars.archive');
         Route::post('/webinars/{webinar}/duplicate', [WebinarController::class, 'duplicate'])->name('webinars.duplicate');
         Route::patch('webinars/{webinar}/add-recording', [WebinarController::class, 'addRecording'])->name('webinars.add-recording');
         Route::delete('/webinars/{id}/recording', [WebinarController::class, 'removeRecording'])->name('webinars.recording.remove');
+    });
+    Route::middleware(['role_or_permission:admin|affiliate|webinars.view'])->group(function () {
+        Route::get('webinars', [WebinarController::class, 'index'])->name('webinars.index');
+        Route::get('webinars/{webinar}', [WebinarController::class, 'show'])->name('webinars.show');
+    });
 
-        Route::resource('privates', PrivateClassController::class)->except(['index', 'show']);
+    // Privates
+    Route::middleware(['role_or_permission:admin|privates.manage'])->group(function () {
+        Route::get('privates/create', [PrivateClassController::class, 'create'])->name('privates.create');
+        Route::post('privates', [PrivateClassController::class, 'store'])->name('privates.store');
+        Route::get('privates/{private}/edit', [PrivateClassController::class, 'edit'])->name('privates.edit');
+        Route::put('privates/{private}', [PrivateClassController::class, 'update'])->name('privates.update');
+        Route::delete('privates/{private}', [PrivateClassController::class, 'destroy'])->name('privates.destroy');
         Route::post('/privates/{private}/publish', [PrivateClassController::class, 'publish'])->name('privates.publish');
         Route::post('/privates/{private}/archive', [PrivateClassController::class, 'archive'])->name('privates.archive');
         Route::post('/privates/{private}/duplicate', [PrivateClassController::class, 'duplicate'])->name('privates.duplicate');
+    });
+    Route::middleware(['role_or_permission:admin|affiliate|privates.view'])->group(function () {
+        Route::get('privates', [PrivateClassController::class, 'index'])->name('privates.index');
+        Route::get('privates/{private}', [PrivateClassController::class, 'show'])->name('privates.show');
+    });
 
-        Route::resource('bundles', BundleController::class)->except(['index', 'show']);
+    // Bundles
+    Route::middleware(['role_or_permission:admin|bundles.manage'])->group(function () {
+        Route::get('bundles/create', [BundleController::class, 'create'])->name('bundles.create');
+        Route::post('bundles', [BundleController::class, 'store'])->name('bundles.store');
+        Route::get('bundles/{bundle}/edit', [BundleController::class, 'edit'])->name('bundles.edit');
+        Route::put('bundles/{bundle}', [BundleController::class, 'update'])->name('bundles.update');
+        Route::delete('bundles/{bundle}', [BundleController::class, 'destroy'])->name('bundles.destroy');
         Route::post('/bundles/{bundle}/publish', [BundleController::class, 'publish'])->name('bundles.publish');
         Route::post('/bundles/{bundle}/archive', [BundleController::class, 'archive'])->name('bundles.archive');
         Route::post('/bundles/{bundle}/duplicate', [BundleController::class, 'duplicate'])->name('bundles.duplicate');
+    });
+    Route::middleware(['role_or_permission:admin|affiliate|bundles.view'])->group(function () {
+        Route::get('bundles', [BundleController::class, 'index'])->name('bundles.index');
+        Route::get('bundles/{bundle}', [BundleController::class, 'show'])->name('bundles.show');
+    });
 
-        Route::resource('affiliates', AffiliateController::class);
+    // Affiliates & Earnings
+    Route::middleware(['role_or_permission:admin|affiliates.manage'])->group(function () {
+        Route::get('affiliates/create', [AffiliateController::class, 'create'])->name('affiliates.create');
+        Route::post('affiliates', [AffiliateController::class, 'store'])->name('affiliates.store');
+        Route::get('affiliates/{affiliate}/edit', [AffiliateController::class, 'edit'])->name('affiliates.edit');
+        Route::put('affiliates/{affiliate}', [AffiliateController::class, 'update'])->name('affiliates.update');
+        Route::delete('affiliates/{affiliate}', [AffiliateController::class, 'destroy'])->name('affiliates.destroy');
         Route::post('affiliates/{affiliate}/toggle-status', [AffiliateController::class, 'toggleStatus'])->name('affiliates.toggleStatus');
+        Route::post('affiliates/{affiliate}/withdraw', [AffiliateController::class, 'withdrawCommission'])->name('affiliates.withdraw');
+    });
+    Route::middleware(['role_or_permission:admin|affiliates.view'])->group(function () {
+        Route::get('affiliates', [AffiliateController::class, 'index'])->name('affiliates.index');
+        Route::get('affiliates/{affiliate}', [AffiliateController::class, 'show'])->name('affiliates.show');
+    });
+
+    Route::middleware(['role_or_permission:affiliate|mentor|admin|earnings.view'])->group(function () {
+        Route::get('affiliate-earnings', [AffiliateEarningController::class, 'index'])->name('earnings.index');
+        Route::get('affiliate-earnings/export', [AffiliateEarningController::class, 'export'])->name('earnings.export');
+    });
+    Route::middleware(['role_or_permission:admin|earnings.manage'])->group(function () {
         Route::post('affiliate-earnings/{earning}/approve', [AffiliateEarningController::class, 'approveEarning'])->name('earnings.approve');
         Route::post('affiliate-earnings/{earning}/reject', [AffiliateEarningController::class, 'rejectEarning'])->name('earnings.reject');
-        Route::post('affiliates/{affiliate}/withdraw', [AffiliateController::class, 'withdrawCommission'])->name('affiliates.withdraw');
+    });
 
-        Route::resource('mentors', MentorController::class);
+    // Mentors
+    Route::middleware(['role_or_permission:admin|mentors.view'])->group(function () {
+        Route::get('mentors', [MentorController::class, 'index'])->name('mentors.index');
+        Route::get('mentors/{mentor}', [MentorController::class, 'show'])->name('mentors.show');
+    });
+    Route::middleware(['role_or_permission:admin|mentors.manage'])->group(function () {
+        Route::get('mentors/create', [MentorController::class, 'create'])->name('mentors.create');
+        Route::post('mentors', [MentorController::class, 'store'])->name('mentors.store');
+        Route::get('mentors/{mentor}/edit', [MentorController::class, 'edit'])->name('mentors.edit');
+        Route::put('mentors/{mentor}', [MentorController::class, 'update'])->name('mentors.update');
+        Route::delete('mentors/{mentor}', [MentorController::class, 'destroy'])->name('mentors.destroy');
         Route::post('/mentors/{mentor}/withdraw', [MentorController::class, 'withdrawCommission'])->name('mentors.withdraw');
+    });
 
-        Route::post('/articles/{article}/publish', [ArticleController::class, 'publish'])->name('articles.publish');
-        Route::post('/articles/{article}/archive', [ArticleController::class, 'archive'])->name('articles.archive');
+    // Discount Codes
+    Route::middleware(['role_or_permission:admin|discount-codes.view'])->group(function () {
+        Route::get('discount-codes', [DiscountCodeController::class, 'index'])->name('discount-codes.index');
+        Route::get('discount-codes/{discount_code}', [DiscountCodeController::class, 'show'])->name('discount-codes.show');
+    });
+    Route::middleware(['role_or_permission:admin|discount-codes.manage'])->group(function () {
+        Route::get('discount-codes/create', [DiscountCodeController::class, 'create'])->name('discount-codes.create');
+        Route::post('discount-codes', [DiscountCodeController::class, 'store'])->name('discount-codes.store');
+        Route::get('discount-codes/{discount_code}/edit', [DiscountCodeController::class, 'edit'])->name('discount-codes.edit');
+        Route::put('discount-codes/{discount_code}', [DiscountCodeController::class, 'update'])->name('discount-codes.update');
+        Route::delete('discount-codes/{discount_code}', [DiscountCodeController::class, 'destroy'])->name('discount-codes.destroy');
+    });
 
-        Route::post('/course-ratings/{rating}/approve', [CourseRatingController::class, 'approve'])->name('course-ratings.approve');
-        Route::post('/course-ratings/{rating}/reject', [CourseRatingController::class, 'reject'])->name('course-ratings.reject');
-        Route::post('/lesson-assignment-submissions/{submission}/approve', [LessonAssignmentController::class, 'approve'])->name('lesson-assignments.approve');
-        Route::post('/lesson-assignment-submissions/{submission}/reject', [LessonAssignmentController::class, 'reject'])->name('lesson-assignments.reject');
-
-        Route::resource('discount-codes', DiscountCodeController::class);
+    // Transactions
+    Route::middleware(['role_or_permission:admin|transactions.view'])->group(function () {
         Route::get('transactions', [InvoiceController::class, 'index'])->name('transactions.index');
-
-        Route::resource('promotions', PromotionController::class);
-        Route::patch('promotions/{promotion}/toggle-status', [PromotionController::class, 'toggleStatus'])->name('promotions.toggle-status');
         Route::get('transactions/export', [InvoiceController::class, 'export'])->name('transactions.export');
+    });
 
+    // Promotions
+    Route::middleware(['role_or_permission:admin|promotions.view'])->group(function () {
+        Route::get('promotions', [PromotionController::class, 'index'])->name('promotions.index');
+        Route::get('promotions/{promotion}', [PromotionController::class, 'show'])->name('promotions.show');
+    });
+    Route::middleware(['role_or_permission:admin|promotions.manage'])->group(function () {
+        Route::get('promotions/create', [PromotionController::class, 'create'])->name('promotions.create');
+        Route::post('promotions', [PromotionController::class, 'store'])->name('promotions.store');
+        Route::get('promotions/{promotion}/edit', [PromotionController::class, 'edit'])->name('promotions.edit');
+        Route::put('promotions/{promotion}', [PromotionController::class, 'update'])->name('promotions.update');
+        Route::delete('promotions/{promotion}', [PromotionController::class, 'destroy'])->name('promotions.destroy');
+        Route::patch('promotions/{promotion}/toggle-status', [PromotionController::class, 'toggleStatus'])->name('promotions.toggle-status');
+    });
+
+    // Carousels
+    Route::middleware(['role_or_permission:admin|carousels.view'])->group(function () {
         Route::get('carousels', [\App\Http\Controllers\Admin\CarouselAdminController::class, 'index'])->name('carousels.index');
+    });
+    Route::middleware(['role_or_permission:admin|carousels.manage'])->group(function () {
         Route::post('carousels', [\App\Http\Controllers\Admin\CarouselAdminController::class, 'store'])->name('carousels.store');
         Route::post('carousels/{carousel}/update', [\App\Http\Controllers\Admin\CarouselAdminController::class, 'update'])->name('carousels.update');
         Route::delete('carousels/{carousel}', [\App\Http\Controllers\Admin\CarouselAdminController::class, 'destroy'])->name('carousels.destroy');
         Route::patch('carousels/{carousel}/toggle-status', [\App\Http\Controllers\Admin\CarouselAdminController::class, 'toggleStatus'])->name('carousels.toggle-status');
+    });
 
-        // Referral & Reward point admin routes
+    // Referral & Reward point admin routes
+    Route::middleware(['role_or_permission:admin|referral.view'])->group(function () {
         Route::get('referral/settings', [App\Http\Controllers\Admin\ReferralAdminController::class, 'settings'])->name('admin.referral.settings');
-        Route::post('referral/settings', [App\Http\Controllers\Admin\ReferralAdminController::class, 'updateSettings'])->name('admin.referral.settings.update');
         Route::get('referral/report', [App\Http\Controllers\Admin\ReferralAdminController::class, 'report'])->name('admin.referral.report');
         Route::get('referral/transactions', [App\Http\Controllers\Admin\ReferralAdminController::class, 'transactions'])->name('admin.referral.transactions');
         Route::get('referral/search-users', [App\Http\Controllers\Admin\ReferralAdminController::class, 'searchUsers'])->name('admin.referral.search-users');
+    });
+    Route::middleware(['role_or_permission:admin|referral.manage'])->group(function () {
+        Route::post('referral/settings', [App\Http\Controllers\Admin\ReferralAdminController::class, 'updateSettings'])->name('admin.referral.settings.update');
         Route::post('referral/adjust-points', [App\Http\Controllers\Admin\ReferralAdminController::class, 'adjustPoints'])->name('admin.referral.adjust-points');
-    });
-
-    Route::middleware(['role:affiliate|admin'])->group(function () {
-        Route::get('bootcamps', [BootcampController::class, 'index'])->name('bootcamps.index');
-        Route::get('bootcamps/{bootcamp}', [BootcampController::class, 'show'])->name('bootcamps.show');
-
-        Route::get('webinars', [WebinarController::class, 'index'])->name('webinars.index');
-        Route::get('webinars/{webinar}', [WebinarController::class, 'show'])->name('webinars.show');
-
-        Route::get('privates', [PrivateClassController::class, 'index'])->name('privates.index');
-        Route::get('privates/{private}', [PrivateClassController::class, 'show'])->name('privates.show');
-
-        Route::get('certification-programs', [CertificationProgramController::class, 'index'])->name('certification-programs.index');
-        Route::get('certification-programs/{program}', [CertificationProgramController::class, 'show'])->name('certification-programs.show');
-
-        Route::get('bundles', [BundleController::class, 'index'])->name('bundles.index');
-        Route::get('bundles/{bundle}', [BundleController::class, 'show'])->name('bundles.show');
-
-        Route::get('certificates/{certificate}', [CertificateController::class, 'show'])->name('certificates.show');
-        Route::get('/{certificate}/preview', [CertificateController::class, 'preview'])->name('certificates.preview');
-        Route::get('/{certificate}/download-all', [CertificateController::class, 'downloadAll'])->name('certificates.download.all');
-        Route::get('/participant/{participant}/download', [CertificateController::class, 'downloadParticipant'])->name('certificates.participant.download');
-    });
-
-    Route::middleware(['role:affiliate|mentor|admin'])->group(function () {
-        Route::get('affiliate-earnings', [AffiliateEarningController::class, 'index'])->name('earnings.index');
-        Route::get('affiliate-earnings/export', [AffiliateEarningController::class, 'export'])->name('earnings.export');
     });
 });
 

@@ -48,11 +48,15 @@ interface ShowProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function ShowArticle({ article, flash }: ShowProps) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
     const isAdmin = auth.role.includes('admin');
     const isMentor = auth.role.includes('mentor');
+    const canManageArticle = canManage('articles') && !isAffiliate;
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -103,8 +107,8 @@ export default function ShowArticle({ article, flash }: ShowProps) {
                     </div>
                 </div>
 
-                <div className={`${!isAffiliate ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
-                    <div className="lg:col-span-2">
+                <div className={`${canManageArticle ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
+                    <div className={canManageArticle ? "lg:col-span-2" : "w-full"}>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Detail Artikel</CardTitle>
@@ -182,11 +186,11 @@ export default function ShowArticle({ article, flash }: ShowProps) {
                     </div>
 
                     {/* Sidebar Actions */}
-                    {!isAffiliate && (
+                    {canManageArticle && (
                         <div>
                             <h2 className="my-2 text-lg font-medium">Aksi & Pengaturan</h2>
                             <div className="space-y-4 rounded-lg border p-4">
-                                {isAdmin && (article.status === 'draft' || article.status === 'archived') && (
+                                {(isAdmin || canManage('articles')) && (article.status === 'draft' || article.status === 'archived') && (
                                     <>
                                         {!article.thumbnail && (
                                             <div className="mb-4 rounded-lg bg-red-50 p-3 text-center text-sm text-red-700">
@@ -207,7 +211,7 @@ export default function ShowArticle({ article, flash }: ShowProps) {
                                     </>
                                 )}
 
-                                {isAdmin && article.status === 'published' && (
+                                {(isAdmin || canManage('articles')) && article.status === 'published' && (
                                     <Button asChild className="w-full">
                                         <Link method="post" href={route('articles.archive', article.id)}>
                                             <CircleX />

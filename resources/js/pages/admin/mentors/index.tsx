@@ -64,7 +64,11 @@ interface MentorProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function Mentors({ mentors, statistics, flash, filters }: MentorProps) {
+    const { canManage } = usePermission();
+    const canManageMentor = canManage('mentors');
     const [open, setOpen] = useState(false);
     const [showMoreStats, setShowMoreStats] = useState(false);
 
@@ -86,15 +90,17 @@ export default function Mentors({ mentors, statistics, flash, filters }: MentorP
                         <h1 className="text-2xl font-semibold">Mentor</h1>
                         <p className="text-muted-foreground text-sm">Ringkasan dan daftar semua mentor.</p>
                     </div>
-                    <Dialog open={open} onOpenChange={setOpen}>
-                        <DialogTrigger asChild>
-                            <Button className="hover:cursor-pointer">
-                                Tambah Mentor
-                                <Plus />
-                            </Button>
-                        </DialogTrigger>
-                        <CreateMentor setOpen={setOpen} />
-                    </Dialog>
+                    {canManageMentor && (
+                        <Dialog open={open} onOpenChange={setOpen}>
+                            <DialogTrigger asChild>
+                                <Button className="hover:cursor-pointer">
+                                    Tambah Mentor
+                                    <Plus />
+                                </Button>
+                            </DialogTrigger>
+                            <CreateMentor setOpen={setOpen} />
+                        </Dialog>
+                    )}
                 </div>
 
                 {/* Statistics Cards */}

@@ -63,7 +63,11 @@ interface CertificateProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function Certificates({ certificates, statistics, flash, filters }: CertificateProps) {
+    const { canManage } = usePermission();
+    const canManageCertificate = canManage('certificates');
     const [showMoreStats, setShowMoreStats] = useState(false);
 
     useEffect(() => {
@@ -84,26 +88,28 @@ export default function Certificates({ certificates, statistics, flash, filters 
                         <h1 className="text-2xl font-semibold">Sertifikat</h1>
                         <p className="text-muted-foreground text-sm">Kelola dan monitor semua sertifikat yang diterbitkan.</p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                        <Button variant="outline" size="sm" asChild>
-                            <Link href={route('certificate-designs.index')}>
-                                <Palette className="h-4 w-4" />
-                                Desain
-                            </Link>
-                        </Button>
-                        <Button variant="outline" size="sm" asChild>
-                            <Link href={route('certificate-signs.index')}>
-                                <PencilLine className="h-4 w-4" />
-                                Tanda Tangan
-                            </Link>
-                        </Button>
-                        <Button size="sm" asChild>
-                            <Link href={route('certificates.create')}>
-                                <Plus className="h-4 w-4" />
-                                Tambah Sertifikat
-                            </Link>
-                        </Button>
-                    </div>
+                    {canManageCertificate && (
+                        <div className="flex flex-wrap gap-2">
+                            <Button variant="outline" size="sm" asChild>
+                                <Link href={route('certificate-designs.index')}>
+                                    <Palette className="h-4 w-4" />
+                                    Desain
+                                </Link>
+                            </Button>
+                            <Button variant="outline" size="sm" asChild>
+                                <Link href={route('certificate-signs.index')}>
+                                    <PencilLine className="h-4 w-4" />
+                                    Tanda Tangan
+                                </Link>
+                            </Button>
+                            <Button size="sm" asChild>
+                                <Link href={route('certificates.create')}>
+                                    <Plus className="h-4 w-4" />
+                                    Tambah Sertifikat
+                                </Link>
+                            </Button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Statistics Cards */}

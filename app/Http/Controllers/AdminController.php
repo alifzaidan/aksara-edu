@@ -3,27 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Models\AffiliateEarning;
+use App\Models\Article;
 use App\Models\Bootcamp;
+use App\Models\CertificationProgram;
 use App\Models\Course;
 use App\Models\CourseRating;
 use App\Models\EnrollmentBootcamp;
 use App\Models\EnrollmentCourse;
 use App\Models\EnrollmentWebinar;
 use App\Models\Invoice;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Inertia\Inertia;
 use App\Models\User;
 use App\Models\Webinar;
 use Carbon\Carbon;
+use Database\Seeders\StaffPermissionSeeder;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class AdminController extends Controller
 {
     public function index(Request $request)
     {
         $user = User::find(Auth::user()->id);
-        $role =  $user->hasRole('admin') ? 'admin' : ($user->hasRole('affiliate') ? 'affiliate' : 'mentor');
+        $role = $user->hasRole('admin') ? 'admin' : ($user->hasRole('staff') ? 'staff' : ($user->hasRole('affiliate') ? 'affiliate' : 'mentor'));
         $stats = [];
 
         $startDate = $request->input('start_date');
@@ -32,6 +35,9 @@ class AdminController extends Controller
         switch ($role) {
             case 'admin':
                 $stats = $this->getAdminStats($startDate, $endDate);
+                break;
+            case 'staff':
+                $stats = $this->getStaffStats($user, $startDate, $endDate);
                 break;
             case 'affiliate':
                 $stats = $this->getAffiliateStats($user, $startDate, $endDate);
@@ -527,6 +533,69 @@ class AdminController extends Controller
                 'start' => Carbon::parse($startDate)->format('d M Y'),
                 'end' => Carbon::parse($endDate)->format('d M Y')
             ] : null,
+        ];
+    }
+
+    private function getStaffStats(User $user, $startDate = null, $endDate = null)
+    {
+        $permissions = $user->getAllPermissions()->pluck('name')->toArray();
+        $totalCourses = Course::count();
+        $totalBootcamps = Bootcamp::count();
+        $totalWebinars = Webinar::count();
+        $totalArticles = class_exists(Article::class) ? Article::count() : 0;
+        $totalCertificationPrograms = class_exists(CertificationProgram::class) ? CertificationProgram::count() : 0;
+        $totalUsers = User::role('user')->count();
+        $newUsersLastWeek = User::role('user')->where('created_at', '>=', now()->subWeek())->count();
+
+        $courseEnrollmentsCount = EnrollmentCourse::whereHas('invoice', fn($q) => $q->where('status', 'paid'))->count();
+        $bootcampEnrollmentsCount = EnrollmentBootcamp::whereHas('invoice', fn($q) => $q->where('status', 'paid'))->count();
+        $webinarEnrollmentsCount = EnrollmentWebinar::whereHas('invoice', fn($q) => $q->where('status', 'paid'))->count();
+        $totalParticipants = $courseEnrollmentsCount + $bootcampEnrollmentsCount + $webinarEnrollmentsCount;
+
+        // Group modules for quick navigation
+        $allModules = StaffPermissionSeeder::getPermissionModules();
+        $accessibleModules = [];
+        foreach ($allModules as $group) {
+            foreach ($group['modules'] as $mod) {
+                $canView = in_array("{$mod['key']}.view", $permissions);
+                $canManage = in_array("{$mod['key']}.manage", $permissions);
+                if ($canView || $canManage) {
+                    $accessibleModules[] = [
+                        'key' => $mod['key'],
+                        'label' => $mod['label'],
+                        'group' => $group['group'],
+                        'can_view' => $canView,
+                        'can_manage' => $canManage,
+                    ];
+                }
+            }
+        }
+
+        // Popular products (safe non-financial data, price excluded)
+        $popularProducts = collect($this->getPopularProducts())->map(function ($item) {
+            return [
+                'id' => $item['id'],
+                'title' => $item['title'],
+                'type' => $item['type'],
+                'enrollment_count' => $item['enrollment_count'],
+                'thumbnail' => $item['thumbnail'] ?? null,
+            ];
+        })->take(5)->values()->toArray();
+
+        return [
+            'total_users' => $totalUsers,
+            'new_users_last_week' => $newUsersLastWeek,
+            'total_courses' => $totalCourses,
+            'total_bootcamps' => $totalBootcamps,
+            'total_webinars' => $totalWebinars,
+            'total_articles' => $totalArticles,
+            'total_certification_programs' => $totalCertificationPrograms,
+            'total_participants' => $totalParticipants,
+            'permissions_count' => count($permissions),
+            'active_permissions' => $permissions,
+            'accessible_modules' => $accessibleModules,
+            'popular_products' => $popularProducts,
+            'participant_data' => $this->getParticipantData(),
         ];
     }
 }

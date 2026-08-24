@@ -120,7 +120,11 @@ interface MentorProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function ShowMentor({ mentor, earnings, withdrawals, courses, articles, webinars, bootcamps, stats, flash }: MentorProps) {
+    const { canManage } = usePermission();
+    const canManageMentor = canManage('mentors');
     const [open, setOpen] = useState(false);
     const [withdrawOpen, setWithdrawOpen] = useState(false);
     const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -204,8 +208,8 @@ export default function ShowMentor({ mentor, earnings, withdrawals, courses, art
             <Head title={`Detail Mentor - ${mentor.name}`} />
             <div className="px-4 py-4 md:px-6">
                 <h1 className="mb-4 text-2xl font-semibold">{`Detail ${mentor.name}`}</h1>
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
-                    <Tabs defaultValue="detail" className="lg:col-span-2">
+                <div className={`${canManageMentor ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
+                    <Tabs defaultValue="detail" className={canManageMentor ? 'lg:col-span-2' : 'w-full'}>
                         <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7">
                             <TabsTrigger value="detail">Detail</TabsTrigger>
                             <TabsTrigger value="courses">
@@ -270,107 +274,115 @@ export default function ShowMentor({ mentor, earnings, withdrawals, courses, art
                         </TabsContent>
                     </Tabs>
 
-                    <div>
-                        <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
-                        <div className="space-y-4 rounded-lg border p-4">
-                            {/* ✅ Withdraw Dialog */}
-                            {stats.available_commission > 0 && (
-                                <>
-                                    <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
+                    {canManageMentor && (
+                        <div>
+                            <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
+                            <div className="space-y-4 rounded-lg border p-4">
+                                {/* ✅ Withdraw Dialog */}
+                                {stats.available_commission > 0 && (
+                                    <>
+                                        <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
+                                            <DialogTrigger asChild>
+                                                <Button className="w-full border-green-700 bg-green-600 text-white hover:bg-green-700">
+                                                    <Banknote />
+                                                    Tarik Komisi
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <DialogTitle>Tarik Komisi</DialogTitle>
+                                                    <DialogDescription>
+                                                        Masukkan nominal komisi yang ingin ditarik untuk {mentor.name}
+                                                    </DialogDescription>
+                                                </DialogHeader>
+
+                                                <div className="space-y-4 py-4">
+                                                    {/* Available Balance */}
+                                                    <div className="rounded-lg bg-green-50 p-4 dark:bg-green-950/20">
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400">Komisi Tersedia</p>
+                                                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                                            {formatCurrency(stats.available_commission)}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Amount Input */}
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="amount">Nominal Penarikan</Label>
+                                                        <div className="relative">
+                                                            <span className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-500">Rp</span>
+                                                            <Input
+                                                                id="amount"
+                                                                type="text"
+                                                                placeholder="0"
+                                                                value={withdrawAmount ? parseInt(withdrawAmount).toLocaleString('id-ID') : ''}
+                                                                onChange={handleAmountChange}
+                                                                className="pl-10"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Quick Fill Buttons */}
+                                                    <div className="space-y-2">
+                                                        <Label className="text-sm">Pilih Cepat</Label>
+                                                        <div className="grid grid-cols-4 gap-2">
+                                                            <Button type="button" variant="outline" size="sm" onClick={() => handleQuickFill(0.25)}>
+                                                                25%
+                                                            </Button>
+                                                            <Button type="button" variant="outline" size="sm" onClick={() => handleQuickFill(0.5)}>
+                                                                50%
+                                                            </Button>
+                                                            <Button type="button" variant="outline" size="sm" onClick={() => handleQuickFill(0.75)}>
+                                                                75%
+                                                            </Button>
+                                                            <Button type="button" variant="outline" size="sm" onClick={() => handleQuickFill(1)}>
+                                                                100%
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <DialogFooter>
+                                                    <Button variant="outline" onClick={() => setWithdrawOpen(false)} disabled={isWithdrawing}>
+                                                        Batal
+                                                    </Button>
+                                                    <Button
+                                                        onClick={handleWithdraw}
+                                                        disabled={isWithdrawing}
+                                                        className="bg-green-600 hover:bg-green-700"
+                                                    >
+                                                        {isWithdrawing ? 'Memproses...' : 'Tarik Sekarang'}
+                                                    </Button>
+                                                </DialogFooter>
+                                            </DialogContent>
+                                        </Dialog>
+                                        <Separator />
+                                    </>
+                                )}
+
+                                <div className="space-y-2">
+                                    <Dialog open={open} onOpenChange={setOpen}>
                                         <DialogTrigger asChild>
-                                            <Button className="w-full border-green-700 bg-green-600 text-white hover:bg-green-700">
-                                                <Banknote />
-                                                Tarik Komisi
+                                            <Button className="w-full" variant="secondary">
+                                                <Edit />
+                                                Edit
                                             </Button>
                                         </DialogTrigger>
-                                        <DialogContent>
-                                            <DialogHeader>
-                                                <DialogTitle>Tarik Komisi</DialogTitle>
-                                                <DialogDescription>Masukkan nominal komisi yang ingin ditarik untuk {mentor.name}</DialogDescription>
-                                            </DialogHeader>
-
-                                            <div className="space-y-4 py-4">
-                                                {/* Available Balance */}
-                                                <div className="rounded-lg bg-green-50 p-4 dark:bg-green-950/20">
-                                                    <p className="text-sm text-gray-600 dark:text-gray-400">Komisi Tersedia</p>
-                                                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                                                        {formatCurrency(stats.available_commission)}
-                                                    </p>
-                                                </div>
-
-                                                {/* Amount Input */}
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="amount">Nominal Penarikan</Label>
-                                                    <div className="relative">
-                                                        <span className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-500">Rp</span>
-                                                        <Input
-                                                            id="amount"
-                                                            type="text"
-                                                            placeholder="0"
-                                                            value={withdrawAmount ? parseInt(withdrawAmount).toLocaleString('id-ID') : ''}
-                                                            onChange={handleAmountChange}
-                                                            className="pl-10"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                {/* Quick Fill Buttons */}
-                                                <div className="space-y-2">
-                                                    <Label className="text-sm">Pilih Cepat</Label>
-                                                    <div className="grid grid-cols-4 gap-2">
-                                                        <Button type="button" variant="outline" size="sm" onClick={() => handleQuickFill(0.25)}>
-                                                            25%
-                                                        </Button>
-                                                        <Button type="button" variant="outline" size="sm" onClick={() => handleQuickFill(0.5)}>
-                                                            50%
-                                                        </Button>
-                                                        <Button type="button" variant="outline" size="sm" onClick={() => handleQuickFill(0.75)}>
-                                                            75%
-                                                        </Button>
-                                                        <Button type="button" variant="outline" size="sm" onClick={() => handleQuickFill(1)}>
-                                                            100%
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <DialogFooter>
-                                                <Button variant="outline" onClick={() => setWithdrawOpen(false)} disabled={isWithdrawing}>
-                                                    Batal
-                                                </Button>
-                                                <Button onClick={handleWithdraw} disabled={isWithdrawing} className="bg-green-600 hover:bg-green-700">
-                                                    {isWithdrawing ? 'Memproses...' : 'Tarik Sekarang'}
-                                                </Button>
-                                            </DialogFooter>
-                                        </DialogContent>
+                                        <EditAffiliate mentor={mentor} setOpen={setOpen} />
                                     </Dialog>
-                                    <Separator />
-                                </>
-                            )}
-
-                            <div className="space-y-2">
-                                <Dialog open={open} onOpenChange={setOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button className="w-full" variant="secondary">
-                                            <Edit />
-                                            Edit
-                                        </Button>
-                                    </DialogTrigger>
-                                    <EditAffiliate mentor={mentor} setOpen={setOpen} />
-                                </Dialog>
-                                <DeleteConfirmDialog
-                                    trigger={
-                                        <Button variant="destructive" className="w-full">
-                                            <Trash /> Hapus
-                                        </Button>
-                                    }
-                                    title="Apakah Anda yakin ingin menghapus mentor ini?"
-                                    itemName={mentor.name}
-                                    onConfirm={handleDelete}
-                                />
+                                    <DeleteConfirmDialog
+                                        trigger={
+                                            <Button variant="destructive" className="w-full">
+                                                <Trash /> Hapus
+                                            </Button>
+                                        }
+                                        title="Apakah Anda yakin ingin menghapus mentor ini?"
+                                        itemName={mentor.name}
+                                        onConfirm={handleDelete}
+                                    />
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
                 <div className="mt-4 rounded-lg border p-4">
                     <h3 className="text-muted-foreground text-center text-sm">

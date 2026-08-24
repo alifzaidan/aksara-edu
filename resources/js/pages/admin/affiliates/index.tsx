@@ -47,7 +47,11 @@ interface AffiliateProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function Affiliates({ affiliates, statistics, flash, filters }: AffiliateProps) {
+    const { canManage } = usePermission();
+    const canManageAffiliate = canManage('affiliates');
     const [open, setOpen] = useState(false);
     const [showMoreStats, setShowMoreStats] = useState(false);
 
@@ -69,15 +73,17 @@ export default function Affiliates({ affiliates, statistics, flash, filters }: A
                         <h1 className="text-2xl font-semibold">Afiliasi</h1>
                         <p className="text-muted-foreground text-sm">Ringkasan dan daftar semua afiliasi.</p>
                     </div>
-                    <Dialog open={open} onOpenChange={setOpen}>
-                        <DialogTrigger asChild>
-                            <Button className="hover:cursor-pointer">
-                                Tambah Afiliasi
-                                <Plus />
-                            </Button>
-                        </DialogTrigger>
-                        <CreateMentor setOpen={setOpen} />
-                    </Dialog>
+                    {canManageAffiliate && (
+                        <Dialog open={open} onOpenChange={setOpen}>
+                            <DialogTrigger asChild>
+                                <Button className="hover:cursor-pointer">
+                                    Tambah Afiliasi
+                                    <Plus />
+                                </Button>
+                            </DialogTrigger>
+                            <CreateMentor setOpen={setOpen} />
+                        </Dialog>
+                    )}
                 </div>
 
                 {/* Statistics Cards */}

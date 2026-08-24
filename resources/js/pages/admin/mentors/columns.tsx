@@ -12,7 +12,12 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { BookText, FileText, Folder, MonitorPlay, Presentation, Trash } from 'lucide-react';
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function MentorActions({ mentor }: { mentor: Mentor }) {
+    const { canManage } = usePermission();
+    const canManageMentor = canManage('mentors');
+
     const handleDelete = () => {
         router.delete(route('mentors.destroy', mentor.id));
     };
@@ -32,26 +37,28 @@ export default function MentorActions({ mentor }: { mentor: Mentor }) {
                     <p>Lihat Mentor</p>
                 </TooltipContent>
             </Tooltip>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div>
-                        <DeleteConfirmDialog
-                            trigger={
-                                <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
-                                    <Trash />
-                                    <span className="sr-only">Hapus Mentor</span>
-                                </Button>
-                            }
-                            title="Apakah Anda yakin ingin menghapus mentor ini?"
-                            itemName={mentor.name}
-                            onConfirm={handleDelete}
-                        />
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Hapus Mentor</p>
-                </TooltipContent>
-            </Tooltip>
+            {canManageMentor && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div>
+                            <DeleteConfirmDialog
+                                trigger={
+                                    <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
+                                        <Trash />
+                                        <span className="sr-only">Hapus Mentor</span>
+                                    </Button>
+                                }
+                                title="Apakah Anda yakin ingin menghapus mentor ini?"
+                                itemName={mentor.name}
+                                onConfirm={handleDelete}
+                            />
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Hapus Mentor</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
         </div>
     );
 }

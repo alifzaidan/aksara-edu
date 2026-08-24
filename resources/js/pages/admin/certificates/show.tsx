@@ -63,9 +63,13 @@ interface CertificateProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function ShowCertificate({ certificate, flash }: CertificateProps) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManageCertificate = canManage('certificates') && !isAffiliate;
     const [isLoading, setIsLoading] = useState(true);
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -82,12 +86,12 @@ export default function ShowCertificate({ certificate, flash }: CertificateProps
     useEffect(() => {
         if (flash?.success) {
             toast.success(flash.success, {
-                style: { whiteSpace: 'pre-line' }
+                style: { whiteSpace: 'pre-line' },
             });
         }
         if (flash?.error) {
             toast.error(flash.error, {
-                style: { whiteSpace: 'pre-line' }
+                style: { whiteSpace: 'pre-line' },
             });
         }
     }, [flash]);
@@ -115,7 +119,11 @@ export default function ShowCertificate({ certificate, flash }: CertificateProps
                             <CertificateDetail certificate={certificate} />
                         </TabsContent>
                         <TabsContent value="participants">
-                            <CertificateParticipants certificate={certificate} participants={certificate.participants || []} issuedDate={certificate.issued_date} />
+                            <CertificateParticipants
+                                certificate={certificate}
+                                participants={certificate.participants || []}
+                                issuedDate={certificate.issued_date}
+                            />
                         </TabsContent>
                     </Tabs>
 
@@ -130,31 +138,31 @@ export default function ShowCertificate({ certificate, flash }: CertificateProps
                             </Button>
 
                             <Separator />
-                            {!isAffiliate && (
+                            {canManageCertificate && (
                                 <>
-                            <div className="space-y-2">
-                                <Button asChild className="w-full" variant="secondary">
-                                    <Link href={route('certificates.edit', { certificate: certificate.id })}>
-                                        <SquarePen className="h-4 w-4" />
-                                        Edit Sertifikat
-                                    </Link>
-                                </Button>
-
-                                <ImportManualParticipantsDialog certificateId={certificate.id} />
-
-                                <DeleteConfirmDialog
-                                    trigger={
-                                        <Button variant="destructive" className="w-full">
-                                            <Trash className="h-4 w-4" />
-                                            Hapus
+                                    <div className="space-y-2">
+                                        <Button asChild className="w-full" variant="secondary">
+                                            <Link href={route('certificates.edit', { certificate: certificate.id })}>
+                                                <SquarePen className="h-4 w-4" />
+                                                Edit Sertifikat
+                                            </Link>
                                         </Button>
-                                    }
-                                    title="Apakah Anda yakin ingin menghapus sertifikat ini?"
-                                    itemName={certificate.title}
-                                    onConfirm={handleDelete}
-                                />
-                            </div>
-                            </>
+
+                                        <ImportManualParticipantsDialog certificateId={certificate.id} />
+
+                                        <DeleteConfirmDialog
+                                            trigger={
+                                                <Button variant="destructive" className="w-full">
+                                                    <Trash className="h-4 w-4" />
+                                                    Hapus
+                                                </Button>
+                                            }
+                                            title="Apakah Anda yakin ingin menghapus sertifikat ini?"
+                                            itemName={certificate.title}
+                                            onConfirm={handleDelete}
+                                        />
+                                    </div>
+                                </>
                             )}
                         </div>
 

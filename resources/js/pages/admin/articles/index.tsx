@@ -70,9 +70,13 @@ interface ArticlesProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function Articles({ articles, statistics, flash, filters }: ArticlesProps) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManageArticle = canManage('articles') && !isAffiliate;
     const [showMoreStats, setShowMoreStats] = useState(false);
 
     useEffect(() => {
@@ -93,7 +97,7 @@ export default function Articles({ articles, statistics, flash, filters }: Artic
                         <h1 className="text-2xl font-semibold">Artikel</h1>
                         <p className="text-muted-foreground text-sm">Kelola artikel blog dan konten edukatif untuk platform pembelajaran.</p>
                     </div>
-                    {!isAffiliate && (
+                    {canManageArticle && (
                         <Button asChild className="hover:cursor-pointer">
                             <Link href={route('articles.create')}>
                                 <Plus />

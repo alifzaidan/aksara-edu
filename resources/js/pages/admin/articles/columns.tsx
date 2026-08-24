@@ -34,9 +34,13 @@ export type Article = {
     created_at: string;
 };
 
+import { usePermission } from '@/hooks/use-permission';
+
 function ArticleActions({ article }: { article: Article }) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManageArticle = canManage('articles') && !isAffiliate;
 
     const handleDelete = () => {
         router.delete(route('articles.destroy', article.id));
@@ -57,7 +61,7 @@ function ArticleActions({ article }: { article: Article }) {
                     <p>Lihat Detail</p>
                 </TooltipContent>
             </Tooltip>
-            {!isAffiliate && (
+            {canManageArticle && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div>

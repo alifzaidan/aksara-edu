@@ -53,9 +53,13 @@ interface CourseProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function Courses({ courses, statistics, flash, filters }: CourseProps) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManageCourse = canManage('courses') && !isAffiliate;
     const [showMoreStats, setShowMoreStats] = useState(false);
 
     useEffect(() => {
@@ -76,7 +80,7 @@ export default function Courses({ courses, statistics, flash, filters }: CourseP
                         <h1 className="text-2xl font-semibold">Kelas Online</h1>
                         <p className="text-muted-foreground text-sm">Ringkasan dan daftar semua kelas online.</p>
                     </div>
-                    {!isAffiliate && (
+                    {canManageCourse && (
                         <Button asChild className="hover:cursor-pointer">
                             <Link href={route('courses.create')}>
                                 Tambah Kelas

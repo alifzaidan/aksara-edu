@@ -46,7 +46,11 @@ interface TransactionsProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function PointTransactions({ transactions, users: initialUsers, filters }: TransactionsProps) {
+    const { canManage } = usePermission();
+    const canManageReferral = canManage('referral');
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [searchLoading, setSearchLoading] = useState(false);
@@ -175,9 +179,8 @@ export default function PointTransactions({ transactions, users: initialUsers, f
                     </p>
                 </div>
 
-                <div className="grid gap-6 lg:grid-cols-3">
-                    {/* Left: Point Transactions Table */}
-                    <div className="lg:col-span-2 space-y-4">
+                <div className={`grid gap-6 ${canManageReferral ? 'lg:grid-cols-3' : 'grid-cols-1'}`}>
+                    <div className={`${canManageReferral ? 'lg:col-span-2' : 'col-span-1'} space-y-4`}>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Riwayat Ledger Poin</CardTitle>
@@ -188,7 +191,6 @@ export default function PointTransactions({ transactions, users: initialUsers, f
                             <CardContent>
                                 <DataTable columns={columns} data={transactions.data} searchKey="user" searchPlaceholder="Cari nama..." />
 
-                                {/* Pagination */}
                                 {transactions.last_page > 1 && (
                                     <div className="flex items-center justify-between pt-4 mt-4 border-t">
                                         <span className="text-xs text-muted-foreground">
@@ -218,139 +220,141 @@ export default function PointTransactions({ transactions, users: initialUsers, f
                     </div>
 
                     {/* Right: Manual Adjustment Form */}
-                    <div className="space-y-4">
-                        <form onSubmit={handleAdjust}>
-                            <Card className="border-border">
-                                <CardHeader>
-                                    <CardTitle className="text-foreground flex items-center gap-2">
-                                        <Plus className="h-5 w-5" />
-                                        Penyesuaian Saldo Poin
-                                    </CardTitle>
-                                    <CardDescription>
-                                        Kurangi atau tambahkan saldo poin secara langsung ke akun pengguna.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="space-y-2" ref={suggestionRef}>
-                                        <Label htmlFor="user_id">Nama / Email Pengguna</Label>
-                                        <div className="relative">
-                                            <Input
-                                                id="user_id"
-                                                placeholder="Masukkan nama atau email pengguna terdaftar..."
-                                                value={data.user_id}
-                                                onChange={(e) => {
-                                                    setData('user_id', e.target.value);
-                                                    setShowSuggestions(true);
-                                                }}
-                                                onFocus={() => setShowSuggestions(true)}
-                                                className="bg-background"
-                                                required
-                                                autoComplete="off"
-                                            />
-                                            {showSuggestions && dynamicSuggestions.length > 0 && (
-                                                <div className="absolute z-50 w-full mt-1 bg-popover text-popover-foreground border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
-                                                    {dynamicSuggestions.map((u) => (
+                    {canManageReferral && (
+                        <div className="space-y-4">
+                            <form onSubmit={handleAdjust}>
+                                <Card className="border-border">
+                                    <CardHeader>
+                                        <CardTitle className="text-foreground flex items-center gap-2">
+                                            <Plus className="h-5 w-5" />
+                                            Penyesuaian Saldo Poin
+                                        </CardTitle>
+                                        <CardDescription>
+                                            Kurangi atau tambahkan saldo poin secara langsung ke akun pengguna.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-2" ref={suggestionRef}>
+                                            <Label htmlFor="user_id">Nama / Email Pengguna</Label>
+                                            <div className="relative">
+                                                <Input
+                                                    id="user_id"
+                                                    placeholder="Masukkan nama atau email pengguna terdaftar..."
+                                                    value={data.user_id}
+                                                    onChange={(e) => {
+                                                        setData('user_id', e.target.value);
+                                                        setShowSuggestions(true);
+                                                    }}
+                                                    onFocus={() => setShowSuggestions(true)}
+                                                    className="bg-background"
+                                                    required
+                                                    autoComplete="off"
+                                                />
+                                                {showSuggestions && dynamicSuggestions.length > 0 && (
+                                                    <div className="absolute z-50 w-full mt-1 bg-popover text-popover-foreground border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                                        {dynamicSuggestions.map((u) => (
+                                                            <button
+                                                                key={u.id}
+                                                                type="button"
+                                                                className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground flex flex-col border-b border-border/50 last:border-b-0"
+                                                                onClick={() => {
+                                                                    setData('user_id', u.email);
+                                                                    setSelectedUser({
+                                                                        name: u.name,
+                                                                        email: u.email,
+                                                                        point_balance: u.point_balance || 0,
+                                                                    });
+                                                                    setShowSuggestions(false);
+                                                                }}
+                                                            >
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="font-medium text-foreground">{u.name}</span>
+                                                                    <span className="text-xs text-emerald-600 font-semibold">{u.point_balance.toLocaleString('id-ID')} poin</span>
+                                                                </div>
+                                                                <span className="text-xs text-muted-foreground">{u.email}</span>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {searchLoading && <p className="text-xs text-muted-foreground">Mencari pengguna terdaftar...</p>}
+
+                                            {/* Selected User Badge */}
+                                            {selectedUser && (
+                                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className="px-3 py-1.5 text-xs font-medium border border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 flex items-center gap-2"
+                                                    >
+                                                        <span className="font-semibold">{selectedUser.email}</span>
+                                                        <span className="text-muted-foreground">|</span>
+                                                        <span>
+                                                            point :{' '}
+                                                            <strong className="text-emerald-700 dark:text-emerald-300 font-bold">
+                                                                {selectedUser.point_balance.toLocaleString('id-ID')}
+                                                            </strong>
+                                                        </span>
                                                         <button
-                                                            key={u.id}
                                                             type="button"
-                                                            className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground flex flex-col border-b border-border/50 last:border-b-0"
                                                             onClick={() => {
-                                                                setData('user_id', u.email);
-                                                                setSelectedUser({
-                                                                    name: u.name,
-                                                                    email: u.email,
-                                                                    point_balance: u.point_balance || 0,
-                                                                });
-                                                                setShowSuggestions(false);
+                                                                setData('user_id', '');
+                                                                setSelectedUser(null);
                                                             }}
+                                                            className="ml-1 text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-100"
                                                         >
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="font-medium text-foreground">{u.name}</span>
-                                                                <span className="text-xs text-emerald-600 font-semibold">{u.point_balance.toLocaleString('id-ID')} poin</span>
-                                                            </div>
-                                                            <span className="text-xs text-muted-foreground">{u.email}</span>
+                                                            <X className="h-3 w-3" />
                                                         </button>
-                                                    ))}
+                                                    </Badge>
                                                 </div>
                                             )}
+
+                                            {!searchLoading && data.user_id.includes('@') && !selectedUser && (
+                                                <p className="text-xs text-amber-600">Email tidak ditemukan di sistem.</p>
+                                            )}
+
+                                            {errors.user_id && <p className="text-xs text-red-600">{errors.user_id}</p>}
                                         </div>
 
-                                        {searchLoading && <p className="text-xs text-muted-foreground">Mencari pengguna terdaftar...</p>}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="amount">Jumlah Poin</Label>
+                                            <Input
+                                                id="amount"
+                                                type="number"
+                                                placeholder="Gunakan tanda minus (-) untuk mengurangi"
+                                                value={data.amount}
+                                                onChange={(e) => setData('amount', e.target.value)}
+                                                className="bg-background"
+                                                required
+                                            />
+                                            <p className="text-[11px] text-muted-foreground">
+                                                Contoh: <span className="font-semibold text-green-600">5000</span> untuk menambah 5,000 poin, atau <span className="font-semibold text-red-600">-3000</span> untuk mengurangi 3,000 poin.
+                                            </p>
+                                            {errors.amount && <p className="text-xs text-red-600">{errors.amount}</p>}
+                                        </div>
 
-                                        {/* Selected User Badge */}
-                                        {selectedUser && (
-                                            <div className="mt-2 flex flex-wrap items-center gap-2">
-                                                <Badge
-                                                    variant="secondary"
-                                                    className="px-3 py-1.5 text-xs font-medium border border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 flex items-center gap-2"
-                                                >
-                                                    <span className="font-semibold">{selectedUser.email}</span>
-                                                    <span className="text-muted-foreground">|</span>
-                                                    <span>
-                                                        point :{' '}
-                                                        <strong className="text-emerald-700 dark:text-emerald-300 font-bold">
-                                                            {selectedUser.point_balance.toLocaleString('id-ID')}
-                                                        </strong>
-                                                    </span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setData('user_id', '');
-                                                            setSelectedUser(null);
-                                                        }}
-                                                        className="ml-1 text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-100"
-                                                    >
-                                                        <X className="h-3 w-3" />
-                                                    </button>
-                                                </Badge>
-                                            </div>
-                                        )}
-
-                                        {!searchLoading && data.user_id.includes('@') && !selectedUser && (
-                                            <p className="text-xs text-amber-600">Email tidak ditemukan di sistem.</p>
-                                        )}
-
-                                        {errors.user_id && <p className="text-xs text-red-600">{errors.user_id}</p>}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="amount">Jumlah Poin</Label>
-                                        <Input
-                                            id="amount"
-                                            type="number"
-                                            placeholder="Gunakan tanda minus (-) untuk mengurangi"
-                                            value={data.amount}
-                                            onChange={(e) => setData('amount', e.target.value)}
-                                            className="bg-background"
-                                            required
-                                        />
-                                        <p className="text-[11px] text-muted-foreground">
-                                            Contoh: <span className="font-semibold text-green-600">5000</span> untuk menambah 5,000 poin, atau <span className="font-semibold text-red-600">-3000</span> untuk mengurangi 3,000 poin.
-                                        </p>
-                                        {errors.amount && <p className="text-xs text-red-600">{errors.amount}</p>}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="description">Alasan / Keterangan Penyesuaian</Label>
-                                        <Textarea
-                                            id="description"
-                                            placeholder="Contoh: Bonus pendaftaran webinar khusus atau koreksi saldo kesalahan sistem."
-                                            value={data.description}
-                                            onChange={(e) => setData('description', e.target.value)}
-                                            className="bg-background h-20"
-                                            required
-                                        />
-                                        {errors.description && <p className="text-xs text-red-600">{errors.description}</p>}
-                                    </div>
-                                </CardContent>
-                                <CardFooter className="bg-muted/20 border-t px-6 py-4">
-                                    <Button type="submit" disabled={processing} className="w-full">
-                                        {processing ? 'Memproses...' : 'Terapkan Penyesuaian'}
-                                    </Button>
-                                </CardFooter>
-                            </Card>
-                        </form>
-                    </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="description">Alasan / Keterangan Penyesuaian</Label>
+                                            <Textarea
+                                                id="description"
+                                                placeholder="Contoh: Bonus pendaftaran webinar khusus atau koreksi saldo kesalahan sistem."
+                                                value={data.description}
+                                                onChange={(e) => setData('description', e.target.value)}
+                                                className="bg-background h-20"
+                                                required
+                                            />
+                                            {errors.description && <p className="text-xs text-red-600">{errors.description}</p>}
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter className="bg-muted/20 border-t px-6 py-4">
+                                        <Button type="submit" disabled={processing} className="w-full">
+                                            {processing ? 'Memproses...' : 'Terapkan Penyesuaian'}
+                                        </Button>
+                                    </CardFooter>
+                                </Card>
+                            </form>
+                        </div>
+                    )}
                 </div>
             </div>
         </AdminLayout>

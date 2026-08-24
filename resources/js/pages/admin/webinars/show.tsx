@@ -72,10 +72,14 @@ interface WebinarProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function ShowWebinar({ webinar, transactions, participants, ratings, averageRating, certificate, flash }: WebinarProps) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const role = auth.role[0];
     const isAffiliate = role === 'affiliate';
+    const canManageWebinar = canManage('webinars') && !isAffiliate;
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -113,7 +117,7 @@ export default function ShowWebinar({ webinar, transactions, participants, ratin
             <div className="px-4 py-4 md:px-6">
                 <h1 className="mb-4 text-2xl font-semibold">{`Detail ${webinar.title}`}</h1>
 
-                {!isAffiliate && needsRecording && (
+                {canManageWebinar && needsRecording && (
                     <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
                         <div className="flex items-start gap-3">
                             <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
@@ -129,8 +133,8 @@ export default function ShowWebinar({ webinar, transactions, participants, ratin
                     </div>
                 )}
 
-                <div className={`${!isAffiliate ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
-                    <Tabs defaultValue="detail" className="lg:col-span-2">
+                <div className={`${canManageWebinar ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
+                    <Tabs defaultValue="detail" className={canManageWebinar ? "lg:col-span-2" : "w-full"}>
                         <TabsList>
                             <TabsTrigger value="detail">Detail</TabsTrigger>
                             {!isAffiliate && (
@@ -171,7 +175,7 @@ export default function ShowWebinar({ webinar, transactions, participants, ratin
                     </Tabs>
 
                     {/* Sidebar remains the same */}
-                    {!isAffiliate && (
+                    {canManageWebinar && (
                         <div>
                             <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
                             <div className="space-y-4 rounded-lg border p-4">

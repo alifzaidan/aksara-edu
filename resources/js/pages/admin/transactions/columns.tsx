@@ -82,7 +82,11 @@ export interface Invoice {
     created_at: string;
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 function ActionsCell({ row }: { row: Row<Invoice> }) {
+    const { canManage } = usePermission();
+    const canManageTransaction = canManage('transactions');
     const invoice = row.original;
     const user = invoice.user;
     let whatsappUrl = '';
@@ -143,7 +147,7 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
                 </Tooltip>
             )}
 
-            {invoice.status === 'pending' && (
+            {invoice.status === 'pending' && canManageTransaction && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div>

@@ -81,10 +81,14 @@ interface ShowCertificationProgramProps {
     flash?: { success?: string; error?: string };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function ShowCertificationProgram({ program, applications, transactions, flash }: ShowCertificationProgramProps) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const role = auth.role[0];
     const isAffiliate = role === 'affiliate';
+    const canManageProgram = canManage('certification-programs') && !isAffiliate;
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Program Sertifikasi', href: route('certification-programs.index') },
@@ -115,7 +119,9 @@ export default function ShowCertificationProgram({ program, applications, transa
     const paidTransactionsCount = transactions.filter((t) => t.status === 'paid').length;
 
     const totalSchedules = (program.schedules?.length ?? 0) + (program.type === 'scholarship' ? (program.socializationSchedules?.length ?? 0) : 0);
-    const uploadedRecordings = (program.schedules?.filter((s) => s.recording_url).length ?? 0) + (program.type === 'scholarship' ? (program.socializationSchedules?.filter((s) => s.recording_url).length ?? 0) : 0);
+    const uploadedRecordings =
+        (program.schedules?.filter((s) => s.recording_url).length ?? 0) +
+        (program.type === 'scholarship' ? (program.socializationSchedules?.filter((s) => s.recording_url).length ?? 0) : 0);
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
@@ -127,47 +133,39 @@ export default function ShowCertificationProgram({ program, applications, transa
                     <Badge className={`border-0 ${statusInfo.color}`}>{statusInfo.label}</Badge>
                 </div>
 
-                <div className={`${!isAffiliate ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
+                <div className={`${canManageProgram ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
                     {/* Main Content */}
-                    <div className="lg:col-span-2">
+                    <div className={canManageProgram ? 'lg:col-span-2' : 'w-full'}>
                         <Tabs defaultValue="detail">
                             <TabsList>
                                 <TabsTrigger value="detail">Detail</TabsTrigger>
-                                {!isAffiliate && (
-                                    <>
-                                        <TabsTrigger value="pendaftar">
-                                            Pendaftar
-                                            {applications.length > 0 && (
-                                                <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">
-                                                    {approvedApplications.length}/{applications.length}
-                                                </span>
-                                            )}
-                                        </TabsTrigger>
-                                        <TabsTrigger value="transaksi">
-                                            Transaksi
-                                            {transactions.length > 0 && (
-                                                <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">
-                                                    {paidTransactionsCount}/{transactions.length}
-                                                </span>
-                                            )}
-                                        </TabsTrigger>
-                                        <TabsTrigger value="rekaman">
-                                            Rekaman
-                                            {totalSchedules > 0 && (
-                                                <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">
-                                                    {uploadedRecordings}/{totalSchedules}
-                                                </span>
-                                            )}
-                                        </TabsTrigger>
-                                    </>
-                                )}
+                                <TabsTrigger value="peserta">
+                                    Daftar Peserta
+                                    {applications.length > 0 && (
+                                        <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{approvedApplications.length}</span>
+                                    )}
+                                </TabsTrigger>
+                                <TabsTrigger value="transaksi">
+                                    Transaksi
+                                    {transactions.length > 0 && (
+                                        <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{paidTransactionsCount}</span>
+                                    )}
+                                </TabsTrigger>
+                                <TabsTrigger value="jadwal">
+                                    Jadwal & Rekaman
+                                    {totalSchedules > 0 && (
+                                        <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">
+                                            {uploadedRecordings}/{totalSchedules}
+                                        </span>
+                                    )}
+                                </TabsTrigger>
                             </TabsList>
 
                             <TabsContent value="detail">
                                 <CertificationProgramDetail program={program} />
                             </TabsContent>
 
-                            <TabsContent value="pendaftar">
+                            <TabsContent value="peserta">
                                 <CertificationProgramApplications applications={applications} programType={program.type} programId={program.id} />
                             </TabsContent>
 
@@ -175,7 +173,7 @@ export default function ShowCertificationProgram({ program, applications, transa
                                 <CertificationProgramTransaction transactions={transactions} programId={program.id} />
                             </TabsContent>
 
-                            <TabsContent value="rekaman">
+                            <TabsContent value="jadwal">
                                 <CertificationProgramRecordings
                                     programId={program.id}
                                     programType={program.type}
@@ -187,7 +185,7 @@ export default function ShowCertificationProgram({ program, applications, transa
                     </div>
 
                     {/* Sidebar Actions */}
-                    {!isAffiliate && (
+                    {canManageProgram && (
                         <div>
                             <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
                             <div className="space-y-4 rounded-lg border p-4">

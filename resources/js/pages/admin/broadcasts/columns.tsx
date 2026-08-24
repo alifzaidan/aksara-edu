@@ -24,6 +24,75 @@ export type Broadcast = {
     created_at: string;
 };
 
+import { usePermission } from '@/hooks/use-permission';
+
+function BroadcastActions({ bc }: { bc: Broadcast }) {
+    const { canManage } = usePermission();
+    const canManageBroadcast = canManage('broadcasts');
+
+    return (
+        <div className="flex items-center justify-center gap-1">
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" asChild>
+                        <Link href={route('broadcasts.show', bc.id)}>
+                            <Eye className="h-4 w-4 text-blue-600" />
+                        </Link>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>Lihat / Kirim Broadcast</TooltipContent>
+            </Tooltip>
+
+            {canManageBroadcast && (
+                <>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" asChild>
+                                <Link href={route('broadcasts.edit', bc.id)}>
+                                    <Edit className="h-4 w-4" />
+                                </Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Edit</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="link" size="icon" className="text-red-500 hover:cursor-pointer">
+                                            <Trash className="h-4 w-4" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Hapus broadcast ini?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Template &quot;{bc.title}&quot; akan dihapus permanen.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                className="bg-red-600 hover:bg-red-700"
+                                                onClick={() => router.delete(route('broadcasts.destroy', bc.id))}
+                                            >
+                                                Hapus
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent>Hapus</TooltipContent>
+                    </Tooltip>
+                </>
+            )}
+        </div>
+    );
+}
+
 export const columns: ColumnDef<Broadcast>[] = [
     {
         id: 'no',
@@ -82,65 +151,6 @@ export const columns: ColumnDef<Broadcast>[] = [
     {
         id: 'actions',
         header: () => <div className="text-center">Aksi</div>,
-        cell: ({ row }) => {
-            const bc = row.original;
-            return (
-                <div className="flex items-center justify-center gap-1">
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" asChild>
-                                <Link href={route('broadcasts.show', bc.id)}>
-                                    <Eye className="h-4 w-4 text-blue-600" />
-                                </Link>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Kirim Broadcast</TooltipContent>
-                    </Tooltip>
-
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" asChild>
-                                <Link href={route('broadcasts.edit', bc.id)}>
-                                    <Edit className="h-4 w-4" />
-                                </Link>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Edit</TooltipContent>
-                    </Tooltip>
-
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <div>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="link" size="icon" className="text-red-500 hover:cursor-pointer">
-                                            <Trash className="h-4 w-4" />
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Hapus broadcast ini?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Template &quot;{bc.title}&quot; akan dihapus permanen.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Batal</AlertDialogCancel>
-                                            <AlertDialogAction
-                                                className="bg-red-600 hover:bg-red-700"
-                                                onClick={() => router.delete(route('broadcasts.destroy', bc.id))}
-                                            >
-                                                Hapus
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </div>
-                        </TooltipTrigger>
-                        <TooltipContent>Hapus</TooltipContent>
-                    </Tooltip>
-                </div>
-            );
-        },
+        cell: ({ row }) => <BroadcastActions bc={row.original} />,
     },
 ];

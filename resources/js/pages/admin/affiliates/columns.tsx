@@ -13,31 +13,38 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { CirclePower, Folder, Trash } from 'lucide-react';
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function AffiliateActions({ affiliate }: { affiliate: Affiliate }) {
+    const { canManage } = usePermission();
+    const canManageAffiliate = canManage('affiliates');
+
     const handleDelete = () => {
         router.delete(route('affiliates.destroy', affiliate.id));
     };
 
     return (
         <div className="flex items-center justify-center gap-2">
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button
-                        variant="link"
-                        size="icon"
-                        className={`${affiliate.affiliate_status === 'Active' ? 'text-red-500' : 'text-green-500'} size-8 hover:cursor-pointer`}
-                        asChild
-                    >
-                        <Link method="post" href={route('affiliates.toggleStatus', affiliate.id)}>
-                            <CirclePower />
-                            <span className="sr-only">{affiliate.affiliate_status === 'Active' ? 'Non Aktifkan Afiliasi' : 'Aktifkan Afiliasi'}</span>
-                        </Link>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>{affiliate.affiliate_status === 'Active' ? 'Non Aktifkan Afiliasi' : 'Aktifkan Afiliasi'}</p>
-                </TooltipContent>
-            </Tooltip>
+            {canManageAffiliate && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="link"
+                            size="icon"
+                            className={`${affiliate.affiliate_status === 'Active' ? 'text-red-500' : 'text-green-500'} size-8 hover:cursor-pointer`}
+                            asChild
+                        >
+                            <Link method="post" href={route('affiliates.toggleStatus', affiliate.id)}>
+                                <CirclePower />
+                                <span className="sr-only">{affiliate.affiliate_status === 'Active' ? 'Non Aktifkan Afiliasi' : 'Aktifkan Afiliasi'}</span>
+                            </Link>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>{affiliate.affiliate_status === 'Active' ? 'Non Aktifkan Afiliasi' : 'Aktifkan Afiliasi'}</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
             <Tooltip>
                 <TooltipTrigger asChild>
                     <Button variant="link" size="icon" className="size-8" asChild>
@@ -51,26 +58,28 @@ export default function AffiliateActions({ affiliate }: { affiliate: Affiliate }
                     <p>Lihat Afiliasi</p>
                 </TooltipContent>
             </Tooltip>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div>
-                        <DeleteConfirmDialog
-                            trigger={
-                                <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
-                                    <Trash />
-                                    <span className="sr-only">Hapus Afiliasi</span>
-                                </Button>
-                            }
-                            title="Apakah Anda yakin ingin menghapus afiliasi ini?"
-                            itemName={affiliate.name}
-                            onConfirm={handleDelete}
-                        />
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Hapus Afiliasi</p>
-                </TooltipContent>
-            </Tooltip>
+            {canManageAffiliate && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div>
+                            <DeleteConfirmDialog
+                                trigger={
+                                    <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
+                                        <Trash />
+                                        <span className="sr-only">Hapus Afiliasi</span>
+                                    </Button>
+                                }
+                                title="Apakah Anda yakin ingin menghapus afiliasi ini?"
+                                itemName={affiliate.name}
+                                onConfirm={handleDelete}
+                            />
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Hapus Afiliasi</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
         </div>
     );
 }

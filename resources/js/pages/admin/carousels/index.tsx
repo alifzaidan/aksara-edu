@@ -28,7 +28,11 @@ interface CarouselsProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function CarouselsIndex({ carousels, flash }: CarouselsProps) {
+    const { canManage } = usePermission();
+    const canManageCarousel = canManage('carousels');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingCarousel, setEditingCarousel] = useState<Carousel | null>(null);
 
@@ -42,6 +46,7 @@ export default function CarouselsIndex({ carousels, flash }: CarouselsProps) {
     }, [flash]);
 
     const handleToggleStatus = (carousel: Carousel) => {
+        if (!canManageCarousel) return;
         router.patch(
             route('carousels.toggle-status', carousel.id),
             {},
@@ -55,6 +60,7 @@ export default function CarouselsIndex({ carousels, flash }: CarouselsProps) {
     };
 
     const handleDelete = (carousel: Carousel) => {
+        if (!canManageCarousel) return;
         if (confirm(`Apakah Anda yakin ingin menghapus banner carousel "${carousel.title || 'Banner'}"?`)) {
             router.delete(route('carousels.destroy', carousel.id), {
                 preserveScroll: true,
@@ -66,11 +72,13 @@ export default function CarouselsIndex({ carousels, flash }: CarouselsProps) {
     };
 
     const handleEdit = (carousel: Carousel) => {
+        if (!canManageCarousel) return;
         setEditingCarousel(carousel);
         setIsCreateOpen(true);
     };
 
     const handleAddNew = () => {
+        if (!canManageCarousel) return;
         setEditingCarousel(null);
         setIsCreateOpen(true);
     };
@@ -87,10 +95,12 @@ export default function CarouselsIndex({ carousels, flash }: CarouselsProps) {
                             Kelola gambar banner slider yang tampil di halaman utama beranda pengguna.
                         </p>
                     </div>
-                    <Button onClick={handleAddNew} className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Tambah Banner
-                    </Button>
+                    {canManageCarousel && (
+                        <Button onClick={handleAddNew} className="gap-2">
+                            <Plus className="h-4 w-4" />
+                            Tambah Banner
+                        </Button>
+                    )}
                 </div>
 
                 {/* Info Notice Box */}
@@ -124,10 +134,12 @@ export default function CarouselsIndex({ carousels, flash }: CarouselsProps) {
                                     Saat ini beranda menggunakan gambar default (carousel-1.webp, carousel-2.webp, carousel-3.webp).
                                 </p>
                             </div>
-                            <Button onClick={handleAddNew} variant="outline" className="gap-2">
-                                <Plus className="h-4 w-4" />
-                                Unggah Banner Pertama
-                            </Button>
+                            {canManageCarousel && (
+                                <Button onClick={handleAddNew} variant="outline" className="gap-2">
+                                    <Plus className="h-4 w-4" />
+                                    Unggah Banner Pertama
+                                </Button>
+                            )}
                         </CardContent>
                     </Card>
                 ) : (
@@ -147,6 +159,7 @@ export default function CarouselsIndex({ carousels, flash }: CarouselsProps) {
                                         <Switch
                                             id={`active-${carousel.id}`}
                                             checked={carousel.is_active}
+                                            disabled={!canManageCarousel}
                                             onCheckedChange={() => handleToggleStatus(carousel)}
                                         />
                                         <span>{carousel.is_active ? 'Aktif' : 'Non-Aktif'}</span>
@@ -170,16 +183,18 @@ export default function CarouselsIndex({ carousels, flash }: CarouselsProps) {
                                         </a>
                                     )}
 
-                                    <div className="flex items-center justify-end gap-2 pt-2 border-t">
-                                        <Button variant="outline" size="sm" onClick={() => handleEdit(carousel)} className="gap-1.5">
-                                            <Pencil className="h-3.5 w-3.5" />
-                                            Edit
-                                        </Button>
-                                        <Button variant="destructive" size="sm" onClick={() => handleDelete(carousel)} className="gap-1.5">
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                            Hapus
-                                        </Button>
-                                    </div>
+                                    {canManageCarousel && (
+                                        <div className="flex items-center justify-end gap-2 pt-2 border-t">
+                                            <Button variant="outline" size="sm" onClick={() => handleEdit(carousel)} className="gap-1.5">
+                                                <Pencil className="h-3.5 w-3.5" />
+                                                Edit
+                                            </Button>
+                                            <Button variant="destructive" size="sm" onClick={() => handleDelete(carousel)} className="gap-1.5">
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                                Hapus
+                                            </Button>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         ))}

@@ -13,11 +13,19 @@ import { Edit, Trash } from 'lucide-react';
 import { useState } from 'react';
 import EditCategory from './edit';
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function CategoryActions({ category }: { category: Category }) {
+    const { canManage } = usePermission();
+    const canManageCategory = canManage('categories');
     const [open, setOpen] = useState(false);
     const handleDelete = () => {
         router.delete(route('categories.destroy', category.id));
     };
+
+    if (!canManageCategory) {
+        return <span className="text-xs text-muted-foreground">-</span>;
+    }
 
     return (
         <div className="flex items-center justify-center gap-2">

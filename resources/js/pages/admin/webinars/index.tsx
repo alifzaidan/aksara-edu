@@ -71,9 +71,13 @@ interface WebinarProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function Webinars({ webinars, statistics, flash, filters }: WebinarProps) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManageWebinar = canManage('webinars') && !isAffiliate;
     const [showMoreStats, setShowMoreStats] = useState(false);
 
     useEffect(() => {
@@ -94,7 +98,7 @@ export default function Webinars({ webinars, statistics, flash, filters }: Webin
                         <h1 className="text-2xl font-semibold">Webinar</h1>
                         <p className="text-muted-foreground text-sm">Ringkasan dan daftar semua webinar.</p>
                     </div>
-                    {!isAffiliate && (
+                    {canManageWebinar && (
                         <Button asChild className="hover:cursor-pointer">
                             <Link href={route('webinars.create')}>
                                 Tambah Webinar

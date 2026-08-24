@@ -83,10 +83,14 @@ interface BootcampProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function ShowBootcamp({ bootcamp, transactions, participants, ratings, averageRating, certificate, flash }: BootcampProps) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const role = auth.role[0];
     const isAffiliate = role === 'affiliate';
+    const canManageBootcamp = canManage('bootcamps') && !isAffiliate;
 
     const totalSchedules = bootcamp.schedules?.length || 0;
     const paidTransactions = transactions.filter((t) => t.status === 'paid');
@@ -120,8 +124,8 @@ export default function ShowBootcamp({ bootcamp, transactions, participants, rat
             <Head title={`Detail Bootcamp - ${bootcamp.title}`} />
             <div className="px-4 py-4 md:px-6">
                 <h1 className="mb-4 text-2xl font-semibold">{`Detail ${bootcamp.title}`}</h1>
-                <div className={`${!isAffiliate ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
-                    <Tabs defaultValue="detail" className="lg:col-span-2">
+                <div className={`${canManageBootcamp ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
+                    <Tabs defaultValue="detail" className={canManageBootcamp ? "lg:col-span-2" : "w-full"}>
                         <TabsList>
                             <TabsTrigger value="detail">Detail</TabsTrigger>
                             {!isAffiliate && (
@@ -161,7 +165,7 @@ export default function ShowBootcamp({ bootcamp, transactions, participants, rat
                         </TabsContent>
                     </Tabs>
 
-                    {!isAffiliate && (
+                    {canManageBootcamp && (
                         <div>
                             <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
                             <div className="space-y-4 rounded-lg border p-4">

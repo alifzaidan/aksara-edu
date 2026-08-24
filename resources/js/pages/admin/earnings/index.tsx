@@ -29,11 +29,12 @@ interface AffiliateEarningProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function AffiliateEarnings({ earnings, flash, filters }: AffiliateEarningProps) {
-    const { auth } = usePage<SharedData>().props;
-    const role = auth.role[0];
-    const isAdmin = role === 'admin';
-    const columns = getColumns(isAdmin);
+    const { canManage } = usePermission();
+    const canManageEarnings = canManage('earnings');
+    const columns = getColumns(canManageEarnings);
 
     useEffect(() => {
         if (flash?.success) {

@@ -65,9 +65,13 @@ interface BundlesProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function Bundles({ bundles, statistics, flash, filters }: BundlesProps) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManageBundle = canManage('bundles') && !isAffiliate;
     const [showMoreStats, setShowMoreStats] = useState(false);
 
     useEffect(() => {
@@ -88,7 +92,7 @@ export default function Bundles({ bundles, statistics, flash, filters }: Bundles
                         <h1 className="text-2xl font-semibold">Paket Bundling</h1>
                         <p className="text-muted-foreground text-sm">Ringkasan dan daftar semua paket bundling.</p>
                     </div>
-                    {!isAffiliate && (
+                    {canManageBundle && (
                         <Button asChild className="hover:cursor-pointer">
                             <Link href={route('bundles.create')}>
                                 <Plus />

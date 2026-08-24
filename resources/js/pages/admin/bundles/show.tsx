@@ -17,6 +17,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { BundleTransactionInvoice } from './columns-transactions';
 import BundleTransaction from './show-transactions';
+import { usePermission } from '@/hooks/use-permission';
 
 interface Product {
     id: string;
@@ -96,7 +97,9 @@ interface ShowProps {
 
 export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, discountAmount, discountPercentage, flash }: ShowProps) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManageBundle = canManage('bundles') && !isAffiliate;
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -179,22 +182,25 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
         archived: { label: 'Archived', color: 'bg-red-100 text-red-700' },
     };
 
-    const totalEnrollments = bundle.enrollments.length;
-    const paidEnrollments = bundle.enrollments.filter((e) => e.invoice.status === 'paid').length;
-    const totalRevenue = bundle.enrollments.filter((e) => e.invoice.status === 'paid').reduce((sum, e) => sum + e.invoice.amount, 0);
-    const transactions: BundleTransactionInvoice[] = bundle.enrollments.map((enrollment) => ({
-        id: enrollment.invoice.id,
+    const totalEnrollments = bundle.enrollments?.length || 0;
+    const paidEnrollments = bundle.enrollments?.filter((e) => e.invoice?.status === 'paid').length || 0;
+    const totalRevenue = bundle.enrollments?.filter((e) => e.invoice?.status === 'paid').reduce((sum, e) => sum + (e.invoice?.amount || 0), 0) || 0;
+
+    // Transform bundle enrollments into TransactionInvoice format
+    const transactions: BundleTransactionInvoice[] = (bundle.enrollments || []).map((enrollment) => ({
+        id: enrollment.id,
         user: {
-            id: enrollment.invoice.user.id,
-            name: enrollment.invoice.user.name,
+            id: enrollment.invoice?.user?.id || '',
+            name: enrollment.invoice?.user?.name || '-',
+            email: enrollment.invoice?.user?.email || '-',
             phone_number: null,
         },
         referrer: null,
-        invoice_code: enrollment.invoice.invoice_code,
+        invoice_code: enrollment.invoice?.invoice_code || '-',
         invoice_url: null,
-        amount: enrollment.invoice.amount,
-        status: enrollment.invoice.status as BundleTransactionInvoice['status'],
-        paid_at: enrollment.invoice.paid_at ?? null,
+        amount: enrollment.invoice?.amount || 0,
+        status: (enrollment.invoice?.status || 'pending') as BundleTransactionInvoice['status'],
+        paid_at: enrollment.invoice?.paid_at ?? null,
         created_at: enrollment.created_at,
     }));
 
@@ -207,9 +213,8 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
             <div className="px-4 py-4 md:px-6">
                 <h1 className="mb-4 text-2xl font-semibold">Detail {bundle.title}</h1>
 
-                {/* ...existing code... */}
-                <div className={`${!isAffiliate ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
-                    <Tabs defaultValue="detail" className="lg:col-span-2">
+                <div className={`${canManageBundle ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
+                    <Tabs defaultValue="detail" className={canManageBundle ? "lg:col-span-2" : "w-full"}>
                         <TabsList>
                             <TabsTrigger value="detail">Detail Bundling</TabsTrigger>
                             {!isAffiliate && (
@@ -663,7 +668,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                     </Tabs>
 
                     {/* Sidebar Actions */}
-                    {!isAffiliate && (
+                    {canManageBundle && (
                         <div>
                             <h2 className="my-2 text-lg font-medium">Aksi & Pengaturan</h2>
                             <div className="space-y-4 rounded-lg border p-4">

@@ -23,9 +23,13 @@ export type PrivateClass = {
     user?: { name: string };
 };
 
+import { usePermission } from '@/hooks/use-permission';
+
 function PrivateActions({ privateClass }: { privateClass: PrivateClass }) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManagePrivate = canManage('privates') && !isAffiliate;
 
     const handleDelete = () => {
         router.delete(route('privates.destroy', { private: privateClass.id }));
@@ -47,7 +51,7 @@ function PrivateActions({ privateClass }: { privateClass: PrivateClass }) {
                 </TooltipContent>
             </Tooltip>
 
-            {!isAffiliate && (
+            {canManagePrivate && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div>

@@ -13,9 +13,13 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Award, Folder, Trash } from 'lucide-react';
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function BootcampActions({ bootcamp }: { bootcamp: Bootcamp }) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManageBootcamp = canManage('bootcamps') && !isAffiliate;
 
     const handleDelete = () => {
         router.delete(route('bootcamps.destroy', bootcamp.id));
@@ -36,7 +40,7 @@ export default function BootcampActions({ bootcamp }: { bootcamp: Bootcamp }) {
                     <p>Lihat Bootcamp</p>
                 </TooltipContent>
             </Tooltip>
-            {!isAffiliate && (
+            {canManageBootcamp && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div>

@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { columns, type PrivateClass } from './columns';
 import { DataTable } from './data-table';
+import { usePermission } from '@/hooks/use-permission';
 
 interface Statistics {
     total: number;
@@ -51,7 +52,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function PrivateIndex({ privateClasses, statistics, flash, filters }: Props) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManagePrivate = canManage('privates') && !isAffiliate;
     const [showMoreStats, setShowMoreStats] = useState(false);
 
     useEffect(() => {
@@ -72,7 +75,7 @@ export default function PrivateIndex({ privateClasses, statistics, flash, filter
                         <h1 className="text-2xl font-semibold">Private Class</h1>
                         <p className="text-muted-foreground text-sm">Kelola layanan private class 1-on-1.</p>
                     </div>
-                    {!isAffiliate && (
+                    {canManagePrivate && (
                         <Button asChild className="hover:cursor-pointer">
                             <Link href={route('privates.create')}>
                                 Tambah Private Class

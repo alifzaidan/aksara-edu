@@ -57,9 +57,13 @@ interface BootcampProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function Bootcamps({ bootcamps, statistics, flash, filters }: BootcampProps) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManageBootcamp = canManage('bootcamps') && !isAffiliate;
     const [showMoreStats, setShowMoreStats] = useState(false);
 
     useEffect(() => {
@@ -80,7 +84,7 @@ export default function Bootcamps({ bootcamps, statistics, flash, filters }: Boo
                         <h1 className="text-2xl font-semibold">Bootcamp</h1>
                         <p className="text-muted-foreground text-sm">Ringkasan dan daftar semua bootcamp.</p>
                     </div>
-                    {!isAffiliate && (
+                    {canManageBootcamp && (
                         <Button asChild className="hover:cursor-pointer">
                             <Link href={route('bootcamps.create')}>
                                 Tambah Bootcamp

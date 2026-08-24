@@ -79,7 +79,12 @@ const getTypeBadge = (type: 'percentage' | 'fixed') => {
     );
 };
 
+import { usePermission } from '@/hooks/use-permission';
+
 function DiscountCodeActions({ discountCode }: { discountCode: DiscountCode }) {
+    const { canManage } = usePermission();
+    const canManageDiscount = canManage('discount-codes');
+
     const handleDelete = () => {
         router.delete(route('discount-codes.destroy', discountCode.id));
     };
@@ -99,39 +104,43 @@ function DiscountCodeActions({ discountCode }: { discountCode: DiscountCode }) {
                 </TooltipContent>
             </Tooltip>
 
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" asChild>
-                        <Link href={route('discount-codes.edit', discountCode.id)}>
-                            <Edit className="size-4" />
-                        </Link>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Edit Kode Diskon</p>
-                </TooltipContent>
-            </Tooltip>
+            {canManageDiscount && (
+                <>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" asChild>
+                                <Link href={route('discount-codes.edit', discountCode.id)}>
+                                    <Edit className="size-4" />
+                                </Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Edit Kode Diskon</p>
+                        </TooltipContent>
+                    </Tooltip>
 
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div>
-                        <DeleteConfirmDialog
-                            trigger={
-                                <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
-                                    <Trash />
-                                    <span className="sr-only">Hapus Kode Diskon</span>
-                                </Button>
-                            }
-                            title="Apakah Anda yakin ingin menghapus kode diskon ini?"
-                            itemName={discountCode.code}
-                            onConfirm={handleDelete}
-                        />
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Hapus Kode Diskon</p>
-                </TooltipContent>
-            </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div>
+                                <DeleteConfirmDialog
+                                    trigger={
+                                        <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
+                                            <Trash />
+                                            <span className="sr-only">Hapus Kode Diskon</span>
+                                        </Button>
+                                    }
+                                    title="Apakah Anda yakin ingin menghapus kode diskon ini?"
+                                    itemName={discountCode.code}
+                                    onConfirm={handleDelete}
+                                />
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Hapus Kode Diskon</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </>
+            )}
         </div>
     );
 }

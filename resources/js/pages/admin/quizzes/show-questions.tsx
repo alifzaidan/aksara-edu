@@ -42,7 +42,11 @@ interface QuizQuestionProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function QuizQuestion({ questions, course, quiz }: QuizQuestionProps) {
+    const { canManage } = usePermission();
+    const canManageCourse = canManage('courses');
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [pageSize, setPageSize] = useState<number>(10);
@@ -165,45 +169,47 @@ export default function QuizQuestion({ questions, course, quiz }: QuizQuestionPr
                                                         {question.type === 'multiple_choice' ? 'Pilihan Ganda' : 'Benar/Salah'}
                                                     </Badge>
                                                 </div>
-                                                <div className="ml-4 flex items-center gap-2">
-                                                    <Button
-                                                        asChild
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="border-blue-200 text-blue-600 hover:bg-blue-50"
-                                                    >
-                                                        <Link
-                                                            href={route('questions.edit', {
-                                                                course: course.id,
-                                                                quiz: quiz.id,
-                                                                question: question.id,
-                                                            })}
+                                                {canManageCourse && (
+                                                    <div className="ml-4 flex items-center gap-2">
+                                                        <Button
+                                                            asChild
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="border-blue-200 text-blue-600 hover:bg-blue-50"
                                                         >
-                                                            <Edit className="h-4 w-4" />
-                                                            Edit
-                                                        </Link>
-                                                    </Button>
-
-                                                    <DeleteConfirmDialog
-                                                        trigger={
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="border-red-200 text-red-600 hover:bg-red-50"
+                                                            <Link
+                                                                href={route('questions.edit', {
+                                                                    course: course.id,
+                                                                    quiz: quiz.id,
+                                                                    question: question.id,
+                                                                })}
                                                             >
-                                                                <Trash className="h-4 w-4" />
-                                                                Hapus
-                                                            </Button>
-                                                        }
-                                                        title="Apakah Anda yakin ingin menghapus pertanyaan ini?"
-                                                        itemName={
-                                                            question.question_text.length > 50
-                                                                ? question.question_text.substring(0, 50) + '...'
-                                                                : question.question_text
-                                                        }
-                                                        onConfirm={() => handleDelete(question.id)}
-                                                    />
-                                                </div>
+                                                                <Edit className="h-4 w-4" />
+                                                                Edit
+                                                            </Link>
+                                                        </Button>
+
+                                                        <DeleteConfirmDialog
+                                                            trigger={
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    className="border-red-200 text-red-600 hover:bg-red-50"
+                                                                >
+                                                                    <Trash className="h-4 w-4" />
+                                                                    Hapus
+                                                                </Button>
+                                                            }
+                                                            title="Apakah Anda yakin ingin menghapus pertanyaan ini?"
+                                                            itemName={
+                                                                question.question_text.length > 50
+                                                                    ? question.question_text.substring(0, 50) + '...'
+                                                                    : question.question_text
+                                                            }
+                                                            onConfirm={() => handleDelete(question.id)}
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
 
                                             <div

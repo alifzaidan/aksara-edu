@@ -22,6 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import { usePermission } from '@/hooks/use-permission';
 
 interface Broadcast {
     id: string;
@@ -147,6 +148,9 @@ const htmlToWhatsapp = (html: string): string => {
 };
 
 export default function ShowBroadcast({ broadcast, categories, courses, bootcamps, webinars, certifications, flash }: Props) {
+    const { canManage } = usePermission();
+    const canManageBroadcast = canManage('broadcasts');
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Pengguna', href: '/admin/users' },
         { title: 'Broadcast', href: '/admin/broadcasts' },
@@ -276,9 +280,11 @@ export default function ShowBroadcast({ broadcast, categories, courses, bootcamp
                                 Total terkirim: <span className="font-medium">{broadcast.total_sent}</span>
                             </p>
                         </div>
-                        <Button variant="outline" size="sm" asChild>
-                            <Link href={route('broadcasts.edit', broadcast.id)}><Edit className="mr-1 h-4 w-4" /> Edit Konten</Link>
-                        </Button>
+                        {canManageBroadcast && (
+                            <Button variant="outline" size="sm" asChild>
+                                <Link href={route('broadcasts.edit', broadcast.id)}><Edit className="mr-1 h-4 w-4" /> Edit Konten</Link>
+                            </Button>
+                        )}
                     </div>
                 </div>
 

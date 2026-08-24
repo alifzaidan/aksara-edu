@@ -13,9 +13,13 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Award, Folder, Trash } from 'lucide-react';
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function WebinarActions({ webinar }: { webinar: Webinar }) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManageWebinar = canManage('webinars') && !isAffiliate;
 
     const handleDelete = () => {
         router.delete(route('webinars.destroy', webinar.id));
@@ -36,7 +40,7 @@ export default function WebinarActions({ webinar }: { webinar: Webinar }) {
                     <p>Lihat Webinar</p>
                 </TooltipContent>
             </Tooltip>
-            {!isAffiliate && (
+            {canManageWebinar && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div>

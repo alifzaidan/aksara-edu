@@ -304,7 +304,11 @@ const PaginationControls = ({
     );
 };
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function UserShow({ user, invoices, enrollments, stats }: UserShowProps) {
+    const { canManage } = usePermission();
+    const canManageUser = canManage('users');
     const [editDialogOpen, setEditDialogOpen] = useState(false);
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -370,49 +374,53 @@ export default function UserShow({ user, invoices, enrollments, stats }: UserSho
                             </Tooltip>
                         )}
 
-                        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm">
-                                            <Edit className="mr-2 h-4 w-4" />
-                                            Edit
-                                        </Button>
-                                    </DialogTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Edit Data Pengguna</p>
-                                </TooltipContent>
-                            </Tooltip>
-                            <DialogContent>
-                                <EditUser user={{ ...user, instance: user.instance ?? '', phone_number: user.phone_number ?? '' }} setOpen={setEditDialogOpen} />
-                            </DialogContent>
-                        </Dialog>
+                        {canManageUser && (
+                            <>
+                                <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <DialogTrigger asChild>
+                                                <Button variant="outline" size="sm">
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    Edit
+                                                </Button>
+                                            </DialogTrigger>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Edit Data Pengguna</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                    <DialogContent>
+                                        <EditUser user={{ ...user, instance: user.instance ?? '', phone_number: user.phone_number ?? '' }} setOpen={setEditDialogOpen} />
+                                    </DialogContent>
+                                </Dialog>
 
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <div>
-                                    <DeleteConfirmDialog
-                                        trigger={
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="border-red-200 text-red-600 hover:border-red-300 hover:text-red-700"
-                                            >
-                                                <Trash className="mr-2 h-4 w-4" />
-                                                Hapus
-                                            </Button>
-                                        }
-                                        title="Apakah Anda yakin ingin menghapus pengguna ini?"
-                                        itemName={user.name}
-                                        onConfirm={handleDelete}
-                                    />
-                                </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Hapus Pengguna</p>
-                            </TooltipContent>
-                        </Tooltip>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <div>
+                                            <DeleteConfirmDialog
+                                                trigger={
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="border-red-200 text-red-600 hover:border-red-300 hover:text-red-700"
+                                                    >
+                                                        <Trash className="mr-2 h-4 w-4" />
+                                                        Hapus
+                                                    </Button>
+                                                }
+                                                title="Apakah Anda yakin ingin menghapus pengguna ini?"
+                                                itemName={user.name}
+                                                onConfirm={handleDelete}
+                                            />
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Hapus Pengguna</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </>
+                        )}
                     </div>
                 </div>
 
