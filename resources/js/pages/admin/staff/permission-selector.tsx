@@ -27,6 +27,12 @@ export default function PermissionSelector({
     onChange,
     error,
 }: PermissionSelectorProps) {
+    const modules = permissionModules
+        .map((group) => ({
+            ...group,
+            modules: group.modules.filter((m) => m.key !== 'earnings'),
+        }))
+        .filter((group) => group.modules.length > 0);
     const isChecked = (perm: string) => selectedPermissions.includes(perm);
 
     const togglePermission = (perm: string) => {
@@ -52,7 +58,7 @@ export default function PermissionSelector({
 
     const selectAll = () => {
         const all: string[] = [];
-        permissionModules.forEach((group) => {
+        modules.forEach((group) => {
             group.modules.forEach((mod) => {
                 all.push(`${mod.key}.view`);
                 all.push(`${mod.key}.manage`);
@@ -63,7 +69,7 @@ export default function PermissionSelector({
 
     const selectAllViewOnly = () => {
         const all: string[] = [];
-        permissionModules.forEach((group) => {
+        modules.forEach((group) => {
             group.modules.forEach((mod) => {
                 all.push(`${mod.key}.view`);
             });
@@ -92,7 +98,7 @@ export default function PermissionSelector({
         onChange([...withoutGroup, ...groupPerms]);
     };
 
-    const totalPermissions = permissionModules.reduce((acc, g) => acc + g.modules.length * 2, 0);
+    const totalPermissions = modules.reduce((acc, g) => acc + g.modules.length * 2, 0);
 
     return (
         <div className="space-y-4">
@@ -146,7 +152,7 @@ export default function PermissionSelector({
             {error && <p className="text-sm font-medium text-destructive">{error}</p>}
 
             <div className="grid gap-4 md:grid-cols-2">
-                {permissionModules.map((group) => {
+                {modules.map((group) => {
                     const groupModuleKeys = group.modules.flatMap((m) => [`${m.key}.view`, `${m.key}.manage`]);
                     const groupSelectedCount = groupModuleKeys.filter((p) => isChecked(p)).length;
 

@@ -34,6 +34,12 @@ interface StaffDetailProps {
 }
 
 export default function ShowStaff({ staff, permission_modules, flash }: StaffDetailProps) {
+    const modules = permission_modules
+        .map((group) => ({
+            ...group,
+            modules: group.modules.filter((m) => m.key !== 'earnings'),
+        }))
+        .filter((group) => group.modules.length > 0);
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Staff',
@@ -183,7 +189,7 @@ export default function ShowStaff({ staff, permission_modules, flash }: StaffDet
                                 </div>
 
                                 <div className="space-y-4">
-                                    {permission_modules.map((group) => {
+                                    {modules.map((group) => {
                                         const groupModuleKeys = group.modules.flatMap((m) => [`${m.key}.view`, `${m.key}.manage`]);
                                         const groupActiveCount = groupModuleKeys.filter((p) => hasPermission(p)).length;
 
