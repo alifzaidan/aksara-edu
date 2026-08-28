@@ -16,7 +16,11 @@ class TransactionController extends Controller
             'courseItems.course',
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
+            'privateItems.privateClass',
+            'privateItems.privateClassSchedule',
             'certificationProgramItems.certificationProgram',
+            'bundleEnrollments.bundle.bundleItems.bundleable',
+            'discountUsage.discountCode',
         ])
             ->where('user_id', $userId)
             ->orderBy('created_at', 'desc')
@@ -31,7 +35,11 @@ class TransactionController extends Controller
             'courseItems.course',
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
+            'privateItems.privateClass',
+            'privateItems.privateClassSchedule',
             'certificationProgramItems.certificationProgram',
+            'bundleEnrollments.bundle.bundleItems.bundleable',
+            'discountUsage.discountCode',
         ])->findOrFail($id);
 
         return Inertia::render('user/profile/transaction/show', ['invoice' => $invoice]);

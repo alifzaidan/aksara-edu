@@ -170,6 +170,7 @@ class CertificationProgramController extends Controller
         $program->load(['schedules', 'socializationSchedules', 'category', 'mentors']);
 
         $hasAccess = false;
+        $pendingInvoice = null;
         $pendingInvoiceUrl = null;
         $regularApplication = null;
         $scholarshipApplication = null;
@@ -190,7 +191,7 @@ class CertificationProgramController extends Controller
                 ->exists();
 
             if (!$hasAccess) {
-                $pendingInvoice = Invoice::where('user_id', $userId)
+                $invoice = Invoice::where('user_id', $userId)
                     ->where('status', 'pending')
                     ->whereHas('certificationProgramItems', function ($query) use ($program) {
                         $query->where('certification_program_id', $program->id);
@@ -198,8 +199,18 @@ class CertificationProgramController extends Controller
                     ->latest()
                     ->first();
 
-                if ($pendingInvoice && $pendingInvoice->invoice_url) {
-                    $pendingInvoiceUrl = $pendingInvoice->invoice_url;
+                if ($invoice) {
+                    $pendingInvoice = [
+                        'id' => $invoice->id,
+                        'invoice_code' => $invoice->invoice_code,
+                        'status' => $invoice->status,
+                        'amount' => $invoice->amount,
+                        'payment_method' => $invoice->payment_method,
+                        'invoice_url' => $invoice->invoice_url,
+                        'created_at' => $invoice->created_at?->toISOString() ?? (string) $invoice->created_at,
+                        'expires_at' => $invoice->expires_at ? $invoice->expires_at->toISOString() : null,
+                    ];
+                    $pendingInvoiceUrl = $invoice->invoice_url;
                 }
             }
 
@@ -221,6 +232,7 @@ class CertificationProgramController extends Controller
         return Inertia::render('user/certification-program/register/index', [
             'program' => $program,
             'hasAccess' => $hasAccess,
+            'pendingInvoice' => $pendingInvoice,
             'pendingInvoiceUrl' => $pendingInvoiceUrl,
             'regularApplication' => $regularApplication,
             'scholarshipApplication' => $scholarshipApplication,

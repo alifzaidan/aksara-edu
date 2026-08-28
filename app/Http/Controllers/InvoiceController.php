@@ -1038,6 +1038,10 @@ class InvoiceController extends Controller
                 EnrollmentCertificationProgram::where('invoice_id', $invoice->id)->delete();
             }
 
+            if ($invoice->bundleEnrollments->count() > 0) {
+                EnrollmentBundle::where('invoice_id', $invoice->id)->delete();
+            }
+
             $userId = $invoice->user_id;
 
             foreach ($invoice->courseItems as $courseItem) {
@@ -1101,6 +1105,13 @@ class InvoiceController extends Controller
             }
 
             DB::commit();
+
+            if (request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Invoice berhasil dibatalkan.'
+                ]);
+            }
 
             return redirect()->back()->with('success', 'Invoice berhasil dibatalkan.');
         } catch (\Exception $e) {

@@ -235,37 +235,51 @@ class BundleController extends Controller
         $bundle->strikethrough_price = $totalOriginalPrice;
 
         $hasAccess = false;
+        $pendingInvoice = null;
         $pendingInvoiceUrl = null;
         $userId = Auth::id();
 
-        $hasAccess = EnrollmentBundle::whereHas('invoice', function ($query) use ($userId) {
-            $query->where('user_id', $userId)
-                ->where('status', 'paid');
-        })
-            ->where('bundle_id', $bundle->id)
-            ->exists();
+        if ($userId) {
+            $hasAccess = EnrollmentBundle::whereHas('invoice', function ($query) use ($userId) {
+                $query->where('user_id', $userId)
+                    ->where('status', 'paid');
+            })
+                ->where('bundle_id', $bundle->id)
+                ->exists();
 
-        if (!$hasAccess) {
-            $pendingInvoice = Invoice::where('user_id', $userId)
-                ->where('status', 'pending')
-                ->whereHas('bundleEnrollments', function ($query) use ($bundle) {
-                    $query->where('bundle_id', $bundle->id);
-                })
-                ->where(function ($query) {
-                    $query->whereNull('expires_at')
-                        ->orWhere('expires_at', '>', now());
-                })
-                ->latest()
-                ->first();
+            if (!$hasAccess) {
+                $invoice = Invoice::where('user_id', $userId)
+                    ->where('status', 'pending')
+                    ->whereHas('bundleEnrollments', function ($query) use ($bundle) {
+                        $query->where('bundle_id', $bundle->id);
+                    })
+                    ->where(function ($query) {
+                        $query->whereNull('expires_at')
+                            ->orWhere('expires_at', '>', now());
+                    })
+                    ->latest()
+                    ->first();
 
-            if ($pendingInvoice && $pendingInvoice->invoice_url) {
-                $pendingInvoiceUrl = $pendingInvoice->invoice_url;
+                if ($invoice) {
+                    $pendingInvoice = [
+                        'id' => $invoice->id,
+                        'invoice_code' => $invoice->invoice_code,
+                        'status' => $invoice->status,
+                        'amount' => $invoice->amount,
+                        'payment_method' => $invoice->payment_method,
+                        'invoice_url' => $invoice->invoice_url,
+                        'created_at' => $invoice->created_at?->toISOString() ?? (string) $invoice->created_at,
+                        'expires_at' => $invoice->expires_at ? $invoice->expires_at->toISOString() : null,
+                    ];
+                    $pendingInvoiceUrl = $invoice->invoice_url;
+                }
             }
         }
 
         return Inertia::render('user/bundling/checkout/index', [
             'bundle' => $bundle,
             'hasAccess' => $hasAccess,
+            'pendingInvoice' => $pendingInvoice,
             'pendingInvoiceUrl' => $pendingInvoiceUrl,
             'referralInfo' => $this->getReferralInfo(),
         ]);

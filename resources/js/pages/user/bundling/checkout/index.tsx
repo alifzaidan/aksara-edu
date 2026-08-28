@@ -45,6 +45,17 @@ interface Bundle {
     bundle_items_count: number;
 }
 
+interface PendingInvoice {
+    id: string;
+    invoice_code: string;
+    status: string;
+    amount: number;
+    payment_method?: string;
+    invoice_url?: string | null;
+    created_at: string;
+    expires_at?: string | null;
+}
+
 interface ReferralInfo {
     code?: string;
     hasActive: boolean;
@@ -53,6 +64,7 @@ interface ReferralInfo {
 interface CheckoutBundleProps {
     bundle: Bundle;
     hasAccess: boolean;
+    pendingInvoice?: PendingInvoice | null;
     pendingInvoiceUrl?: string | null;
     referralInfo: ReferralInfo;
 }
@@ -96,10 +108,12 @@ function getErrorMessage(error: unknown, fallback: string): string {
     return fallback;
 }
 
-export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, referralInfo }: CheckoutBundleProps) {
+export default function CheckoutBundle({ bundle, hasAccess, pendingInvoice, pendingInvoiceUrl, referralInfo }: CheckoutBundleProps) {
     const { auth } = usePage<SharedData>().props;
     const isLoggedIn = !!auth.user;
     const isProfileComplete = isLoggedIn && auth.user?.phone_number && auth.user?.instance && auth.user?.city;
+
+    const [cancellingInvoice, setCancellingInvoice] = useState(false);
 
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -418,7 +432,6 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
             overrideReferralValid?: boolean,
             overridePointsChecked?: boolean,
             overridePointsToUse?: number,
-            retryCount = 0
         ): Promise<void> => {
             const activeDiscountAmount = activeDiscountData?.valid ? activeDiscountData.discount_amount : 0;
             const activeFinalPrice = bundle.price - activeDiscountAmount;
@@ -448,148 +461,119 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
                 invoiceData.referral_code = currentPromoCode;
             }
 
+            const affiliateCode = sessionStorage.getItem('affiliate_code') || new URLSearchParams(window.location.search).get('ref') || referralInfo?.code;
+            if (affiliateCode) {
+                invoiceData.affiliate_code = affiliateCode;
+            }
+
             try {
-                const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
+                const res = await axios.post(route('invoice.store.bundle'), invoiceData);
 
-                const res = await fetch(route('invoice.store.bundle'), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                        Accept: 'application/json',
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify(invoiceData),
-                });
-
-                if (res.status === 419 && retryCount < 2) {
-                    await refreshCSRFToken();
-                    return submitPayment(
-                        activeDiscountData,
-                        overrideCodeType,
-                        overridePromoCode,
-                        overrideReferralValid,
-                        overridePointsChecked,
-                        overridePointsToUse,
-                        retryCount + 1
-                    );
-                }
-
-                const data = await res.json();
-
-                if (res.ok && data.success) {
-                    if (data.payment_url) {
+                if (res.data && res.data.success) {
+                    if (res.data.payment_url) {
                         sessionStorage.removeItem('pendingCheckoutBundle');
-                        window.location.href = data.payment_url;
+                        window.location.href = res.data.payment_url;
                     } else {
-                        throw new Error('Payment URL not received');
+                        throw new Error('Payment URL tidak diterima dari server.');
                     }
                 } else {
-                    throw new Error(data.message || 'Gagal membuat invoice.');
+                    throw new Error(res.data?.message || 'Gagal membuat invoice.');
                 }
             } catch (error) {
                 console.error('Payment error:', error);
                 throw error;
             }
         },
-        [bundle.id, bundle.price, bundleDiscount, refreshCSRFToken, transactionFee, pointsChecked, pointsToUse, codeType, referralData, promoCode],
+        [bundle.id, bundle.price, bundleDiscount, transactionFee, pointsChecked, pointsToUse, codeType, referralData, promoCode, referralInfo?.code],
     );
 
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        // 1. Jika pengguna sudah login
+        if (isLoggedIn) {
+            if (!isProfileComplete) {
+                toast.error('Profil Anda belum lengkap! Harap lengkapi nomor telepon, instansi, dan kota domisili terlebih dahulu.');
+                setTimeout(() => {
+                    window.location.href = route('profile.edit', { redirect: window.location.href });
+                }, 1500);
+                return;
+            }
+
+            if (!termsAccepted) {
+                toast.error('Anda harus menyetujui syarat dan ketentuan!');
+                return;
+            }
+
+            setLoading(true);
+            try {
+                await submitPayment(discountData);
+            } catch (error: unknown) {
+                toast.error(getErrorMessage(error, 'Terjadi kesalahan saat proses pembayaran.'));
+                setLoading(false);
+            }
+            return;
+        }
+
+        // 2. Jika pengguna belum login (Guest)
+        if (!guestFormData.email || !guestFormData.phone_number || !guestFormData.instance || !guestFormData.city) {
+            toast.error('Mohon lengkapi seluruh data diri.');
+            return;
+        }
+
         if (!termsAccepted) {
-            alert('Anda harus menyetujui syarat dan ketentuan!');
-            return;
-        }
-
-        const authenticated = await ensureAuthenticated();
-        if (!authenticated) {
-            return;
-        }
-
-        if (!isProfileComplete) {
-            alert('Profil Anda belum lengkap! Harap lengkapi nomor telepon dan instansi terlebih dahulu.');
-            window.location.href = route('profile.edit');
+            toast.error('Anda harus menyetujui syarat dan ketentuan!');
             return;
         }
 
         setLoading(true);
 
         try {
+            if (emailExists) {
+                const loginResponse = await axios.post(route('auto-login'), {
+                    email: guestFormData.email,
+                    phone_number: guestFormData.phone_number,
+                    instance: guestFormData.instance,
+                    city: guestFormData.city,
+                });
+
+                if (!loginResponse.data?.success) {
+                    throw new Error(loginResponse.data?.message || 'Gagal login otomatis. Pastikan nomor telepon sesuai dengan yang terdaftar.');
+                }
+            } else {
+                if (!guestFormData.name) {
+                    toast.error('Nama lengkap wajib diisi.');
+                    setLoading(false);
+                    return;
+                }
+
+                const regResponse = await axios.post(route('register'), {
+                    name: guestFormData.name,
+                    email: guestFormData.email,
+                    phone_number: guestFormData.phone_number,
+                    instance: guestFormData.instance,
+                    city: guestFormData.city,
+                    password: guestFormData.phone_number,
+                    password_confirmation: guestFormData.phone_number,
+                    affiliate_code: sessionStorage.getItem('affiliate_code') || new URLSearchParams(window.location.search).get('ref') || referralInfo?.code || '',
+                });
+
+                if (!(regResponse.data?.success || regResponse.status === 200 || regResponse.status === 201)) {
+                    throw new Error('Registrasi gagal.');
+                }
+            }
+
+            // Langsung eksekusi submitPayment() tanpa reload halaman!
             await submitPayment(discountData);
         } catch (error: unknown) {
-            alert(getErrorMessage(error, 'Terjadi kesalahan saat proses pembayaran.'));
             setLoading(false);
+            if (axios.isAxiosError(error)) {
+                toast.error(error.response?.data?.message || getErrorMessage(error, 'Gagal memproses pendaftaran.'));
+            } else {
+                toast.error(getErrorMessage(error, 'Gagal memproses pendaftaran.'));
+            }
         }
     };
-
-    useEffect(() => {
-        if (!isLoggedIn) return;
-
-        const pendingCheckoutRaw = sessionStorage.getItem('pendingCheckoutBundle');
-        if (!pendingCheckoutRaw) return;
-
-        try {
-            const pendingCheckout = JSON.parse(pendingCheckoutRaw) as PendingCheckoutData;
-
-            const fiveMinutes = 5 * 60 * 1000;
-            if (Date.now() - pendingCheckout.timestamp > fiveMinutes) {
-                sessionStorage.removeItem('pendingCheckoutBundle');
-                return;
-            }
-
-            if (pendingCheckout.bundleId !== bundle.id) {
-                sessionStorage.removeItem('pendingCheckoutBundle');
-                return;
-            }
-
-            // Remove immediately to prevent double submissions in StrictMode/concurrent renders
-            sessionStorage.removeItem('pendingCheckoutBundle');
-
-            if (pendingCheckout.promoCode) {
-                setPromoCode(pendingCheckout.promoCode);
-            }
-            if (pendingCheckout.codeType) {
-                setCodeType(pendingCheckout.codeType);
-            }
-            if (pendingCheckout.referralValid) {
-                setReferralData({ valid: true });
-            }
-
-            if (pendingCheckout.pointsChecked) {
-                setPointsChecked(true);
-            }
-            if (pendingCheckout.pointsToUse) {
-                setPointsToUse(pendingCheckout.pointsToUse);
-            }
-
-            setDiscountData(pendingCheckout.discountData || null);
-            setTermsAccepted(pendingCheckout.termsAccepted || false);
-
-            if (!pendingCheckout.termsAccepted) {
-                setLoading(false);
-                return;
-            }
-
-            setLoading(true);
-
-            submitPayment(
-                pendingCheckout.discountData || null,
-                pendingCheckout.codeType,
-                pendingCheckout.promoCode,
-                pendingCheckout.referralValid,
-                pendingCheckout.pointsChecked,
-                pendingCheckout.pointsToUse
-            ).catch((error: unknown) => {
-                console.error('Pending checkout bundle error:', error);
-                toast.error(getErrorMessage(error, 'Gagal melanjutkan checkout bundle.'));
-                setLoading(false);
-            });
-        } catch {
-            sessionStorage.removeItem('pendingCheckoutBundle');
-        }
-    }, [bundle.id, isLoggedIn, submitPayment]);
 
     if (isLoggedIn && !isProfileComplete) {
         return (
@@ -734,16 +718,64 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
                                     <Link href={route('profile.index')}>Lihat Dashboard</Link>
                                 </Button>
                             </div>
-                        ) : pendingInvoiceUrl ? (
-                            <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
-                                <Hourglass size={64} className="text-yellow-500" />
-                                <h2 className="text-xl font-bold">Pembayaran Tertunda</h2>
+                        ) : (pendingInvoice || pendingInvoiceUrl) ? (
+                            <div className="rounded-2xl border bg-white p-6 shadow-xl dark:bg-gray-800">
+                                <div className="flex items-center gap-2 mb-2 text-yellow-600 dark:text-yellow-400">
+                                    <Hourglass className="h-5 w-5" />
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                        Transaksi Menunggu Pembayaran
+                                    </h3>
+                                </div>
                                 <p className="text-sm text-gray-500">
-                                    Anda memiliki pembayaran yang belum selesai untuk paket bundling ini. Silakan lanjutkan untuk membayar.
+                                    {pendingInvoice?.invoice_code ? (
+                                        <>Kode Invoice: <span className="font-semibold text-gray-800 dark:text-gray-200">{pendingInvoice.invoice_code}</span></>
+                                    ) : (
+                                        'Anda memiliki transaksi yang belum selesai untuk paket bundling ini.'
+                                    )}
                                 </p>
-                                <Button asChild className="w-full">
-                                    <a href={pendingInvoiceUrl}>Lanjutkan Pembayaran</a>
-                                </Button>
+                                {pendingInvoice?.amount !== undefined && (
+                                    <p className="text-2xl font-bold text-orange-600 my-3">
+                                        Rp {pendingInvoice.amount.toLocaleString('id-ID')}
+                                    </p>
+                                )}
+                                <div className="space-y-2 pt-2">
+                                    {(pendingInvoice?.invoice_url || pendingInvoiceUrl) && (
+                                        <Button asChild className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold" size="lg">
+                                            <a href={pendingInvoice?.invoice_url || pendingInvoiceUrl!}>
+                                                Lanjutkan Pembayaran
+                                            </a>
+                                        </Button>
+                                    )}
+                                    <div className="flex gap-2">
+                                        <Button onClick={() => window.location.reload()} variant="outline" className="flex-1" size="lg">
+                                            Cek Status
+                                        </Button>
+                                        {pendingInvoice?.id && (
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className="flex-1 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950"
+                                                size="lg"
+                                                disabled={cancellingInvoice}
+                                                onClick={async () => {
+                                                    if (confirm('Apakah Anda yakin ingin membatalkan transaksi ini dan membuat pesanan baru?')) {
+                                                        setCancellingInvoice(true);
+                                                        try {
+                                                            await axios.post(route('invoice.cancel', pendingInvoice.id));
+                                                            toast.success('Pesanan berhasil dibatalkan.');
+                                                            window.location.reload();
+                                                        } catch (err: any) {
+                                                            toast.error(err.response?.data?.message || 'Gagal membatalkan pesanan.');
+                                                            setCancellingInvoice(false);
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                {cancellingInvoice ? 'Membatalkan...' : 'Batalkan Pesanan'}
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         ) : (
                             <form onSubmit={handleCheckout}>

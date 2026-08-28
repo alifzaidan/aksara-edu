@@ -14,7 +14,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { AlertCircle, BadgeCheck, Calendar, CheckCircle2, Clock, GraduationCap, Loader2, Lock, Tag, User } from 'lucide-react';
+import { AlertCircle, BadgeCheck, Calendar, CheckCircle2, Clock, GraduationCap, Hourglass, Loader2, Lock, Tag, User } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -89,9 +89,21 @@ function getErrorMessage(error: unknown, fallback: string): string {
     return fallback;
 }
 
+interface PendingInvoice {
+    id: string;
+    invoice_code: string;
+    status: string;
+    amount: number;
+    payment_method?: string;
+    invoice_url?: string | null;
+    created_at: string;
+    expires_at?: string | null;
+}
+
 interface RegisterProps {
     program: Program;
     hasAccess: boolean;
+    pendingInvoice?: PendingInvoice | null;
     pendingInvoiceUrl?: string | null;
     regularApplication?: Application | null;
     scholarshipApplication?: Application | null;
@@ -105,6 +117,7 @@ interface RegisterProps {
 export default function Register({
     program,
     hasAccess,
+    pendingInvoice,
     pendingInvoiceUrl,
     regularApplication,
     scholarshipApplication,
@@ -125,6 +138,7 @@ export default function Register({
     const isLoggedIn = !!user;
     const isProfileComplete = !!(isLoggedIn && user?.phone_number && user?.instance && user?.city);
 
+    const [cancellingInvoice, setCancellingInvoice] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isDocumentDialogOpen, setIsDocumentDialogOpen] = useState(false);
     const [documentAttachment, setDocumentAttachment] = useState<File | null>(null);
@@ -524,7 +538,6 @@ export default function Register({
             overrideReferralValid?: boolean,
             overridePointsChecked?: boolean,
             overridePointsToUse?: number,
-            retryCount = 0
         ): Promise<void> => {
             const originalDiscountAmount =
                 program.strikethrough_price && program.strikethrough_price > 0 ? program.strikethrough_price - program.price : 0;
@@ -560,50 +573,30 @@ export default function Register({
                 invoiceData.referral_code = currentPromoCode;
             }
 
+            const affiliateCode = sessionStorage.getItem('affiliate_code') || new URLSearchParams(window.location.search).get('ref') || referralInfo?.code;
+            if (affiliateCode) {
+                invoiceData.affiliate_code = affiliateCode;
+            }
+
             try {
-                const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
+                const res = await axios.post(route('invoice.store'), invoiceData);
 
-                const res = await fetch(route('invoice.store'), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                        Accept: 'application/json',
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify(invoiceData),
-                });
-
-                if (res.status === 419 && retryCount < 2) {
-                    await refreshCSRFToken();
-                    return submitPayment(
-                        overrideCodeType,
-                        overridePromoCode,
-                        overrideReferralValid,
-                        overridePointsChecked,
-                        overridePointsToUse,
-                        retryCount + 1
-                    );
-                }
-
-                const data = await res.json();
-
-                if (res.ok && data.success) {
-                    if (data.payment_url) {
+                if (res.data && res.data.success) {
+                    if (res.data.payment_url) {
                         sessionStorage.removeItem('pendingCertificationCheckout');
-                        window.location.href = data.payment_url;
+                        window.location.href = res.data.payment_url;
                     } else {
-                        throw new Error('Payment URL not received');
+                        throw new Error('Payment URL tidak diterima dari server.');
                     }
                 } else {
-                    throw new Error(data.message || 'Gagal membuat invoice.');
+                    throw new Error(res.data?.message || 'Gagal membuat invoice.');
                 }
             } catch (error) {
                 console.error('Payment error:', error);
                 throw error;
             }
         },
-        [displayPrice, discountData, program.id, program.price, program.strikethrough_price, isScholarship, refreshCSRFToken, pointsChecked, pointsToUse, codeType, referralData, promoCode],
+        [displayPrice, discountData, program.id, program.price, program.strikethrough_price, isScholarship, pointsChecked, pointsToUse, codeType, referralData, promoCode, referralInfo?.code],
     );
 
     const handleCheckout = useCallback(async () => {
@@ -612,51 +605,111 @@ export default function Register({
             return;
         }
 
-        // Check if guest form is complete before proceeding
-        if (!isLoggedIn && !isGuestFormComplete()) {
-            toast.error('Lengkapi semua data diri terlebih dahulu.');
-            return;
-        }
-
-        const authenticated = await ensureAuthenticated();
-        if (!authenticated) {
-            return;
-        }
-
-        if (!isProfileComplete) {
-            window.location.href = route('profile.edit');
-            return;
-        }
-
-        if (requiresDocumentUpload && !hasApprovedDocument) {
-            if (isDocumentPending || isDocumentRejected) {
+        // 1. Jika pengguna sudah login
+        if (isLoggedIn) {
+            if (!isProfileComplete) {
+                toast.error('Profil Anda belum lengkap! Harap lengkapi nomor telepon, instansi, dan kota domisili terlebih dahulu.');
+                setTimeout(() => {
+                    window.location.href = route('profile.edit', { redirect: window.location.href });
+                }, 1500);
                 return;
             }
 
-            setIsDocumentDialogOpen(true);
+            if (requiresDocumentUpload && !hasApprovedDocument) {
+                if (isDocumentPending || isDocumentRejected) {
+                    return;
+                }
+                setIsDocumentDialogOpen(true);
+                return;
+            }
+
+            setIsLoading(true);
+            try {
+                await submitPayment();
+            } catch (error) {
+                toast.error(getErrorMessage(error, 'Terjadi kesalahan saat proses pembayaran.'));
+                setIsLoading(false);
+            }
+            return;
+        }
+
+        // 2. Jika pengguna belum login (Guest)
+        if (!isGuestFormComplete()) {
+            toast.error('Lengkapi semua data diri terlebih dahulu.');
             return;
         }
 
         setIsLoading(true);
 
         try {
+            if (emailExists) {
+                const loginResponse = await axios.post(route('auto-login'), {
+                    email: guestFormData.email,
+                    phone_number: guestFormData.phone_number,
+                    instance: guestFormData.instance,
+                    city: guestFormData.city,
+                });
+
+                if (!loginResponse.data?.success) {
+                    throw new Error(loginResponse.data?.message || 'Gagal login otomatis. Pastikan nomor telepon sesuai dengan yang terdaftar.');
+                }
+            } else {
+                if (!guestFormData.name) {
+                    toast.error('Nama lengkap wajib diisi.');
+                    setIsLoading(false);
+                    return;
+                }
+
+                const regResponse = await axios.post(route('register'), {
+                    name: guestFormData.name,
+                    email: guestFormData.email,
+                    phone_number: guestFormData.phone_number,
+                    instance: guestFormData.instance,
+                    city: guestFormData.city,
+                    password: guestFormData.phone_number,
+                    password_confirmation: guestFormData.phone_number,
+                    affiliate_code: sessionStorage.getItem('affiliate_code') || new URLSearchParams(window.location.search).get('ref') || referralInfo?.code || '',
+                });
+
+                if (!(regResponse.data?.success || regResponse.status === 200 || regResponse.status === 201)) {
+                    throw new Error('Registrasi gagal.');
+                }
+            }
+
+            if (requiresDocumentUpload && !hasApprovedDocument) {
+                if (isDocumentPending || isDocumentRejected) {
+                    setIsLoading(false);
+                    return;
+                }
+                setIsLoading(false);
+                setIsDocumentDialogOpen(true);
+                return;
+            }
+
+            // Langsung eksekusi submitPayment() tanpa reload halaman!
             await submitPayment();
-        } catch (error) {
-            toast.error(getErrorMessage(error, 'Terjadi kesalahan saat proses pembayaran.'));
+        } catch (error: unknown) {
             setIsLoading(false);
+            if (axios.isAxiosError(error)) {
+                toast.error(error.response?.data?.message || getErrorMessage(error, 'Gagal memproses pendaftaran.'));
+            } else {
+                toast.error(getErrorMessage(error, 'Gagal memproses pendaftaran.'));
+            }
         }
     }, [
         displayPrice,
-        ensureAuthenticated,
+        emailExists,
+        guestFormData,
         hasApprovedDocument,
         isDocumentPending,
         isDocumentRejected,
+        isGuestFormComplete,
+        isLoggedIn,
         isProfileComplete,
+        referralInfo?.code,
         requiresDocumentUpload,
         submitPayment,
         termsAccepted,
-        isLoggedIn,
-        isGuestFormComplete,
     ]);
 
     const ensureAuthenticatedForDocument = useCallback(async () => {
@@ -979,19 +1032,65 @@ export default function Register({
                                 </div>
                             )}
 
-                            {pendingInvoiceUrl && !isLoading && (
-                                <Alert>
-                                    <Clock className="h-4 w-4" />
-                                    <AlertTitle>Pembayaran Menunggu</AlertTitle>
-                                    <AlertDescription>
-                                        Anda memiliki invoice yang belum dibayar.
-                                        <Button asChild size="sm" className="mt-2 w-full">
-                                            <a href={pendingInvoiceUrl} target="_blank" rel="noopener noreferrer">
-                                                Lanjutkan Pembayaran
-                                            </a>
-                                        </Button>
-                                    </AlertDescription>
-                                </Alert>
+                            {(pendingInvoice || pendingInvoiceUrl) && !isLoading && (
+                                <div className="rounded-2xl border bg-white p-6 shadow-xl dark:bg-gray-800">
+                                    <div className="flex items-center gap-2 mb-2 text-yellow-600 dark:text-yellow-400">
+                                        <Hourglass className="h-5 w-5" />
+                                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                            Transaksi Menunggu Pembayaran
+                                        </h3>
+                                    </div>
+                                    <p className="text-sm text-gray-500">
+                                        {pendingInvoice?.invoice_code ? (
+                                            <>Kode Invoice: <span className="font-semibold text-gray-800 dark:text-gray-200">{pendingInvoice.invoice_code}</span></>
+                                        ) : (
+                                            'Anda memiliki transaksi yang belum selesai untuk program ini.'
+                                        )}
+                                    </p>
+                                    {pendingInvoice?.amount !== undefined && (
+                                        <p className="text-2xl font-bold text-orange-600 my-3">
+                                            Rp {pendingInvoice.amount.toLocaleString('id-ID')}
+                                        </p>
+                                    )}
+                                    <div className="space-y-2 pt-2">
+                                        {(pendingInvoice?.invoice_url || pendingInvoiceUrl) && (
+                                            <Button asChild className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold" size="lg">
+                                                <a href={pendingInvoice?.invoice_url || pendingInvoiceUrl!}>
+                                                    Lanjutkan Pembayaran
+                                                </a>
+                                            </Button>
+                                        )}
+                                        <div className="flex gap-2">
+                                            <Button onClick={() => window.location.reload()} variant="outline" className="flex-1" size="lg">
+                                                Cek Status
+                                            </Button>
+                                            {pendingInvoice?.id && (
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    className="flex-1 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950"
+                                                    size="lg"
+                                                    disabled={cancellingInvoice}
+                                                    onClick={async () => {
+                                                        if (confirm('Apakah Anda yakin ingin membatalkan transaksi ini dan membuat pesanan baru?')) {
+                                                            setCancellingInvoice(true);
+                                                            try {
+                                                                await axios.post(route('invoice.cancel', pendingInvoice.id));
+                                                                toast.success('Pesanan berhasil dibatalkan.');
+                                                                window.location.reload();
+                                                            } catch (err: any) {
+                                                                toast.error(err.response?.data?.message || 'Gagal membatalkan pesanan.');
+                                                                setCancellingInvoice(false);
+                                                            }
+                                                        }
+                                                    }}
+                                                >
+                                                    {cancellingInvoice ? 'Membatalkan...' : 'Batalkan Pesanan'}
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
                             )}
                             {requiresDocumentUpload && (
                                 <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">

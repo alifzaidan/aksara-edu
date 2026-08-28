@@ -183,9 +183,20 @@ class PrivateController extends Controller
         }
 
         $pendingBySchedule = $pendingEnrollments->mapWithKeys(function ($enrollment) {
+            $invoice = $enrollment->invoice;
             return [
                 $enrollment->private_class_schedule_id => [
-                    'invoice_url' => $enrollment->invoice?->invoice_url,
+                    'pending_invoice' => $invoice ? [
+                        'id' => $invoice->id,
+                        'invoice_code' => $invoice->invoice_code,
+                        'status' => $invoice->status,
+                        'amount' => $invoice->amount,
+                        'payment_method' => $invoice->payment_method,
+                        'invoice_url' => $invoice->invoice_url,
+                        'created_at' => $invoice->created_at?->toISOString() ?? (string) $invoice->created_at,
+                        'expires_at' => $invoice->expires_at ? $invoice->expires_at->toISOString() : null,
+                    ] : null,
+                    'invoice_url' => $invoice?->invoice_url,
                 ],
             ];
         });
@@ -195,6 +206,7 @@ class PrivateController extends Controller
             $maxParticipants = max((int) ($schedule->max_participants ?? 1), 1);
             $isFull = $occupiedParticipants >= $maxParticipants;
             $hasAccess = $ownedScheduleIds->contains($schedule->id);
+            $pendingInvoice = data_get($pendingBySchedule, $schedule->id . '.pending_invoice');
             $pendingInvoiceUrl = data_get($pendingBySchedule, $schedule->id . '.invoice_url');
 
             $isRegistrationClosed = $schedule->registration_deadline && now()->gt($schedule->registration_deadline);
@@ -208,6 +220,7 @@ class PrivateController extends Controller
                 'occupied_participants' => $occupiedParticipants,
                 'is_full' => $isFull,
                 'has_access' => $hasAccess,
+                'pending_invoice' => $pendingInvoice,
                 'pending_invoice_url' => $pendingInvoiceUrl,
                 'is_registration_closed' => $isRegistrationClosed,
             ];

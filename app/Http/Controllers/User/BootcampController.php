@@ -111,34 +111,48 @@ class BootcampController extends Controller
 
         $bootcamp->load(['schedules', 'tools', 'category', 'mentors']);
         $hasAccess = false;
+        $pendingInvoice = null;
         $pendingInvoiceUrl = null;
 
         $userId = Auth::id();
 
-        $hasAccess = Invoice::where('user_id', $userId)
-            ->where('status', 'paid')
-            ->whereHas('bootcampItems', function ($query) use ($bootcamp) {
-                $query->where('bootcamp_id', $bootcamp->id);
-            })
-            ->exists();
-
-        if (!$hasAccess) {
-            $pendingInvoice = Invoice::where('user_id', $userId)
-                ->where('status', 'pending')
+        if ($userId) {
+            $hasAccess = Invoice::where('user_id', $userId)
+                ->where('status', 'paid')
                 ->whereHas('bootcampItems', function ($query) use ($bootcamp) {
                     $query->where('bootcamp_id', $bootcamp->id);
                 })
-                ->latest()
-                ->first();
+                ->exists();
 
-            if ($pendingInvoice && $pendingInvoice->invoice_url) {
-                $pendingInvoiceUrl = $pendingInvoice->invoice_url;
+            if (!$hasAccess) {
+                $invoice = Invoice::where('user_id', $userId)
+                    ->where('status', 'pending')
+                    ->whereHas('bootcampItems', function ($query) use ($bootcamp) {
+                        $query->where('bootcamp_id', $bootcamp->id);
+                    })
+                    ->latest()
+                    ->first();
+
+                if ($invoice) {
+                    $pendingInvoice = [
+                        'id' => $invoice->id,
+                        'invoice_code' => $invoice->invoice_code,
+                        'status' => $invoice->status,
+                        'amount' => $invoice->amount,
+                        'payment_method' => $invoice->payment_method,
+                        'invoice_url' => $invoice->invoice_url,
+                        'created_at' => $invoice->created_at?->toISOString() ?? (string) $invoice->created_at,
+                        'expires_at' => $invoice->expires_at ? $invoice->expires_at->toISOString() : null,
+                    ];
+                    $pendingInvoiceUrl = $invoice->invoice_url;
+                }
             }
         }
 
         return Inertia::render('user/bootcamp/register/index', [
             'bootcamp' => $bootcamp,
             'hasAccess' => $hasAccess,
+            'pendingInvoice' => $pendingInvoice,
             'pendingInvoiceUrl' => $pendingInvoiceUrl,
             'referralInfo' => $this->getReferralInfo(),
         ]);

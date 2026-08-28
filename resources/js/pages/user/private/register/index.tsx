@@ -24,6 +24,17 @@ interface PrivateClass {
     benefits?: string | null;
 }
 
+interface PendingInvoice {
+    id: string;
+    invoice_code: string;
+    status: string;
+    amount: number;
+    payment_method?: string;
+    invoice_url?: string | null;
+    created_at: string;
+    expires_at?: string | null;
+}
+
 interface PrivateScheduleOption {
     id: string;
     start_time: string;
@@ -33,6 +44,7 @@ interface PrivateScheduleOption {
     occupied_participants: number;
     is_full: boolean;
     has_access: boolean;
+    pending_invoice?: PendingInvoice | null;
     pending_invoice_url?: string | null;
     is_registration_closed: boolean;
 }
@@ -70,6 +82,7 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
     const isFree = privateClass.price === 0;
     const benefitList = parseList(privateClass.benefits);
 
+    const [cancellingInvoice, setCancellingInvoice] = useState(false);
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
     const [selectedScheduleId, setSelectedScheduleId] = useState<string>(scheduleOptions[0]?.id || '');
@@ -254,7 +267,7 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                 return;
             }
 
-            const response = await axios.post(route('invoice.store'), {
+            const invoiceData: Record<string, any> = {
                 type: 'private',
                 id: privateClass.id,
                 private_class_schedule_id: scheduleId,
@@ -264,7 +277,14 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                 total_amount: totalPrice,
                 discount_code_id: null,
                 discount_code_amount: 0,
-            });
+            };
+
+            const affiliateCode = sessionStorage.getItem('affiliate_code') || new URLSearchParams(window.location.search).get('ref') || referralInfo?.code;
+            if (affiliateCode) {
+                invoiceData.affiliate_code = affiliateCode;
+            }
+
+            const response = await axios.post(route('invoice.store'), invoiceData);
 
             if (response.data?.success && response.data?.payment_url) {
                 sessionStorage.removeItem('pendingPrivateCheckout');
@@ -272,7 +292,7 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                 return;
             }
 
-            toast.error('Gagal membuat invoice pembayaran.');
+            toast.error(response.data?.message || 'Gagal membuat invoice pembayaran.');
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
                 toast.error(error.response?.data?.message || 'Terjadi kesalahan saat checkout.');
@@ -290,54 +310,80 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
             return;
         }
 
-        if (!termsAccepted) {
+        if (!termsAccepted && !isFree) {
             toast.error('Anda harus menyetujui syarat dan ketentuan.');
             return;
         }
 
-        const authenticated = await ensureAuthenticated();
-        if (!authenticated) {
+        // 1. Jika pengguna sudah login
+        if (isLoggedIn) {
+            if (!isProfileComplete) {
+                toast.error('Profil Anda belum lengkap! Harap lengkapi nomor telepon, instansi, dan kota domisili terlebih dahulu.');
+                setTimeout(() => {
+                    window.location.href = route('profile.edit', { redirect: window.location.href });
+                }, 1500);
+                return;
+            }
+
+            setLoading(true);
+            await submitPayment(selectedSchedule.id);
+            return;
+        }
+
+        // 2. Jika pengguna belum login (Guest)
+        if (!guestFormData.email || !guestFormData.phone_number || !guestFormData.instance || !guestFormData.city) {
+            toast.error('Mohon lengkapi seluruh data diri.');
             return;
         }
 
         setLoading(true);
-        await submitPayment(selectedSchedule.id);
-    };
-
-    useEffect(() => {
-        if (!isLoggedIn) return;
-
-        const pendingCheckoutRaw = sessionStorage.getItem('pendingPrivateCheckout');
-        if (!pendingCheckoutRaw) return;
 
         try {
-            const pendingCheckout = JSON.parse(pendingCheckoutRaw);
-
-            const fiveMinutes = 5 * 60 * 1000;
-            if (Date.now() - pendingCheckout.timestamp > fiveMinutes) {
-                sessionStorage.removeItem('pendingPrivateCheckout');
-                return;
-            }
-
-            if (pendingCheckout.privateClassId !== privateClass.id) {
-                sessionStorage.removeItem('pendingPrivateCheckout');
-                return;
-            }
-
-            setTermsAccepted(pendingCheckout.termsAccepted || false);
-            if (pendingCheckout.scheduleId) {
-                setSelectedScheduleId(pendingCheckout.scheduleId);
-                setLoading(true);
-                submitPayment(pendingCheckout.scheduleId).catch(() => {
-                    setLoading(false);
-                    sessionStorage.removeItem('pendingPrivateCheckout');
+            if (emailExists) {
+                const loginResponse = await axios.post(route('auto-login'), {
+                    email: guestFormData.email,
+                    phone_number: guestFormData.phone_number,
+                    instance: guestFormData.instance,
+                    city: guestFormData.city,
                 });
+
+                if (!loginResponse.data?.success) {
+                    throw new Error(loginResponse.data?.message || 'Gagal login otomatis. Pastikan nomor telepon sesuai dengan yang terdaftar.');
+                }
+            } else {
+                if (!guestFormData.name) {
+                    toast.error('Nama lengkap wajib diisi.');
+                    setLoading(false);
+                    return;
+                }
+
+                const regResponse = await axios.post(route('register'), {
+                    name: guestFormData.name,
+                    email: guestFormData.email,
+                    phone_number: guestFormData.phone_number,
+                    instance: guestFormData.instance,
+                    city: guestFormData.city,
+                    password: guestFormData.phone_number,
+                    password_confirmation: guestFormData.phone_number,
+                    affiliate_code: sessionStorage.getItem('affiliate_code') || new URLSearchParams(window.location.search).get('ref') || referralInfo?.code || '',
+                });
+
+                if (!(regResponse.data?.success || regResponse.status === 200 || regResponse.status === 201)) {
+                    throw new Error('Registrasi gagal.');
+                }
             }
-        } catch {
-            sessionStorage.removeItem('pendingPrivateCheckout');
+
+            // Langsung eksekusi submitPayment() tanpa reload halaman!
+            await submitPayment(selectedSchedule.id);
+        } catch (error: unknown) {
+            setLoading(false);
+            if (axios.isAxiosError(error)) {
+                toast.error(error.response?.data?.message || 'Gagal memproses pendaftaran.');
+            } else {
+                toast.error('Gagal memproses pendaftaran.');
+            }
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isLoggedIn, privateClass.id]);
+    };
 
     const formatDateTime = (value?: string | null) => {
         if (!value) return '-';
@@ -528,16 +574,64 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                                 <Link href={route('private.detail', { privateClass: privateClass.slug })}>Kembali ke Detail</Link>
                             </Button>
                         </div>
-                    ) : pendingSchedule?.pending_invoice_url ? (
-                        <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
-                            <Hourglass size={64} className="text-yellow-500" />
-                            <h2 className="text-xl font-bold">Pembayaran Tertunda</h2>
+                    ) : (pendingSchedule?.pending_invoice || pendingSchedule?.pending_invoice_url) ? (
+                        <div className="rounded-2xl border bg-white p-6 shadow-xl dark:bg-gray-800">
+                            <div className="flex items-center gap-2 mb-2 text-yellow-600 dark:text-yellow-400">
+                                <Hourglass className="h-5 w-5" />
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                    Transaksi Menunggu Pembayaran
+                                </h3>
+                            </div>
                             <p className="text-sm text-gray-500">
-                                Anda memiliki pembayaran yang belum selesai untuk private class ini. Silakan lanjutkan untuk membayar.
+                                {pendingSchedule?.pending_invoice?.invoice_code ? (
+                                    <>Kode Invoice: <span className="font-semibold text-gray-800 dark:text-gray-200">{pendingSchedule.pending_invoice.invoice_code}</span></>
+                                ) : (
+                                    'Anda memiliki transaksi yang belum selesai untuk private class ini.'
+                                )}
                             </p>
-                            <Button asChild className="w-full">
-                                <a href={pendingSchedule.pending_invoice_url}>Lanjutkan Pembayaran</a>
-                            </Button>
+                            {pendingSchedule?.pending_invoice?.amount !== undefined && (
+                                <p className="text-2xl font-bold text-orange-600 my-3">
+                                    Rp {pendingSchedule.pending_invoice.amount.toLocaleString('id-ID')}
+                                </p>
+                            )}
+                            <div className="space-y-2 pt-2">
+                                {(pendingSchedule?.pending_invoice?.invoice_url || pendingSchedule?.pending_invoice_url) && (
+                                    <Button asChild className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold" size="lg">
+                                        <a href={pendingSchedule?.pending_invoice?.invoice_url || pendingSchedule?.pending_invoice_url!}>
+                                            Lanjutkan Pembayaran
+                                        </a>
+                                    </Button>
+                                )}
+                                <div className="flex gap-2">
+                                    <Button onClick={() => window.location.reload()} variant="outline" className="flex-1" size="lg">
+                                        Cek Status
+                                    </Button>
+                                    {pendingSchedule?.pending_invoice?.id && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            className="flex-1 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950"
+                                            size="lg"
+                                            disabled={cancellingInvoice}
+                                            onClick={async () => {
+                                                if (confirm('Apakah Anda yakin ingin membatalkan transaksi ini dan membuat pesanan baru?')) {
+                                                    setCancellingInvoice(true);
+                                                    try {
+                                                        await axios.post(route('invoice.cancel', pendingSchedule.pending_invoice!.id));
+                                                        toast.success('Pesanan berhasil dibatalkan.');
+                                                        window.location.reload();
+                                                    } catch (err: any) {
+                                                        toast.error(err.response?.data?.message || 'Gagal membatalkan pesanan.');
+                                                        setCancellingInvoice(false);
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            {cancellingInvoice ? 'Membatalkan...' : 'Batalkan Pesanan'}
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <form
