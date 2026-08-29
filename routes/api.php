@@ -4,8 +4,8 @@ use App\Http\Controllers\Api\InvoiceApiController;
 use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\SearchController;
-use App\Http\Controllers\CRM\WablasWebhookController;
-use App\Http\Controllers\CRM\EvolutionWebhookController;
+// use App\Http\Controllers\CRM\WablasWebhookController;
+// use App\Http\Controllers\CRM\EvolutionWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -62,5 +62,5 @@ Route::post('/check-email', function (Request $request) {
     return response()->json($response);
 });
 
-Route::post('/webhook/wablas', [WablasWebhookController::class, 'handle']);
-Route::post('/webhook/evolution', [EvolutionWebhookController::class, 'handle']);
+// Route::post('/webhook/wablas', [WablasWebhookController::class, 'handle']);
+// Route::post('/webhook/evolution', [EvolutionWebhookController::class, 'handle']);

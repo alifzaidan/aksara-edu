@@ -44,15 +44,16 @@ class WebinarController extends Controller
             $query->whereIn('status', $statuses);
         }
 
-        if ($request->filled('has_recording')) {
-            $recordingFilters = explode(',', $request->input('has_recording'));
+        $recordingParam = $request->input('recording_status') ?? $request->input('has_recording');
+        if (!empty($recordingParam)) {
+            $recordingFilters = explode(',', $recordingParam);
             $query->where(function ($q) use ($recordingFilters) {
                 $hasCondition = false;
-                if (in_array('recorded', $recordingFilters)) {
+                if (in_array('yes', $recordingFilters) || in_array('recorded', $recordingFilters)) {
                     $q->whereNotNull('recording_url')->where('recording_url', '!=', '');
                     $hasCondition = true;
                 }
-                if (in_array('unrecorded', $recordingFilters)) {
+                if (in_array('no', $recordingFilters) || in_array('unrecorded', $recordingFilters)) {
                     $method = $hasCondition ? 'orWhere' : 'where';
                     $q->$method(function ($sub) {
                         $sub->whereNull('recording_url')->orWhere('recording_url', '');
@@ -125,7 +126,8 @@ class WebinarController extends Controller
             'filters' => [
                 'search' => $request->input('search'),
                 'status' => $request->input('status'),
-                'has_recording' => $request->input('has_recording'),
+                'recording_status' => $recordingParam,
+                'has_recording' => $recordingParam,
                 'per_page' => $perPage,
             ],
         ]);

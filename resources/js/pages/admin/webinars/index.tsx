@@ -67,6 +67,9 @@ interface WebinarProps {
     };
     filters?: {
         search?: string;
+        status?: string;
+        recording_status?: string;
+        has_recording?: string;
         per_page?: number;
     };
 }

@@ -43,6 +43,7 @@ interface DataTableProps<TData, TValue> {
     filters?: {
         search?: string;
         status?: string;
+        recording_status?: string;
         has_recording?: string;
         per_page?: number;
     };
@@ -89,8 +90,9 @@ export function DataTable<TData, TValue>({ columns, data, pagination, filters }:
     }, [filters?.status]);
 
     const selectedRecordingStatuses = React.useMemo(() => {
-        return filters?.has_recording ? filters.has_recording.split(',') : [];
-    }, [filters?.has_recording]);
+        const rec = filters?.recording_status ?? filters?.has_recording;
+        return rec ? rec.split(',') : [];
+    }, [filters?.recording_status, filters?.has_recording]);
 
     const updateFilter = useCallback((key: string, values: string[]) => {
         const searchParams = new URLSearchParams(window.location.search);
@@ -135,6 +137,7 @@ export function DataTable<TData, TValue>({ columns, data, pagination, filters }:
         const searchParams = new URLSearchParams(window.location.search);
         searchParams.delete('search');
         searchParams.delete('status');
+        searchParams.delete('recording_status');
         searchParams.delete('has_recording');
         searchParams.set('page', '1');
         router.get(
@@ -163,13 +166,13 @@ export function DataTable<TData, TValue>({ columns, data, pagination, filters }:
                             onFilterChange={(values) => updateFilter('status', values)}
                         />
                     )}
-                    {table.getColumn('has_recording') && (
+                    {table.getColumn('recording_status') && (
                         <DataTableFacetedFilter
-                            column={table.getColumn('has_recording')}
+                            column={table.getColumn('recording_status')}
                             title="Rekaman"
                             options={recordingStatuses}
                             selectedValues={selectedRecordingStatuses}
-                            onFilterChange={(values) => updateFilter('has_recording', values)}
+                            onFilterChange={(values) => updateFilter('recording_status', values)}
                         />
                     )}
                     {isFiltered && (

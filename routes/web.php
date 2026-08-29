@@ -226,10 +226,6 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
     });
 
     // Courses
-    Route::middleware(['role_or_permission:admin|mentor|affiliate|courses.view'])->group(function () {
-        Route::get('courses', [CourseController::class, 'index'])->name('courses.index');
-        Route::get('courses/{course}', [CourseController::class, 'show'])->name('courses.show');
-    });
     Route::middleware(['role_or_permission:admin|mentor|courses.manage'])->group(function () {
         Route::get('courses/create', [CourseController::class, 'create'])->name('courses.create');
         Route::post('courses', [CourseController::class, 'store'])->name('courses.store');
@@ -254,12 +250,12 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
         Route::post('/lesson-assignment-submissions/{submission}/approve', [LessonAssignmentController::class, 'approve'])->name('lesson-assignments.approve');
         Route::post('/lesson-assignment-submissions/{submission}/reject', [LessonAssignmentController::class, 'reject'])->name('lesson-assignments.reject');
     });
+    Route::middleware(['role_or_permission:admin|mentor|affiliate|courses.view'])->group(function () {
+        Route::get('courses', [CourseController::class, 'index'])->name('courses.index');
+        Route::get('courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+    });
 
     // Categories
-    Route::middleware(['role_or_permission:admin|mentor|categories.view'])->group(function () {
-        Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
-        Route::get('categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
-    });
     Route::middleware(['role_or_permission:admin|mentor|categories.manage'])->group(function () {
         Route::get('categories/create', [CategoryController::class, 'create'])->name('categories.create');
         Route::post('categories', [CategoryController::class, 'store'])->name('categories.store');
@@ -267,12 +263,12 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
         Route::put('categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
         Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
     });
+    Route::middleware(['role_or_permission:admin|mentor|categories.view'])->group(function () {
+        Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
+        Route::get('categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
+    });
 
     // Tools
-    Route::middleware(['role_or_permission:admin|mentor|tools.view'])->group(function () {
-        Route::get('tools', [ToolController::class, 'index'])->name('tools.index');
-        Route::get('tools/{tool}', [ToolController::class, 'show'])->name('tools.show');
-    });
     Route::middleware(['role_or_permission:admin|mentor|tools.manage'])->group(function () {
         Route::get('tools/create', [ToolController::class, 'create'])->name('tools.create');
         Route::post('tools', [ToolController::class, 'store'])->name('tools.store');
@@ -281,12 +277,12 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
         Route::delete('tools/{tool}', [ToolController::class, 'destroy'])->name('tools.destroy');
         Route::post('/tools/{id}', [ToolController::class, 'update'])->name('tools.update');
     });
+    Route::middleware(['role_or_permission:admin|mentor|tools.view'])->group(function () {
+        Route::get('tools', [ToolController::class, 'index'])->name('tools.index');
+        Route::get('tools/{tool}', [ToolController::class, 'show'])->name('tools.show');
+    });
 
     // Articles
-    Route::middleware(['role_or_permission:admin|mentor|articles.view'])->group(function () {
-        Route::get('articles', [ArticleController::class, 'index'])->name('articles.index');
-        Route::get('articles/{article}', [ArticleController::class, 'show'])->name('articles.show');
-    });
     Route::middleware(['role_or_permission:admin|mentor|articles.manage'])->group(function () {
         Route::get('articles/create', [ArticleController::class, 'create'])->name('articles.create');
         Route::post('articles', [ArticleController::class, 'store'])->name('articles.store');
@@ -297,12 +293,12 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
         Route::post('/articles/{article}/publish', [ArticleController::class, 'publish'])->name('articles.publish');
         Route::post('/articles/{article}/archive', [ArticleController::class, 'archive'])->name('articles.archive');
     });
+    Route::middleware(['role_or_permission:admin|mentor|articles.view'])->group(function () {
+        Route::get('articles', [ArticleController::class, 'index'])->name('articles.index');
+        Route::get('articles/{article}', [ArticleController::class, 'show'])->name('articles.show');
+    });
 
     // Users
-    Route::middleware(['role_or_permission:admin|users.view'])->group(function () {
-        Route::get('users', [UserController::class, 'index'])->name('users.index');
-        Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
-    });
     Route::middleware(['role_or_permission:admin|users.manage'])->group(function () {
         Route::get('users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('users', [UserController::class, 'store'])->name('users.store');
@@ -310,12 +306,12 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
         Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     });
+    Route::middleware(['role_or_permission:admin|users.view'])->group(function () {
+        Route::get('users', [UserController::class, 'index'])->name('users.index');
+        Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
+    });
 
     // Broadcasts
-    Route::middleware(['role_or_permission:admin|broadcasts.view'])->group(function () {
-        Route::get('broadcasts', [BroadcastController::class, 'index'])->name('broadcasts.index');
-        Route::get('broadcasts/{broadcast}', [BroadcastController::class, 'show'])->name('broadcasts.show');
-    });
     Route::middleware(['role_or_permission:admin|broadcasts.manage'])->group(function () {
         Route::get('broadcasts/create', [BroadcastController::class, 'create'])->name('broadcasts.create');
         Route::post('broadcasts', [BroadcastController::class, 'store'])->name('broadcasts.store');
@@ -326,15 +322,12 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
         Route::post('broadcasts/{broadcast}/send', [BroadcastController::class, 'send'])->name('broadcasts.send');
         Route::post('broadcasts/{broadcast}/send-single', [BroadcastController::class, 'sendSingle'])->name('broadcasts.send-single');
     });
+    Route::middleware(['role_or_permission:admin|broadcasts.view'])->group(function () {
+        Route::get('broadcasts', [BroadcastController::class, 'index'])->name('broadcasts.index');
+        Route::get('broadcasts/{broadcast}', [BroadcastController::class, 'show'])->name('broadcasts.show');
+    });
 
     // Certificates
-    Route::middleware(['role_or_permission:admin|certificates.view'])->group(function () {
-        Route::get('certificates', [CertificateController::class, 'index'])->name('certificates.index');
-        Route::get('certificates/{certificate}', [CertificateController::class, 'show'])->name('certificates.show');
-        Route::get('/{certificate}/preview', [CertificateController::class, 'preview'])->name('certificates.preview');
-        Route::get('/{certificate}/download-all', [CertificateController::class, 'downloadAll'])->name('certificates.download.all');
-        Route::get('/participant/{participant}/download', [CertificateController::class, 'downloadParticipant'])->name('certificates.participant.download');
-    });
     Route::middleware(['role_or_permission:admin|certificates.manage'])->group(function () {
         Route::get('certificates/create', [CertificateController::class, 'create'])->name('certificates.create');
         Route::post('certificates', [CertificateController::class, 'store'])->name('certificates.store');
@@ -347,6 +340,13 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
         Route::post('/certificates/{certificate}/import-manual-participants', [CertificateController::class, 'importManualParticipants'])->name('certificates.import-manual-participants');
         Route::resource('certificate-designs', CertificateDesignController::class);
         Route::resource('certificate-signs', CertificateSignController::class);
+    });
+    Route::middleware(['role_or_permission:admin|certificates.view'])->group(function () {
+        Route::get('certificates', [CertificateController::class, 'index'])->name('certificates.index');
+        Route::get('certificates/{certificate}', [CertificateController::class, 'show'])->name('certificates.show');
+        Route::get('certificates/{certificate}/preview', [CertificateController::class, 'preview'])->name('certificates.preview');
+        Route::get('certificates/{certificate}/download-all', [CertificateController::class, 'downloadAll'])->name('certificates.download.all');
+        Route::get('certificates/participant/{participant}/download', [CertificateController::class, 'downloadParticipant'])->name('certificates.participant.download');
     });
 
     // Bootcamps
@@ -469,10 +469,6 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
     });
 
     // Mentors
-    Route::middleware(['role_or_permission:admin|mentors.view'])->group(function () {
-        Route::get('mentors', [MentorController::class, 'index'])->name('mentors.index');
-        Route::get('mentors/{mentor}', [MentorController::class, 'show'])->name('mentors.show');
-    });
     Route::middleware(['role_or_permission:admin|mentors.manage'])->group(function () {
         Route::get('mentors/create', [MentorController::class, 'create'])->name('mentors.create');
         Route::post('mentors', [MentorController::class, 'store'])->name('mentors.store');
@@ -481,18 +477,22 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
         Route::delete('mentors/{mentor}', [MentorController::class, 'destroy'])->name('mentors.destroy');
         Route::post('/mentors/{mentor}/withdraw', [MentorController::class, 'withdrawCommission'])->name('mentors.withdraw');
     });
+    Route::middleware(['role_or_permission:admin|mentors.view'])->group(function () {
+        Route::get('mentors', [MentorController::class, 'index'])->name('mentors.index');
+        Route::get('mentors/{mentor}', [MentorController::class, 'show'])->name('mentors.show');
+    });
 
     // Discount Codes
-    Route::middleware(['role_or_permission:admin|discount-codes.view'])->group(function () {
-        Route::get('discount-codes', [DiscountCodeController::class, 'index'])->name('discount-codes.index');
-        Route::get('discount-codes/{discount_code}', [DiscountCodeController::class, 'show'])->name('discount-codes.show');
-    });
     Route::middleware(['role_or_permission:admin|discount-codes.manage'])->group(function () {
         Route::get('discount-codes/create', [DiscountCodeController::class, 'create'])->name('discount-codes.create');
         Route::post('discount-codes', [DiscountCodeController::class, 'store'])->name('discount-codes.store');
         Route::get('discount-codes/{discount_code}/edit', [DiscountCodeController::class, 'edit'])->name('discount-codes.edit');
         Route::put('discount-codes/{discount_code}', [DiscountCodeController::class, 'update'])->name('discount-codes.update');
         Route::delete('discount-codes/{discount_code}', [DiscountCodeController::class, 'destroy'])->name('discount-codes.destroy');
+    });
+    Route::middleware(['role_or_permission:admin|discount-codes.view'])->group(function () {
+        Route::get('discount-codes', [DiscountCodeController::class, 'index'])->name('discount-codes.index');
+        Route::get('discount-codes/{discount_code}', [DiscountCodeController::class, 'show'])->name('discount-codes.show');
     });
 
     // Transactions
@@ -502,10 +502,6 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
     });
 
     // Promotions
-    Route::middleware(['role_or_permission:admin|promotions.view'])->group(function () {
-        Route::get('promotions', [PromotionController::class, 'index'])->name('promotions.index');
-        Route::get('promotions/{promotion}', [PromotionController::class, 'show'])->name('promotions.show');
-    });
     Route::middleware(['role_or_permission:admin|promotions.manage'])->group(function () {
         Route::get('promotions/create', [PromotionController::class, 'create'])->name('promotions.create');
         Route::post('promotions', [PromotionController::class, 'store'])->name('promotions.store');
@@ -513,6 +509,10 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
         Route::put('promotions/{promotion}', [PromotionController::class, 'update'])->name('promotions.update');
         Route::delete('promotions/{promotion}', [PromotionController::class, 'destroy'])->name('promotions.destroy');
         Route::patch('promotions/{promotion}/toggle-status', [PromotionController::class, 'toggleStatus'])->name('promotions.toggle-status');
+    });
+    Route::middleware(['role_or_permission:admin|promotions.view'])->group(function () {
+        Route::get('promotions', [PromotionController::class, 'index'])->name('promotions.index');
+        Route::get('promotions/{promotion}', [PromotionController::class, 'show'])->name('promotions.show');
     });
 
     // Carousels
