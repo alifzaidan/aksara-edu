@@ -49,9 +49,11 @@ interface AffiliateProps {
 
 import { usePermission } from '@/hooks/use-permission';
 
-export default function Affiliates({ affiliates, statistics, flash, filters }: AffiliateProps) {
+export default function Affiliates({ affiliates, statistics, flash, filters }: AffiliatesProps) {
+    const { auth } = usePage<SharedData>().props;
     const { canManage } = usePermission();
     const canManageAffiliate = canManage('affiliates');
+    const isStaff = auth.role.includes('staff') && !auth.role.includes('admin');
     const [open, setOpen] = useState(false);
     const [showMoreStats, setShowMoreStats] = useState(false);
 
@@ -101,20 +103,22 @@ export default function Affiliates({ affiliates, statistics, flash, filters }: A
                             </div>
                         </div>
 
-                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <p className="text-muted-foreground text-xs font-medium">Total Komisi</p>
-                                    <h3 className="mt-1 text-lg font-bold text-purple-600 dark:text-purple-400">
-                                        {rupiahFormatter.format(statistics.earnings.total_earnings)}
-                                    </h3>
-                                    <p className="mt-1 text-xs text-teal-600 dark:text-teal-400">
-                                        {statistics.earnings.total_transactions} transaksi
-                                    </p>
+                        {!isStaff && (
+                            <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <p className="text-muted-foreground text-xs font-medium">Total Komisi</p>
+                                        <h3 className="mt-1 text-lg font-bold text-purple-600 dark:text-purple-400">
+                                            {rupiahFormatter.format(statistics.earnings.total_earnings)}
+                                        </h3>
+                                        <p className="mt-1 text-xs text-teal-600 dark:text-teal-400">
+                                            {statistics.earnings.total_transactions} transaksi
+                                        </p>
+                                    </div>
+                                    <DollarSign className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                                 </div>
-                                <DollarSign className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* ✅ MOBILE: Expandable Details */}
@@ -147,29 +151,31 @@ export default function Affiliates({ affiliates, statistics, flash, filters }: A
                                 </div>
 
                                 {/* Commission */}
-                                <div className="rounded-lg border p-3 text-sm">
-                                    <h4 className="mb-2 text-xs font-semibold">Detail Komisi</h4>
-                                    <div className="space-y-1 text-xs">
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Sudah Dibayar</span>
-                                            <span className="font-medium text-green-600">
-                                                {rupiahFormatter.format(statistics.earnings.paid_commission)}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Komisi Tersedia</span>
-                                            <span className="font-medium text-yellow-600">
-                                                {rupiahFormatter.format(statistics.earnings.pending_commission)}
-                                            </span>
+                                {!isStaff && (
+                                    <div className="rounded-lg border p-3 text-sm">
+                                        <h4 className="mb-2 text-xs font-semibold">Detail Komisi</h4>
+                                        <div className="space-y-1 text-xs">
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Sudah Dibayar</span>
+                                                <span className="font-medium text-green-600">
+                                                    {rupiahFormatter.format(statistics.earnings.paid_commission)}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Komisi Tersedia</span>
+                                                <span className="font-medium text-yellow-600">
+                                                    {rupiahFormatter.format(statistics.earnings.pending_commission)}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         )}
                     </div>
 
-                    {/* ✅ DESKTOP: Simple Stats (4 cards) */}
-                    <div className="hidden gap-4 md:grid md:grid-cols-2 lg:grid-cols-4">
+                    {/* ✅ DESKTOP: Stats */}
+                    <div className={`hidden gap-4 md:grid ${isStaff ? 'md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
                         <div className="dark:to-background rounded-lg border bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm dark:from-blue-950/20">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -199,39 +205,43 @@ export default function Affiliates({ affiliates, statistics, flash, filters }: A
                             </div>
                         </div>
 
-                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-muted-foreground text-sm font-medium">Total Komisi</p>
-                                    <h3 className="mt-2 text-2xl font-bold text-purple-600 dark:text-purple-400">
-                                        {rupiahFormatter.format(statistics.earnings.total_earnings)}
-                                    </h3>
-                                    <p className="mt-1 text-xs text-purple-600 dark:text-purple-400">
-                                        {statistics.earnings.total_transactions} transaksi
-                                    </p>
+                        {!isStaff && (
+                            <>
+                                <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-muted-foreground text-sm font-medium">Total Komisi</p>
+                                            <h3 className="mt-2 text-2xl font-bold text-purple-600 dark:text-purple-400">
+                                                {rupiahFormatter.format(statistics.earnings.total_earnings)}
+                                            </h3>
+                                            <p className="mt-1 text-xs text-purple-600 dark:text-purple-400">
+                                                {statistics.earnings.total_transactions} transaksi
+                                            </p>
+                                        </div>
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
+                                            <DollarSign className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
-                                    <DollarSign className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                                </div>
-                            </div>
-                        </div>
 
-                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-yellow-50 to-white p-4 shadow-sm dark:from-yellow-950/20">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-muted-foreground text-sm font-medium">Komisi Tersedia</p>
-                                    <h3 className="mt-2 text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                                        {rupiahFormatter.format(statistics.earnings.pending_commission)}
-                                    </h3>
-                                    <p className="mt-1 text-xs text-green-600 dark:text-green-400">
-                                        {rupiahFormatter.format(statistics.earnings.paid_commission)} sudah dibayar
-                                    </p>
+                                <div className="dark:to-background rounded-lg border bg-gradient-to-br from-yellow-50 to-white p-4 shadow-sm dark:from-yellow-950/20">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-muted-foreground text-sm font-medium">Komisi Tersedia</p>
+                                            <h3 className="mt-2 text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                                                {rupiahFormatter.format(statistics.earnings.pending_commission)}
+                                            </h3>
+                                            <p className="mt-1 text-xs text-green-600 dark:text-green-400">
+                                                {rupiahFormatter.format(statistics.earnings.paid_commission)} sudah dibayar
+                                            </p>
+                                        </div>
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+                                            <CheckCircle className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30">
-                                    <CheckCircle className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-                                </div>
-                            </div>
-                        </div>
+                            </>
+                        )}
                     </div>
                 </div>
 

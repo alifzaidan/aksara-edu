@@ -51,9 +51,14 @@ class PrivateClassController extends Controller
             ->whereHas('privateItems')
             ->count();
 
-        $totalRevenue = Invoice::where('status', 'paid')
-            ->whereHas('privateItems')
-            ->sum('nett_amount');
+        $user = Auth::user();
+        $isStaff = $user && $user->hasRole('staff') && !$user->hasRole('admin');
+
+        $totalRevenue = $isStaff
+            ? 0
+            : Invoice::where('status', 'paid')
+                ->whereHas('privateItems')
+                ->sum('nett_amount');
 
         $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
         $privateClasses = $query->paginate($perPage)->withQueryString();
@@ -160,6 +165,16 @@ class PrivateClassController extends Controller
             })
             ->latest()
             ->get();
+
+        $user = Auth::user();
+        if ($user && $user->hasRole('staff') && !$user->hasRole('admin')) {
+            $transactions->each(function ($tx) {
+                $tx->amount = 0;
+                $tx->discount_amount = 0;
+                $tx->transaction_fee = 0;
+                $tx->nett_amount = 0;
+            });
+        }
 
         return Inertia::render('admin/privates/show', [
             'privateClass' => $privateClass,

@@ -64,6 +64,7 @@ export default function Bootcamps({ bootcamps, statistics, flash, filters }: Boo
     const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
     const canManageBootcamp = canManage('bootcamps') && !isAffiliate;
+    const isStaff = auth.role.includes('staff') && !auth.role.includes('admin');
     const [showMoreStats, setShowMoreStats] = useState(false);
 
     useEffect(() => {
@@ -109,20 +110,22 @@ export default function Bootcamps({ bootcamps, statistics, flash, filters }: Boo
                             </div>
                         </div>
 
-                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <p className="text-muted-foreground text-xs font-medium">Total Pendapatan</p>
-                                    <h3 className="mt-1 text-lg font-bold text-purple-600 dark:text-purple-400">
-                                        {rupiahFormatter.format(statistics.performance.total_revenue)}
-                                    </h3>
-                                    <p className="mt-1 text-xs text-teal-600 dark:text-teal-400">
-                                        {statistics.performance.total_enrollments} peserta
-                                    </p>
+                        {!isStaff && (
+                            <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <p className="text-muted-foreground text-xs font-medium">Total Pendapatan</p>
+                                        <h3 className="mt-1 text-lg font-bold text-purple-600 dark:text-purple-400">
+                                            {rupiahFormatter.format(statistics.performance.total_revenue)}
+                                        </h3>
+                                        <p className="mt-1 text-xs text-teal-600 dark:text-teal-400">
+                                            {statistics.performance.total_enrollments} peserta
+                                        </p>
+                                    </div>
+                                    <DollarSign className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                                 </div>
-                                <DollarSign className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* ✅ MOBILE: Expandable Details */}
@@ -162,33 +165,17 @@ export default function Bootcamps({ bootcamps, statistics, flash, filters }: Boo
                                     </div>
                                 </div>
 
-                                {/* Pricing & Completion */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="rounded-lg border p-3 text-sm">
-                                        <h4 className="mb-2 text-xs font-semibold">Harga</h4>
-                                        <div className="space-y-1 text-xs">
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Berbayar</span>
-                                                <span className="font-medium text-green-600">{statistics.pricing.paid_bootcamps}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Gratis</span>
-                                                <span className="font-medium text-blue-600">{statistics.pricing.free_bootcamps}</span>
-                                            </div>
+                                {/* Execution Status */}
+                                <div className="rounded-lg border p-3 text-sm">
+                                    <h4 className="mb-2 font-semibold">Status Pelaksanaan</h4>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground text-xs">Selesai</span>
+                                            <span className="text-xs font-medium text-green-600">{statistics.completion.completed}</span>
                                         </div>
-                                    </div>
-
-                                    <div className="rounded-lg border p-3 text-sm">
-                                        <h4 className="mb-2 text-xs font-semibold">Pelaksanaan</h4>
-                                        <div className="space-y-1 text-xs">
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Selesai</span>
-                                                <span className="font-medium text-green-600">{statistics.completion.completed}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Berlangsung</span>
-                                                <span className="font-medium text-blue-600">{statistics.completion.ongoing}</span>
-                                            </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground text-xs">Sedang Berjalan</span>
+                                            <span className="text-xs font-medium text-blue-600">{statistics.completion.ongoing}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -215,8 +202,8 @@ export default function Bootcamps({ bootcamps, statistics, flash, filters }: Boo
                         )}
                     </div>
 
-                    {/* ✅ DESKTOP: Overview Stats (4 cards) */}
-                    <div className="hidden gap-4 md:grid md:grid-cols-2 lg:grid-cols-4">
+                    {/* ✅ DESKTOP: Overview (4 cards) */}
+                    <div className={`hidden gap-4 md:grid md:grid-cols-2 ${isStaff ? 'lg:grid-cols-3' : 'lg:grid-cols-4'}`}>
                         <div className="dark:to-background rounded-lg border bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm dark:from-blue-950/20">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -258,40 +245,44 @@ export default function Bootcamps({ bootcamps, statistics, flash, filters }: Boo
                             </div>
                         </div>
 
-                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-orange-50 to-white p-4 shadow-sm dark:from-orange-950/20">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-muted-foreground text-sm font-medium">Total Revenue</p>
-                                    <h3 className="mt-2 text-2xl font-bold text-orange-600 dark:text-orange-400">
-                                        {rupiahFormatter.format(statistics.performance.total_revenue)}
-                                    </h3>
-                                </div>
-                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30">
-                                    <TrendingUp className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                        {!isStaff && (
+                            <div className="dark:to-background rounded-lg border bg-gradient-to-br from-orange-50 to-white p-4 shadow-sm dark:from-orange-950/20">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-muted-foreground text-sm font-medium">Total Revenue</p>
+                                        <h3 className="mt-2 text-2xl font-bold text-orange-600 dark:text-orange-400">
+                                            {rupiahFormatter.format(statistics.performance.total_revenue)}
+                                        </h3>
+                                    </div>
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30">
+                                        <TrendingUp className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* ✅ DESKTOP: Additional Stats (3 cards) */}
-                    <div className="hidden gap-4 md:grid md:grid-cols-3">
+                    <div className={`hidden gap-4 md:grid ${isStaff ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
                         {/* Pricing Breakdown */}
-                        <div className="rounded-lg border p-4 shadow-sm">
-                            <div className="mb-3 flex items-center gap-2">
-                                <DollarSign className="text-muted-foreground h-5 w-5" />
-                                <h4 className="font-semibold">Tipe Harga</h4>
-                            </div>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Berbayar</span>
-                                    <span className="font-medium text-green-600">{statistics.pricing.paid_bootcamps}</span>
+                        {!isStaff && (
+                            <div className="rounded-lg border p-4 shadow-sm">
+                                <div className="mb-3 flex items-center gap-2">
+                                    <DollarSign className="text-muted-foreground h-5 w-5" />
+                                    <h4 className="font-semibold">Tipe Harga</h4>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Gratis</span>
-                                    <span className="font-medium text-blue-600">{statistics.pricing.free_bootcamps}</span>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-muted-foreground">Berbayar</span>
+                                        <span className="font-medium text-green-600">{statistics.pricing.paid_bootcamps}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-muted-foreground">Gratis</span>
+                                        <span className="font-medium text-blue-600">{statistics.pricing.free_bootcamps}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* ✅ UPDATED: Completion Status */}
                         <div className="rounded-lg border p-4 shadow-sm">

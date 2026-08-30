@@ -118,6 +118,41 @@ export type CertificationProgram = {
     batch?: string | null;
 };
 
+function CertificationProgramPriceCell({ program }: { program: CertificationProgram }) {
+    const { auth } = usePage<SharedData>().props;
+    const { roles, isAdmin } = usePermission();
+    const isStaff = (roles?.includes('staff') || auth?.role?.includes('staff')) && !isAdmin && !auth?.role?.includes('admin');
+
+    const { price, strikethrough_price, scholarship_price, type } = program;
+    const isScholarship = type === 'scholarship';
+    const displayPrice = isScholarship ? (scholarship_price ?? 0) : price;
+
+    if (displayPrice === 0 && (!isScholarship || (price === 0 && (scholarship_price ?? 0) === 0))) {
+        return <div className="text-base font-semibold">Gratis</div>;
+    }
+
+    if (isStaff) {
+        return (
+            <div>
+                <div className="text-base font-semibold text-muted-foreground">Rp ***</div>
+                {isScholarship && <div className="mt-0.5 text-xs text-purple-600">Harga Beasiswa</div>}
+            </div>
+        );
+    }
+
+    return (
+        <div>
+            {strikethrough_price > 0 && (
+                <div className="text-xs text-gray-500 line-through">{rupiahFormatter.format(strikethrough_price)}</div>
+            )}
+            <div className="text-base font-semibold">{rupiahFormatter.format(displayPrice)}</div>
+            {isScholarship && scholarship_price !== undefined && scholarship_price > 0 && (
+                <div className="mt-0.5 text-xs text-purple-600">Harga Beasiswa</div>
+            )}
+        </div>
+    );
+}
+
 export const columns: ColumnDef<CertificationProgram>[] = [
     {
         accessorKey: 'no',
@@ -173,27 +208,7 @@ export const columns: ColumnDef<CertificationProgram>[] = [
     {
         accessorKey: 'price',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
-        cell: ({ row }) => {
-            const { price, strikethrough_price, scholarship_price, type } = row.original;
-
-            const displayPrice = type === 'scholarship' ? (scholarship_price ?? 0) : price;
-
-            if (displayPrice === 0) {
-                return <div className="text-base font-semibold">Gratis</div>;
-            }
-
-            return (
-                <div>
-                    {strikethrough_price > 0 && (
-                        <div className="text-xs text-gray-500 line-through">{rupiahFormatter.format(strikethrough_price)}</div>
-                    )}
-                    <div className="text-base font-semibold">{rupiahFormatter.format(displayPrice)}</div>
-                    {type === 'scholarship' && scholarship_price !== undefined && scholarship_price > 0 && (
-                        <div className="mt-0.5 text-xs text-purple-600">Harga Beasiswa</div>
-                    )}
-                </div>
-            );
-        },
+        cell: ({ row }) => <CertificationProgramPriceCell program={row.original} />,
     },
     {
         accessorKey: 'schedules',

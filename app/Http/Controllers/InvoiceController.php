@@ -147,10 +147,13 @@ class InvoiceController extends Controller
         $pendingTransactions = (clone $statsBase)->where('status', 'pending')->count();
         $failedTransactions = (clone $statsBase)->where('status', 'failed')->count();
 
+        $user = Auth::user();
+        $isStaff = $user && $user->hasRole('staff') && !$user->hasRole('admin');
+
         // Revenue statistics
-        $totalRevenue = (clone $statsBase)->where('status', 'paid')->sum('nett_amount');
-        $totalGross = (clone $statsBase)->where('status', 'paid')->sum('amount');
-        $totalDiscount = (clone $statsBase)->where('status', 'paid')->sum('discount_amount');
+        $totalRevenue = $isStaff ? 0 : (clone $statsBase)->where('status', 'paid')->sum('nett_amount');
+        $totalGross = $isStaff ? 0 : (clone $statsBase)->where('status', 'paid')->sum('amount');
+        $totalDiscount = $isStaff ? 0 : (clone $statsBase)->where('status', 'paid')->sum('discount_amount');
 
         // Free vs Paid
         $freeEnrollments = (clone $statsBase)->where('status', 'paid')->where('nett_amount', 0)->count();
@@ -164,12 +167,12 @@ class InvoiceController extends Controller
         $bundleTransactions = (clone $statsBase)->whereHas('bundleEnrollments')->count();
 
         $todayTransactions = (clone $statsBase)->whereDate('paid_at', Carbon::today())->count();
-        $todayRevenue = (clone $statsBase)->where('status', 'paid')->whereDate('paid_at', Carbon::today())->sum('nett_amount');
+        $todayRevenue = $isStaff ? 0 : (clone $statsBase)->where('status', 'paid')->whereDate('paid_at', Carbon::today())->sum('nett_amount');
 
         $thisMonthTransactions = (clone $statsBase)->whereYear('paid_at', Carbon::now()->year)->whereMonth('paid_at', Carbon::now()->month)->count();
-        $thisMonthRevenue = (clone $statsBase)->where('status', 'paid')->whereYear('paid_at', Carbon::now()->year)->whereMonth('paid_at', Carbon::now()->month)->sum('nett_amount');
+        $thisMonthRevenue = $isStaff ? 0 : (clone $statsBase)->where('status', 'paid')->whereYear('paid_at', Carbon::now()->year)->whereMonth('paid_at', Carbon::now()->month)->sum('nett_amount');
 
-        $averageTransactionValue = $paidEnrollments > 0
+        $averageTransactionValue = (!$isStaff && $paidEnrollments > 0)
             ? $totalRevenue / $paidEnrollments
             : 0;
 
@@ -1828,6 +1831,11 @@ class InvoiceController extends Controller
 
     public function generatePDF($id)
     {
+        $user = Auth::user();
+        if ($user && $user->hasRole('staff') && !$user->hasRole('admin')) {
+            abort(403, 'Akses invoice tidak diizinkan untuk staff');
+        }
+
         $invoice = Invoice::with([
             'user',
             'courseItems.course',

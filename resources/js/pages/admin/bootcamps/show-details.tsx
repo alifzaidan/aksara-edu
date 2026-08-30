@@ -64,6 +64,7 @@ function getYoutubeId(url: string) {
 export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
+    const isStaff = auth.role.includes('staff') && !auth.role.includes('admin');
     const [deletingScheduleId, setDeletingScheduleId] = useState<string | null>(null);
 
     const getInitials = useInitials();
@@ -271,6 +272,8 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                         <TableCell>
                             {bootcamp.price === 0 ? (
                                 <span>Gratis</span>
+                            ) : isStaff ? (
+                                <span className="text-base font-semibold text-muted-foreground">Rp ***</span>
                             ) : (
                                 <span>
                                     {bootcamp.strikethrough_price > 0 && (

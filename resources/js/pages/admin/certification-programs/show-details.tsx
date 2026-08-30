@@ -62,6 +62,7 @@ interface CertificationProgram {
 export default function CertificationProgramDetail({ program }: { program: CertificationProgram }) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
+    const isStaff = auth.role.includes('staff') && !auth.role.includes('admin');
     const getInitials = useInitials();
     const socializationSchedules =
         program.socializationSchedules ?? (program as CertificationProgram & { socialization_schedules?: Schedule[] }).socialization_schedules ?? [];
@@ -289,18 +290,26 @@ export default function CertificationProgramDetail({ program }: { program: Certi
                         <TableCell>
                             {program.type === 'scholarship' ? (
                                 <div className="space-y-1">
-                                    {program.strikethrough_price > 0 && (
+                                    {!isStaff && program.strikethrough_price > 0 && (
                                         <div className="text-xs text-gray-500 line-through">
                                             {rupiahFormatter.format(program.strikethrough_price)}
                                         </div>
                                     )}
                                     <div className="text-base font-semibold">
-                                        {(program.scholarship_price ?? 0) === 0 ? 'Gratis' : rupiahFormatter.format(program.scholarship_price ?? 0)}
+                                        {(program.scholarship_price ?? 0) === 0 ? (
+                                            'Gratis'
+                                        ) : isStaff ? (
+                                            <span className="text-muted-foreground">Rp ***</span>
+                                        ) : (
+                                            rupiahFormatter.format(program.scholarship_price ?? 0)
+                                        )}
                                     </div>
                                     <div className="text-xs text-purple-600">Harga Beasiswa</div>
                                 </div>
                             ) : program.price === 0 ? (
                                 <span className="text-base font-semibold">Gratis</span>
+                            ) : isStaff ? (
+                                <span className="text-base font-semibold text-muted-foreground">Rp ***</span>
                             ) : (
                                 <div>
                                     {program.strikethrough_price > 0 && (

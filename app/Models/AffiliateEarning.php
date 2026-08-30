@@ -16,6 +16,11 @@ class AffiliateEarning extends Model
         return $this->belongsTo(User::class, 'affiliate_user_id');
     }
 
+    public function affiliateUser()
+    {
+        return $this->belongsTo(User::class, 'affiliate_user_id');
+    }
+
     public function invoice()
     {
         return $this->belongsTo(Invoice::class, 'invoice_id');

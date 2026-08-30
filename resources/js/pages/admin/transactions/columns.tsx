@@ -84,9 +84,26 @@ export interface Invoice {
 
 import { usePermission } from '@/hooks/use-permission';
 
+function PriceCell({ row }: { row: Row<Invoice> }) {
+    const { roles, isAdmin } = usePermission();
+    const isStaff = roles.includes('staff') && !isAdmin;
+
+    if (isStaff) {
+        return <div className="font-medium text-muted-foreground">Rp ***</div>;
+    }
+
+    const formatted = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+    }).format(row.original.nett_amount);
+    return <div className="font-medium">{formatted}</div>;
+}
+
 function ActionsCell({ row }: { row: Row<Invoice> }) {
-    const { canManage } = usePermission();
+    const { canManage, roles, isAdmin } = usePermission();
     const canManageTransaction = canManage('transactions');
+    const isStaff = roles.includes('staff') && !isAdmin;
     const invoice = row.original;
     const user = invoice.user;
     let whatsappUrl = '';
@@ -114,7 +131,7 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
 
     return (
         <div className="flex items-center justify-center gap-2">
-            {invoice.status === 'paid' && (
+            {invoice.status === 'paid' && !isStaff && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" asChild>
@@ -254,14 +271,7 @@ export const columns: ColumnDef<Invoice>[] = [
     {
         accessorKey: 'nett_amount',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
-        cell: ({ row }) => {
-            const formatted = new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0,
-            }).format(row.original.nett_amount);
-            return <div className="font-medium">{formatted}</div>;
-        },
+        cell: ({ row }) => <PriceCell row={row} />,
     },
     {
         accessorKey: 'user.referrer.name',

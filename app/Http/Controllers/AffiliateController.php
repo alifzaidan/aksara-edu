@@ -6,6 +6,7 @@ use App\Models\AffiliateEarning;
 use App\Models\AffiliateWithdrawal;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 
@@ -13,6 +14,9 @@ class AffiliateController extends Controller
 {
     public function index(Request $request)
     {
+        $user = Auth::user();
+        $isStaff = $user && $user->hasRole('staff') && !$user->hasRole('admin');
+
         $query = User::role('affiliate');
 
         if ($request->filled('search')) {
@@ -33,9 +37,9 @@ class AffiliateController extends Controller
             $q->where('affiliate_status', '!=', 'Active')->orWhereNull('affiliate_status');
         })->count();
 
-        $totalEarnings = (int) AffiliateEarning::sum('amount');
-        $paidCommission = (int) AffiliateWithdrawal::sum('amount');
-        $pendingCommission = max(0, $totalEarnings - $paidCommission);
+        $totalEarnings = $isStaff ? 0 : (int) AffiliateEarning::sum('amount');
+        $paidCommission = $isStaff ? 0 : (int) AffiliateWithdrawal::sum('amount');
+        $pendingCommission = $isStaff ? 0 : max(0, $totalEarnings - $paidCommission);
         $totalTransactions = AffiliateEarning::whereHas('invoice', function ($q) {
             $q->where('status', 'paid');
         })->count();
@@ -67,8 +71,8 @@ class AffiliateController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
-        $affiliates->through(function ($affiliate) {
-            $affiliate->total_earnings = $affiliate->affiliate_earnings_sum_amount ?? 0;
+        $affiliates->through(function ($affiliate) use ($isStaff) {
+            $affiliate->total_earnings = $isStaff ? 0 : ($affiliate->affiliate_earnings_sum_amount ?? 0);
             unset($affiliate->affiliate_earnings_sum_amount);
             return $affiliate;
         });
@@ -118,6 +122,9 @@ class AffiliateController extends Controller
 
     public function show(string $id)
     {
+        $user = Auth::user();
+        $isStaff = $user && $user->hasRole('staff') && !$user->hasRole('admin');
+
         $affiliate = User::findOrFail($id);
         $earnings = AffiliateEarning::with([
             'invoice.user',
@@ -132,9 +139,23 @@ class AffiliateController extends Controller
             ->get();
         $withdrawals = AffiliateWithdrawal::where('affiliate_user_id', $affiliate->id)->orderBy('withdrawn_at', 'desc')->get();
 
-        $totalCommission = $earnings->sum('amount');
-        $paidCommission = $withdrawals->sum('amount');
-        $availableCommission = $totalCommission - $paidCommission;
+        $totalCommission = $isStaff ? 0 : $earnings->sum('amount');
+        $paidCommission = $isStaff ? 0 : $withdrawals->sum('amount');
+        $availableCommission = $isStaff ? 0 : ($totalCommission - $paidCommission);
+
+        if ($isStaff) {
+            $earnings->transform(function ($e) {
+                $e->amount = 0;
+                if ($e->invoice) {
+                    $e->invoice->nett_amount = 0;
+                }
+                return $e;
+            });
+            $withdrawals->transform(function ($w) {
+                $w->amount = 0;
+                return $w;
+            });
+        }
 
         $stats = [
             'total_products' => $earnings->count(),

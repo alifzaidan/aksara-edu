@@ -1,7 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { rupiahFormatter } from '@/lib/utils';
-import { Link } from '@inertiajs/react';
+import { SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { BookOpen, Clock, GraduationCap, Tag, Users } from 'lucide-react';
@@ -27,6 +28,8 @@ interface ShowCourseProps {
 }
 
 export default function ShowCourse({ courses }: ShowCourseProps) {
+    const { auth } = usePage<SharedData>().props;
+    const isStaff = auth.role?.includes('staff') && !auth.role?.includes('admin');
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'published':
@@ -143,7 +146,7 @@ export default function ShowCourse({ courses }: ShowCourseProps) {
                                                 <div className="flex flex-col">
                                                     <span className="text-muted-foreground text-xs">Harga</span>
                                                     <span className="text-base font-bold text-green-600">
-                                                        {course.price === 0 ? 'Gratis' : rupiahFormatter.format(course.price)}
+                                                        {course.price === 0 ? 'Gratis' : (isStaff ? 'Rp ***' : rupiahFormatter.format(course.price))}
                                                     </span>
                                                 </div>
                                             </div>

@@ -24,7 +24,8 @@ export default function AffiliateEarnings({ earnings, stats }: { earnings: Earni
     const { auth } = usePage<SharedData>().props;
     const role = auth.role[0];
     const isAdmin = role === 'admin';
-    const columns = getColumns(isAdmin);
+    const isStaff = auth.role?.includes('staff') && !isAdmin;
+    const columns = getColumns(isAdmin, isStaff);
 
     return (
         <div className="h-full space-y-6 rounded-lg border p-4">
@@ -46,7 +47,9 @@ export default function AffiliateEarnings({ earnings, stats }: { earnings: Earni
                             <Wallet className="text-muted-foreground h-4 w-4" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-lg font-bold md:text-xl">{formatCurrency(stats.total_commission)}</div>
+                            <div className="text-lg font-bold md:text-xl">
+                                {isStaff ? 'Rp ***' : formatCurrency(stats.total_commission)}
+                            </div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -55,7 +58,9 @@ export default function AffiliateEarnings({ earnings, stats }: { earnings: Earni
                             <Banknote className="text-muted-foreground h-4 w-4" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-lg font-bold md:text-xl">{formatCurrency(stats.available_commission)}</div>
+                            <div className="text-lg font-bold md:text-xl">
+                                {isStaff ? 'Rp ***' : formatCurrency(stats.available_commission)}
+                            </div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -64,7 +69,9 @@ export default function AffiliateEarnings({ earnings, stats }: { earnings: Earni
                             <CheckCircle className="text-muted-foreground h-4 w-4" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-lg font-bold md:text-xl">{formatCurrency(stats.paid_commission)}</div>
+                            <div className="text-lg font-bold md:text-xl">
+                                {isStaff ? 'Rp ***' : formatCurrency(stats.paid_commission)}
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

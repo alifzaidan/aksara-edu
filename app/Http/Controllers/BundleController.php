@@ -38,9 +38,14 @@ class BundleController extends Controller
         $draftBundles = (clone $baseStats)->where('status', 'draft')->count();
         $archivedBundles = (clone $baseStats)->where('status', 'archived')->count();
 
-        $totalRevenue = Invoice::where('status', 'paid')
-            ->whereHas('bundleEnrollments')
-            ->sum('nett_amount');
+        $user = Auth::user();
+        $isStaff = $user && $user->hasRole('staff') && !$user->hasRole('admin');
+
+        $totalRevenue = $isStaff
+            ? 0
+            : Invoice::where('status', 'paid')
+                ->whereHas('bundleEnrollments')
+                ->sum('nett_amount');
 
         $statistics = [
             'overview' => [
@@ -237,6 +242,18 @@ class BundleController extends Controller
         $discountPercentage = $totalOriginalPrice > 0
             ? round(($discountAmount / $totalOriginalPrice) * 100)
             : 0;
+
+        $user = Auth::user();
+        if ($user && $user->hasRole('staff') && !$user->hasRole('admin')) {
+            $bundle->enrollments->each(function ($enrollment) {
+                if ($enrollment->invoice) {
+                    $enrollment->invoice->amount = 0;
+                    $enrollment->invoice->nett_amount = 0;
+                    $enrollment->invoice->discount_amount = 0;
+                    $enrollment->invoice->transaction_fee = 0;
+                }
+            });
+        }
 
         return Inertia::render('admin/bundles/show', [
             'bundle' => $bundle,

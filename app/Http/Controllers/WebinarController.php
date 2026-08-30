@@ -87,9 +87,14 @@ class WebinarController extends Controller
             ->whereHas('webinarItems')
             ->count();
 
-        $totalRevenue = Invoice::where('status', 'paid')
-            ->whereHas('webinarItems')
-            ->sum('nett_amount');
+        $user = Auth::user();
+        $isStaff = $user && $user->hasRole('staff') && !$user->hasRole('admin');
+
+        $totalRevenue = $isStaff
+            ? 0
+            : Invoice::where('status', 'paid')
+                ->whereHas('webinarItems')
+                ->sum('nett_amount');
 
         $statistics = [
             'overview' => [
@@ -225,6 +230,16 @@ class WebinarController extends Controller
             ->whereDoesntHave('bundleEnrollments')
             ->latest()
             ->get();
+
+        $user = Auth::user();
+        if ($user && $user->hasRole('staff') && !$user->hasRole('admin')) {
+            $transactions->each(function ($tx) {
+                $tx->amount = 0;
+                $tx->discount_amount = 0;
+                $tx->transaction_fee = 0;
+                $tx->nett_amount = 0;
+            });
+        }
 
         $ratingTransactions = (clone $transactionQuery)
             ->latest()

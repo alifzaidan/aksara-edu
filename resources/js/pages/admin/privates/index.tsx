@@ -55,6 +55,7 @@ export default function PrivateIndex({ privateClasses, statistics, flash, filter
     const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
     const canManagePrivate = canManage('privates') && !isAffiliate;
+    const isStaff = auth.role.includes('staff') && !auth.role.includes('admin');
     const [showMoreStats, setShowMoreStats] = useState(false);
 
     useEffect(() => {
@@ -100,20 +101,22 @@ export default function PrivateIndex({ privateClasses, statistics, flash, filter
                             </div>
                         </div>
 
-                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <p className="text-muted-foreground text-xs font-medium">Total Pendapatan</p>
-                                    <h3 className="mt-1 text-lg font-bold text-purple-600 dark:text-purple-400">
-                                        {rupiahFormatter.format(statistics.revenue)}
-                                    </h3>
-                                    <p className="mt-1 text-xs text-teal-600 dark:text-teal-400">
-                                        {statistics.participants} peserta
-                                    </p>
+                        {!isStaff && (
+                            <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <p className="text-muted-foreground text-xs font-medium">Total Pendapatan</p>
+                                        <h3 className="mt-1 text-lg font-bold text-purple-600 dark:text-purple-400">
+                                            {rupiahFormatter.format(statistics.revenue)}
+                                        </h3>
+                                        <p className="mt-1 text-xs text-teal-600 dark:text-teal-400">
+                                            {statistics.participants} peserta
+                                        </p>
+                                    </div>
+                                    <DollarSign className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                                 </div>
-                                <DollarSign className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* ✅ MOBILE: Expandable Details */}
@@ -156,8 +159,8 @@ export default function PrivateIndex({ privateClasses, statistics, flash, filter
                         )}
                     </div>
 
-                    {/* ✅ DESKTOP: Overview Stats (4 cards) */}
-                    <div className="hidden gap-4 md:grid md:grid-cols-2 lg:grid-cols-4">
+                    {/* ✅ DESKTOP: Overview Stats */}
+                    <div className={`hidden gap-4 md:grid md:grid-cols-2 ${isStaff ? 'lg:grid-cols-3' : 'lg:grid-cols-4'}`}>
                         <div className="dark:to-background rounded-lg border bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm dark:from-blue-950/20">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -199,23 +202,25 @@ export default function PrivateIndex({ privateClasses, statistics, flash, filter
                             </div>
                         </div>
 
-                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-orange-50 to-white p-4 shadow-sm dark:from-orange-950/20">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-muted-foreground text-sm font-medium">Total Revenue</p>
-                                    <h3 className="mt-2 text-2xl font-bold text-orange-600 dark:text-orange-400">
-                                        {rupiahFormatter.format(statistics.revenue)}
-                                    </h3>
-                                </div>
-                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30">
-                                    <TrendingUp className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                        {!isStaff && (
+                            <div className="dark:to-background rounded-lg border bg-gradient-to-br from-orange-50 to-white p-4 shadow-sm dark:from-orange-950/20">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-muted-foreground text-sm font-medium">Total Revenue</p>
+                                        <h3 className="mt-2 text-2xl font-bold text-orange-600 dark:text-orange-400">
+                                            {rupiahFormatter.format(statistics.revenue)}
+                                        </h3>
+                                    </div>
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30">
+                                        <TrendingUp className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* ✅ DESKTOP: Additional Stats */}
-                    <div className="hidden gap-4 md:grid md:grid-cols-3">
+                    <div className={`hidden gap-4 md:grid ${isStaff ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
                         <div className="rounded-lg border p-4 shadow-sm">
                             <div className="mb-3 flex items-center gap-2">
                                 <FileText className="text-muted-foreground h-5 w-5" />
@@ -250,18 +255,20 @@ export default function PrivateIndex({ privateClasses, statistics, flash, filter
                             </div>
                         </div>
 
-                        <div className="rounded-lg border p-4 shadow-sm">
-                            <div className="mb-3 flex items-center gap-2">
-                                <DollarSign className="text-muted-foreground h-5 w-5" />
-                                <h4 className="font-semibold">Revenue</h4>
-                            </div>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Total Revenue</span>
-                                    <span className="font-medium text-orange-600">{rupiahFormatter.format(statistics.revenue)}</span>
+                        {!isStaff && (
+                            <div className="rounded-lg border p-4 shadow-sm">
+                                <div className="mb-3 flex items-center gap-2">
+                                    <DollarSign className="text-muted-foreground h-5 w-5" />
+                                    <h4 className="font-semibold">Revenue</h4>
+                                </div>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-muted-foreground">Total Revenue</span>
+                                        <span className="font-medium text-orange-600">{rupiahFormatter.format(statistics.revenue)}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
 

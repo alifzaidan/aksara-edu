@@ -100,6 +100,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
     const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
     const canManageBundle = canManage('bundles') && !isAffiliate;
+    const isStaff = auth.role.includes('staff') && !auth.role.includes('admin');
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -349,12 +350,16 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                     <div className="grid gap-4 md:grid-cols-2">
                                         <div className="rounded-lg border p-4">
                                             <h3 className="mb-3 text-sm font-medium text-gray-600">Total Harga Normal</h3>
-                                            <p className="text-2xl font-bold text-gray-900">{rupiahFormatter.format(totalOriginalPrice)}</p>
+                                            <p className="text-2xl font-bold text-gray-900">
+                                                {isStaff ? 'Rp ***' : rupiahFormatter.format(totalOriginalPrice)}
+                                            </p>
                                         </div>
                                         <div className="rounded-lg border border-green-200 bg-green-50 p-4">
                                             <h3 className="mb-3 text-sm font-medium text-green-700">Harga Bundle</h3>
-                                            <p className="text-2xl font-bold text-green-700">{rupiahFormatter.format(bundle.price)}</p>
-                                            {discountPercentage > 0 && (
+                                            <p className="text-2xl font-bold text-green-700">
+                                                {isStaff ? 'Rp ***' : rupiahFormatter.format(bundle.price)}
+                                            </p>
+                                            {discountPercentage > 0 && !isStaff && (
                                                 <p className="mt-2 text-xs text-green-600">
                                                     Hemat {discountPercentage}% ({rupiahFormatter.format(discountAmount)})
                                                 </p>
@@ -386,7 +391,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                                         </Badge>
                                                                     </div>
                                                                     <span className="text-sm font-medium text-gray-600">
-                                                                        {rupiahFormatter.format(item.price)}
+                                                                        {isStaff ? 'Rp ***' : rupiahFormatter.format(item.price)}
                                                                     </span>
                                                                 </div>
                                                             ) : (
@@ -403,7 +408,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                                         </Badge>
                                                                     </div>
                                                                     <span className="text-sm font-medium text-red-600">
-                                                                        {rupiahFormatter.format(item.price)}
+                                                                        {isStaff ? 'Rp ***' : rupiahFormatter.format(item.price)}
                                                                     </span>
                                                                 </div>
                                                             ),
@@ -432,7 +437,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                                         </Badge>
                                                                     </div>
                                                                     <span className="text-sm font-medium text-gray-600">
-                                                                        {rupiahFormatter.format(item.price)}
+                                                                        {isStaff ? 'Rp ***' : rupiahFormatter.format(item.price)}
                                                                     </span>
                                                                 </div>
                                                             ) : (
@@ -449,7 +454,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                                         </Badge>
                                                                     </div>
                                                                     <span className="text-sm font-medium text-red-600">
-                                                                        {rupiahFormatter.format(item.price)}
+                                                                        {isStaff ? 'Rp ***' : rupiahFormatter.format(item.price)}
                                                                     </span>
                                                                 </div>
                                                             ),
@@ -478,7 +483,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                                         </Badge>
                                                                     </div>
                                                                     <span className="text-sm font-medium text-gray-600">
-                                                                        {rupiahFormatter.format(item.price)}
+                                                                        {isStaff ? 'Rp ***' : rupiahFormatter.format(item.price)}
                                                                     </span>
                                                                 </div>
                                                             ) : (
@@ -495,7 +500,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                                         </Badge>
                                                                     </div>
                                                                     <span className="text-sm font-medium text-red-600">
-                                                                        {rupiahFormatter.format(item.price)}
+                                                                        {isStaff ? 'Rp ***' : rupiahFormatter.format(item.price)}
                                                                     </span>
                                                                 </div>
                                                             ),
@@ -551,7 +556,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                             <TabsContent value="enrollments">
                                 <div className="space-y-4">
                                     {/* Stats Cards */}
-                                    <div className="grid gap-4 md:grid-cols-3">
+                                    <div className={`grid gap-4 ${isStaff ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
                                         <Card>
                                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                                 <CardTitle className="text-sm font-medium">Total Pembelian</CardTitle>
@@ -574,16 +579,18 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                             </CardContent>
                                         </Card>
 
-                                        <Card>
-                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                                                <Package className="text-muted-foreground h-4 w-4" />
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="text-2xl font-bold">{rupiahFormatter.format(totalRevenue)}</div>
-                                                <p className="text-muted-foreground text-xs">Dari pembayaran sukses</p>
-                                            </CardContent>
-                                        </Card>
+                                        {!isStaff && (
+                                            <Card>
+                                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                    <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                                                    <Package className="text-muted-foreground h-4 w-4" />
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <div className="text-2xl font-bold">{rupiahFormatter.format(totalRevenue)}</div>
+                                                    <p className="text-muted-foreground text-xs">Dari pembayaran sukses</p>
+                                                </CardContent>
+                                            </Card>
+                                        )}
                                     </div>
 
                                     {/* Enrollments Table */}
@@ -624,7 +631,11 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                                         </code>
                                                                     </TableCell>
                                                                     <TableCell className="font-medium">
-                                                                        {rupiahFormatter.format(enrollment.invoice.amount)}
+                                                                        {isStaff ? (
+                                                                            <span className="text-muted-foreground">Rp ***</span>
+                                                                        ) : (
+                                                                            rupiahFormatter.format(enrollment.invoice.amount)
+                                                                        )}
                                                                     </TableCell>
                                                                     <TableCell>
                                                                         <Badge

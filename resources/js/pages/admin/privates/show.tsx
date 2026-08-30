@@ -54,6 +54,7 @@ export default function ShowPrivate({ privateClass, transactions, flash }: Props
     const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
     const canManagePrivate = canManage('privates') && !isAffiliate;
+    const isStaff = auth.role.includes('staff') && !auth.role.includes('admin');
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Private Class', href: route('privates.index') },
@@ -123,7 +124,9 @@ export default function ShowPrivate({ privateClass, transactions, flash }: Props
                                         {privateClass.location && <TableRow><TableCell>Lokasi</TableCell><TableCell>{privateClass.location}</TableCell></TableRow>}
                                         <TableRow><TableCell>Harga</TableCell>
                                             <TableCell>
-                                                {privateClass.price === 0 ? <span>Gratis</span> : (
+                                                {privateClass.price === 0 ? <span>Gratis</span> : isStaff ? (
+                                                    <span className="text-base font-semibold text-muted-foreground">Rp ***</span>
+                                                ) : (
                                                     <span>
                                                         {privateClass.strikethrough_price > 0 && <span className="text-xs text-gray-500 line-through">{rupiahFormatter.format(privateClass.strikethrough_price)} </span>}
                                                         <span className="text-base font-semibold">{rupiahFormatter.format(privateClass.price)}</span>
@@ -179,7 +182,7 @@ export default function ShowPrivate({ privateClass, transactions, flash }: Props
                                                         <TableCell>{trx.user?.name || '-'}</TableCell>
                                                         <TableCell>{trx.user?.email || '-'}</TableCell>
                                                         <TableCell><Badge className={`capitalize border-0 ${trx.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-800'}`}>{trx.status}</Badge></TableCell>
-                                                        <TableCell>{rupiahFormatter.format(trx.nett_amount || 0)}</TableCell>
+                                                        <TableCell>{isStaff ? <span className="text-muted-foreground">Rp ***</span> : rupiahFormatter.format(trx.nett_amount || 0)}</TableCell>
                                                         <TableCell className="text-muted-foreground text-xs">{format(new Date(trx.created_at), 'dd MMM yyyy', { locale: localeId })}</TableCell>
                                                     </TableRow>
                                                 ))}

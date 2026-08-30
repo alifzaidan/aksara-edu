@@ -26,8 +26,9 @@ class TransactionsExport implements
     protected $certificationProgramId;
     protected $title;
     protected $userName;
+    protected $isStaff;
 
-    public function __construct($filters = [])
+    public function __construct($filters = [], ?bool $isStaff = null)
     {
         $this->startDate = $filters['start_date'] ?? null;
         $this->endDate = $filters['end_date'] ?? null;
@@ -41,6 +42,7 @@ class TransactionsExport implements
         $this->certificationProgramId = $filters['certification_program_id'] ?? null;
         $this->title = $filters['title'] ?? null;
         $this->userName = $filters['user_name'] ?? null;
+        $this->isStaff = $isStaff ?? (auth()->check() && auth()->user()->hasRole('staff') && !auth()->user()->hasRole('admin'));
     }
 
     public function query()
@@ -214,6 +216,27 @@ class TransactionsExport implements
 
     public function headings(): array
     {
+        if ($this->isStaff) {
+            return [
+                'No',
+                'Kode Invoice',
+                'Nama Pembeli',
+                'Email',
+                'No. HP',
+                'Instansi',
+                'Kota Domisili',
+                'Nama Produk',
+                'Jenis Produk',
+                'Status',
+                'Jenis Pembayaran',
+                'Metode Pembayaran',
+                'Channel Pembayaran',
+                'Afiliasi',
+                'Tanggal Pembelian',
+                'Tanggal Pembayaran',
+            ];
+        }
+
         return [
             'No',
             'Kode Invoice',
@@ -243,6 +266,27 @@ class TransactionsExport implements
         static $index = 0;
         $index++;
 
+        if ($this->isStaff) {
+            return [
+                $index,
+                $invoice->invoice_code,
+                $invoice->user->name ?? '-',
+                $invoice->user->email ?? '-',
+                $invoice->user->phone_number ?? '-',
+                $invoice->user->instance ?? '-',
+                $invoice->user->city ?? '-',
+                $this->getProductNames($invoice),
+                $this->getProductType($invoice),
+                ucfirst($invoice->status),
+                $invoice->nett_amount === 0 ? 'Gratis' : 'Berbayar',
+                $invoice->payment_method ?? '-',
+                $invoice->payment_channel ?? '-',
+                $invoice->user->referrer->name ?? '-',
+                $invoice->created_at ? $invoice->created_at->format('d M Y, H:i') : '-',
+                $invoice->paid_at ? Carbon::parse($invoice->paid_at)->format('d M Y, H:i') : '-',
+            ];
+        }
+
         return [
             $index,
             $invoice->invoice_code,
@@ -269,6 +313,27 @@ class TransactionsExport implements
 
     public function columnWidths(): array
     {
+        if ($this->isStaff) {
+            return [
+                'A' => 5,  // No
+                'B' => 15, // Kode Invoice
+                'C' => 25, // Nama Pembeli
+                'D' => 30, // Email
+                'E' => 15, // No. HP
+                'F' => 20, // Instansi
+                'G' => 20, // Kota Domisili
+                'H' => 40, // Nama Produk
+                'I' => 15, // Jenis Produk
+                'J' => 10, // Status
+                'K' => 15, // Jenis Pembayaran
+                'L' => 18, // Metode Pembayaran
+                'M' => 18, // Channel Pembayaran
+                'N' => 25, // Afiliasi
+                'O' => 20, // Tanggal Pembelian
+                'P' => 20, // Tanggal Pembayaran
+            ];
+        }
+
         return [
             'A' => 5,  // No
             'B' => 15, // Kode Invoice
@@ -295,13 +360,14 @@ class TransactionsExport implements
 
     public function styles(Worksheet $sheet)
     {
+        $lastCol = $this->isStaff ? 'P' : 'T';
         return [
             // Style header row
             1 => [
                 'font' => ['bold' => true],
                 'fill' => [
                     'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => 'E0E0E0']
+                    'startColor' => ['rgb' => 'E0E0E0'],
                 ],
             ],
         ];

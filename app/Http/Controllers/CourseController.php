@@ -9,6 +9,7 @@ use App\Models\CourseRating;
 use App\Models\Invoice;
 use App\Models\Tool;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -73,9 +74,14 @@ class CourseController extends Controller
             ->whereHas('courseItems')
             ->count();
 
-        $totalRevenue = Invoice::where('status', 'paid')
-            ->whereHas('courseItems')
-            ->sum('nett_amount');
+        $user = Auth::user();
+        $isStaff = $user && $user->hasRole('staff') && !$user->hasRole('admin');
+
+        $totalRevenue = $isStaff
+            ? 0
+            : Invoice::where('status', 'paid')
+                ->whereHas('courseItems')
+                ->sum('nett_amount');
 
         $statistics = [
             'overview' => [
@@ -234,6 +240,16 @@ class CourseController extends Controller
             ->whereDoesntHave('bundleEnrollments')
             ->latest()
             ->get();
+
+        $user = Auth::user();
+        if ($user && $user->hasRole('staff') && !$user->hasRole('admin')) {
+            $transactions->each(function ($tx) {
+                $tx->amount = 0;
+                $tx->discount_amount = 0;
+                $tx->transaction_fee = 0;
+                $tx->nett_amount = 0;
+            });
+        }
 
         $ratings = CourseRating::with(['user'])
             ->where('course_id', $course->id)

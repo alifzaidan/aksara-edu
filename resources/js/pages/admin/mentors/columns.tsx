@@ -6,13 +6,27 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { rupiahFormatter } from '@/lib/utils';
-import { Link, router } from '@inertiajs/react';
+import { SharedData } from '@/types';
+import { Link, router, usePage } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { BookText, FileText, Folder, MonitorPlay, Presentation, Trash } from 'lucide-react';
 
 import { usePermission } from '@/hooks/use-permission';
+
+function MentorEarningsCell({ row }: { row: { original: Mentor } }) {
+    const { auth } = usePage<SharedData>().props;
+    const { roles, isAdmin } = usePermission();
+    const isStaff = (roles?.includes('staff') || auth?.role?.includes('staff')) && !isAdmin && !auth?.role?.includes('admin');
+
+    if (isStaff) {
+        return <div className="font-medium text-muted-foreground">Rp ***</div>;
+    }
+
+    const totalEarnings = row.original.total_earnings || 0;
+    return <div className="font-medium text-green-600">{rupiahFormatter.format(totalEarnings)}</div>;
+}
 
 export default function MentorActions({ mentor }: { mentor: Mentor }) {
     const { canManage } = usePermission();
@@ -204,10 +218,7 @@ export const columns: ColumnDef<Mentor>[] = [
     {
         accessorKey: 'total_earnings',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Total Pendapatan" />,
-        cell: ({ row }) => {
-            const totalEarnings = row.original.total_earnings || 0;
-            return <div className="font-medium text-green-600">{rupiahFormatter.format(totalEarnings)}</div>;
-        },
+        cell: ({ row }) => <MentorEarningsCell row={row} />,
     },
     {
         accessorKey: 'created_at',

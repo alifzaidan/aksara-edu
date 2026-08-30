@@ -10,6 +10,7 @@ use App\Models\Course;
 use App\Models\User;
 use App\Models\Webinar;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 
@@ -17,6 +18,9 @@ class MentorController extends Controller
 {
     public function index(Request $request)
     {
+        $user = Auth::user();
+        $isStaff = $user && $user->hasRole('staff') && !$user->hasRole('admin');
+
         $query = User::role('mentor');
 
         if ($request->filled('search')) {
@@ -40,9 +44,9 @@ class MentorController extends Controller
         $totalWebinars = Webinar::count();
         $totalBootcamps = Bootcamp::count();
 
-        $totalEarnings = (int) AffiliateEarning::sum('amount');
-        $paidCommission = (int) AffiliateWithdrawal::sum('amount');
-        $pendingCommission = max(0, $totalEarnings - $paidCommission);
+        $totalEarnings = $isStaff ? 0 : (int) AffiliateEarning::sum('amount');
+        $paidCommission = $isStaff ? 0 : (int) AffiliateWithdrawal::sum('amount');
+        $pendingCommission = $isStaff ? 0 : max(0, $totalEarnings - $paidCommission);
 
         $statistics = [
             'overview' => [
@@ -73,8 +77,8 @@ class MentorController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
-        $mentors->through(function ($mentor) {
-            $mentor->total_earnings = $mentor->affiliate_earnings_sum_amount ?? 0;
+        $mentors->through(function ($mentor) use ($isStaff) {
+            $mentor->total_earnings = $isStaff ? 0 : ($mentor->affiliate_earnings_sum_amount ?? 0);
             unset($mentor->affiliate_earnings_sum_amount);
             return $mentor;
         });
@@ -146,6 +150,9 @@ class MentorController extends Controller
 
     public function show(string $id)
     {
+        $user = Auth::user();
+        $isStaff = $user && $user->hasRole('staff') && !$user->hasRole('admin');
+
         $mentor = User::findOrFail($id);
         $earnings = AffiliateEarning::with([
             'invoice.user',
@@ -161,9 +168,23 @@ class MentorController extends Controller
             ->orderBy('withdrawn_at', 'desc')
             ->get();
 
-        $totalCommission = $earnings->sum('amount');
-        $paidCommission = $withdrawals->sum('amount');
-        $availableCommission = $totalCommission - $paidCommission;
+        $totalCommission = $isStaff ? 0 : $earnings->sum('amount');
+        $paidCommission = $isStaff ? 0 : $withdrawals->sum('amount');
+        $availableCommission = $isStaff ? 0 : ($totalCommission - $paidCommission);
+
+        if ($isStaff) {
+            $earnings->transform(function ($e) {
+                $e->amount = 0;
+                if ($e->invoice) {
+                    $e->invoice->nett_amount = 0;
+                }
+                return $e;
+            });
+            $withdrawals->transform(function ($w) {
+                $w->amount = 0;
+                return $w;
+            });
+        }
 
         $courses = $mentor->courses()
             ->with(['category', 'tools'])

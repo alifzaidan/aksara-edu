@@ -1,7 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { rupiahFormatter } from '@/lib/utils';
-import { Link } from '@inertiajs/react';
+import { SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Calendar, CalendarDays, Rocket, Tag } from 'lucide-react';
@@ -27,6 +28,8 @@ interface ShowBootcampsProps {
 }
 
 export default function ShowBootcamps({ bootcamps }: ShowBootcampsProps) {
+    const { auth } = usePage<SharedData>().props;
+    const isStaff = auth.role?.includes('staff') && !auth.role?.includes('admin');
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'published':
@@ -138,7 +141,9 @@ export default function ShowBootcamps({ bootcamps }: ShowBootcampsProps) {
 
                                             {/* Price */}
                                             <div className="flex flex-col">
-                                                {hasDiscount ? (
+                                                {isStaff ? (
+                                                    <span className="text-base font-bold text-muted-foreground">Rp ***</span>
+                                                ) : hasDiscount ? (
                                                     <div className="flex items-baseline gap-2">
                                                         <span className="text-base font-bold text-green-600">
                                                             {rupiahFormatter.format(bootcamp.discount_price!)}

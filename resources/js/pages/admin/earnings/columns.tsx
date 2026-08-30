@@ -83,7 +83,7 @@ export type Earning = {
     created_at: string;
 };
 
-export const getColumns = (isAdmin: boolean): ColumnDef<Earning>[] => {
+export const getColumns = (isAdmin: boolean, isStaff: boolean = false): ColumnDef<Earning>[] => {
     const columns: ColumnDef<Earning>[] = [
         {
             id: 'items',
@@ -114,8 +114,11 @@ export const getColumns = (isAdmin: boolean): ColumnDef<Earning>[] => {
             id: 'price',
             header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
             cell: ({ row }) => {
+                if (isStaff) {
+                    return <div className="font-medium text-muted-foreground">Rp ***</div>;
+                }
                 const invoice = row.original.invoice;
-                const totalPrice = invoice.nett_amount;
+                const totalPrice = invoice?.nett_amount ?? 0;
 
                 // Format total harga sebagai mata uang Rupiah
                 const formatted = new Intl.NumberFormat('id-ID', {
@@ -131,6 +134,9 @@ export const getColumns = (isAdmin: boolean): ColumnDef<Earning>[] => {
             accessorKey: 'amount',
             header: ({ column }) => <DataTableColumnHeader column={column} title="Komisi" />,
             cell: ({ row }) => {
+                if (isStaff) {
+                    return <div className="font-medium text-muted-foreground">Rp ***</div>;
+                }
                 const formatted = new Intl.NumberFormat('id-ID', {
                     style: 'currency',
                     currency: 'IDR',
@@ -170,8 +176,8 @@ export const getColumns = (isAdmin: boolean): ColumnDef<Earning>[] => {
         },
     ];
 
-    // Jika pengguna adalah admin, tambahkan kolom Aksi di awal
-    if (isAdmin) {
+    // Jika pengguna adalah admin dan bukan staff, tambahkan kolom Aksi di awal
+    if (isAdmin && !isStaff) {
         columns.unshift({
             id: 'actions',
             header: () => <div className="text-center">Aksi</div>,

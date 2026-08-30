@@ -32,6 +32,7 @@ interface Course {
 export default function CourseDetail({ course, averageRating }: { course: Course; averageRating?: number }) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
+    const isStaff = auth.role.includes('staff') && !auth.role.includes('admin');
 
     const affiliateUrls = useMemo(() => {
         const affiliateCode = auth.user.affiliate_code;
@@ -237,6 +238,8 @@ export default function CourseDetail({ course, averageRating }: { course: Course
                         <TableCell>
                             {course.price === 0 ? (
                                 <span>Gratis</span>
+                            ) : isStaff ? (
+                                <span className="text-base font-semibold text-muted-foreground">Rp ***</span>
                             ) : (
                                 <span>
                                     {course.strikethrough_price > 0 && (

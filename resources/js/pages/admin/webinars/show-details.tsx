@@ -52,6 +52,7 @@ function getYoutubeId(url: string) {
 export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
     const { auth } = usePage<SharedData>().props;
     const isAffiliate = auth.role.includes('affiliate');
+    const isStaff = auth.role.includes('staff') && !auth.role.includes('admin');
     const [isDeleting, setIsDeleting] = useState(false);
 
     const getInitials = useInitials();
@@ -249,6 +250,8 @@ export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
                         <TableCell>
                             {webinar.price === 0 ? (
                                 <span>Gratis</span>
+                            ) : isStaff ? (
+                                <span className="text-base font-semibold text-muted-foreground">Rp ***</span>
                             ) : (
                                 <span>
                                     {webinar.strikethrough_price > 0 && (

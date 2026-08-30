@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Traits\MessaraTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -253,6 +254,16 @@ class CertificationProgramController extends Controller
         $transactions = (clone $transactionQuery)
             ->latest()
             ->get();
+
+        $user = Auth::user();
+        if ($user && $user->hasRole('staff') && !$user->hasRole('admin')) {
+            $transactions->each(function ($tx) {
+                $tx->amount = 0;
+                $tx->discount_amount = 0;
+                $tx->transaction_fee = 0;
+                $tx->nett_amount = 0;
+            });
+        }
 
         return Inertia::render('admin/certification-programs/show', [
             'program' => $program,

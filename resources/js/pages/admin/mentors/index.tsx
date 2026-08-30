@@ -67,8 +67,10 @@ interface MentorProps {
 import { usePermission } from '@/hooks/use-permission';
 
 export default function Mentors({ mentors, statistics, flash, filters }: MentorProps) {
+    const { auth } = usePage<SharedData>().props;
     const { canManage } = usePermission();
     const canManageMentor = canManage('mentors');
+    const isStaff = auth.role.includes('staff') && !auth.role.includes('admin');
     const [open, setOpen] = useState(false);
     const [showMoreStats, setShowMoreStats] = useState(false);
 
@@ -118,24 +120,26 @@ export default function Mentors({ mentors, statistics, flash, filters }: MentorP
                             </div>
                         </div>
 
-                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <p className="text-muted-foreground text-xs font-medium">Total Komisi</p>
-                                    <h3 className="mt-1 text-lg font-bold text-purple-600 dark:text-purple-400">
-                                        {rupiahFormatter.format(statistics.earnings.total_earnings)}
-                                    </h3>
-                                    <p className="mt-1 text-xs text-teal-600 dark:text-teal-400">
-                                        {statistics.content.total_courses +
-                                            statistics.content.total_articles +
-                                            statistics.content.total_webinars +
-                                            statistics.content.total_bootcamps}{' '}
-                                        konten
-                                    </p>
+                        {!isStaff && (
+                            <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <p className="text-muted-foreground text-xs font-medium">Total Komisi</p>
+                                        <h3 className="mt-1 text-lg font-bold text-purple-600 dark:text-purple-400">
+                                            {rupiahFormatter.format(statistics.earnings.total_earnings)}
+                                        </h3>
+                                        <p className="mt-1 text-xs text-teal-600 dark:text-teal-400">
+                                            {statistics.content.total_courses +
+                                                statistics.content.total_articles +
+                                                statistics.content.total_webinars +
+                                                statistics.content.total_bootcamps}{' '}
+                                            konten
+                                        </p>
+                                    </div>
+                                    <DollarSign className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                                 </div>
-                                <DollarSign className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* ✅ MOBILE: Expandable Details */}
@@ -156,10 +160,14 @@ export default function Mentors({ mentors, statistics, flash, filters }: MentorP
 
                         {showMoreStats && (
                             <div className="mt-4 space-y-3">
-                                {/* Status */}
+                                {/* Mentor Status */}
                                 <div className="rounded-lg border p-3 text-sm">
                                     <h4 className="mb-2 font-semibold">Status Mentor</h4>
                                     <div className="space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground text-xs">Aktif</span>
+                                            <span className="text-xs font-medium text-green-600">{statistics.overview.active_mentors}</span>
+                                        </div>
                                         <div className="flex items-center justify-between">
                                             <span className="text-muted-foreground text-xs">Tidak Aktif</span>
                                             <span className="text-xs font-medium text-gray-600">{statistics.overview.inactive_mentors}</span>
@@ -167,30 +175,31 @@ export default function Mentors({ mentors, statistics, flash, filters }: MentorP
                                     </div>
                                 </div>
 
-                                {/* Content & Commission */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="rounded-lg border p-3 text-sm">
-                                        <h4 className="mb-2 text-xs font-semibold">Konten</h4>
-                                        <div className="space-y-1 text-xs">
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Kelas</span>
-                                                <span className="font-medium">{statistics.content.total_courses}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Bootcamp</span>
-                                                <span className="font-medium">{statistics.content.total_bootcamps}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Webinar</span>
-                                                <span className="font-medium">{statistics.content.total_webinars}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Artikel</span>
-                                                <span className="font-medium">{statistics.content.total_articles}</span>
-                                            </div>
+                                {/* Content Breakdown */}
+                                <div className="rounded-lg border p-3 text-sm">
+                                    <h4 className="mb-2 font-semibold">Konten Dibuat</h4>
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Kelas</span>
+                                            <span className="font-medium text-blue-600">{statistics.content.total_courses}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Bootcamp</span>
+                                            <span className="font-medium text-purple-600">{statistics.content.total_bootcamps}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Webinar</span>
+                                            <span className="font-medium text-green-600">{statistics.content.total_webinars}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Artikel</span>
+                                            <span className="font-medium text-orange-600">{statistics.content.total_articles}</span>
                                         </div>
                                     </div>
+                                </div>
 
+                                {/* Earnings Breakdown */}
+                                {!isStaff && (
                                     <div className="rounded-lg border p-3 text-sm">
                                         <h4 className="mb-2 text-xs font-semibold">Komisi</h4>
                                         <div className="space-y-1 text-xs">
@@ -208,13 +217,13 @@ export default function Mentors({ mentors, statistics, flash, filters }: MentorP
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         )}
                     </div>
 
-                    {/* ✅ DESKTOP: Stats (4 cards) */}
-                    <div className="hidden gap-4 md:grid md:grid-cols-2 lg:grid-cols-4">
+                    {/* ✅ DESKTOP: Stats */}
+                    <div className={`hidden gap-4 md:grid ${isStaff ? 'md:grid-cols-3' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
                         <div className="dark:to-background rounded-lg border bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm dark:from-blue-950/20">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -244,22 +253,24 @@ export default function Mentors({ mentors, statistics, flash, filters }: MentorP
                             </div>
                         </div>
 
-                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-muted-foreground text-sm font-medium">Total Komisi</p>
-                                    <h3 className="mt-2 text-2xl font-bold text-purple-600 dark:text-purple-400">
-                                        {rupiahFormatter.format(statistics.earnings.total_earnings)}
-                                    </h3>
-                                    <p className="mt-1 text-xs text-purple-600 dark:text-purple-400">
-                                        {rupiahFormatter.format(statistics.earnings.paid_commission)} dibayar
-                                    </p>
-                                </div>
-                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
-                                    <DollarSign className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                        {!isStaff && (
+                            <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-muted-foreground text-sm font-medium">Total Komisi</p>
+                                        <h3 className="mt-2 text-2xl font-bold text-purple-600 dark:text-purple-400">
+                                            {rupiahFormatter.format(statistics.earnings.total_earnings)}
+                                        </h3>
+                                        <p className="mt-1 text-xs text-purple-600 dark:text-purple-400">
+                                            {rupiahFormatter.format(statistics.earnings.paid_commission)} dibayar
+                                        </p>
+                                    </div>
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
+                                        <DollarSign className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         <div className="dark:to-background rounded-lg border bg-gradient-to-br from-orange-50 to-white p-4 shadow-sm dark:from-orange-950/20">
                             <div className="flex items-center justify-between">

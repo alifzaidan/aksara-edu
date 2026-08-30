@@ -20,13 +20,15 @@ class EarningsExport implements FromQuery, WithHeadings, WithMapping, WithColumn
     protected $endDate;
     protected $userId;
     protected $isAdmin;
+    protected $isStaff;
 
-    public function __construct($filters = [], $userId = null, $isAdmin = false)
+    public function __construct($filters = [], $userId = null, $isAdmin = false, $isStaff = false)
     {
         $this->startDate = $filters['start_date'] ?? null;
         $this->endDate   = $filters['end_date'] ?? null;
         $this->userId    = $userId;
         $this->isAdmin   = $isAdmin;
+        $this->isStaff   = $isStaff;
     }
 
     public function query()
@@ -40,8 +42,8 @@ class EarningsExport implements FromQuery, WithHeadings, WithMapping, WithColumn
             'invoice.certificationProgramItems.certificationProgram',
         ]);
 
-        // Non-admin hanya bisa export data miliknya sendiri
-        if (!$this->isAdmin) {
+        // Non-admin hanya bisa export data miliknya sendiri (kecuali staff yang melihat data global)
+        if (!$this->isAdmin && !$this->isStaff) {
             $query->where('affiliate_user_id', $this->userId);
         }
 
@@ -58,6 +60,18 @@ class EarningsExport implements FromQuery, WithHeadings, WithMapping, WithColumn
 
     public function headings(): array
     {
+        if ($this->isStaff) {
+            return [
+                'No',
+                'Kode Invoice',
+                'Nama Afiliator',
+                'Nama Produk',
+                'Rate (%)',
+                'Status',
+                'Tanggal',
+            ];
+        }
+
         return [
             'No',
             'Kode Invoice',
@@ -96,6 +110,18 @@ class EarningsExport implements FromQuery, WithHeadings, WithMapping, WithColumn
             $names[] = $item->certificationProgram->title ?? '-';
         }
 
+        if ($this->isStaff) {
+            return [
+                $index,                                              // A: No        → integer
+                $invoice->invoice_code ?? '-',                       // B: Invoice   → text
+                $invoice->user->name ?? '-',                         // C: Afiliator → text
+                implode(', ', $names) ?: '-',                        // D: Produk    → text
+                (float) ($earning->rate / 100),                      // E: Rate      → number (format %)
+                ucfirst($earning->status),                           // F: Status    → text
+                $earning->created_at ? $earning->created_at->format('d M Y, H:i') : '-', // G: Tanggal
+            ];
+        }
+
         $totalPrice = $invoice->nett_amount;
 
         return [
@@ -117,6 +143,12 @@ class EarningsExport implements FromQuery, WithHeadings, WithMapping, WithColumn
      */
     public function columnFormats(): array
     {
+        if ($this->isStaff) {
+            return [
+                'E' => '0.00%',        // Rate   → 10.00%
+            ];
+        }
+
         return [
             'E' => '"Rp "#,##0',   // Harga  → Rp 1.500.000
             'F' => '"Rp "#,##0',   // Komisi → Rp 150.000
@@ -126,6 +158,18 @@ class EarningsExport implements FromQuery, WithHeadings, WithMapping, WithColumn
 
     public function columnWidths(): array
     {
+        if ($this->isStaff) {
+            return [
+                'A' => 5,   // No
+                'B' => 18,  // Kode Invoice
+                'C' => 25,  // Nama Afiliator
+                'D' => 45,  // Nama Produk
+                'E' => 10,  // Rate
+                'F' => 12,  // Status
+                'G' => 22,  // Tanggal
+            ];
+        }
+
         return [
             'A' => 5,   // No
             'B' => 18,  // Kode Invoice
@@ -141,8 +185,9 @@ class EarningsExport implements FromQuery, WithHeadings, WithMapping, WithColumn
 
     public function styles(Worksheet $sheet)
     {
+        $lastCol = $this->isStaff ? 'G' : 'I';
         // Baris header: bold + background abu-abu
-        $sheet->getStyle('A1:I1')->applyFromArray([
+        $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
             'font' => ['bold' => true],
             'fill' => [
                 'fillType'   => Fill::FILL_SOLID,
@@ -153,7 +198,8 @@ class EarningsExport implements FromQuery, WithHeadings, WithMapping, WithColumn
         // Rata kanan untuk kolom angka (Harga, Komisi, Rate)
         $lastRow = $sheet->getHighestRow();
         if ($lastRow > 1) {
-            $sheet->getStyle("E2:G{$lastRow}")->getAlignment()
+            $alignRange = $this->isStaff ? "E2:E{$lastRow}" : "E2:G{$lastRow}";
+            $sheet->getStyle($alignRange)->getAlignment()
                 ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
         }
 

@@ -1,4 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
+import { SharedData } from '@/types';
+import { usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { CheckCircle } from 'lucide-react';
@@ -13,6 +15,9 @@ interface Withdrawal {
 }
 
 export default function MentorWithdrawals({ withdrawals }: { withdrawals: Withdrawal[] }) {
+    const { auth } = usePage<SharedData>().props;
+    const isStaff = auth.role?.includes('staff') && !auth.role?.includes('admin');
+
     if (!withdrawals || withdrawals.length === 0) {
         return (
             <div className="space-y-6 rounded-lg border p-4">
@@ -41,7 +46,9 @@ export default function MentorWithdrawals({ withdrawals }: { withdrawals: Withdr
                                 <div className="flex flex-1 items-center gap-3">
                                     <CheckCircle className="h-5 w-5 text-green-600" />
                                     <div>
-                                        <p className="text-lg font-semibold">{formatCurrency(withdrawal.amount)}</p>
+                                        <p className="text-lg font-semibold">
+                                            {isStaff ? 'Rp ***' : formatCurrency(withdrawal.amount)}
+                                        </p>
                                         <p className="text-muted-foreground text-sm">
                                             {format(new Date(withdrawal.withdrawn_at), 'dd MMMM yyyy HH:mm', { locale: id })}
                                         </p>
@@ -58,7 +65,7 @@ export default function MentorWithdrawals({ withdrawals }: { withdrawals: Withdr
             <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950/20">
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Penarikan Keseluruhan</p>
                 <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                    {formatCurrency(withdrawals.reduce((sum, w) => sum + w.amount, 0))}
+                    {isStaff ? 'Rp ***' : formatCurrency(withdrawals.reduce((sum, w) => sum + w.amount, 0))}
                 </p>
             </div>
         </div>

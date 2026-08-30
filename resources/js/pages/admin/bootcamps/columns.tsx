@@ -94,6 +94,27 @@ export type Bootcamp = {
     } | null;
 };
 
+function BootcampPriceCell({ bootcamp }: { bootcamp: Bootcamp }) {
+    const { auth } = usePage<SharedData>().props;
+    const { roles, isAdmin } = usePermission();
+    const isStaff = (roles?.includes('staff') || auth?.role?.includes('staff')) && !isAdmin && !auth?.role?.includes('admin');
+
+    const price = bootcamp.price;
+    if (price === 0) {
+        return <div className="text-base font-semibold">Gratis</div>;
+    }
+    if (isStaff) {
+        return <div className="text-base font-semibold text-muted-foreground">Rp ***</div>;
+    }
+    const strikethroughPrice = bootcamp.strikethrough_price;
+    return (
+        <div>
+            {strikethroughPrice > 0 && <div className="text-xs text-gray-500 line-through">{rupiahFormatter.format(strikethroughPrice)}</div>}
+            <div className="text-base font-semibold">{rupiahFormatter.format(price)}</div>
+        </div>
+    );
+}
+
 export const columns: ColumnDef<Bootcamp>[] = [
     {
         accessorKey: 'no',
@@ -120,6 +141,10 @@ export const columns: ColumnDef<Bootcamp>[] = [
         header: ({ column }) => <DataTableColumnHeader column={column} title="Kategori" />,
     },
     {
+        accessorKey: 'user.name',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Mentor" />,
+    },
+    {
         accessorKey: 'thumbnail',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Thumbnail" />,
         cell: ({ row }) => {
@@ -128,6 +153,11 @@ export const columns: ColumnDef<Bootcamp>[] = [
             const thumbnailUrl = thumbnail ? `/storage/${thumbnail}` : '/assets/images/placeholder.png';
             return <img src={thumbnailUrl} alt={title} className="h-16 rounded object-cover" />;
         },
+    },
+    {
+        accessorKey: 'price',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
+        cell: ({ row }) => <BootcampPriceCell bootcamp={row.original} />,
     },
     {
         accessorKey: 'start_date',
@@ -166,23 +196,6 @@ export const columns: ColumnDef<Bootcamp>[] = [
                             <span>-</span>
                         )}
                     </div>
-                </div>
-            );
-        },
-    },
-    {
-        accessorKey: 'price',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
-        cell: ({ row }) => {
-            const strikethroughPrice = row.original.strikethrough_price;
-            const price = row.original.price;
-            if (price === 0) {
-                return <div className="text-base font-semibold">Gratis</div>;
-            }
-            return (
-                <div>
-                    {strikethroughPrice > 0 && <div className="text-xs text-gray-500 line-through">{rupiahFormatter.format(strikethroughPrice)}</div>}
-                    <div className="text-base font-semibold">{rupiahFormatter.format(price)}</div>
                 </div>
             );
         },

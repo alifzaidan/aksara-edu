@@ -27,6 +27,50 @@ export interface BundleTransactionInvoice {
     created_at: string;
 }
 
+import { usePermission } from '@/hooks/use-permission';
+import { Row } from '@tanstack/react-table';
+
+function PriceCell({ row }: { row: Row<BundleTransactionInvoice> }) {
+    const { roles, isAdmin } = usePermission();
+    const isStaff = roles.includes('staff') && !isAdmin;
+
+    if (isStaff) {
+        return <div className="font-medium text-muted-foreground">Rp ***</div>;
+    }
+
+    const formatted = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+    }).format(row.original.amount);
+    return <div className="font-medium">{formatted}</div>;
+}
+
+function ActionCell({ row }: { row: Row<BundleTransactionInvoice> }) {
+    const { roles, isAdmin } = usePermission();
+    const isStaff = roles.includes('staff') && !isAdmin;
+    const invoice = row.original;
+
+    return (
+        <div className="flex items-center justify-center">
+            {invoice.status === 'paid' && !isStaff && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" asChild>
+                            <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
+                                <FileText className="size-4" />
+                            </a>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Lihat Invoice</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
+        </div>
+    );
+}
+
 export const columns: ColumnDef<BundleTransactionInvoice>[] = [
     {
         id: 'user_name',
@@ -41,14 +85,7 @@ export const columns: ColumnDef<BundleTransactionInvoice>[] = [
     {
         accessorKey: 'amount',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
-        cell: ({ row }) => {
-            const formatted = new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0,
-            }).format(row.original.amount);
-            return <div className="font-medium">{formatted}</div>;
-        },
+        cell: ({ row }) => <PriceCell row={row} />,
     },
     {
         accessorKey: 'referrer.name',
@@ -90,26 +127,6 @@ export const columns: ColumnDef<BundleTransactionInvoice>[] = [
     {
         id: 'actions',
         header: () => <div className="text-center">Aksi</div>,
-        cell: ({ row }) => {
-            const invoice = row.original;
-            return (
-                <div className="flex items-center justify-center">
-                    {invoice.status === 'paid' && (
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" asChild>
-                                    <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
-                                        <FileText className="size-4" />
-                                    </a>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Lihat Invoice</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    )}
-                </div>
-            );
-        },
+        cell: ({ row }) => <ActionCell row={row} />,
     },
 ];
