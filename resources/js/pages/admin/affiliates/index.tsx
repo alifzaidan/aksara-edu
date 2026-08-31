@@ -2,8 +2,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import AdminLayout from '@/layouts/admin-layout';
 import { rupiahFormatter } from '@/lib/utils';
-import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { SharedData, type BreadcrumbItem } from '@/types';
+import { Head, usePage } from '@inertiajs/react';
 import { CheckCircle, ChevronDown, ChevronUp, DollarSign, Plus, UserCheck, Users as UsersIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -34,7 +34,7 @@ interface Statistics {
 
 import { PaginatedData } from '@/types/pagination';
 
-interface AffiliateProps {
+interface AffiliatesProps {
     affiliates: PaginatedData<Affiliate>;
     statistics: Statistics;
     flash?: {
