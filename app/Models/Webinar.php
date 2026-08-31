@@ -11,6 +11,10 @@ class Webinar extends Model
 
     protected $guarded = ['created_at', 'updated_at'];
 
+    protected $casts = [
+        'installment_enabled' => 'boolean',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -46,5 +50,10 @@ class Webinar extends Model
         return $this->bundleItems()->whereHas('bundle', function ($q) {
             $q->where('status', 'published');
         })->exists();
+    }
+
+    public function installmentTerms()
+    {
+        return $this->morphMany(ProductInstallmentTerm::class, 'termable')->orderBy('term_number');
     }
 }

@@ -124,6 +124,20 @@ class BootcampController extends Controller
                 })
                 ->exists();
 
+            // Cek akses via cicilan aktif (DP sudah dibayar & tidak dibekukan)
+            if (!$hasAccess) {
+                $hasAccess = Invoice::where('user_id', $userId)
+                    ->where('status', 'installment_pending')
+                    ->whereNull('access_suspended_at')
+                    ->whereHas('bootcampItems', function ($query) use ($bootcamp) {
+                        $query->where('bootcamp_id', $bootcamp->id);
+                    })
+                    ->whereHas('installmentTerms', function ($q) {
+                        $q->where('installment_number', 1)->where('status', 'paid');
+                    })
+                    ->exists();
+            }
+
             if (!$hasAccess) {
                 $invoice = Invoice::where('user_id', $userId)
                     ->where('status', 'pending')
@@ -155,6 +169,7 @@ class BootcampController extends Controller
             'pendingInvoice' => $pendingInvoice,
             'pendingInvoiceUrl' => $pendingInvoiceUrl,
             'referralInfo' => $this->getReferralInfo(),
+            'installmentTerms' => $bootcamp->installmentTerms()->get(['term_number', 'amount', 'due_date']),
         ]);
     }
 

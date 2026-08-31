@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import InstallmentConfig from '@/components/admin/installment-config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
@@ -27,6 +28,8 @@ interface Course {
     status: string;
     level: string;
     created_at: string | Date;
+    installment_enabled?: boolean;
+    installment_terms?: Array<{ id: string; term_number: number; amount: number; due_date: string }>;
 }
 
 export default function CourseDetail({ course, averageRating }: { course: Course; averageRating?: number }) {
@@ -325,6 +328,15 @@ export default function CourseDetail({ course, averageRating }: { course: Course
                     <span className="text-muted-foreground text-sm">Belum ada gambar sneak peek yang ditentukan.</span>
                 )}
             </div>
+
+            {/* Installment Config */}
+            <InstallmentConfig
+                productType="course"
+                productId={course.id}
+                productPrice={course.price}
+                installmentEnabled={course.installment_enabled ?? false}
+                initialTerms={course.installment_terms ?? []}
+            />
         </div>
     );
 }

@@ -157,9 +157,9 @@ class PrivateClassController extends Controller
 
     public function show(string $id)
     {
-        $privateClass = PrivateClass::with(['category', 'user', 'schedules'])->findOrFail($id);
+        $privateClass = PrivateClass::with(['category', 'user', 'schedules', 'installmentTerms'])->findOrFail($id);
 
-        $transactions = Invoice::with(['user', 'privateItems.privateClass', 'privateItems.privateClassSchedule'])
+        $transactions = Invoice::with(['user', 'installmentTerms', 'privateItems.privateClass', 'privateItems.privateClassSchedule'])
             ->whereHas('privateItems', function ($q) use ($id) {
                 $q->where('private_class_id', $id);
             })

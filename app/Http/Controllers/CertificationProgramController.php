@@ -227,7 +227,7 @@ class CertificationProgramController extends Controller
 
     public function show(string $id)
     {
-        $program = CertificationProgram::with(['category', 'mentors', 'schedules', 'socializationSchedules'])->findOrFail($id);
+        $program = CertificationProgram::with(['category', 'mentors', 'schedules', 'socializationSchedules', 'installmentTerms'])->findOrFail($id);
 
         $applications = [];
         if ($program->type === 'scholarship') {
@@ -243,6 +243,7 @@ class CertificationProgramController extends Controller
 
         $transactionQuery = Invoice::with([
             'user.referrer',
+            'installmentTerms',
             'certificationProgramItems' => function ($query) use ($id) {
                 $query->where('certification_program_id', $id);
             }

@@ -31,6 +31,27 @@ class CheckEnrollment
             })
             ->exists();
 
+        // Cek akses cicilan aktif (DP terbayar dan tidak dibekukan)
+        if (!$isEnrolled) {
+            $installmentInvoice = Invoice::where('user_id', $user->id)
+                ->where('status', 'installment_pending')
+                ->whereHas('courseItems', function ($query) use ($course) {
+                    $query->where('course_id', $course->id);
+                })
+                ->whereHas('installmentTerms', function ($q) {
+                    $q->where('installment_number', 1)->where('status', 'paid');
+                })
+                ->first();
+
+            if ($installmentInvoice) {
+                if ($installmentInvoice->isAccessSuspended()) {
+                    return redirect()->route('profile.installments')
+                        ->with('error', 'Akses kelas ini dibekukan karena terdapat cicilan yang melewati jatuh tempo. Silakan bayar cicilan Anda.');
+                }
+                $isEnrolled = true;
+            }
+        }
+
         if (!$isEnrolled) {
             return redirect()->route('course.detail', $course->slug)->with('error', 'Anda belum terdaftar di kelas ini.');
         }

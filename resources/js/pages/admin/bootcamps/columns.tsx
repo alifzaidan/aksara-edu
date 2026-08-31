@@ -79,6 +79,10 @@ export type Bootcamp = {
     category: {
         name: string;
     };
+    mentors?: {
+        id: string;
+        name: string;
+    }[];
     title: string;
     thumbnail: string | null;
     strikethrough_price: number;
@@ -86,6 +90,7 @@ export type Bootcamp = {
     start_date: string;
     end_date: string;
     status: 'draft' | 'published' | 'archived' | 'hidden';
+    installment_enabled?: boolean;
     certificate?: {
         id: string;
         title: string;
@@ -111,6 +116,11 @@ function BootcampPriceCell({ bootcamp }: { bootcamp: Bootcamp }) {
         <div>
             {strikethroughPrice > 0 && <div className="text-xs text-gray-500 line-through">{rupiahFormatter.format(strikethroughPrice)}</div>}
             <div className="text-base font-semibold">{rupiahFormatter.format(price)}</div>
+            {bootcamp.installment_enabled && (
+                <Badge variant="outline" className="mt-1 border-primary/30 bg-primary/10 text-primary text-[10px] px-1.5 py-0 font-medium">
+                    Bisa Dicicil
+                </Badge>
+            )}
         </div>
     );
 }
@@ -141,8 +151,27 @@ export const columns: ColumnDef<Bootcamp>[] = [
         header: ({ column }) => <DataTableColumnHeader column={column} title="Kategori" />,
     },
     {
-        accessorKey: 'user.name',
+        accessorKey: 'mentors',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Mentor" />,
+        cell: ({ row }) => {
+            const mentors = row.original.mentors ?? [];
+            if (mentors.length === 0) {
+                return <span className="text-muted-foreground text-sm">-</span>;
+            }
+            return (
+                <div className="flex flex-col gap-0.5">
+                    {mentors.map((mentor) => (
+                        <Link
+                            key={mentor.id}
+                            href={route('mentors.show', mentor.id)}
+                            className="text-primary text-sm font-medium hover:underline"
+                        >
+                            {mentor.name}
+                        </Link>
+                    ))}
+                </div>
+            );
+        },
     },
     {
         accessorKey: 'thumbnail',

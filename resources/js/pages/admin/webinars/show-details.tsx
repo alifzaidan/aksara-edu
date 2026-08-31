@@ -1,4 +1,5 @@
 import DeleteConfirmDialog from '@/components/delete-dialog';
+import InstallmentConfig from '@/components/admin/installment-config';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +42,8 @@ interface Webinar {
         bio?: string;
         avatar?: string;
     };
+    installment_enabled?: boolean;
+    installment_terms?: Array<{ id: string; term_number: number; amount: number; due_date: string }>;
 }
 
 function getYoutubeId(url: string) {
@@ -409,6 +412,16 @@ export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
                 />
                 {webinar.thumbnail ? null : <span className="text-muted-foreground text-sm">Thumbnail belum diunggah.</span>}
             </div>
+
+            {/* Installment Config */}
+            <InstallmentConfig
+                productType="webinar"
+                productId={webinar.id}
+                productPrice={webinar.price}
+                installmentEnabled={webinar.installment_enabled ?? false}
+                initialTerms={webinar.installment_terms ?? []}
+                registrationDeadline={webinar.registration_deadline}
+            />
         </div>
     );
 }

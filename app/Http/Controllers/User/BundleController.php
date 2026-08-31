@@ -247,6 +247,20 @@ class BundleController extends Controller
                 ->where('bundle_id', $bundle->id)
                 ->exists();
 
+            // Cek akses via cicilan aktif
+            if (!$hasAccess) {
+                $hasAccess = Invoice::where('user_id', $userId)
+                    ->where('status', 'installment_pending')
+                    ->whereNull('access_suspended_at')
+                    ->whereHas('bundleEnrollments', function ($query) use ($bundle) {
+                        $query->where('bundle_id', $bundle->id);
+                    })
+                    ->whereHas('installmentTerms', function ($q) {
+                        $q->where('installment_number', 1)->where('status', 'paid');
+                    })
+                    ->exists();
+            }
+
             if (!$hasAccess) {
                 $invoice = Invoice::where('user_id', $userId)
                     ->where('status', 'pending')
@@ -282,6 +296,7 @@ class BundleController extends Controller
             'pendingInvoice' => $pendingInvoice,
             'pendingInvoiceUrl' => $pendingInvoiceUrl,
             'referralInfo' => $this->getReferralInfo(),
+            'installmentTerms' => $bundle->installmentTerms()->get(['term_number', 'amount', 'due_date']),
         ]);
     }
 

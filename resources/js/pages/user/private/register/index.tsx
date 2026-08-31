@@ -1,9 +1,11 @@
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import InstallmentOptions from '@/components/installment-options';
 import UserLayout from '@/layouts/user-layout';
 import { SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -58,6 +60,7 @@ interface Props {
     privateClass: PrivateClass;
     scheduleOptions: PrivateScheduleOption[];
     referralInfo: ReferralInfo;
+    installmentTerms?: Array<{ term_number: number; amount: number; due_date: string }>;
 }
 
 interface GuestFormData {
@@ -75,7 +78,7 @@ function parseList(items?: string | null): string[] {
     return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
 }
 
-export default function PrivateRegister({ privateClass, scheduleOptions, referralInfo }: Props) {
+export default function PrivateRegister({ privateClass, scheduleOptions, referralInfo, installmentTerms = [] }: Props) {
     const { auth } = usePage<SharedData>().props;
     const isLoggedIn = !!auth.user;
     const isProfileComplete = isLoggedIn && auth.user?.phone_number && auth.user?.instance && auth.user?.city;
@@ -736,71 +739,161 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
 
                                 {/* Price breakdown */}
                                 {isFree ? (
-                                    <div className="flex items-center justify-between p-4 text-center">
-                                        <span className="w-full text-2xl font-bold text-green-600">PRIVATE CLASS GRATIS</span>
-                                    </div>
+                                    <>
+                                        <div className="flex items-center justify-between p-4 text-center">
+                                            <span className="w-full text-2xl font-bold text-green-600">PRIVATE CLASS GRATIS</span>
+                                        </div>
+                                        <Button className="w-full" type="submit" disabled={isDisabled}>
+                                            {loading ? 'Memproses...' : 'Daftar Gratis'}
+                                        </Button>
+                                    </>
+                                ) : !isFree && installmentTerms.length > 0 ? (
+                                    <Tabs defaultValue="full" className="w-full">
+                                        <TabsList className="grid w-full grid-cols-2 mb-3">
+                                            <TabsTrigger value="full">Bayar Penuh</TabsTrigger>
+                                            <TabsTrigger value="installment" className="flex items-center gap-1.5">
+                                                <span>Cicilan</span>
+                                                <Badge variant="secondary" className="px-1.5 py-0 text-[10px] bg-primary/10 text-primary">
+                                                    {installmentTerms.length}x
+                                                </Badge>
+                                            </TabsTrigger>
+                                        </TabsList>
+
+                                        {/* Tab Bayar Penuh */}
+                                        <TabsContent value="full" className="space-y-4 m-0">
+                                            <div className="space-y-2 rounded-lg border p-4">
+                                                {(privateClass.strikethrough_price ?? 0) > 0 &&
+                                                    (privateClass.strikethrough_price ?? 0) > privateClass.price && (
+                                                        <>
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-gray-600">Harga Asli</span>
+                                                                <span className="font-semibold text-gray-500 line-through">
+                                                                    Rp {(privateClass.strikethrough_price ?? 0).toLocaleString('id-ID')}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-gray-600">Diskon</span>
+                                                                <span className="font-semibold text-red-500">
+                                                                    -Rp{' '}
+                                                                    {((privateClass.strikethrough_price ?? 0) - privateClass.price).toLocaleString('id-ID')}
+                                                                </span>
+                                                            </div>
+                                                            <Separator className="my-2" />
+                                                        </>
+                                                    )}
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-600">Harga Private Class</span>
+                                                    <span className="font-semibold text-gray-500">Rp {privateClass.price.toLocaleString('id-ID')}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-600">Biaya Transaksi</span>
+                                                    <span className="font-semibold text-gray-500">Rp {transactionFee.toLocaleString('id-ID')}</span>
+                                                </div>
+                                                <Separator className="my-2" />
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-semibold text-gray-900">Total Pembayaran</span>
+                                                    <span className="text-primary text-xl font-bold">Rp {totalPrice.toLocaleString('id-ID')}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                                                <Checkbox
+                                                    id="terms"
+                                                    checked={termsAccepted}
+                                                    onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                                                />
+                                                <Label htmlFor="terms">
+                                                    Saya menyetujui{' '}
+                                                    <a
+                                                        href="/terms-and-conditions"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-blue-700 hover:underline"
+                                                    >
+                                                        syarat dan ketentuan
+                                                    </a>
+                                                </Label>
+                                            </div>
+
+                                            <Button className="w-full" type="submit" disabled={!termsAccepted || isDisabled}>
+                                                {loading ? 'Memproses...' : 'Lanjutkan Pembayaran'}
+                                            </Button>
+                                        </TabsContent>
+
+                                        {/* Tab Cicilan */}
+                                        <TabsContent value="installment" className="space-y-4 m-0">
+                                            <InstallmentOptions
+                                                productType="private"
+                                                productId={privateClass.id}
+                                                productPrice={privateClass.price}
+                                                terms={installmentTerms}
+                                                privateClassScheduleId={selectedScheduleId}
+                                                termsAccepted={termsAccepted}
+                                                onTermsAcceptedChange={setTermsAccepted}
+                                            />
+                                        </TabsContent>
+                                    </Tabs>
                                 ) : (
-                                    <div className="space-y-2 rounded-lg border p-4">
-                                        {(privateClass.strikethrough_price ?? 0) > 0 &&
-                                            (privateClass.strikethrough_price ?? 0) > privateClass.price && (
-                                                <>
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-gray-600">Harga Asli</span>
-                                                        <span className="font-semibold text-gray-500 line-through">
-                                                            Rp {(privateClass.strikethrough_price ?? 0).toLocaleString('id-ID')}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-gray-600">Diskon</span>
-                                                        <span className="font-semibold text-red-500">
-                                                            -Rp{' '}
-                                                            {((privateClass.strikethrough_price ?? 0) - privateClass.price).toLocaleString('id-ID')}
-                                                        </span>
-                                                    </div>
-                                                    <Separator className="my-2" />
-                                                </>
-                                            )}
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-gray-600">Harga Private Class</span>
-                                            <span className="font-semibold text-gray-500">Rp {privateClass.price.toLocaleString('id-ID')}</span>
+                                    <>
+                                        <div className="space-y-2 rounded-lg border p-4">
+                                            {(privateClass.strikethrough_price ?? 0) > 0 &&
+                                                (privateClass.strikethrough_price ?? 0) > privateClass.price && (
+                                                    <>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-gray-600">Harga Asli</span>
+                                                            <span className="font-semibold text-gray-500 line-through">
+                                                                Rp {(privateClass.strikethrough_price ?? 0).toLocaleString('id-ID')}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-gray-600">Diskon</span>
+                                                            <span className="font-semibold text-red-500">
+                                                                -Rp{' '}
+                                                                {((privateClass.strikethrough_price ?? 0) - privateClass.price).toLocaleString('id-ID')}
+                                                            </span>
+                                                        </div>
+                                                        <Separator className="my-2" />
+                                                    </>
+                                                )}
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-600">Harga Private Class</span>
+                                                <span className="font-semibold text-gray-500">Rp {privateClass.price.toLocaleString('id-ID')}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-600">Biaya Transaksi</span>
+                                                <span className="font-semibold text-gray-500">Rp {transactionFee.toLocaleString('id-ID')}</span>
+                                            </div>
+                                            <Separator className="my-2" />
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-semibold text-gray-900">Total Pembayaran</span>
+                                                <span className="text-primary text-xl font-bold">Rp {totalPrice.toLocaleString('id-ID')}</span>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-gray-600">Biaya Transaksi</span>
-                                            <span className="font-semibold text-gray-500">Rp {transactionFee.toLocaleString('id-ID')}</span>
-                                        </div>
-                                        <Separator className="my-2" />
-                                        <div className="flex items-center justify-between">
-                                            <span className="font-semibold text-gray-900">Total Pembayaran</span>
-                                            <span className="text-primary text-xl font-bold">Rp {totalPrice.toLocaleString('id-ID')}</span>
-                                        </div>
-                                    </div>
-                                )}
 
-                                {/* Terms */}
-                                {!isFree && (
-                                    <div className="flex items-center gap-3">
-                                        <Checkbox
-                                            id="terms"
-                                            checked={termsAccepted}
-                                            onCheckedChange={(checked) => setTermsAccepted(checked === true)}
-                                        />
-                                        <Label htmlFor="terms">
-                                            Saya menyetujui{' '}
-                                            <a
-                                                href="/terms-and-conditions"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-blue-700 hover:underline"
-                                            >
-                                                syarat dan ketentuan
-                                            </a>
-                                        </Label>
-                                    </div>
-                                )}
+                                        <div className="flex items-center gap-3">
+                                            <Checkbox
+                                                id="terms"
+                                                checked={termsAccepted}
+                                                onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                                            />
+                                            <Label htmlFor="terms">
+                                                Saya menyetujui{' '}
+                                                <a
+                                                    href="/terms-and-conditions"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-700 hover:underline"
+                                                >
+                                                    syarat dan ketentuan
+                                                </a>
+                                            </Label>
+                                        </div>
 
-                                <Button className="w-full" type="submit" disabled={(isFree ? false : !termsAccepted) || isDisabled}>
-                                    {loading ? 'Memproses...' : isFree ? 'Daftar Gratis' : 'Lanjutkan Pembayaran'}
-                                </Button>
+                                        <Button className="w-full" type="submit" disabled={!termsAccepted || isDisabled}>
+                                            {loading ? 'Memproses...' : 'Lanjutkan Pembayaran'}
+                                        </Button>
+                                    </>
+                                )}
                             </div>
                         </form>
                     )}

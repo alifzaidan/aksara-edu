@@ -66,7 +66,83 @@ class Invoice extends Model
         return [
             'paid_at' => 'datetime',
             'expires_at' => 'datetime',
+            'installment_due_date' => 'datetime',
+            'access_suspended_at' => 'datetime',
+            'is_installment' => 'boolean',
         ];
+    }
+
+    // ==================== Installment Relations ====================
+
+    public function parentInvoice()
+    {
+        return $this->belongsTo(Invoice::class, 'parent_invoice_id');
+    }
+
+    /**
+     * Relasi dari invoice induk ke semua invoice anak (termin)
+     */
+    public function installmentTerms()
+    {
+        return $this->hasMany(Invoice::class, 'parent_invoice_id')->orderBy('installment_number');
+    }
+
+    public function installmentTerm()
+    {
+        return $this->belongsTo(ProductInstallmentTerm::class, 'installment_term_id');
+    }
+
+    // ==================== Installment Helpers ====================
+
+    /**
+     * Cek apakah semua termin cicilan sudah lunas
+     */
+    public function isFullyPaid(): bool
+    {
+        if (!$this->is_installment) {
+            return $this->status === 'paid';
+        }
+        return $this->installmentTerms()->where('status', '!=', 'paid')->doesntExist();
+    }
+
+    /**
+     * Jumlah termin yang sudah dibayar
+     */
+    public function paidTermsCount(): int
+    {
+        return $this->installmentTerms()->where('status', 'paid')->count();
+    }
+
+    /**
+     * Invoice anak termin berikutnya yang belum dibayar
+     */
+    public function nextUnpaidTerm(): ?Invoice
+    {
+        return $this->installmentTerms()->where('status', 'pending')->orderBy('installment_number')->first();
+    }
+
+    /**
+     * Cek apakah akses sedang dibekukan
+     */
+    public function isAccessSuspended(): bool
+    {
+        return !is_null($this->access_suspended_at);
+    }
+
+    /**
+     * Cek apakah ini invoice induk cicilan
+     */
+    public function isInstallmentParent(): bool
+    {
+        return $this->is_installment && is_null($this->parent_invoice_id);
+    }
+
+    /**
+     * Cek apakah ini invoice anak (termin cicilan)
+     */
+    public function isInstallmentChild(): bool
+    {
+        return !is_null($this->parent_invoice_id);
     }
 
     public function getInvoiceType(): string
@@ -238,6 +314,7 @@ class Invoice extends Model
             'pending' => 'yellow',
             'failed' => 'red',
             'expired' => 'gray',
+            'installment_pending' => 'blue',
             default => 'gray',
         };
     }

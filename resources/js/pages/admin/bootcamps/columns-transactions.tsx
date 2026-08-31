@@ -8,12 +8,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { FileText, Image } from 'lucide-react';
+import InstallmentMonitorModal, { InstallmentTermItem } from '@/components/admin/installment-monitor-modal';
+import { Clock, FileText, Image, Wallet } from 'lucide-react';
 
 interface User {
     id: string;
     name: string;
     phone_number: string | null;
+    email?: string | null;
 }
 
 interface FreeRequirement {
@@ -30,9 +32,13 @@ export interface Invoice {
     invoice_code: string;
     invoice_url: string | null;
     amount: number;
-    status: 'paid' | 'pending' | 'failed';
+    status: 'paid' | 'pending' | 'failed' | 'installment_pending';
+    is_installment?: boolean;
+    access_suspended_at?: string | null;
     paid_at: string | null;
     created_at: string;
+    installment_terms?: InstallmentTermItem[];
+    installmentTerms?: InstallmentTermItem[];
     bootcamp_items: {
         id: string;
         bootcamp_id: string;
@@ -44,7 +50,7 @@ function ProofModal({ requirement, userName }: { requirement: FreeRequirement; u
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="size-8">
                     <Image className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
@@ -155,6 +161,8 @@ function ActionCell({ row }: { row: Row<Invoice> }) {
     const { roles, isAdmin } = usePermission();
     const isStaff = roles.includes('staff') && !isAdmin;
     const invoice = row.original;
+    const terms = invoice.installment_terms || invoice.installmentTerms || [];
+    const isInstallment = invoice.is_installment || invoice.status === 'installment_pending' || terms.length > 0;
     const hasProof =
         invoice.bootcamp_items[0]?.free_requirement &&
         (invoice.bootcamp_items[0].free_requirement.ig_follow_proof ||
@@ -166,7 +174,7 @@ function ActionCell({ row }: { row: Row<Invoice> }) {
             {invoice.status === 'paid' && !isStaff && (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" asChild>
+                        <Button variant="ghost" size="icon" className="size-8" asChild>
                             <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
                                 <FileText className="h-4 w-4" />
                             </a>
@@ -176,6 +184,25 @@ function ActionCell({ row }: { row: Row<Invoice> }) {
                         <p>Lihat Invoice</p>
                     </TooltipContent>
                 </Tooltip>
+            )}
+
+            {isInstallment && (
+                <InstallmentMonitorModal
+                    invoice={invoice as any}
+                    trigger={
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="size-8 text-primary hover:text-primary hover:bg-primary/10">
+                                    <Clock className="size-4" />
+                                    <span className="sr-only">Monitor Cicilan & Reminder WA</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Monitor Cicilan & Reminder WA</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    }
+                />
             )}
 
             {hasProof && (
@@ -221,12 +248,42 @@ export const transactionColumns: ColumnDef<Invoice>[] = [
         accessorKey: 'status',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
         cell: ({ row }) => {
-            const status = row.original.status;
+            const invoice = row.original;
+            const terms = invoice.installment_terms || invoice.installmentTerms || [];
+            const isInstallment = invoice.is_installment || invoice.status === 'installment_pending' || terms.length > 0;
+
+            if (isInstallment) {
+                const paidCount = terms.filter((t) => t.status === 'paid').length;
+                const totalCount = terms.length;
+                const isFullyPaid = totalCount > 0 && paidCount === totalCount;
+                const isSuspended = !!invoice.access_suspended_at;
+
+                return (
+                    <div className="flex flex-col gap-1 items-start">
+                        {isFullyPaid ? (
+                            <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">
+                                Cicilan Lunas
+                            </Badge>
+                        ) : isSuspended ? (
+                            <Badge variant="destructive">
+                                Akses Dibekukan
+                            </Badge>
+                        ) : (
+                            <Badge className="bg-amber-100 text-amber-800 border-amber-300">
+                                Cicilan ({paidCount}/{totalCount || '?'})
+                            </Badge>
+                        )}
+                    </div>
+                );
+            }
+
+            const status = invoice.status;
             const statusText = status.charAt(0).toUpperCase() + status.slice(1);
             const statusClasses = {
                 paid: 'bg-green-100 text-green-800',
                 pending: 'bg-yellow-100 text-yellow-800',
                 failed: 'bg-red-100 text-red-800',
+                installment_pending: 'bg-amber-100 text-amber-800',
             };
             return <Badge className={`${statusClasses[status] || 'bg-gray-100 text-gray-800'}`}>{statusText}</Badge>;
         },

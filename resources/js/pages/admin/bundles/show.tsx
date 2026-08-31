@@ -1,4 +1,5 @@
 import DeleteConfirmDialog from '@/components/delete-dialog';
+import InstallmentConfig from '@/components/admin/installment-config';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -75,6 +76,8 @@ interface Bundle {
     enrollments: EnrollmentBundle[];
     created_at: string;
     updated_at: string;
+    installment_enabled?: boolean;
+    installment_terms?: Array<{ id: string; term_number: number; amount: number; due_date: string }>;
 }
 
 interface GroupedItems {
@@ -547,6 +550,16 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                             </a>
                                         </div>
                                     )}
+
+                                    {/* Installment Config */}
+                                    <InstallmentConfig
+                                        productType="bundle"
+                                        productId={bundle.id}
+                                        productPrice={bundle.price}
+                                        installmentEnabled={bundle.installment_enabled ?? false}
+                                        initialTerms={bundle.installment_terms ?? []}
+                                        registrationDeadline={bundle.registration_deadline}
+                                    />
                                 </CardContent>
                             </Card>
                         </TabsContent>

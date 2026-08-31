@@ -1,4 +1,6 @@
 import DeleteConfirmDialog from '@/components/delete-dialog';
+import InstallmentConfig from '@/components/admin/installment-config';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +55,8 @@ interface Bootcamp {
     }>;
     has_submission_link?: boolean;
     created_at: string | Date;
+    installment_enabled?: boolean;
+    installment_terms?: Array<{ id: string; term_number: number; amount: number; due_date: string }>;
 }
 
 function getYoutubeId(url: string) {
@@ -515,6 +519,16 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                 />
                 {bootcamp.thumbnail ? null : <span className="text-muted-foreground text-sm">Thumbnail belum diunggah.</span>}
             </div>
+
+            {/* Installment Config */}
+            <InstallmentConfig
+                productType="bootcamp"
+                productId={bootcamp.id}
+                productPrice={bootcamp.price}
+                installmentEnabled={bootcamp.installment_enabled ?? false}
+                initialTerms={bootcamp.installment_terms ?? []}
+                registrationDeadline={bootcamp.registration_deadline}
+            />
         </div>
     );
 }

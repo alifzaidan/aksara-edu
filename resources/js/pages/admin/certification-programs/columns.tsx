@@ -116,6 +116,7 @@ export type CertificationProgram = {
         recording_url?: string | null;
     }[];
     batch?: string | null;
+    installment_enabled?: boolean;
 };
 
 function CertificationProgramPriceCell({ program }: { program: CertificationProgram }) {
@@ -148,6 +149,11 @@ function CertificationProgramPriceCell({ program }: { program: CertificationProg
             <div className="text-base font-semibold">{rupiahFormatter.format(displayPrice)}</div>
             {isScholarship && scholarship_price !== undefined && scholarship_price > 0 && (
                 <div className="mt-0.5 text-xs text-purple-600">Harga Beasiswa</div>
+            )}
+            {!isScholarship && displayPrice > 0 && program.installment_enabled && (
+                <Badge variant="outline" className="mt-1 border-primary/30 bg-primary/10 text-primary text-[10px] px-1.5 py-0 font-medium">
+                    Bisa Dicicil
+                </Badge>
             )}
         </div>
     );

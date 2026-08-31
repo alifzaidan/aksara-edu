@@ -155,14 +155,25 @@ class PrivateController extends Controller
         $pendingEnrollments = collect();
 
         if ($userId) {
-            $ownedScheduleIds = EnrollmentPrivate::whereIn('private_class_schedule_id', $scheduleIds)
+            $ownedPaidIds = EnrollmentPrivate::whereIn('private_class_schedule_id', $scheduleIds)
                 ->whereHas('invoice', function ($query) use ($userId) {
                     $query->where('status', 'paid')
                         ->where('user_id', $userId);
                 })
-                ->pluck('private_class_schedule_id')
-                ->unique()
-                ->values();
+                ->pluck('private_class_schedule_id');
+
+            $ownedInstallmentIds = EnrollmentPrivate::whereIn('private_class_schedule_id', $scheduleIds)
+                ->whereHas('invoice', function ($query) use ($userId) {
+                    $query->where('status', 'installment_pending')
+                        ->whereNull('access_suspended_at')
+                        ->where('user_id', $userId)
+                        ->whereHas('installmentTerms', function ($q) {
+                            $q->where('installment_number', 1)->where('status', 'paid');
+                        });
+                })
+                ->pluck('private_class_schedule_id');
+
+            $ownedScheduleIds = $ownedPaidIds->concat($ownedInstallmentIds)->unique()->values();
 
             $pendingEnrollments = EnrollmentPrivate::with(['invoice:id,invoice_url,expires_at,created_at'])
                 ->whereIn('private_class_schedule_id', $scheduleIds)
@@ -230,6 +241,7 @@ class PrivateController extends Controller
             'privateClass' => $privateClass,
             'scheduleOptions' => $scheduleOptions,
             'referralInfo' => $this->getReferralInfo(),
+            'installmentTerms' => $privateClass->installmentTerms()->get(['term_number', 'amount', 'due_date']),
         ]);
     }
 

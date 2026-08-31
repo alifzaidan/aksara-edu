@@ -218,7 +218,9 @@ class BundleController extends Controller
         $bundle->load([
             'user',
             'bundleItems.bundleable',
-            'enrollments.invoice.user'
+            'enrollments.invoice.user',
+            'enrollments.invoice.installmentTerms',
+            'installmentTerms',
         ]);
 
         $validItems = $bundle->bundleItems->filter(function ($item) {

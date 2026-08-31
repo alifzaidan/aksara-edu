@@ -10,7 +10,8 @@ import type { Row } from '@tanstack/react-table';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { FileText, Trash } from 'lucide-react';
+import InstallmentMonitorModal, { InstallmentTermItem } from '@/components/admin/installment-monitor-modal';
+import { Clock, FileText, Trash } from 'lucide-react';
 import { useState } from 'react';
 
 interface Referrer {
@@ -22,6 +23,7 @@ interface User {
     id: string;
     name: string;
     phone_number: string | null;
+    email?: string | null;
     referrer: Referrer | null;
 }
 
@@ -72,13 +74,18 @@ export interface Invoice {
     invoice_code: string;
     invoice_url: string | null;
     nett_amount: number;
-    status: 'paid' | 'pending' | 'failed';
+    amount?: number;
+    status: 'paid' | 'pending' | 'failed' | 'installment_pending';
+    is_installment?: boolean;
+    access_suspended_at?: string | null;
     paid_at: string | null;
     course_items: EnrollmentCourse[];
     bootcamp_items: EnrollmentBootcamp[];
     webinar_items: EnrollmentWebinar[];
     bundle_enrollments: BundleEnrollment[];
     certification_program_items: CertificationProgramItem[];
+    installment_terms?: InstallmentTermItem[];
+    installmentTerms?: InstallmentTermItem[];
     created_at: string;
 }
 
@@ -106,6 +113,8 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
     const isStaff = roles.includes('staff') && !isAdmin;
     const invoice = row.original;
     const user = invoice.user;
+    const terms = invoice.installment_terms || invoice.installmentTerms || [];
+    const isInstallment = invoice.is_installment || invoice.status === 'installment_pending' || terms.length > 0;
     let whatsappUrl = '';
 
     if (user?.phone_number) {
@@ -134,7 +143,7 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
             {invoice.status === 'paid' && !isStaff && (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" asChild>
+                        <Button variant="ghost" size="icon" className="size-8" asChild>
                             <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
                                 <FileText className="size-4" />
                             </a>
@@ -146,10 +155,29 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
                 </Tooltip>
             )}
 
+            {isInstallment && (
+                <InstallmentMonitorModal
+                    invoice={invoice as any}
+                    trigger={
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="size-8 text-primary hover:text-primary hover:bg-primary/10">
+                                    <Clock className="size-4" />
+                                    <span className="sr-only">Monitor Cicilan & Reminder WA</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Monitor Cicilan & Reminder WA</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    }
+                />
+            )}
+
             {whatsappUrl && (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" asChild>
+                        <Button variant="ghost" size="icon" className="size-8" asChild>
                             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
                                 <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="w-4 fill-[#25D366]">
                                     <title>WhatsApp</title>
@@ -282,7 +310,36 @@ export const columns: ColumnDef<Invoice>[] = [
         accessorKey: 'status',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
         cell: ({ row }) => {
-            const status = row.original.status;
+            const invoice = row.original;
+            const terms = invoice.installment_terms || invoice.installmentTerms || [];
+            const isInstallment = invoice.is_installment || invoice.status === 'installment_pending' || terms.length > 0;
+
+            if (isInstallment) {
+                const paidCount = terms.filter((t) => t.status === 'paid').length;
+                const totalCount = terms.length;
+                const isFullyPaid = totalCount > 0 && paidCount === totalCount;
+                const isSuspended = !!invoice.access_suspended_at;
+
+                return (
+                    <div className="flex flex-col gap-1 items-start">
+                        {isFullyPaid ? (
+                            <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">
+                                Cicilan Lunas
+                            </Badge>
+                        ) : isSuspended ? (
+                            <Badge variant="destructive">
+                                Akses Dibekukan
+                            </Badge>
+                        ) : (
+                            <Badge className="bg-amber-100 text-amber-800 border-amber-300">
+                                Cicilan ({paidCount}/{totalCount || '?'})
+                            </Badge>
+                        )}
+                    </div>
+                );
+            }
+
+            const status = invoice.status;
             const statusText = status.charAt(0).toUpperCase() + status.slice(1);
             const statusClasses = {
                 paid: 'bg-green-100 text-green-800',
@@ -290,6 +347,7 @@ export const columns: ColumnDef<Invoice>[] = [
                 pending: 'bg-yellow-100 text-yellow-800',
                 failed: 'bg-red-100 text-red-800',
                 expired: 'bg-gray-100 text-gray-800',
+                installment_pending: 'bg-amber-100 text-amber-800',
             };
             return <Badge className={`${statusClasses[status] || statusClasses.expired}`}>{statusText}</Badge>;
         },

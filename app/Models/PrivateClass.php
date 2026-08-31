@@ -12,6 +12,7 @@ class PrivateClass extends Model
     protected $guarded = ['created_at', 'updated_at'];
 
     protected $casts = [
+        'installment_enabled' => 'boolean',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
         'registration_deadline' => 'datetime',
@@ -42,5 +43,10 @@ class PrivateClass extends Model
     {
         return $this->hasMany(\App\Models\PrivateClassSchedule::class, 'private_class_id')
             ->orderBy('start_time', 'asc');
+    }
+
+    public function installmentTerms()
+    {
+        return $this->morphMany(ProductInstallmentTerm::class, 'termable')->orderBy('term_number');
     }
 }

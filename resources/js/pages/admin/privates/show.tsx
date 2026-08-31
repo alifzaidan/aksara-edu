@@ -1,4 +1,5 @@
 import DeleteConfirmDialog from '@/components/delete-dialog';
+import InstallmentConfig from '@/components/admin/installment-config';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -33,11 +34,25 @@ interface PrivateClass {
         id: string; start_time: string; end_time: string;
         registration_deadline?: string | null; max_participants?: number; is_active?: boolean;
     }>;
+    installment_enabled?: boolean;
+    installment_terms?: Array<{ id: string; term_number: number; amount: number; due_date: string }>;
 }
 
+import InstallmentMonitorModal, { InstallmentTermItem } from '@/components/admin/installment-monitor-modal';
+import { Clock } from 'lucide-react';
+
 interface Transaction {
-    id: string; invoice_code: string; status: string; nett_amount: number; created_at: string;
-    user?: { name: string; email: string };
+    id: string;
+    invoice_code: string;
+    status: string;
+    amount?: number;
+    nett_amount: number;
+    created_at: string;
+    is_installment?: boolean;
+    access_suspended_at?: string | null;
+    user?: { id?: string; name: string; email: string; phone_number?: string | null };
+    installment_terms?: InstallmentTermItem[];
+    installmentTerms?: InstallmentTermItem[];
     private_items?: Array<{ private_class_schedule?: { start_time?: string; end_time?: string } }>;
 }
 
@@ -166,6 +181,16 @@ export default function ShowPrivate({ privateClass, transactions, flash }: Props
                                     <span className="font-semibold">Thumbnail:</span>
                                     <img src={privateClass.thumbnail ? `/storage/${privateClass.thumbnail}` : '/assets/images/placeholder.png'} alt={privateClass.title} className="my-1 mt-2 h-40 w-64 rounded border object-cover" />
                                 </div>
+
+                                {/* Installment Config */}
+                                <InstallmentConfig
+                                    productType="private"
+                                    productId={privateClass.id}
+                                    productPrice={privateClass.price}
+                                    installmentEnabled={privateClass.installment_enabled ?? false}
+                                    initialTerms={privateClass.installment_terms ?? []}
+                                    registrationDeadline={privateClass.registration_deadline}
+                                />
                             </div>
                         </TabsContent>
                         <TabsContent value="transaksi">
@@ -176,16 +201,45 @@ export default function ShowPrivate({ privateClass, transactions, flash }: Props
                                     <div className="overflow-x-auto rounded-md border">
                                         <Table>
                                             <TableBody>
-                                                {transactions.map((trx) => (
-                                                    <TableRow key={trx.id}>
-                                                        <TableCell className="font-medium">{trx.invoice_code}</TableCell>
-                                                        <TableCell>{trx.user?.name || '-'}</TableCell>
-                                                        <TableCell>{trx.user?.email || '-'}</TableCell>
-                                                        <TableCell><Badge className={`capitalize border-0 ${trx.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-800'}`}>{trx.status}</Badge></TableCell>
-                                                        <TableCell>{isStaff ? <span className="text-muted-foreground">Rp ***</span> : rupiahFormatter.format(trx.nett_amount || 0)}</TableCell>
-                                                        <TableCell className="text-muted-foreground text-xs">{format(new Date(trx.created_at), 'dd MMM yyyy', { locale: localeId })}</TableCell>
-                                                    </TableRow>
-                                                ))}
+                                                {transactions.map((trx) => {
+                                                    const terms = trx.installment_terms || trx.installmentTerms || [];
+                                                    const isInstallment = trx.is_installment || trx.status === 'installment_pending' || terms.length > 0;
+                                                    const paidCount = terms.filter((t) => t.status === 'paid').length;
+                                                    const totalCount = terms.length;
+                                                    const isFullyPaid = totalCount > 0 && paidCount === totalCount;
+                                                    const isSuspended = !!trx.access_suspended_at;
+
+                                                    return (
+                                                        <TableRow key={trx.id}>
+                                                            <TableCell className="font-medium">{trx.invoice_code}</TableCell>
+                                                            <TableCell>{trx.user?.name || '-'}</TableCell>
+                                                            <TableCell>{trx.user?.email || '-'}</TableCell>
+                                                            <TableCell>
+                                                                {isInstallment ? (
+                                                                    isFullyPaid ? (
+                                                                        <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">Cicilan Lunas</Badge>
+                                                                    ) : isSuspended ? (
+                                                                        <Badge variant="destructive">Akses Dibekukan</Badge>
+                                                                    ) : (
+                                                                        <Badge className="bg-amber-100 text-amber-800 border-amber-300">Cicilan ({paidCount}/{totalCount || '?'})</Badge>
+                                                                    )
+                                                                ) : (
+                                                                    <Badge className={`capitalize border-0 ${trx.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-800'}`}>{trx.status}</Badge>
+                                                                )}
+                                                            </TableCell>
+                                                            <TableCell>{isStaff ? <span className="text-muted-foreground">Rp ***</span> : rupiahFormatter.format(trx.nett_amount || 0)}</TableCell>
+                                                            <TableCell className="text-muted-foreground text-xs">{format(new Date(trx.created_at), 'dd MMM yyyy', { locale: localeId })}</TableCell>
+                                                            <TableCell className="text-right">
+                                                                {isInstallment && (
+                                                                    <InstallmentMonitorModal
+                                                                        invoice={trx as any}
+                                                                        productTitle={privateClass.title}
+                                                                    />
+                                                                )}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })}
                                             </TableBody>
                                         </Table>
                                     </div>

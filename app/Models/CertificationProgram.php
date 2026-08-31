@@ -12,6 +12,7 @@ class CertificationProgram extends Model
     protected $guarded = ['created_at', 'updated_at'];
 
     protected $casts = [
+        'installment_enabled' => 'boolean',
         'registration_deadline' => 'datetime',
         'socialization_registration_deadline' => 'datetime',
         'document_required' => 'boolean',
@@ -53,5 +54,10 @@ class CertificationProgram extends Model
     public function enrollments()
     {
         return $this->hasMany(EnrollmentCertificationProgram::class);
+    }
+
+    public function installmentTerms()
+    {
+        return $this->morphMany(ProductInstallmentTerm::class, 'termable')->orderBy('term_number');
     }
 }

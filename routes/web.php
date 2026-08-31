@@ -43,6 +43,8 @@ use App\Http\Controllers\User\Profile\TransactionController as ProfileTransactio
 use App\Http\Controllers\User\Profile\WebinarController as ProfileWebinarController;
 use App\Http\Controllers\User\Profile\ProfileController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\InstallmentController;
+use App\Http\Controllers\Admin\InstallmentTermController;
 use App\Http\Controllers\WebinarController;
 use App\Http\Controllers\User\QuizController as UserQuizController;
 use App\Http\Controllers\BiinsightImportController;
@@ -157,6 +159,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/invoice/{id}', [InvoiceController::class, 'show'])->name('invoice.show');
     Route::post('/invoice/{id}/cancel', [InvoiceController::class, 'cancel'])->name('invoice.cancel');
     Route::post('/invoice/expire-old', [InvoiceController::class, 'expireOldInvoices'])->name('invoice.expire-old');
+
+    // Installment routes
+    Route::post('/invoice/installment', [InstallmentController::class, 'store'])->name('installment.store');
+    Route::post('/installment/{id}/pay', [InstallmentController::class, 'payTerm'])->name('installment.pay-term');
+    Route::get('/profile/installments', [InstallmentController::class, 'index'])->name('profile.installments');
 
     Route::redirect('profile', 'profile/dashboard');
     Route::get('/profile/dashboard', [ProfileController::class, 'index'])->name('profile.index');
@@ -536,6 +543,15 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
     Route::middleware(['role_or_permission:admin|referral.manage'])->group(function () {
         Route::post('referral/settings', [App\Http\Controllers\Admin\ReferralAdminController::class, 'updateSettings'])->name('admin.referral.settings.update');
         Route::post('referral/adjust-points', [App\Http\Controllers\Admin\ReferralAdminController::class, 'adjustPoints'])->name('admin.referral.adjust-points');
+    });
+
+    // Installment Term admin routes
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::post('products/{type}/{id}/installments/toggle', [InstallmentTermController::class, 'toggleEnabled'])->name('installments.toggle');
+        Route::post('installment-terms', [InstallmentTermController::class, 'store'])->name('installment-terms.store');
+        Route::put('installment-terms/{id}', [InstallmentTermController::class, 'update'])->name('installment-terms.update');
+        Route::delete('installment-terms/{id}', [InstallmentTermController::class, 'destroy'])->name('installment-terms.destroy');
+        Route::post('installments/{id}/send-reminder', [InstallmentController::class, 'sendReminder'])->name('installments.send-reminder');
     });
 });
 

@@ -13,6 +13,7 @@ class Bundle extends Model
     protected $guarded = ['created_at', 'updated_at'];
 
     protected $casts = [
+        'installment_enabled' => 'boolean',
         'registration_deadline' => 'datetime',
     ];
 
@@ -153,5 +154,10 @@ class Bundle extends Model
     public function getTotalItemsCount(): int
     {
         return $this->bundleItems()->count();
+    }
+
+    public function installmentTerms()
+    {
+        return $this->morphMany(ProductInstallmentTerm::class, 'termable')->orderBy('term_number');
     }
 }
