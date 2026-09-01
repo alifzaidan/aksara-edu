@@ -101,6 +101,7 @@ class Invoice extends Model
     public function scopePurchasedByUser($query, $userId)
     {
         return $query->where('user_id', $userId)
+            ->whereNull('parent_invoice_id')
             ->where(function ($q) {
                 $q->whereIn('status', ['paid', 'completed'])
                     ->orWhere(function ($iq) {
@@ -118,6 +119,7 @@ class Invoice extends Model
     public function scopeAccessibleForUser($query, $userId)
     {
         return $query->where('user_id', $userId)
+            ->whereNull('parent_invoice_id')
             ->where(function ($q) {
                 $q->whereIn('status', ['paid', 'completed'])
                     ->orWhere(function ($iq) {

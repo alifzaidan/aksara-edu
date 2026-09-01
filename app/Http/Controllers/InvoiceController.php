@@ -1984,7 +1984,16 @@ class InvoiceController extends Controller
             'parentInvoice.webinarItems.webinar',
             'parentInvoice.privateItems.privateClass',
             'parentInvoice.certificationProgramItems.certificationProgram',
-        ])->findOrFail($id);
+        ])
+            ->where(function ($q) use ($id) {
+                $q->where('id', $id)->orWhere('invoice_code', $id);
+            })
+            ->firstOrFail();
+
+        // Cek otorisasi kepemilikan invoice
+        if (!$user->hasRole('admin') && $invoice->user_id !== $user->id) {
+            abort(403, 'Anda tidak memiliki akses ke invoice ini');
+        }
 
         // Izinkan download jika:
         // 1. Invoice reguler yang sudah paid

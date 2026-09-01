@@ -24,6 +24,12 @@ class AffiliateEarningController extends Controller
             'invoice.webinarItems.webinar',
             'invoice.bundleEnrollments.bundle',
             'invoice.certificationProgramItems.certificationProgram',
+            // Untuk invoice cicilan anak, load nama produk dari parentInvoice
+            'invoice.parentInvoice.courseItems.course',
+            'invoice.parentInvoice.bootcampItems.bootcamp',
+            'invoice.parentInvoice.webinarItems.webinar',
+            'invoice.parentInvoice.bundleEnrollments.bundle',
+            'invoice.parentInvoice.certificationProgramItems.certificationProgram',
         ]);
 
         if (!$user->hasRole('admin') && !$isStaff) {

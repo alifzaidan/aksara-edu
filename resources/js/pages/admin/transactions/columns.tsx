@@ -65,7 +65,8 @@ interface CertificationProgram {
 }
 
 interface CertificationProgramItem {
-    certification_program: CertificationProgram;
+    certification_program?: CertificationProgram;
+    certificationProgram?: CertificationProgram;
 }
 
 export interface Invoice {
@@ -79,11 +80,16 @@ export interface Invoice {
     is_installment?: boolean;
     access_suspended_at?: string | null;
     paid_at: string | null;
-    course_items: EnrollmentCourse[];
-    bootcamp_items: EnrollmentBootcamp[];
-    webinar_items: EnrollmentWebinar[];
-    bundle_enrollments: BundleEnrollment[];
-    certification_program_items: CertificationProgramItem[];
+    course_items?: EnrollmentCourse[];
+    courseItems?: EnrollmentCourse[];
+    bootcamp_items?: EnrollmentBootcamp[];
+    bootcampItems?: EnrollmentBootcamp[];
+    webinar_items?: EnrollmentWebinar[];
+    webinarItems?: EnrollmentWebinar[];
+    bundle_enrollments?: BundleEnrollment[];
+    bundleEnrollments?: BundleEnrollment[];
+    certification_program_items?: CertificationProgramItem[];
+    certificationProgramItems?: CertificationProgramItem[];
     installment_terms?: InstallmentTermItem[];
     installmentTerms?: InstallmentTermItem[];
     created_at: string;
@@ -262,11 +268,13 @@ export const columns: ColumnDef<Invoice>[] = [
         header: 'Nama Produk',
         filterFn: (row, _columnId, filterValue) => {
             const invoice = row.original;
-            const courseTitles = invoice.course_items?.map((item) => item.course.title) || [];
-            const bootcampTitles = invoice.bootcamp_items?.map((item) => item.bootcamp.title) || [];
-            const webinarTitles = invoice.webinar_items?.map((item) => item.webinar.title) || [];
-            const bundleTitles = invoice.bundle_enrollments?.map((item) => item.bundle.title) || [];
-            const certTitles = invoice.certification_program_items?.map((item) => item.certification_program.title) || [];
+            const courseTitles = (invoice.courseItems || invoice.course_items || []).map((item) => item.course.title);
+            const bootcampTitles = (invoice.bootcampItems || invoice.bootcamp_items || []).map((item) => item.bootcamp.title);
+            const webinarTitles = (invoice.webinarItems || invoice.webinar_items || []).map((item) => item.webinar.title);
+            const bundleTitles = (invoice.bundleEnrollments || invoice.bundle_enrollments || []).map((item) => item.bundle.title);
+            const certTitles = (invoice.certificationProgramItems || invoice.certification_program_items || []).map(
+                (item) => item.certificationProgram?.title || item.certification_program?.title || '',
+            );
 
             const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles, ...certTitles];
             return allTitles.some((title) =>
@@ -275,14 +283,16 @@ export const columns: ColumnDef<Invoice>[] = [
         },
         cell: ({ row }) => {
             const invoice = row.original;
-            const courseTitles = invoice.course_items?.map((item) => item.course.title) || [];
-            const bootcampTitles = invoice.bootcamp_items?.map((item) => item.bootcamp.title) || [];
-            const webinarTitles = invoice.webinar_items?.map((item) => item.webinar.title) || [];
-            const bundleTitles = invoice.bundle_enrollments?.map((item) => item.bundle.title) || [];
-            const certTitles = invoice.certification_program_items?.map((item) => item.certification_program.title) || [];
+            const courseTitles = (invoice.courseItems || invoice.course_items || []).map((item) => item.course.title);
+            const bootcampTitles = (invoice.bootcampItems || invoice.bootcamp_items || []).map((item) => item.bootcamp.title);
+            const webinarTitles = (invoice.webinarItems || invoice.webinar_items || []).map((item) => item.webinar.title);
+            const bundleTitles = (invoice.bundleEnrollments || invoice.bundle_enrollments || []).map((item) => item.bundle.title);
+            const certTitles = (invoice.certificationProgramItems || invoice.certification_program_items || []).map(
+                (item) => item.certificationProgram?.title || item.certification_program?.title || '',
+            );
 
-            const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles, ...certTitles];
-            const fullTitleString = allTitles.join(', ');
+            const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles, ...certTitles].filter(Boolean);
+            const fullTitleString = allTitles.length > 0 ? allTitles.join(', ') : '-';
 
             return (
                 <Tooltip>

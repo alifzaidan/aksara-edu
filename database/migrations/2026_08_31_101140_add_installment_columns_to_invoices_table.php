@@ -48,13 +48,17 @@ return new class extends Migration
         }
 
         // Ubah enum status untuk mendukung installment_pending
-        DB::statement("ALTER TABLE invoices MODIFY COLUMN status ENUM('pending', 'paid', 'failed', 'installment_pending') NOT NULL DEFAULT 'pending'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE invoices MODIFY COLUMN status ENUM('pending', 'paid', 'failed', 'installment_pending') NOT NULL DEFAULT 'pending'");
+        }
     }
 
     public function down(): void
     {
         // Kembalikan enum status ke semula
-        DB::statement("ALTER TABLE invoices MODIFY COLUMN status ENUM('pending', 'paid', 'failed') NOT NULL DEFAULT 'pending'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE invoices MODIFY COLUMN status ENUM('pending', 'paid', 'failed') NOT NULL DEFAULT 'pending'");
+        }
 
         Schema::table('invoices', function (Blueprint $table) {
             try { $table->dropForeign(['parent_invoice_id']); } catch (\Throwable $e) {}
