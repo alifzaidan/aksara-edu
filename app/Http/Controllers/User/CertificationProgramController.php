@@ -49,8 +49,7 @@ class CertificationProgramController extends Controller
         if (Auth::check()) {
             $userId = Auth::id();
             $myProgramIds = Invoice::with('certificationProgramItems')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->certificationProgramItems->pluck('certification_program_id');
@@ -119,8 +118,7 @@ class CertificationProgramController extends Controller
         if (Auth::check()) {
             $userId = Auth::id();
             $myProgramIds = Invoice::with('certificationProgramItems')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->certificationProgramItems->pluck('certification_program_id');

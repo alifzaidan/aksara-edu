@@ -24,6 +24,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
 use Xendit\Configuration;
 use Xendit\Invoice\CreateInvoiceRequest;
 use Xendit\Invoice\InvoiceApi;
@@ -59,17 +60,21 @@ class InstallmentController extends Controller
             ->orderByDesc('created_at')
             ->get()
             ->map(function (Invoice $invoice) {
-                $terms = $invoice->installmentTerms;
+                $terms = $invoice->installmentTerms->sortBy('installment_number')->values();
                 $paidCount = $terms->where('status', 'paid')->count();
                 $totalCount = $terms->count();
-                $nextUnpaid = $terms->where('status', 'pending')->sortBy('installment_number')->first();
+                $nextUnpaid = $terms->where('status', 'pending')->first();
+                $isNextOverdue = false;
+                if ($nextUnpaid && $nextUnpaid->installment_due_date) {
+                    $isNextOverdue = Carbon::now('Asia/Jakarta')->gt(Carbon::parse($nextUnpaid->installment_due_date)->endOfDay());
+                }
 
                 return [
                     'id' => $invoice->id,
                     'invoice_code' => $invoice->invoice_code,
                     'status' => $invoice->status,
                     'amount' => $invoice->amount,
-                    'is_access_suspended' => $invoice->isAccessSuspended(),
+                    'is_access_suspended' => $invoice->isAccessSuspended() || $isNextOverdue,
                     'access_suspended_at' => $invoice->access_suspended_at,
                     'created_at' => $invoice->created_at,
                     'product_type' => $invoice->getInvoiceType(),
@@ -82,20 +87,29 @@ class InstallmentController extends Controller
                         'amount' => $nextUnpaid->amount,
                         'installment_due_date' => $nextUnpaid->installment_due_date,
                         'status' => $nextUnpaid->status,
+                        'is_overdue' => $isNextOverdue,
                     ] : null,
-                    'terms' => $terms->map(fn($t) => [
-                        'id' => $t->id,
-                        'installment_number' => $t->installment_number,
-                        'invoice_code' => $t->invoice_code,
-                        'amount' => $t->amount,
-                        'status' => $t->status,
-                        'installment_due_date' => $t->installment_due_date,
-                        'paid_at' => $t->paid_at,
-                    ]),
+                    'terms' => $terms->map(function ($t) {
+                        $isOverdue = $t->installment_due_date
+                            ? Carbon::now('Asia/Jakarta')->gt(Carbon::parse($t->installment_due_date)->endOfDay()) && $t->status !== 'paid'
+                            : false;
+                        return [
+                            'id' => $t->id,
+                            'installment_number' => $t->installment_number,
+                            'invoice_code' => $t->invoice_code,
+                            'amount' => $t->amount,
+                            'status' => $t->status,
+                            'installment_due_date' => $t->installment_due_date,
+                            'paid_at' => $t->paid_at,
+                            'payment_method' => $t->payment_method,
+                            'payment_channel' => $t->payment_channel,
+                            'is_overdue' => $isOverdue,
+                        ];
+                    }),
                 ];
             });
 
-        return inertia('User/Profile/Installments', [
+        return Inertia::render('user/profile/installments', [
             'installments' => $invoices,
         ]);
     }
@@ -259,6 +273,14 @@ class InstallmentController extends Controller
                 throw new \Exception('Tidak ada termin yang perlu dibayar.');
             }
 
+            // Validasi overdue: tidak bisa bayar mandiri jika jatuh tempo sudah terlewat
+            if ($nextTerm->installment_due_date) {
+                $dueDate = Carbon::parse($nextTerm->installment_due_date)->endOfDay();
+                if (Carbon::now('Asia/Jakarta')->gt($dueDate)) {
+                    throw new \Exception('Batas waktu pembayaran untuk termin ini telah melewati jatuh tempo. Pembayaran online ditutup, silakan hubungi admin untuk penyelesaian cicilan.');
+                }
+            }
+
             // Pastikan termin ke-1 sudah dibayar (jangan loncat)
             $dp = $parentInvoice->installmentTerms()->where('installment_number', 1)->first();
             if ($dp && $dp->status !== 'paid') {
@@ -410,7 +432,7 @@ class InstallmentController extends Controller
         }
     }
 
-    private function createXenditInvoice(Invoice $childInvoice, mixed $item, mixed $user): array
+    private function createXenditInvoice(Invoice $childInvoice, mixed $item, mixed $user)
     {
         $xenditRequest = new CreateInvoiceRequest([
             'external_id' => $childInvoice->invoice_code,
@@ -436,6 +458,6 @@ class InstallmentController extends Controller
         ]);
 
         $xenditApi = new InvoiceApi();
-        return $xenditApi->createInvoice($xenditRequest)->getArrayCopy() ?? (array) $xenditApi->createInvoice($xenditRequest);
+        return $xenditApi->createInvoice($xenditRequest);
     }
 }

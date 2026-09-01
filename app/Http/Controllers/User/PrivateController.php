@@ -38,8 +38,7 @@ class PrivateController extends Controller
         if (Auth::check()) {
             $userId = Auth::id();
             $myPrivateClassIds = Invoice::with('privateItems.privateClass.category')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->privateItems->pluck('private_class_id');
@@ -95,8 +94,7 @@ class PrivateController extends Controller
         if (Auth::check()) {
             $userId = Auth::id();
             $myPrivateClassIds = Invoice::with('privateItems.privateClass.category')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->privateItems->pluck('private_class_id');

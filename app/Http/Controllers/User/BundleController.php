@@ -106,24 +106,21 @@ class BundleController extends Controller
             $userId = Auth::id();
 
             $ownedCourseIds = Invoice::with('courseItems')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(fn($invoice) => $invoice->courseItems->pluck('course_id'))
                 ->unique()
                 ->toArray();
 
             $ownedBootcampIds = Invoice::with('bootcampItems')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(fn($invoice) => $invoice->bootcampItems->pluck('bootcamp_id'))
                 ->unique()
                 ->toArray();
 
             $ownedWebinarIds = Invoice::with('webinarItems')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(fn($invoice) => $invoice->webinarItems->pluck('webinar_id'))
                 ->unique()

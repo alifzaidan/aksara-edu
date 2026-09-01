@@ -112,8 +112,8 @@ export default function RegisterSection({ program, isEnrolled, scholarshipApplic
                     <h5 className="mb-4 text-sm">Daftar sekarang dan dapatkan sertifikat profesional yang diakui industri</h5>
 
                     {/* Price */}
-                    {!isScholarshipNotApproved && program.strikethrough_price && program.strikethrough_price > 0 && (
-                        <span className="text-right text-sm text-red-500 line-through">{formatRupiah(program.strikethrough_price)}</span>
+                    {!isScholarshipNotApproved && (program.strikethrough_price ?? 0) > 0 && (
+                        <span className="text-right text-sm text-red-500 line-through">{formatRupiah(program.strikethrough_price!)}</span>
                     )}
                     {displayPrice > 0 ? (
                         <span className="text-right text-3xl font-bold text-gray-900 italic dark:text-gray-100">{formatRupiah(displayPrice)}</span>

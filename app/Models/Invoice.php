@@ -95,6 +95,42 @@ class Invoice extends Model
     // ==================== Installment Helpers ====================
 
     /**
+     * Scope untuk invoice yang sudah dibeli oleh user (lunas atau cicilan dengan DP terbayar)
+     * Termasuk yang aksesnya sedang dibekukan (agar tetap tampil di dashboard/daftar produk user)
+     */
+    public function scopePurchasedByUser($query, $userId)
+    {
+        return $query->where('user_id', $userId)
+            ->where(function ($q) {
+                $q->whereIn('status', ['paid', 'completed'])
+                    ->orWhere(function ($iq) {
+                        $iq->where('status', 'installment_pending')
+                            ->whereHas('installmentTerms', function ($tq) {
+                                $tq->where('installment_number', 1)->where('status', 'paid');
+                            });
+                    });
+            });
+    }
+
+    /**
+     * Scope untuk invoice yang aktif dan dapat diakses materinya (lunas, atau cicilan dengan DP terbayar & tidak dibekukan)
+     */
+    public function scopeAccessibleForUser($query, $userId)
+    {
+        return $query->where('user_id', $userId)
+            ->where(function ($q) {
+                $q->whereIn('status', ['paid', 'completed'])
+                    ->orWhere(function ($iq) {
+                        $iq->where('status', 'installment_pending')
+                            ->whereNull('access_suspended_at')
+                            ->whereHas('installmentTerms', function ($tq) {
+                                $tq->where('installment_number', 1)->where('status', 'paid');
+                            });
+                    });
+            });
+    }
+
+    /**
      * Cek apakah semua termin cicilan sudah lunas
      */
     public function isFullyPaid(): bool

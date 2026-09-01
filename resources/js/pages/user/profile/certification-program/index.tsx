@@ -5,7 +5,7 @@ import { Spotlight } from '@/components/ui/spotlight';
 import ProfileLayout from '@/layouts/profile/layout';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Clock, Lock } from 'lucide-react';
 import { useState } from 'react';
 
 interface CertificationProgram {
@@ -27,7 +27,11 @@ interface Invoice {
     invoice_code: string;
     invoice_url: string;
     amount: number;
-    status: 'paid' | 'pending' | 'expired' | 'failed' | 'completed';
+    status: 'paid' | 'pending' | 'expired' | 'failed' | 'completed' | 'installment_pending';
+    is_installment?: boolean;
+    is_access_suspended?: boolean;
+    paid_terms?: number;
+    total_terms?: number;
     paid_at: string | null;
     payment_channel: string | null;
     payment_method: string | null;
@@ -58,6 +62,10 @@ export default function CertificationProgramIndex({ myCertificationPrograms }: P
                     invoice_id: invoice.id,
                     invoice_code: invoice.invoice_code,
                     invoice_status: invoice.status,
+                    is_installment: invoice.is_installment,
+                    is_access_suspended: invoice.is_access_suspended,
+                    paid_terms: invoice.paid_terms,
+                    total_terms: invoice.total_terms,
                     invoice_url: invoice.invoice_url,
                     paid_at: invoice.paid_at,
                     payment_channel: invoice.payment_channel,
@@ -108,10 +116,24 @@ export default function CertificationProgramIndex({ myCertificationPrograms }: P
                                         <h2 className="mb-1 text-lg font-semibold">{item.title}</h2>
                                         <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">Invoice: {item.invoice_code}</p>
 
-                                        <div className="mb-3 flex items-center gap-2 rounded-lg bg-green-50 p-2 dark:bg-green-900/20">
-                                            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                            <span className="text-xs font-medium text-green-700 dark:text-green-300">Sudah Dibayar</span>
-                                        </div>
+                                        {item.is_access_suspended ? (
+                                            <div className="mb-3 flex items-center gap-2 rounded-lg bg-red-50 p-2 dark:bg-red-900/20">
+                                                <Lock className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                                <span className="text-xs font-medium text-red-700 dark:text-red-300">Akses Dibekukan</span>
+                                            </div>
+                                        ) : item.is_installment && item.invoice_status === 'installment_pending' ? (
+                                            <div className="mb-3 flex items-center gap-2 rounded-lg bg-amber-50 p-2 dark:bg-amber-900/20">
+                                                <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                                <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                                                    Cicilan Aktif ({item.paid_terms}/{item.total_terms})
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <div className="mb-3 flex items-center gap-2 rounded-lg bg-green-50 p-2 dark:bg-green-900/20">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                                <span className="text-xs font-medium text-green-700 dark:text-green-300">Sudah Dibayar</span>
+                                            </div>
+                                        )}
 
                                         <div className="mt-2 flex justify-between text-sm">
                                             <span className="text-gray-600 dark:text-gray-400">

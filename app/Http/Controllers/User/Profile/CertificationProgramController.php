@@ -13,19 +13,28 @@ class CertificationProgramController extends Controller
     {
         $userId = Auth::id();
 
-        $invoices = Invoice::with(['certificationProgramItems.certificationProgram.category'])
-            ->where('user_id', $userId)
-            ->whereIn('status', ['paid', 'completed'])
+        $invoices = Invoice::with(['certificationProgramItems.certificationProgram.category', 'installmentTerms'])
+            ->purchasedByUser($userId)
             ->orderBy('created_at', 'desc')
             ->get();
 
         // Explicitly structure data for Inertia
         $myCertificationPrograms = $invoices->map(function ($invoice) {
+            $terms = $invoice->installmentTerms ?: collect();
+            $isInstallment = $invoice->is_installment || $invoice->status === 'installment_pending' || $terms->count() > 0;
+            $paidTerms = $terms->where('status', 'paid')->count();
+            $totalTerms = $terms->count();
+            $isSuspended = $invoice->isAccessSuspended();
+
             return [
                 'id' => $invoice->id,
                 'invoice_code' => $invoice->invoice_code,
                 'invoice_url' => $invoice->invoice_url,
                 'status' => $invoice->status,
+                'is_installment' => $isInstallment,
+                'is_access_suspended' => $isSuspended,
+                'paid_terms' => $paidTerms,
+                'total_terms' => $totalTerms,
                 'paid_at' => $invoice->paid_at,
                 'created_at' => $invoice->created_at,
                 'payment_method' => $invoice->payment_method,
@@ -63,7 +72,7 @@ class CertificationProgramController extends Controller
     {
         $userId = Auth::id();
 
-        // Get all paid/completed invoices with certification items
+        // Get all purchased invoices with certification items
         $invoices = Invoice::with([
             'certificationProgramItems.certificationProgram.category',
             'certificationProgramItems.certificationProgram.schedules' => function($q) {
@@ -72,9 +81,9 @@ class CertificationProgramController extends Controller
             'certificationProgramItems.certificationProgram.socializationSchedules' => function($q) {
                 $q->orderBy('schedule_date')->orderBy('start_time');
             },
+            'installmentTerms',
         ])
-            ->where('user_id', $userId)
-            ->whereIn('status', ['paid', 'completed'])
+            ->purchasedByUser($userId)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -96,6 +105,13 @@ class CertificationProgramController extends Controller
             abort(404, 'Sertifikasi program tidak ditemukan atau Anda belum terdaftar.');
         }
 
+        $terms = $matchedInvoice->installmentTerms ?: collect();
+        $isInstallment = $matchedInvoice->is_installment || $matchedInvoice->status === 'installment_pending' || $terms->count() > 0;
+        $paidTerms = $terms->where('status', 'paid')->count();
+        $totalTerms = $terms->count();
+        $isSuspended = $matchedInvoice->isAccessSuspended();
+        $isFullyPaid = $matchedInvoice->status === 'paid' || $matchedInvoice->isFullyPaid();
+
         // Explicitly structure data for Inertia serialization
         return Inertia::render('user/profile/certification-program/detail', [
             'invoice' => [
@@ -106,6 +122,11 @@ class CertificationProgramController extends Controller
                 'nett_amount' => $matchedInvoice->nett_amount,
                 'discount_amount' => $matchedInvoice->discount_amount,
                 'status' => $matchedInvoice->status,
+                'is_installment' => $isInstallment,
+                'is_access_suspended' => $isSuspended,
+                'is_fully_paid' => $isFullyPaid,
+                'paid_terms' => $paidTerms,
+                'total_terms' => $totalTerms,
                 'paid_at' => $matchedInvoice->paid_at,
                 'created_at' => $matchedInvoice->created_at,
                 'payment_method' => $matchedInvoice->payment_method,

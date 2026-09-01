@@ -272,8 +272,8 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                         return availableProducts.map((product) => {
                             const productUrl = getProductUrl(product);
                             const isScholarship = product.type === 'certification-program' && product.program_type === 'scholarship';
-                            const displayPrice = isScholarship ? (product.scholarship_price ?? product.price) : product.price;
-                            const discount = calculateDiscount(product.strikethrough_price, displayPrice);
+                            const displayPrice = isScholarship ? 0 : product.price;
+                            const discount = isScholarship ? 0 : calculateDiscount(product.strikethrough_price, displayPrice);
                             const certDeadline =
                                 product.type === 'certification-program'
                                     ? product.program_type === 'scholarship'

@@ -27,8 +27,7 @@ class WebinarController extends Controller
         if (Auth::check()) {
             $userId = Auth::id();
             $myWebinarIds = Invoice::with('webinarItems.webinar.category')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->webinarItems->pluck('webinar_id');
@@ -70,8 +69,7 @@ class WebinarController extends Controller
         if (Auth::check()) {
             $userId = Auth::id();
             $myWebinarIds = Invoice::with('webinarItems.webinar.category')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->webinarItems->pluck('webinar_id');

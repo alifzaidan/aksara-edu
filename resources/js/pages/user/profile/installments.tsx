@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import ProfileLayout from '@/layouts/profile/layout';
 import UserLayout from '@/layouts/user-layout';
 import { rupiahFormatter } from '@/lib/utils';
-import { Head, router } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
+import axios from 'axios';
 import { format, parseISO } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
-import { AlertTriangle, CalendarClock, CheckCircle2, Clock, CreditCard, Lock, Package } from 'lucide-react';
+import { AlertTriangle, BanknoteIcon, CalendarClock, CheckCircle2, Clock, CreditCard, Lock, Package, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -19,6 +20,9 @@ interface InstallmentTermDetail {
     status: 'pending' | 'paid' | 'failed';
     installment_due_date: string | null;
     paid_at: string | null;
+    payment_method: string | null;
+    payment_channel: string | null;
+    is_overdue: boolean;
 }
 
 interface NextUnpaidTerm {
@@ -27,6 +31,7 @@ interface NextUnpaidTerm {
     amount: number;
     installment_due_date: string | null;
     status: string;
+    is_overdue: boolean;
 }
 
 interface Installment {
@@ -49,10 +54,15 @@ interface InstallmentsProps {
     installments: Installment[];
 }
 
-function TermStatusBadge({ status }: { status: string }) {
+function TermStatusBadge({ status, isOverdue }: { status: string; isOverdue?: boolean }) {
     if (status === 'paid') return (
         <Badge className="bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400">
             <CheckCircle2 className="h-3 w-3 mr-1" /> Lunas
+        </Badge>
+    );
+    if (isOverdue) return (
+        <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400">
+            <XCircle className="h-3 w-3 mr-1" /> Jatuh Tempo Terlewat
         </Badge>
     );
     if (status === 'failed') return (
@@ -65,10 +75,7 @@ function TermStatusBadge({ status }: { status: string }) {
     );
 }
 
-import axios from 'axios';
-
 function InstallmentCard({ item }: { item: Installment }) {
-    const [isExpanded, setIsExpanded] = useState(false);
     const [isPayingTerm, setIsPayingTerm] = useState(false);
 
     async function handlePayTerm() {
@@ -89,18 +96,22 @@ function InstallmentCard({ item }: { item: Installment }) {
 
     const progressPercent = item.total_terms > 0 ? (item.paid_terms / item.total_terms) * 100 : 0;
     const isFullyPaid = item.status === 'paid';
+    const isNextOverdue = item.next_unpaid_term?.is_overdue ?? false;
+    const isSuspended = item.is_access_suspended && !isFullyPaid;
 
     return (
-        <div className={`rounded-xl border bg-card overflow-hidden transition-all ${item.is_access_suspended ? 'border-red-300 dark:border-red-800' : 'border-border'}`}>
+        <div className={`rounded-xl border bg-card overflow-hidden transition-all ${isSuspended ? 'border-red-300 dark:border-red-800' : isNextOverdue ? 'border-orange-300 dark:border-orange-800' : 'border-border'}`}>
             {/* Header */}
             <div className="p-4 sm:p-5">
                 <div className="flex items-start gap-3">
-                    <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${isFullyPaid ? 'bg-green-100 dark:bg-green-900/30' : item.is_access_suspended ? 'bg-red-100 dark:bg-red-900/30' : 'bg-blue-100 dark:bg-blue-900/30'}`}>
+                    <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${isFullyPaid ? 'bg-green-100 dark:bg-green-900/30' : isSuspended ? 'bg-red-100 dark:bg-red-900/30' : isNextOverdue ? 'bg-orange-100 dark:bg-orange-900/30' : 'bg-blue-100 dark:bg-blue-900/30'}`}>
                         {isFullyPaid
                             ? <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-                            : item.is_access_suspended
+                            : isSuspended
                                 ? <Lock className="h-5 w-5 text-red-600 dark:text-red-400" />
-                                : <CalendarClock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                : isNextOverdue
+                                    ? <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                                    : <CalendarClock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         }
                     </div>
                     <div className="flex-1 min-w-0">
@@ -124,18 +135,32 @@ function InstallmentCard({ item }: { item: Installment }) {
                     </div>
                     <div className="h-2 rounded-full bg-muted overflow-hidden">
                         <div
-                            className={`h-full rounded-full transition-all ${isFullyPaid ? 'bg-green-500' : item.is_access_suspended ? 'bg-red-500' : 'bg-blue-500'}`}
+                            className={`h-full rounded-full transition-all ${isFullyPaid ? 'bg-green-500' : isSuspended ? 'bg-red-500' : isNextOverdue ? 'bg-orange-500' : 'bg-blue-500'}`}
                             style={{ width: `${progressPercent}%` }}
                         />
                     </div>
                 </div>
 
+                {/* Overdue warning (before suspended) */}
+                {isNextOverdue && !isSuspended && !isFullyPaid && (
+                    <div className="mt-3 flex items-start gap-2 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 px-3 py-2.5">
+                        <AlertTriangle className="h-4 w-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-orange-700 dark:text-orange-400">
+                            Batas waktu pembayaran termin ke-{item.next_unpaid_term?.installment_number} telah terlewat.
+                            Pembayaran mandiri ditutup. Silakan hubungi admin untuk penyelesaian cicilan Anda.
+                        </p>
+                    </div>
+                )}
+
                 {/* Suspended warning */}
-                {item.is_access_suspended && !isFullyPaid && (
-                    <div className="mt-3 flex items-start gap-2 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 px-3 py-2">
-                        <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                {isSuspended && (
+                    <div className="mt-3 flex items-start gap-2 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 px-3 py-2.5">
+                        <Lock className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
                         <p className="text-xs text-red-600 dark:text-red-400">
-                            Akses dibekukan karena cicilan melewati jatuh tempo. Segera bayar cicilan berikutnya untuk memulihkan akses.
+                            Akses dibekukan karena cicilan melewati jatuh tempo.
+                            {isNextOverdue
+                                ? ' Pembayaran mandiri ditutup. Hubungi admin untuk memulihkan akses.'
+                                : ' Segera bayar cicilan berikutnya untuk memulihkan akses.'}
                         </p>
                     </div>
                 )}
@@ -143,63 +168,89 @@ function InstallmentCard({ item }: { item: Installment }) {
                 {/* Action buttons */}
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                     {!isFullyPaid && item.next_unpaid_term && (
-                        <Button
-                            size="sm"
-                            onClick={handlePayTerm}
-                            disabled={isPayingTerm}
-                            className="gap-2"
-                            id={`btn-pay-term-${item.id}`}
-                        >
-                            <CreditCard className="h-4 w-4" />
-                            {isPayingTerm ? 'Memproses...' : `Bayar Cicilan ke-${item.next_unpaid_term.installment_number} (${rupiahFormatter.format(item.next_unpaid_term.amount)})`}
-                        </Button>
+                        isNextOverdue ? (
+                            <Button
+                                size="sm"
+                                disabled
+                                variant="outline"
+                                className="gap-2 cursor-not-allowed opacity-60 border-orange-300 text-orange-700 dark:border-orange-700 dark:text-orange-400"
+                                id={`btn-pay-term-overdue-${item.id}`}
+                            >
+                                <BanknoteIcon className="h-4 w-4" />
+                                Cicilan ke-{item.next_unpaid_term.installment_number} — Batas Waktu Terlewat
+                            </Button>
+                        ) : (
+                            <Button
+                                size="sm"
+                                onClick={handlePayTerm}
+                                disabled={isPayingTerm}
+                                className="gap-2"
+                                id={`btn-pay-term-${item.id}`}
+                            >
+                                <CreditCard className="h-4 w-4" />
+                                {isPayingTerm ? 'Memproses...' : `Bayar Cicilan ke-${item.next_unpaid_term.installment_number} (${rupiahFormatter.format(item.next_unpaid_term.amount)})`}
+                            </Button>
+                        )
                     )}
                     {isFullyPaid && (
                         <Badge className="bg-green-100 text-green-700 border-green-200">
                             <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Semua Cicilan Lunas
                         </Badge>
                     )}
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setIsExpanded(!isExpanded)}
-                        className="ml-auto text-muted-foreground"
-                    >
-                        {isExpanded ? 'Sembunyikan' : 'Lihat Detail'}
-                    </Button>
                 </div>
             </div>
 
-            {/* Expanded term details */}
-            {isExpanded && (
-                <div className="border-t border-border p-4 sm:p-5 bg-muted/20 space-y-2">
-                    <p className="text-sm font-medium mb-3">Rincian Termin</p>
-                    {item.terms.map((term) => (
-                        <div key={term.id} className="flex items-center gap-3 rounded-lg bg-background border border-border p-3">
-                            <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${term.status === 'paid' ? 'bg-green-500' : term.status === 'failed' ? 'bg-red-500' : 'bg-slate-400'}`}>
-                                {term.installment_number}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <p className="text-sm font-medium">Termin ke-{term.installment_number}</p>
-                                    <TermStatusBadge status={term.status} />
+            {/* Term details — always visible */}
+            <div className="border-t border-border bg-muted/20">
+                <div className="px-4 sm:px-5 py-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Rincian Termin Pembayaran</p>
+                    <div className="space-y-2">
+                        {item.terms.map((term) => (
+                            <div
+                                key={term.id}
+                                className={`rounded-lg border p-3 bg-background flex items-start gap-3 ${term.is_overdue ? 'border-orange-200 dark:border-orange-800' : term.status === 'paid' ? 'border-green-200 dark:border-green-800' : 'border-border'}`}
+                            >
+                                <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white mt-0.5 ${term.status === 'paid' ? 'bg-green-500' : term.is_overdue ? 'bg-orange-500' : 'bg-slate-400'}`}>
+                                    {term.installment_number}
                                 </div>
-                                {term.installment_due_date && (
-                                    <p className="text-xs text-muted-foreground mt-0.5">
-                                        Jatuh tempo: {format(parseISO(term.installment_due_date), 'dd MMMM yyyy', { locale: idLocale })}
-                                    </p>
-                                )}
-                                {term.paid_at && (
-                                    <p className="text-xs text-green-600 mt-0.5">
-                                        Dibayar: {format(parseISO(term.paid_at), 'dd MMMM yyyy HH:mm', { locale: idLocale })}
-                                    </p>
-                                )}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                                        <p className="text-sm font-medium">Termin ke-{term.installment_number}</p>
+                                        <TermStatusBadge status={term.status} isOverdue={term.is_overdue} />
+                                        {term.installment_number === 1 && (
+                                            <Badge variant="outline" className="text-xs text-muted-foreground">DP</Badge>
+                                        )}
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        {term.installment_due_date && (
+                                            <p className={`text-xs ${term.is_overdue ? 'text-orange-600 dark:text-orange-400 font-medium' : 'text-muted-foreground'}`}>
+                                                <CalendarClock className="h-3 w-3 inline-block mr-1 -mt-0.5" />
+                                                Jatuh tempo: {format(parseISO(term.installment_due_date), 'dd MMMM yyyy', { locale: idLocale })}
+                                                {term.is_overdue && ' ⚠️ Terlewat'}
+                                            </p>
+                                        )}
+                                        {term.paid_at ? (
+                                            <p className="text-xs text-green-600 dark:text-green-400">
+                                                <CheckCircle2 className="h-3 w-3 inline-block mr-1 -mt-0.5" />
+                                                Dibayar: {format(parseISO(term.paid_at), 'dd MMMM yyyy, HH:mm', { locale: idLocale })}
+                                                {term.payment_channel && ` · via ${term.payment_channel}`}
+                                            </p>
+                                        ) : term.status === 'pending' && !term.is_overdue && (
+                                            <p className="text-xs text-muted-foreground">
+                                                <Clock className="h-3 w-3 inline-block mr-1 -mt-0.5" />
+                                                Belum dibayar
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                                <p className="font-semibold text-sm flex-shrink-0 mt-0.5">
+                                    {rupiahFormatter.format(term.amount)}
+                                </p>
                             </div>
-                            <p className="font-semibold text-sm flex-shrink-0">{rupiahFormatter.format(term.amount)}</p>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
-            )}
+            </div>
         </div>
     );
 }

@@ -17,25 +17,25 @@ class ProfileController extends Controller
         $userId = Auth::id();
 
         $courseCount = EnrollmentCourse::whereHas('invoice', function ($query) use ($userId) {
-            $query->where('user_id', $userId)->where('status', 'paid');
+            $query->purchasedByUser($userId);
         })->count();
 
         $bootcampCount = EnrollmentBootcamp::whereHas('invoice', function ($query) use ($userId) {
-            $query->where('user_id', $userId)->where('status', 'paid');
+            $query->purchasedByUser($userId);
         })->count();
 
         $webinarCount = EnrollmentWebinar::whereHas('invoice', function ($query) use ($userId) {
-            $query->where('user_id', $userId)->where('status', 'paid');
+            $query->purchasedByUser($userId);
         })->count();
 
         $certificationProgramCount = EnrollmentCertificationProgram::whereHas('invoice', function ($query) use ($userId) {
-            $query->where('user_id', $userId)->where('status', 'paid');
+            $query->purchasedByUser($userId);
         })->count();
 
         // Ambil enrollment courses dengan progress
         $enrolledCourses = EnrollmentCourse::with(['course:id,title,slug,group_url', 'invoice'])
             ->whereHas('invoice', function ($query) use ($userId) {
-                $query->where('user_id', $userId)->where('status', 'paid');
+                $query->purchasedByUser($userId);
             })
             ->orderBy('created_at', 'desc')
             ->limit(5)
@@ -56,7 +56,7 @@ class ProfileController extends Controller
         // Ambil enrollment bootcamps dengan jadwal dan group URL
         $enrolledBootcamps = EnrollmentBootcamp::with(['bootcamp:id,title,slug,start_date,end_date,group_url', 'invoice'])
             ->whereHas('invoice', function ($query) use ($userId) {
-                $query->where('user_id', $userId)->where('status', 'paid');
+                $query->purchasedByUser($userId);
             })
             ->orderBy('created_at', 'desc')
             ->limit(5)
@@ -77,7 +77,7 @@ class ProfileController extends Controller
         // Ambil enrollment webinars dengan jadwal dan group URL
         $enrolledWebinars = EnrollmentWebinar::with(['webinar:id,title,slug,start_time,end_time,group_url', 'invoice'])
             ->whereHas('invoice', function ($query) use ($userId) {
-                $query->where('user_id', $userId)->where('status', 'paid');
+                $query->purchasedByUser($userId);
             })
             ->orderBy('created_at', 'desc')
             ->limit(5)
@@ -97,7 +97,7 @@ class ProfileController extends Controller
 
         $enrolledCertificationPrograms = EnrollmentCertificationProgram::with(['certificationProgram:id,title,slug,group_url', 'invoice'])
             ->whereHas('invoice', function ($query) use ($userId) {
-                $query->where('user_id', $userId)->where('status', 'paid');
+                $query->purchasedByUser($userId);
             })
             ->orderBy('created_at', 'desc')
             ->limit(5)

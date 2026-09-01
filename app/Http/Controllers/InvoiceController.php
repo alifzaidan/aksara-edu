@@ -1978,15 +1978,44 @@ class InvoiceController extends Controller
             'webinarItems.webinar',
             'privateItems.privateClass',
             'privateItems.privateClassSchedule',
-            'certificationProgramItems.certificationProgram'
+            'certificationProgramItems.certificationProgram',
+            'parentInvoice.courseItems.course',
+            'parentInvoice.bootcampItems.bootcamp',
+            'parentInvoice.webinarItems.webinar',
+            'parentInvoice.privateItems.privateClass',
+            'parentInvoice.certificationProgramItems.certificationProgram',
         ])->findOrFail($id);
 
-        if ($invoice->status !== 'paid') {
-            abort(403, 'Invoice belum dibayar');
+        // Izinkan download jika:
+        // 1. Invoice reguler yang sudah paid
+        // 2. Invoice parent cicilan yang sudah lunas (status=paid)
+        // 3. Invoice anak cicilan (termin) yang statusnya paid
+        $isAllowed = false;
+        if ($invoice->status === 'paid') {
+            $isAllowed = true;
+        } elseif ($invoice->isInstallmentChild() && $invoice->status === 'paid') {
+            $isAllowed = true;
+        }
+
+        if (!$isAllowed) {
+            abort(403, 'Invoice belum dibayar atau belum lunas');
+        }
+
+        // Jika invoice anak cicilan, gunakan data produk dari parent
+        $invoiceForView = $invoice;
+        if ($invoice->isInstallmentChild() && $invoice->parentInvoice) {
+            $parent = $invoice->parentInvoice;
+            // Salin relasi produk dari parent ke invoice anak untuk view
+            $invoice->setRelation('courseItems', $parent->courseItems);
+            $invoice->setRelation('bootcampItems', $parent->bootcampItems);
+            $invoice->setRelation('webinarItems', $parent->webinarItems);
+            $invoice->setRelation('privateItems', $parent->privateItems);
+            $invoice->setRelation('certificationProgramItems', $parent->certificationProgramItems);
+            $invoiceForView = $invoice;
         }
 
         $data = [
-            'invoice' => $invoice,
+            'invoice' => $invoiceForView,
             'company' => [
                 'name' => 'Aksademy',
                 'address' => 'Perumahan Permata Permadani, Blok B1. Kel. Pendem Kec. Junrejo Kota Batu Prov. Jawa Timur, 65324',

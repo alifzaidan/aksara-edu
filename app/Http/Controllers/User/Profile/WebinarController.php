@@ -25,9 +25,8 @@ class WebinarController extends Controller
     public function index()
     {
         $userId = Auth::id();
-        $myWebinars = Invoice::with('webinarItems.webinar.category')
-            ->where('user_id', $userId)
-            ->where('status', 'paid')
+        $myWebinars = Invoice::with(['webinarItems.webinar.category', 'installmentTerms'])
+            ->purchasedByUser($userId)
             ->orderBy('created_at', 'desc')
             ->get();
         return Inertia::render('user/profile/webinar/index', ['myWebinars' => $myWebinars]);
@@ -43,10 +42,10 @@ class WebinarController extends Controller
                     $q->where('slug', $slug);
                 });
             },
-            'webinarItems.webinar.category'
+            'webinarItems.webinar.category',
+            'installmentTerms',
         ])
-            ->where('user_id', $userId)
-            ->where('status', 'paid')
+            ->purchasedByUser($userId)
             ->whereHas('webinarItems.webinar', function ($query) use ($slug) {
                 $query->where('slug', $slug);
             })

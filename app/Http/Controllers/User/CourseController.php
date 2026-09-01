@@ -26,8 +26,7 @@ class CourseController extends Controller
         if (Auth::check()) {
             $userId = Auth::id();
             $myCourseIds = Invoice::with('courseItems.course.category')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->courseItems->pluck('course_id');
@@ -68,8 +67,7 @@ class CourseController extends Controller
         if (Auth::check()) {
             $userId = Auth::id();
             $myCourseIds = Invoice::with('courseItems.course.category')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->courseItems->pluck('course_id');

@@ -26,8 +26,8 @@ class BootcampController extends Controller
     public function index()
     {
         $userId = Auth::id();
-        $myBootcamps = Invoice::with('bootcampItems.bootcamp.category')
-            ->where('user_id', $userId)
+        $myBootcamps = Invoice::with(['bootcampItems.bootcamp.category', 'installmentTerms'])
+            ->purchasedByUser($userId)
             ->orderBy('created_at', 'desc')
             ->get();
         return Inertia::render('user/profile/bootcamp/index', ['myBootcamps' => $myBootcamps]);
@@ -45,10 +45,10 @@ class BootcampController extends Controller
             },
             'bootcampItems.bootcamp.category',
             'bootcampItems.bootcamp.schedules',
-            'bootcampItems.attendances.bootcampSchedule'
+            'bootcampItems.attendances.bootcampSchedule',
+            'installmentTerms',
         ])
-            ->where('user_id', $userId)
-            ->where('status', 'paid')
+            ->purchasedByUser($userId)
             ->whereHas('bootcampItems.bootcamp', function ($query) use ($slug) {
                 $query->where('slug', $slug);
             })

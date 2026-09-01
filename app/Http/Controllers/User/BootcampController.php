@@ -27,8 +27,7 @@ class BootcampController extends Controller
         if (Auth::check()) {
             $userId = Auth::id();
             $myBootcampIds = Invoice::with('bootcampItems.bootcamp.category')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->bootcampItems->pluck('bootcamp_id');
@@ -70,8 +69,7 @@ class BootcampController extends Controller
         if (Auth::check()) {
             $userId = Auth::id();
             $myBootcampIds = Invoice::with('bootcampItems.bootcamp.category')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->bootcampItems->pluck('bootcamp_id');

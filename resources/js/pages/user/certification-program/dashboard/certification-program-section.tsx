@@ -196,9 +196,9 @@ export default function CertificationProgramSection({ categories, programs, myPr
                                                 <p className="mb-2 text-lg font-semibold text-green-600 dark:text-green-400">Gratis</p>
                                             ) : (
                                                 <div className="mb-2">
-                                                    {!isScholarshipNotApproved && program.strikethrough_price && program.strikethrough_price > 0 && (
+                                                    {!isScholarshipNotApproved && (program.strikethrough_price ?? 0) > 0 && (
                                                         <p className="text-sm text-red-500 line-through">
-                                                            {formatRupiah(program.strikethrough_price)}
+                                                            {formatRupiah(program.strikethrough_price!)}
                                                         </p>
                                                     )}
                                                     <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">

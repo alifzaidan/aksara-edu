@@ -236,8 +236,7 @@ class HomeController extends Controller
             $userId = Auth::id();
 
             $myCourseIds = Invoice::with('courseItems')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->courseItems->pluck('course_id');
@@ -247,8 +246,7 @@ class HomeController extends Controller
                 ->all();
 
             $myBootcampIds = Invoice::with('bootcampItems')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->bootcampItems->pluck('bootcamp_id');
@@ -258,8 +256,7 @@ class HomeController extends Controller
                 ->all();
 
             $myWebinarIds = Invoice::with('webinarItems')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->webinarItems->pluck('webinar_id');
@@ -269,8 +266,7 @@ class HomeController extends Controller
                 ->all();
 
             $myBundleIds = Invoice::with('bundleEnrollments')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->bundleEnrollments->pluck('bundle_id');
@@ -280,7 +276,7 @@ class HomeController extends Controller
                 ->all();
 
             $myPrivateIds = EnrollmentPrivate::whereHas('invoice', function ($query) use ($userId) {
-                $query->where('user_id', $userId);
+                $query->purchasedByUser($userId);
             })
                 ->pluck('private_class_id')
                 ->unique()
@@ -288,8 +284,7 @@ class HomeController extends Controller
                 ->all();
 
             $myCertificationProgramIds = Invoice::with('certificationProgramItems')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->certificationProgramItems->pluck('certification_program_id');

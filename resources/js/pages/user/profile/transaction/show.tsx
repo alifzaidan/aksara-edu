@@ -14,7 +14,9 @@ import { Button } from '@/components/ui/button';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
 import axios from 'axios';
-import { AlertTriangle, CheckCircle, Clock, ExternalLink, FileText, Home, XCircle } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { id as idLocale } from 'date-fns/locale';
+import { AlertTriangle, CalendarClock, CheckCircle, CheckCircle2, Clock, ExternalLink, FileText, Home, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -84,6 +86,19 @@ interface BundleEnrollment {
     };
 }
 
+interface InstallmentTermItem {
+    id: string;
+    installment_number: number;
+    invoice_code: string;
+    amount: number;
+    status: 'pending' | 'paid' | 'failed';
+    installment_due_date: string | null;
+    paid_at: string | null;
+    payment_method: string | null;
+    payment_channel: string | null;
+    is_overdue?: boolean;
+}
+
 interface Invoice {
     id: string;
     invoice_code: string;
@@ -91,7 +106,11 @@ interface Invoice {
     amount: number;
     nett_amount: number;
     discount_amount: number;
-    status: 'paid' | 'pending' | 'failed';
+    status: 'paid' | 'pending' | 'failed' | 'completed' | 'installment_pending';
+    is_installment?: boolean;
+    access_suspended_at?: string | null;
+    installment_terms?: InstallmentTermItem[];
+    installmentTerms?: InstallmentTermItem[];
     paid_at: string | null;
     expires_at: string | null;
     payment_method: string | null;
@@ -119,6 +138,20 @@ export default function TransactionShow({ invoice }: Props) {
     const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
     const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
 
+    const terms = invoice.installment_terms || invoice.installmentTerms || [];
+    const isInstallment =
+        invoice.is_installment ||
+        invoice.status === 'installment_pending' ||
+        terms.length > 0;
+    const paidTermsCount = terms.filter((t: any) => t.status === 'paid').length;
+    const totalTermsCount = terms.length;
+    const isFullyPaid = totalTermsCount > 0 && paidTermsCount === totalTermsCount;
+    const isSuspended = !!invoice.access_suspended_at;
+    const isAccessible =
+        invoice.status === 'paid' ||
+        invoice.status === 'completed' ||
+        (invoice.status === 'installment_pending' && !isSuspended);
+
     const getProductInfo = () => {
         const privateItems = invoice.private_items || invoice.privateItems || [];
         const bundleItems = invoice.bundle_enrollments || invoice.bundleEnrollments || [];
@@ -140,7 +173,7 @@ export default function TransactionShow({ invoice }: Props) {
                 name: bootcamp.title,
                 slug: bootcamp.slug,
                 thumbnail: bootcamp.thumbnail,
-                profileUrl: `/bootcamp/${bootcamp.slug}`,
+                profileUrl: `/profile/my-bootcamps/${bootcamp.slug}`,
                 publicUrl: `/bootcamp/${bootcamp.slug}`,
             };
         } else if (invoice.webinar_items && invoice.webinar_items.length > 0) {
@@ -150,7 +183,7 @@ export default function TransactionShow({ invoice }: Props) {
                 name: webinar.title,
                 slug: webinar.slug,
                 thumbnail: webinar.thumbnail,
-                profileUrl: `/webinar/${webinar.slug}`,
+                profileUrl: `/profile/my-webinars/${webinar.slug}`,
                 publicUrl: `/webinar/${webinar.slug}`,
             };
         } else if (privateItems.length > 0) {
@@ -210,8 +243,18 @@ export default function TransactionShow({ invoice }: Props) {
     };
 
     const getStatusIcon = () => {
+        if (isInstallment) {
+            if (isFullyPaid || invoice.status === 'paid' || invoice.status === 'completed') {
+                return <CheckCircle className="mt-1 h-6 w-6 text-green-500" />;
+            }
+            if (isSuspended) {
+                return <AlertTriangle className="mt-1 h-6 w-6 text-red-500" />;
+            }
+            return <Clock className="mt-1 h-6 w-6 text-amber-500" />;
+        }
         switch (invoice.status) {
             case 'paid':
+            case 'completed':
                 return <CheckCircle className="mt-1 h-6 w-6 text-green-500" />;
             case 'pending':
                 return <Clock className="mt-1 h-6 w-6 text-yellow-500" />;
@@ -223,8 +266,18 @@ export default function TransactionShow({ invoice }: Props) {
     };
 
     const getStatusText = () => {
+        if (isInstallment) {
+            if (isFullyPaid || invoice.status === 'paid' || invoice.status === 'completed') {
+                return 'Cicilan Lunas';
+            }
+            if (isSuspended) {
+                return 'Akses Program Dibekukan';
+            }
+            return `Cicilan Berjalan (${paidTermsCount}/${totalTermsCount || '?'} Termin Terbayar)`;
+        }
         switch (invoice.status) {
             case 'paid':
+            case 'completed':
                 return 'Pembayaran Berhasil';
             case 'pending':
                 return isExpired ? 'Pembayaran Kedaluwarsa' : 'Menunggu Pembayaran';
@@ -236,8 +289,18 @@ export default function TransactionShow({ invoice }: Props) {
     };
 
     const getStatusColor = () => {
+        if (isInstallment) {
+            if (isFullyPaid || invoice.status === 'paid' || invoice.status === 'completed') {
+                return 'text-green-600';
+            }
+            if (isSuspended) {
+                return 'text-red-600';
+            }
+            return 'text-amber-500';
+        }
         switch (invoice.status) {
             case 'paid':
+            case 'completed':
                 return 'text-green-600';
             case 'pending':
                 return isExpired ? 'text-red-600' : 'text-yellow-600';
@@ -264,6 +327,28 @@ export default function TransactionShow({ invoice }: Props) {
                         </div>
 
                         <div className="p-6">
+                            {isInstallment && (
+                                <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-900/20">
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                        <div>
+                                            <h4 className="font-semibold text-amber-900 dark:text-amber-200">
+                                                {isSuspended ? '⚠️ Akses Program Sedang Dibekukan' : 'ℹ️ Transaksi Pembayaran Cicilan'}
+                                            </h4>
+                                            <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">
+                                                {isSuspended
+                                                    ? 'Akses materi dan sesi program dibekukan karena terdapat termin cicilan yang telah melewati tanggal jatuh tempo.'
+                                                    : `Anda telah membayar ${paidTermsCount} dari ${totalTermsCount} termin cicilan. Program aktif dan dapat diakses.`}
+                                            </p>
+                                        </div>
+                                        <Button asChild size="sm" className="shrink-0 bg-amber-600 hover:bg-amber-700 text-white">
+                                            <Link href={route('profile.installments')}>
+                                                Kelola Cicilan Saya
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
                             {productInfo && (
                                 <div className="mb-6 rounded-lg border bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700">
                                     <h3 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Produk yang Dibeli</h3>
@@ -289,7 +374,7 @@ export default function TransactionShow({ invoice }: Props) {
                                                             : 'Sertifikasi Program'}
                                             </p>
                                             <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-                                                {invoice.status === 'paid' ? (
+                                                {isAccessible ? (
                                                     <Button asChild size="sm" variant="outline">
                                                         <Link href={productInfo.profileUrl}>
                                                             <ExternalLink className="mr-2 h-4 w-4" />
@@ -413,6 +498,80 @@ export default function TransactionShow({ invoice }: Props) {
                                 </div>
                             </div>
 
+                            {/* Installment terms breakdown */}
+                            {isInstallment && terms.length > 0 && (
+                                <div className="mb-6 rounded-lg border border-border bg-gray-50 dark:bg-gray-700/30 p-4">
+                                    <h3 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Rincian Termin Cicilan</h3>
+                                    <div className="space-y-2">
+                                        {terms.map((term: InstallmentTermItem) => {
+                                            const isTermOverdue = term.is_overdue ?? false;
+                                            return (
+                                                <div
+                                                    key={term.id}
+                                                    className={`flex items-start gap-3 rounded-lg border p-3 bg-white dark:bg-gray-800 ${
+                                                        term.status === 'paid'
+                                                            ? 'border-green-200 dark:border-green-800'
+                                                            : isTermOverdue
+                                                              ? 'border-orange-200 dark:border-orange-800'
+                                                              : 'border-border'
+                                                    }`}
+                                                >
+                                                    <div
+                                                        className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white mt-0.5 ${
+                                                            term.status === 'paid'
+                                                                ? 'bg-green-500'
+                                                                : isTermOverdue
+                                                                  ? 'bg-orange-500'
+                                                                  : 'bg-slate-400'
+                                                        }`}
+                                                    >
+                                                        {term.installment_number}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                                                Termin ke-{term.installment_number}{term.installment_number === 1 ? ' (DP)' : ''}
+                                                            </p>
+                                                            {term.status === 'paid' ? (
+                                                                <span className="inline-flex items-center gap-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs px-2 py-0.5">
+                                                                    <CheckCircle2 className="h-3 w-3" /> Lunas
+                                                                </span>
+                                                            ) : isTermOverdue ? (
+                                                                <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs px-2 py-0.5">
+                                                                    <XCircle className="h-3 w-3" /> Jatuh Tempo Terlewat
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs px-2 py-0.5">
+                                                                    <Clock className="h-3 w-3" /> Menunggu
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="space-y-0.5 text-xs">
+                                                            {term.installment_due_date && (
+                                                                <p className={isTermOverdue ? 'text-orange-600 dark:text-orange-400 font-medium' : 'text-gray-500 dark:text-gray-400'}>
+                                                                    <CalendarClock className="h-3 w-3 inline-block mr-1 -mt-0.5" />
+                                                                    Jatuh tempo: {format(parseISO(term.installment_due_date), 'dd MMMM yyyy', { locale: idLocale })}
+                                                                </p>
+                                                            )}
+                                                            {term.paid_at && (
+                                                                <p className="text-green-600 dark:text-green-400">
+                                                                    <CheckCircle className="h-3 w-3 inline-block mr-1 -mt-0.5" />
+                                                                    Dibayar: {format(parseISO(term.paid_at), 'dd MMMM yyyy, HH:mm', { locale: idLocale })}
+                                                                    {term.payment_channel && ` · via ${term.payment_channel}`}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-sm font-semibold flex-shrink-0 mt-0.5 text-gray-900 dark:text-white">
+                                                        Rp {term.amount.toLocaleString('id-ID')}
+                                                    </p>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="flex flex-col justify-center gap-4 sm:flex-row">
                                 {invoice.status === 'pending' && !isExpired && invoice.invoice_url && (
                                     <>
@@ -455,18 +614,27 @@ export default function TransactionShow({ invoice }: Props) {
                                     </>
                                 )}
 
-                                {invoice.status === 'paid' && (
+                                {(invoice.status === 'paid' || (isInstallment && isFullyPaid)) && (
                                     <>
                                         <Button asChild className="w-full sm:w-auto" variant="outline">
                                             <Link href={route('profile.transactions')}>Lihat Riwayat Transaksi</Link>
                                         </Button>
-                                        <Button asChild>
-                                            <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
-                                                <FileText className="size-4" />
-                                                Unduh Invoice
-                                            </a>
-                                        </Button>
+                                        {/* Hanya tampilkan tombol invoice jika bukan cicilan atau cicilan sudah lunas */}
+                                        {(!isInstallment || isFullyPaid) && (
+                                            <Button asChild>
+                                                <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
+                                                    <FileText className="size-4" />
+                                                    Unduh Invoice
+                                                </a>
+                                            </Button>
+                                        )}
                                     </>
+                                )}
+
+                                {isInstallment && !isFullyPaid && (
+                                    <Button asChild className="w-full sm:w-auto" variant="outline">
+                                        <Link href={route('profile.installments')}>Lihat Cicilan Saya</Link>
+                                    </Button>
                                 )}
 
                                 {(invoice.status === 'failed' || isExpired) && (

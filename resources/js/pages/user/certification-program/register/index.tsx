@@ -1416,8 +1416,8 @@ export default function Register({
                                             </Badge>
                                         </div>
                                         <Separator />
-                                        {!isScholarshipNotApproved && program.strikethrough_price && program.strikethrough_price > 0 && (
-                                            <p className="text-right text-sm text-red-500 line-through">{formatRupiah(program.strikethrough_price)}</p>
+                                        {!isScholarshipNotApproved && (program.strikethrough_price ?? 0) > 0 && (
+                                            <p className="text-right text-sm text-red-500 line-through">{formatRupiah(program.strikethrough_price!)}</p>
                                         )}
                                         
                                         <div className="space-y-1 text-right">
@@ -1713,8 +1713,8 @@ export default function Register({
                                         </Badge>
                                     </div>
                                     <Separator className="mb-4" />
-                                    {!isScholarshipNotApproved && program.strikethrough_price && program.strikethrough_price > 0 && (
-                                        <p className="text-right text-sm text-red-500 line-through">{formatRupiah(program.strikethrough_price)}</p>
+                                    {!isScholarshipNotApproved && (program.strikethrough_price ?? 0) > 0 && (
+                                        <p className="text-right text-sm text-red-500 line-through">{formatRupiah(program.strikethrough_price!)}</p>
                                     )}
                                     
                                     <div className="space-y-1 text-right">
