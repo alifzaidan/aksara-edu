@@ -100,6 +100,25 @@ interface Invoice {
     created_at: string;
 }
 
+interface TransactionItem {
+    type: string;
+    title: string;
+    slug: string;
+    price: number;
+    invoice_id: string;
+    invoice_status: Invoice['status'];
+    invoice_code: string;
+    invoice_url: string;
+    is_installment?: boolean;
+    access_suspended_at?: string | null;
+    installment_terms?: any[];
+    paid_at: string | null;
+    payment_channel: string | null;
+    payment_method: string | null;
+    created_at: string;
+    is_scholarship?: boolean;
+}
+
 interface Props {
     myTransactions: Invoice[];
 }
@@ -114,7 +133,7 @@ export default function Transactions({ myTransactions }: Props) {
         );
     };
 
-    const getItemHref = (type: string, slug: string, status: Invoice['status'], item?: any) => {
+    const getItemHref = (type: string, slug: string, status: Invoice['status'], item?: TransactionItem) => {
         const isAccessible =
             status === 'paid' ||
             status === 'completed' ||
@@ -141,7 +160,7 @@ export default function Transactions({ myTransactions }: Props) {
     };
 
     // Gabungkan semua items dari semua invoice menjadi satu array
-    const allItems = myTransactions.flatMap((invoice) => {
+    const allItems: TransactionItem[] = myTransactions.flatMap((invoice) => {
         const courseItems = invoice.course_items || invoice.courseItems || [];
         const bootcampItems = invoice.bootcamp_items || invoice.bootcampItems || [];
         const webinarItems = invoice.webinar_items || invoice.webinarItems || [];
@@ -151,8 +170,8 @@ export default function Transactions({ myTransactions }: Props) {
             invoice.certificationProgramItems || invoice.certification_program_items || [];
         const installmentTerms = invoice.installment_terms || invoice.installmentTerms || [];
 
-        return [
-            ...courseItems.map((item) => ({
+        const items: TransactionItem[] = [
+            ...courseItems.map((item): TransactionItem => ({
                 type: 'Course',
                 title: item.course?.title || 'Kelas Online',
                 slug: item.course?.slug || '',
@@ -169,7 +188,7 @@ export default function Transactions({ myTransactions }: Props) {
                 payment_method: invoice.payment_method,
                 created_at: invoice.created_at,
             })),
-            ...bootcampItems.map((item) => ({
+            ...bootcampItems.map((item): TransactionItem => ({
                 type: 'Bootcamp',
                 title: item.bootcamp?.title || 'Bootcamp',
                 slug: item.bootcamp?.slug || '',
@@ -186,7 +205,7 @@ export default function Transactions({ myTransactions }: Props) {
                 payment_method: invoice.payment_method,
                 created_at: invoice.created_at,
             })),
-            ...webinarItems.map((item) => ({
+            ...webinarItems.map((item): TransactionItem => ({
                 type: 'Webinar',
                 title: item.webinar?.title || 'Webinar',
                 slug: item.webinar?.slug || '',
@@ -203,7 +222,7 @@ export default function Transactions({ myTransactions }: Props) {
                 payment_method: invoice.payment_method,
                 created_at: invoice.created_at,
             })),
-            ...privateItems.map((item) => {
+            ...privateItems.map((item): TransactionItem => {
                 const pc = item.privateClass || item.private_class;
                 return {
                     type: 'Private',
@@ -223,7 +242,7 @@ export default function Transactions({ myTransactions }: Props) {
                     created_at: invoice.created_at,
                 };
             }),
-            ...bundleItems.map((item) => ({
+            ...bundleItems.map((item): TransactionItem => ({
                 type: 'Bundle',
                 title: item.bundle?.title || 'Paket Bundling',
                 slug: item.bundle?.slug || '',
@@ -240,15 +259,15 @@ export default function Transactions({ myTransactions }: Props) {
                 payment_method: invoice.payment_method,
                 created_at: invoice.created_at,
             })),
-            ...certificationItems
-                .map((item) => {
-                    const certificationProgram = getCertificationProgram(item);
+            ...certificationItems.flatMap((item): TransactionItem[] => {
+                const certificationProgram = getCertificationProgram(item);
 
-                    if (!certificationProgram) {
-                        return null;
-                    }
+                if (!certificationProgram) {
+                    return [];
+                }
 
-                    return {
+                return [
+                    {
                         type: 'Certification Program',
                         title: certificationProgram.title,
                         slug: certificationProgram.slug,
@@ -265,36 +284,16 @@ export default function Transactions({ myTransactions }: Props) {
                         payment_method: invoice.payment_method,
                         created_at: invoice.created_at,
                         is_scholarship: item.is_scholarship,
-                    };
-                })
-                .filter(
-                    (
-                        item,
-                    ): item is {
-                        type: string;
-                        title: string;
-                        slug: string;
-                        price: number;
-                        invoice_id: string;
-                        invoice_status: Invoice['status'];
-                        invoice_code: string;
-                        invoice_url: string;
-                        is_installment?: boolean;
-                        access_suspended_at?: string | null;
-                        installment_terms?: any[];
-                        paid_at: string | null;
-                        payment_channel: string | null;
-                        payment_method: string | null;
-                        created_at: string;
-                        is_scholarship: boolean;
-                    } => item !== null,
-                ),
+                    },
+                ];
+            }),
         ];
+        return items;
     });
 
     const filteredItems = allItems.filter((item) => item.title.toLowerCase().includes(search.toLowerCase()));
 
-    const getStatusComponent = (status: Invoice['status'], item?: any) => {
+    const getStatusComponent = (status: Invoice['status'], item?: TransactionItem) => {
         const isInstallment =
             item?.is_installment ||
             status === 'installment_pending' ||
