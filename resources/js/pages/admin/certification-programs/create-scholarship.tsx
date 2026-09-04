@@ -19,7 +19,7 @@ import { BreadcrumbItem } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Head, router } from '@inertiajs/react';
 import { Editor } from '@tinymce/tinymce-react';
-import { BookMarked, CalendarFold, Check, ChevronsUpDown, GraduationCap } from 'lucide-react';
+import { AlertTriangle, BookMarked, CalendarFold, Check, ChevronsUpDown, GraduationCap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -145,6 +145,7 @@ export default function CreateScholarshipCertificationProgram({ categories, ment
     const [biinspiraPrograms, setBiinspiraPrograms] = useState<any[]>([]);
     const [isBiinspiraPopoverOpen, setIsBiinspiraPopoverOpen] = useState(false);
     const [selectedBiinspiraProgram, setSelectedBiinspiraProgram] = useState<any | null>(null);
+    const [missingMentorNames, setMissingMentorNames] = useState<string[]>([]);
 
     useEffect(() => {
         fetch(route('admin.biinsight-import.programs') + '?type=certification_program')
@@ -378,8 +379,72 @@ export default function CreateScholarshipCertificationProgram({ categories, ment
 
                                                                     setSocializationSchedules(mappedSocialization);
 
+                                                                    // Populate Mentor(s)
+                                                                    const rawMentorNames: string[] = [];
+                                                                    if (Array.isArray(program.mentors)) {
+                                                                        program.mentors.forEach((m: any) => {
+                                                                            if (typeof m === 'string' && m.trim()) {
+                                                                                rawMentorNames.push(m.trim());
+                                                                            } else if (m && typeof m === 'object' && m.name) {
+                                                                                rawMentorNames.push(String(m.name).trim());
+                                                                            }
+                                                                        });
+                                                                    } else if (typeof program.mentor === 'string' && program.mentor.trim()) {
+                                                                        rawMentorNames.push(program.mentor.trim());
+                                                                    } else if (typeof program.mentor_name === 'string' && program.mentor_name.trim()) {
+                                                                        rawMentorNames.push(program.mentor_name.trim());
+                                                                    }
+
+                                                                    const assignedMentors: string[] = [];
+                                                                    const missingMentors: string[] = [];
+
+                                                                    if (rawMentorNames.length > 0) {
+                                                                        const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+                                                                        const getBaseName = (s: string) => normalize(s.split(',')[0]);
+
+                                                                        const matchedMentorIds: string[] = [];
+
+                                                                        rawMentorNames.forEach((rawName) => {
+                                                                            const matched = mentors.find((m) => {
+                                                                                const mNorm = normalize(m.name);
+                                                                                const rNorm = normalize(rawName);
+                                                                                if (mNorm === rNorm) return true;
+                                                                                const mBase = getBaseName(m.name);
+                                                                                const rBase = getBaseName(rawName);
+                                                                                if (mBase && rBase && mBase === rBase) return true;
+                                                                                return false;
+                                                                            });
+
+                                                                            if (matched) {
+                                                                                if (!matchedMentorIds.includes(matched.id)) {
+                                                                                    matchedMentorIds.push(matched.id);
+                                                                                    assignedMentors.push(matched.name);
+                                                                                }
+                                                                            } else {
+                                                                                missingMentors.push(rawName);
+                                                                            }
+                                                                        });
+
+                                                                        if (matchedMentorIds.length > 0) {
+                                                                            form.setValue('mentor_ids', matchedMentorIds);
+                                                                        }
+                                                                    }
+
                                                                     setIsBiinspiraPopoverOpen(false);
-                                                                    toast.success(`Berhasil mengambil data "${program.title}" dari Biinsight!`);
+                                                                    setMissingMentorNames(missingMentors);
+
+                                                                    if (missingMentors.length > 0) {
+                                                                        toast.warning(
+                                                                            `Mentor "${missingMentors.join(', ')}" belum terdaftar di database Aksademy. Silakan buat data mentor terlebih dahulu di Aksademy agar dapat dipilih.`,
+                                                                            { duration: 7000 }
+                                                                        );
+                                                                    }
+
+                                                                    if (assignedMentors.length > 0) {
+                                                                        toast.success(`Berhasil mengambil data "${program.title}" dari Biinsight (Mentor: ${assignedMentors.join(', ')}).`);
+                                                                    } else {
+                                                                        toast.success(`Berhasil mengambil data "${program.title}" dari Biinsight!`);
+                                                                    }
                                                                 } catch (err: any) {
                                                                     console.error(err);
                                                                     toast.error(`Gagal memproses data: ${err.message}`);
@@ -761,6 +826,20 @@ export default function CreateScholarshipCertificationProgram({ categories, ment
                                                         </div>
                                                     </div>
                                                 ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {missingMentorNames.length > 0 && (
+                                        <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-amber-800 dark:border-amber-800/80 dark:bg-amber-950/40 dark:text-amber-300">
+                                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                            <div className="space-y-1 text-xs leading-relaxed">
+                                                <p className="font-medium text-amber-900 dark:text-amber-200">
+                                                    Mentor "{missingMentorNames.join(', ')}" belum terdaftar di Aksademy
+                                                </p>
+                                                <p className="text-amber-700 dark:text-amber-400">
+                                                    Data mentor dari Biinsight tidak ditemukan di database Aksademy. Silakan buat akun/data mentor tersebut terlebih dahulu di menu <strong>Kelola Staff / Mentor</strong> atau pilih mentor lain yang tersedia di atas.
+                                                </p>
                                             </div>
                                         </div>
                                     )}

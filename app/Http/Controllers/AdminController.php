@@ -425,8 +425,8 @@ class AdminController extends Controller
             ->sum('nett_amount');
 
         $monthlyRevenueChange = 0;
-        if ($lastMonthRevenue > 0) {
-            $monthlyRevenueChange = (($revenueThisMonth - $lastMonthRevenue) / $lastMonthRevenue) * 100;
+        if ($revenueLastMonth > 0) {
+            $monthlyRevenueChange = (($revenueThisMonth - $revenueLastMonth) / $revenueLastMonth) * 100;
         } elseif ($revenueThisMonth > 0) {
             $monthlyRevenueChange = 100;
         }
@@ -472,7 +472,7 @@ class AdminController extends Controller
                                 ->whereHas('installmentTerms', fn ($tq) => $tq->where('installment_number', 1)->where('status', 'paid'));
                         });
                 })
-                ->orderByDesc(Invoice::selectRaw('COALESCE(paid_at, created_at)')->whereColumn('id', 'invoices.id'))
+                ->orderByRaw('COALESCE(paid_at, created_at) DESC')
                 ->take(5)
                 ->get(),
             'revenue_data' => $this->getRevenueData(),
