@@ -133,6 +133,75 @@ class Invoice extends Model
     }
 
     /**
+     * Ambil data cicilan aktif milik user untuk produk tertentu
+     */
+    public static function getActiveInstallmentForUser($userId, string $type, string $productId): ?array
+    {
+        if (!$userId) {
+            return null;
+        }
+
+        $parentInvoice = self::with(['installmentTerms' => function ($q) {
+            $q->orderBy('installment_number');
+        }])
+            ->where('user_id', $userId)
+            ->where('is_installment', true)
+            ->whereNull('parent_invoice_id')
+            ->where(function ($q) use ($type, $productId) {
+                match ($type) {
+                    'certification_program', 'certification-program' => $q->whereHas('certificationProgramItems', fn($iq) => $iq->where('certification_program_id', $productId)),
+                    'bootcamp' => $q->whereHas('bootcampItems', fn($iq) => $iq->where('bootcamp_id', $productId)),
+                    'bundle' => $q->whereHas('bundleEnrollments', fn($iq) => $iq->where('bundle_id', $productId)),
+                    'webinar' => $q->whereHas('webinarItems', fn($iq) => $iq->where('webinar_id', $productId)),
+                    'course' => $q->whereHas('courseItems', fn($iq) => $iq->where('course_id', $productId)),
+                    'private' => $q->whereHas('privateItems', fn($iq) => $iq->where('private_class_id', $productId)),
+                    default => null,
+                };
+            })
+            ->latest()
+            ->first();
+
+        if (!$parentInvoice) {
+            return null;
+        }
+
+        $terms = $parentInvoice->installmentTerms->sortBy('installment_number')->values();
+        $paidTerms = $terms->where('status', 'paid')->count();
+        $totalTerms = $terms->count();
+        $nextUnpaid = $parentInvoice->nextUnpaidTerm();
+        $isFullyPaid = $parentInvoice->isFullyPaid() || ($paidTerms === $totalTerms && $totalTerms > 0);
+
+        return [
+            'parent_invoice_id' => $parentInvoice->id,
+            'invoice_code' => $parentInvoice->invoice_code,
+            'status' => $parentInvoice->status,
+            'amount' => $parentInvoice->amount,
+            'total_terms' => $totalTerms,
+            'paid_terms' => $paidTerms,
+            'is_fully_paid' => $isFullyPaid,
+            'next_term' => $nextUnpaid ? [
+                'id' => $nextUnpaid->id,
+                'term_number' => $nextUnpaid->installment_number,
+                'amount' => $nextUnpaid->amount,
+                'due_date' => $nextUnpaid->installment_due_date ? $nextUnpaid->installment_due_date->format('Y-m-d') : null,
+                'is_overdue' => $nextUnpaid->installment_due_date
+                    ? \Carbon\Carbon::now('Asia/Jakarta')->gt(\Carbon\Carbon::parse($nextUnpaid->installment_due_date)->endOfDay())
+                    : false,
+            ] : null,
+            'terms' => $terms->map(function ($t) {
+                return [
+                    'id' => $t->id,
+                    'term_number' => $t->installment_number,
+                    'amount' => $t->amount,
+                    'due_date' => $t->installment_due_date ? $t->installment_due_date->format('Y-m-d') : null,
+                    'status' => $t->status,
+                    'paid_at' => $t->paid_at ? $t->paid_at->format('Y-m-d H:i') : null,
+                ];
+            })->values()->all(),
+        ];
+    }
+
+    /**
      * Cek apakah semua termin cicilan sudah lunas
      */
     public function isFullyPaid(): bool
@@ -156,7 +225,7 @@ class Invoice extends Model
      */
     public function nextUnpaidTerm(): ?Invoice
     {
-        return $this->installmentTerms()->where('status', 'pending')->orderBy('installment_number')->first();
+        return $this->installmentTerms()->where('status', '!=', 'paid')->orderBy('installment_number')->first();
     }
 
     /**

@@ -109,36 +109,31 @@ class BootcampController extends Controller
 
         $bootcamp->load(['schedules', 'tools', 'category', 'mentors']);
         $hasAccess = false;
+        $activeInstallment = null;
         $pendingInvoice = null;
         $pendingInvoiceUrl = null;
 
         $userId = Auth::id();
 
         if ($userId) {
-            $hasAccess = Invoice::where('user_id', $userId)
-                ->where('status', 'paid')
+            $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'bootcamp', $bootcamp->id);
+
+            $hasRegularPaid = Invoice::where('user_id', $userId)
+                ->whereNull('parent_invoice_id')
+                ->where('is_installment', false)
+                ->whereIn('status', ['paid', 'completed'])
                 ->whereHas('bootcampItems', function ($query) use ($bootcamp) {
                     $query->where('bootcamp_id', $bootcamp->id);
                 })
                 ->exists();
 
-            // Cek akses via cicilan aktif (DP sudah dibayar & tidak dibekukan)
-            if (!$hasAccess) {
-                $hasAccess = Invoice::where('user_id', $userId)
-                    ->where('status', 'installment_pending')
-                    ->whereNull('access_suspended_at')
-                    ->whereHas('bootcampItems', function ($query) use ($bootcamp) {
-                        $query->where('bootcamp_id', $bootcamp->id);
-                    })
-                    ->whereHas('installmentTerms', function ($q) {
-                        $q->where('installment_number', 1)->where('status', 'paid');
-                    })
-                    ->exists();
-            }
+            $isInstallmentCompleted = $activeInstallment && $activeInstallment['is_fully_paid'];
+            $hasAccess = $hasRegularPaid || $isInstallmentCompleted;
 
-            if (!$hasAccess) {
+            if (!$hasAccess && !$activeInstallment) {
                 $invoice = Invoice::where('user_id', $userId)
                     ->where('status', 'pending')
+                    ->where('is_installment', false)
                     ->whereHas('bootcampItems', function ($query) use ($bootcamp) {
                         $query->where('bootcamp_id', $bootcamp->id);
                     })
@@ -164,6 +159,7 @@ class BootcampController extends Controller
         return Inertia::render('user/bootcamp/register/index', [
             'bootcamp' => $bootcamp,
             'hasAccess' => $hasAccess,
+            'activeInstallment' => $activeInstallment,
             'pendingInvoice' => $pendingInvoice,
             'pendingInvoiceUrl' => $pendingInvoiceUrl,
             'referralInfo' => $this->getReferralInfo(),

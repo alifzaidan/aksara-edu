@@ -133,6 +133,7 @@ class PrivateController extends Controller
 
         $privateClass->load(['category', 'user', 'schedules']);
         $userId = Auth::id();
+        $activeInstallment = $userId ? Invoice::getActiveInstallmentForUser($userId, 'private', $privateClass->id) : null;
 
         $schedules = $privateClass->schedules
             ->where('is_active', true)
@@ -155,40 +156,41 @@ class PrivateController extends Controller
         if ($userId) {
             $ownedPaidIds = EnrollmentPrivate::whereIn('private_class_schedule_id', $scheduleIds)
                 ->whereHas('invoice', function ($query) use ($userId) {
-                    $query->where('status', 'paid')
-                        ->where('user_id', $userId);
+                    $query->where('user_id', $userId)
+                        ->where('is_installment', false)
+                        ->whereIn('status', ['paid', 'completed']);
                 })
                 ->pluck('private_class_schedule_id');
 
-            $ownedInstallmentIds = EnrollmentPrivate::whereIn('private_class_schedule_id', $scheduleIds)
-                ->whereHas('invoice', function ($query) use ($userId) {
-                    $query->where('status', 'installment_pending')
-                        ->whereNull('access_suspended_at')
-                        ->where('user_id', $userId)
-                        ->whereHas('installmentTerms', function ($q) {
-                            $q->where('installment_number', 1)->where('status', 'paid');
-                        });
-                })
-                ->pluck('private_class_schedule_id');
+            $isInstallmentCompleted = $activeInstallment && $activeInstallment['is_fully_paid'];
+            if ($isInstallmentCompleted) {
+                $completedInstallmentScheduleIds = EnrollmentPrivate::whereIn('private_class_schedule_id', $scheduleIds)
+                    ->where('invoice_id', $activeInstallment['parent_invoice_id'])
+                    ->pluck('private_class_schedule_id');
+                $ownedPaidIds = $ownedPaidIds->concat($completedInstallmentScheduleIds);
+            }
 
-            $ownedScheduleIds = $ownedPaidIds->concat($ownedInstallmentIds)->unique()->values();
+            $ownedScheduleIds = $ownedPaidIds->unique()->values();
 
-            $pendingEnrollments = EnrollmentPrivate::with(['invoice:id,invoice_url,expires_at,created_at'])
-                ->whereIn('private_class_schedule_id', $scheduleIds)
-                ->whereHas('invoice', function ($query) use ($userId) {
-                    $query->where('status', 'pending')
-                        ->where('user_id', $userId)
-                        ->where(function ($q) {
-                            $q->whereNull('expires_at')
-                                ->orWhere('expires_at', '>', now());
-                        });
-                })
-                ->get()
-                ->sortByDesc(function ($enrollment) {
-                    return $enrollment->invoice?->created_at;
-                })
-                ->unique('private_class_schedule_id')
-                ->values();
+            if (!$activeInstallment) {
+                $pendingEnrollments = EnrollmentPrivate::with(['invoice:id,invoice_url,expires_at,created_at'])
+                    ->whereIn('private_class_schedule_id', $scheduleIds)
+                    ->whereHas('invoice', function ($query) use ($userId) {
+                        $query->where('status', 'pending')
+                            ->where('is_installment', false)
+                            ->where('user_id', $userId)
+                            ->where(function ($q) {
+                                $q->whereNull('expires_at')
+                                    ->orWhere('expires_at', '>', now());
+                            });
+                    })
+                    ->get()
+                    ->sortByDesc(function ($enrollment) {
+                        return $enrollment->invoice?->created_at;
+                    })
+                    ->unique('private_class_schedule_id')
+                    ->values();
+            }
         }
 
         $pendingBySchedule = $pendingEnrollments->mapWithKeys(function ($enrollment) {
@@ -238,6 +240,7 @@ class PrivateController extends Controller
         return Inertia::render('user/private/register/index', [
             'privateClass' => $privateClass,
             'scheduleOptions' => $scheduleOptions,
+            'activeInstallment' => $activeInstallment,
             'referralInfo' => $this->getReferralInfo(),
             'installmentTerms' => $privateClass->installmentTerms()->get(['term_number', 'amount', 'due_date']),
         ]);

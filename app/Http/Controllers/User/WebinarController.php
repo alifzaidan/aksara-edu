@@ -110,36 +110,31 @@ class WebinarController extends Controller
 
         $webinar->load(['tools', 'user', 'category']);
         $hasAccess = false;
+        $activeInstallment = null;
         $pendingInvoice = null;
         $pendingInvoiceUrl = null;
 
         $userId = Auth::id();
 
         if ($userId) {
-            $hasAccess = Invoice::where('user_id', $userId)
-                ->where('status', 'paid')
+            $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'webinar', $webinar->id);
+
+            $hasRegularPaid = Invoice::where('user_id', $userId)
+                ->whereNull('parent_invoice_id')
+                ->where('is_installment', false)
+                ->whereIn('status', ['paid', 'completed'])
                 ->whereHas('webinarItems', function ($query) use ($webinar) {
                     $query->where('webinar_id', $webinar->id);
                 })
                 ->exists();
 
-            // Cek akses via cicilan aktif
-            if (!$hasAccess) {
-                $hasAccess = Invoice::where('user_id', $userId)
-                    ->where('status', 'installment_pending')
-                    ->whereNull('access_suspended_at')
-                    ->whereHas('webinarItems', function ($query) use ($webinar) {
-                        $query->where('webinar_id', $webinar->id);
-                    })
-                    ->whereHas('installmentTerms', function ($q) {
-                        $q->where('installment_number', 1)->where('status', 'paid');
-                    })
-                    ->exists();
-            }
+            $isInstallmentCompleted = $activeInstallment && $activeInstallment['is_fully_paid'];
+            $hasAccess = $hasRegularPaid || $isInstallmentCompleted;
 
-            if (!$hasAccess) {
+            if (!$hasAccess && !$activeInstallment) {
                 $invoice = Invoice::where('user_id', $userId)
                     ->where('status', 'pending')
+                    ->where('is_installment', false)
                     ->whereHas('webinarItems', function ($query) use ($webinar) {
                         $query->where('webinar_id', $webinar->id);
                     })
@@ -165,6 +160,7 @@ class WebinarController extends Controller
         return Inertia::render('user/webinar/register/index', [
             'webinar' => $webinar,
             'hasAccess' => $hasAccess,
+            'activeInstallment' => $activeInstallment,
             'pendingInvoice' => $pendingInvoice,
             'pendingInvoiceUrl' => $pendingInvoiceUrl,
             'referralInfo' => $this->getReferralInfo(),

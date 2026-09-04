@@ -232,35 +232,29 @@ class BundleController extends Controller
         $bundle->strikethrough_price = $totalOriginalPrice;
 
         $hasAccess = false;
+        $activeInstallment = null;
         $pendingInvoice = null;
         $pendingInvoiceUrl = null;
         $userId = Auth::id();
 
         if ($userId) {
-            $hasAccess = EnrollmentBundle::whereHas('invoice', function ($query) use ($userId) {
+            $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'bundle', $bundle->id);
+
+            $hasRegularPaid = EnrollmentBundle::whereHas('invoice', function ($query) use ($userId) {
                 $query->where('user_id', $userId)
-                    ->where('status', 'paid');
+                    ->where('is_installment', false)
+                    ->whereIn('status', ['paid', 'completed']);
             })
                 ->where('bundle_id', $bundle->id)
                 ->exists();
 
-            // Cek akses via cicilan aktif
-            if (!$hasAccess) {
-                $hasAccess = Invoice::where('user_id', $userId)
-                    ->where('status', 'installment_pending')
-                    ->whereNull('access_suspended_at')
-                    ->whereHas('bundleEnrollments', function ($query) use ($bundle) {
-                        $query->where('bundle_id', $bundle->id);
-                    })
-                    ->whereHas('installmentTerms', function ($q) {
-                        $q->where('installment_number', 1)->where('status', 'paid');
-                    })
-                    ->exists();
-            }
+            $isInstallmentCompleted = $activeInstallment && $activeInstallment['is_fully_paid'];
+            $hasAccess = $hasRegularPaid || $isInstallmentCompleted;
 
-            if (!$hasAccess) {
+            if (!$hasAccess && !$activeInstallment) {
                 $invoice = Invoice::where('user_id', $userId)
                     ->where('status', 'pending')
+                    ->where('is_installment', false)
                     ->whereHas('bundleEnrollments', function ($query) use ($bundle) {
                         $query->where('bundle_id', $bundle->id);
                     })
@@ -290,6 +284,7 @@ class BundleController extends Controller
         return Inertia::render('user/bundling/checkout/index', [
             'bundle' => $bundle,
             'hasAccess' => $hasAccess,
+            'activeInstallment' => $activeInstallment,
             'pendingInvoice' => $pendingInvoice,
             'pendingInvoiceUrl' => $pendingInvoiceUrl,
             'referralInfo' => $this->getReferralInfo(),

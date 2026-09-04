@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
-import InstallmentOptions from '@/components/installment-options';
+import InstallmentOptions, { ActiveInstallmentData, InstallmentTermOption } from '@/components/installment-options';
 import UserLayout from '@/layouts/user-layout';
 import { SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
@@ -105,6 +105,7 @@ interface PendingInvoice {
 interface RegisterProps {
     program: Program;
     hasAccess: boolean;
+    activeInstallment?: ActiveInstallmentData | null;
     pendingInvoice?: PendingInvoice | null;
     pendingInvoiceUrl?: string | null;
     regularApplication?: Application | null;
@@ -120,6 +121,7 @@ interface RegisterProps {
 export default function Register({
     program,
     hasAccess,
+    activeInstallment: initialActiveInstallment = null,
     pendingInvoice,
     pendingInvoiceUrl,
     regularApplication,
@@ -141,6 +143,9 @@ export default function Register({
         | undefined;
     const isLoggedIn = !!user;
     const isProfileComplete = !!(isLoggedIn && user?.phone_number && user?.instance && user?.city);
+
+    const [activeInstallment, setActiveInstallment] = useState<ActiveInstallmentData | null>(initialActiveInstallment);
+    const [paymentTab, setPaymentTab] = useState<'full' | 'installment'>(initialActiveInstallment ? 'installment' : 'full');
 
     const [cancellingInvoice, setCancellingInvoice] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -346,6 +351,8 @@ export default function Register({
             try {
                 const response = await axios.post('/api/check-email', {
                     email,
+                    type: 'certification_program',
+                    id: program.id,
                     program_id: program.id,
                 });
                 const data = response.data;
@@ -360,11 +367,19 @@ export default function Register({
                         city: data.city || prev.city,
                     }));
                     setUserPoints(data.point_balance || 0);
+
+                    if (data.active_installment) {
+                        setActiveInstallment(data.active_installment);
+                        setPaymentTab('installment');
+                    } else {
+                        setActiveInstallment(null);
+                    }
                 } else {
                     setEmailExists(false);
                     setUserPoints(0);
                     setPointsChecked(false);
                     setPointsToUse(0);
+                    setActiveInstallment(null);
                 }
 
                 // Always check and store scholarship application status, regardless of user existence
@@ -379,6 +394,7 @@ export default function Register({
                 setUserPoints(0);
                 setPointsChecked(false);
                 setPointsToUse(0);
+                setActiveInstallment(null);
             } finally {
                 setCheckingEmail(false);
             }
@@ -435,13 +451,8 @@ export default function Register({
             return false;
         }
 
-        if (!guestFormData.instance) {
-            toast.error('Instansi wajib diisi.');
-            return false;
-        }
-
-        if (!guestFormData.city) {
-            toast.error('Kota domisili wajib diisi.');
+        if (!guestFormData.instance || !guestFormData.city) {
+            toast.error('Instansi dan Kota Domisili wajib diisi.');
             return false;
         }
 
@@ -462,6 +473,7 @@ export default function Register({
                 }
 
                 toast.success('Login berhasil. Melanjutkan pendaftaran...');
+                return true;
             } else {
                 if (!guestFormData.name) {
                     toast.error('Nama wajib diisi.');
@@ -469,7 +481,7 @@ export default function Register({
                     return false;
                 }
 
-                await axios.post(route('register'), {
+                const regResponse = await axios.post(route('register'), {
                     name: guestFormData.name,
                     email: guestFormData.email,
                     phone_number: guestFormData.phone_number,
@@ -480,12 +492,13 @@ export default function Register({
                     affiliate_code: sessionStorage.getItem('affiliate_code') || new URLSearchParams(window.location.search).get('ref') || referralInfo?.code || '',
                 });
 
-                toast.success('Registrasi berhasil. Melanjutkan pendaftaran...');
-            }
+                if (!(regResponse.data?.success || regResponse.status === 200 || regResponse.status === 201)) {
+                    throw new Error('Registrasi gagal.');
+                }
 
-            savePendingCheckout();
-            window.location.reload();
-            return false;
+                toast.success('Registrasi berhasil. Melanjutkan pendaftaran...');
+                return true;
+            }
         } catch (error: unknown) {
             setIsLoading(false);
             if (axios.isAxiosError(error)) {
@@ -495,7 +508,7 @@ export default function Register({
             }
             return false;
         }
-    }, [emailExists, guestFormData.email, guestFormData.instance, guestFormData.city, guestFormData.name, guestFormData.phone_number, isLoggedIn, savePendingCheckout]);
+    }, [emailExists, guestFormData.email, guestFormData.instance, guestFormData.city, guestFormData.name, guestFormData.phone_number, isLoggedIn, referralInfo?.code]);
 
     // Show scholarship prompt only when the user hasn't applied yet or their application was rejected.
     // For guests, consider `guestScholarshipStatus` returned by `/api/check-email`.
@@ -604,6 +617,12 @@ export default function Register({
     );
 
     const handleCheckout = useCallback(async () => {
+        if (activeInstallment && !activeInstallment.is_fully_paid) {
+            toast.error('Anda sedang memiliki program cicilan berjalan. Silakan selesaikan pembayaran melalui tab Cicilan.');
+            setPaymentTab('installment');
+            return;
+        }
+
         if (!termsAccepted && displayPrice > 0) {
             toast.error('Anda harus menyetujui syarat dan ketentuan.');
             return;
@@ -849,7 +868,7 @@ export default function Register({
         }
     }, [isLoggedIn, program.slug, submitPayment]);
 
-    if (hasAccess) {
+    if (hasAccess && (!activeInstallment || activeInstallment.is_fully_paid)) {
         return (
             <UserLayout>
                 <Head title={`Terdaftar - ${program.title}`} />
@@ -1225,9 +1244,24 @@ export default function Register({
                         <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-md dark:border-zinc-700 dark:bg-zinc-800">
                             <h3 className="mb-2 font-semibold">Ringkasan Pendaftaran</h3>
                             {!isScholarship && displayPrice > 0 && installmentTerms.length > 0 ? (
-                                <Tabs defaultValue="full" className="w-full">
+                                <Tabs
+                                    value={paymentTab}
+                                    onValueChange={(val) => {
+                                        if (val === 'full' && activeInstallment && !activeInstallment.is_fully_paid) {
+                                            toast.error('Anda sedang memiliki program cicilan berjalan. Silakan selesaikan pembayaran melalui tab Cicilan.');
+                                            return;
+                                        }
+                                        setPaymentTab(val as 'full' | 'installment');
+                                    }}
+                                    className="w-full"
+                                >
                                     <TabsList className="grid w-full grid-cols-2 mb-4">
-                                        <TabsTrigger value="full">Bayar Penuh</TabsTrigger>
+                                        <TabsTrigger
+                                            value="full"
+                                            disabled={!!activeInstallment && !activeInstallment.is_fully_paid}
+                                        >
+                                            Bayar Penuh
+                                        </TabsTrigger>
                                         <TabsTrigger value="installment" className="flex items-center gap-1.5">
                                             <span>Cicilan</span>
                                             <Badge variant="secondary" className="px-1.5 py-0 text-[10px] bg-primary/10 text-primary">
@@ -1525,8 +1559,21 @@ export default function Register({
                                             productId={program.id}
                                             productPrice={program.price}
                                             terms={installmentTerms}
+                                            activeInstallment={activeInstallment}
                                             termsAccepted={termsAccepted}
                                             onTermsAcceptedChange={setTermsAccepted}
+                                            onBeforePay={async () => {
+                                                if (!activeInstallment && !termsAccepted) {
+                                                    toast.error('Anda harus menyetujui syarat dan ketentuan!');
+                                                    return false;
+                                                }
+                                                if (!isLoggedIn && !isGuestFormComplete()) {
+                                                    toast.error('Lengkapi semua data diri terlebih dahulu.');
+                                                    return false;
+                                                }
+                                                const authenticated = await ensureAuthenticated();
+                                                return authenticated;
+                                            }}
                                         />
                                         <Button asChild variant="outline" className="w-full">
                                             <Link href={route('certification-programs.detail', program.slug)}>← Kembali ke Detail</Link>

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import InstallmentOptions from '@/components/installment-options';
+import InstallmentOptions, { ActiveInstallmentData, InstallmentTermOption } from '@/components/installment-options';
 import UserLayout from '@/layouts/user-layout';
 import { SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -61,6 +61,7 @@ interface Props {
     scheduleOptions: PrivateScheduleOption[];
     referralInfo: ReferralInfo;
     installmentTerms?: Array<{ term_number: number; amount: number; due_date: string }>;
+    activeInstallment?: ActiveInstallmentData | null;
 }
 
 interface GuestFormData {
@@ -78,12 +79,21 @@ function parseList(items?: string | null): string[] {
     return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
 }
 
-export default function PrivateRegister({ privateClass, scheduleOptions, referralInfo, installmentTerms = [] }: Props) {
+export default function PrivateRegister({
+    privateClass,
+    scheduleOptions,
+    referralInfo,
+    installmentTerms = [],
+    activeInstallment: initialActiveInstallment = null,
+}: Props) {
     const { auth } = usePage<SharedData>().props;
     const isLoggedIn = !!auth.user;
     const isProfileComplete = isLoggedIn && auth.user?.phone_number && auth.user?.instance && auth.user?.city;
     const isFree = privateClass.price === 0;
     const benefitList = parseList(privateClass.benefits);
+
+    const [activeInstallment, setActiveInstallment] = useState<ActiveInstallmentData | null>(initialActiveInstallment);
+    const [paymentTab, setPaymentTab] = useState<'full' | 'installment'>(initialActiveInstallment ? 'installment' : 'full');
 
     const [cancellingInvoice, setCancellingInvoice] = useState(false);
     const [termsAccepted, setTermsAccepted] = useState(false);
@@ -133,7 +143,12 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
             setCheckingEmail(true);
 
             try {
-                const response = await axios.post('/api/check-email', { email });
+                const response = await axios.post('/api/check-email', {
+                    email,
+                    type: 'private',
+                    id: privateClass.id,
+                    private_class_id: privateClass.id,
+                });
                 const data = response.data;
 
                 if (data.exists) {
@@ -145,11 +160,20 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                         instance: data.instance || prev.instance,
                         city: data.city || prev.city,
                     }));
+
+                    if (data.active_installment) {
+                        setActiveInstallment(data.active_installment);
+                        setPaymentTab('installment');
+                    } else {
+                        setActiveInstallment(null);
+                    }
                 } else {
                     setEmailExists(false);
+                    setActiveInstallment(null);
                 }
             } catch {
                 setEmailExists(false);
+                setActiveInstallment(null);
             } finally {
                 setCheckingEmail(false);
             }
@@ -170,25 +194,13 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
         );
     };
 
-    const ensureAuthenticated = async (): Promise<boolean> => {
+    const ensureAuth = async (): Promise<boolean> => {
         if (isLoggedIn) return true;
 
-        if (!guestFormData.email || !guestFormData.phone_number) {
-            toast.error('Email dan nomor telepon wajib diisi.');
+        if (!guestFormData.email || !guestFormData.phone_number || !guestFormData.instance || !guestFormData.city) {
+            toast.error('Mohon lengkapi seluruh data diri.');
             return false;
         }
-
-        if (!guestFormData.instance) {
-            toast.error('Instansi wajib diisi.');
-            return false;
-        }
-
-        if (!guestFormData.city) {
-            toast.error('Kota domisili wajib diisi.');
-            return false;
-        }
-
-        setLoading(true);
 
         try {
             if (emailExists) {
@@ -199,21 +211,16 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                     city: guestFormData.city,
                 });
 
-                const loginData = loginResponse.data;
-
-                if (!loginData.success) {
-                    throw new Error(loginData.message || 'Gagal login otomatis.');
+                if (!loginResponse.data?.success) {
+                    throw new Error(loginResponse.data?.message || 'Gagal login otomatis. Pastikan nomor telepon sesuai dengan yang terdaftar.');
                 }
-
-                toast.success('Login berhasil. Melanjutkan checkout...');
             } else {
                 if (!guestFormData.name) {
-                    toast.error('Nama wajib diisi.');
-                    setLoading(false);
+                    toast.error('Nama lengkap wajib diisi.');
                     return false;
                 }
 
-                await axios.post(route('register'), {
+                const regResponse = await axios.post(route('register'), {
                     name: guestFormData.name,
                     email: guestFormData.email,
                     phone_number: guestFormData.phone_number,
@@ -224,19 +231,14 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                     affiliate_code: sessionStorage.getItem('affiliate_code') || new URLSearchParams(window.location.search).get('ref') || referralInfo?.code || '',
                 });
 
-                toast.success('Registrasi berhasil. Melanjutkan checkout...');
+                if (!(regResponse.data?.success || regResponse.status === 200 || regResponse.status === 201)) {
+                    throw new Error('Registrasi gagal.');
+                }
             }
-
-            savePendingCheckout();
-            window.location.reload();
-            return false;
-        } catch (error: unknown) {
-            setLoading(false);
-            if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || 'Gagal memproses login/registrasi otomatis.');
-            } else {
-                toast.error('Gagal memproses login/registrasi otomatis.');
-            }
+            return true;
+        } catch (error: any) {
+            console.error('Login/Register error:', error);
+            toast.error(error.response?.data?.message || error.message || 'Gagal memproses pendaftaran.');
             return false;
         }
     };
@@ -308,6 +310,12 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
     };
 
     const handleCheckout = async () => {
+        if (activeInstallment && !activeInstallment.is_fully_paid) {
+            toast.error('Anda sedang memiliki program cicilan berjalan. Silakan selesaikan pembayaran melalui tab Cicilan.');
+            setPaymentTab('installment');
+            return;
+        }
+
         if (!selectedSchedule) {
             toast.error('Pilih jadwal private class terlebih dahulu.');
             return;
@@ -414,10 +422,10 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
     const isDisabled =
         loading ||
         !selectedSchedule ||
-        selectedSchedule.has_access ||
+        (!activeInstallment && selectedSchedule.has_access) ||
         selectedSchedule.is_full ||
         selectedSchedule.is_registration_closed ||
-        !!selectedSchedule.pending_invoice_url;
+        (!activeInstallment && !!selectedSchedule.pending_invoice_url);
 
     // Check if any schedule grants access (user already enrolled somewhere)
     const hasAccess = scheduleOptions.some((s) => s.has_access);
@@ -568,7 +576,7 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                     </Tabs>
 
                     {/* Right: Payment Sidebar */}
-                    {hasAccess ? (
+                    {hasAccess && (!activeInstallment || activeInstallment.is_fully_paid) ? (
                         <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
                             <BadgeCheck size={64} className="text-green-500" />
                             <h2 className="text-xl font-bold">Anda Sudah Memiliki Akses</h2>
@@ -577,7 +585,7 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                                 <Link href={route('private.detail', { privateClass: privateClass.slug })}>Kembali ke Detail</Link>
                             </Button>
                         </div>
-                    ) : (pendingSchedule?.pending_invoice || pendingSchedule?.pending_invoice_url) ? (
+                    ) : (pendingSchedule?.pending_invoice || pendingSchedule?.pending_invoice_url) && !activeInstallment ? (
                         <div className="rounded-2xl border bg-white p-6 shadow-xl dark:bg-gray-800">
                             <div className="flex items-center gap-2 mb-2 text-yellow-600 dark:text-yellow-400">
                                 <Hourglass className="h-5 w-5" />
@@ -748,9 +756,21 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                                         </Button>
                                     </>
                                 ) : !isFree && installmentTerms.length > 0 ? (
-                                    <Tabs defaultValue="full" className="w-full">
+                                    <Tabs
+                                        value={paymentTab}
+                                        onValueChange={(val) => {
+                                            if (val === 'full' && activeInstallment && !activeInstallment.is_fully_paid) {
+                                                toast.error('Anda memiliki program cicilan berjalan. Silakan selesaikan pembayaran cicilan Anda.');
+                                                return;
+                                            }
+                                            setPaymentTab(val as 'full' | 'installment');
+                                        }}
+                                        className="w-full"
+                                    >
                                         <TabsList className="grid w-full grid-cols-2 mb-3">
-                                            <TabsTrigger value="full">Bayar Penuh</TabsTrigger>
+                                            <TabsTrigger value="full" disabled={!!activeInstallment && !activeInstallment.is_fully_paid}>
+                                                Bayar Penuh
+                                            </TabsTrigger>
                                             <TabsTrigger value="installment" className="flex items-center gap-1.5">
                                                 <span>Cicilan</span>
                                                 <Badge variant="secondary" className="px-1.5 py-0 text-[10px] bg-primary/10 text-primary">
@@ -830,6 +850,18 @@ export default function PrivateRegister({ privateClass, scheduleOptions, referra
                                                 privateClassScheduleId={selectedScheduleId}
                                                 termsAccepted={termsAccepted}
                                                 onTermsAcceptedChange={setTermsAccepted}
+                                                activeInstallment={activeInstallment}
+                                                onBeforePay={async () => {
+                                                    if (!activeInstallment && !termsAccepted) {
+                                                        toast.error('Anda harus menyetujui syarat dan ketentuan!');
+                                                        return false;
+                                                    }
+                                                    if (!activeInstallment && !selectedScheduleId) {
+                                                        toast.error('Silakan pilih jadwal terlebih dahulu.');
+                                                        return false;
+                                                    }
+                                                    return await ensureAuth();
+                                                }}
                                             />
                                         </TabsContent>
                                     </Tabs>

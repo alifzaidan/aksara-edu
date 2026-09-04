@@ -240,6 +240,17 @@ class InvoiceController extends Controller
             $userId = Auth::id();
             $type = $request->input('type', 'course');
             $itemId = $request->input('id');
+
+            if ($userId) {
+                $activeInstallment = Invoice::getActiveInstallmentForUser($userId, $type, $itemId);
+                if ($activeInstallment && !$activeInstallment['is_fully_paid']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda memiliki transaksi cicilan yang sedang aktif untuk program ini. Silakan lanjutkan pembayaran termin cicilan Anda.',
+                    ], 422);
+                }
+            }
+
             $privateClassScheduleId = $request->input('private_class_schedule_id');
             $selectedPrivateSchedule = null;
             $isScholarship = false;
@@ -600,6 +611,17 @@ class InvoiceController extends Controller
         try {
             $userId = Auth::id();
             $bundleId = $request->input('bundle_id');
+
+            if ($userId) {
+                $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'bundle', $bundleId);
+                if ($activeInstallment && !$activeInstallment['is_fully_paid']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda memiliki transaksi cicilan yang sedang aktif untuk paket bundling ini. Silakan lanjutkan pembayaran termin cicilan Anda.',
+                    ], 422);
+                }
+            }
+
             $discountAmount = $request->input('discount_amount', 0);
             $transactionFee = $request->input('transaction_fee', 5000);
             $nettAmount = $request->input('nett_amount');
@@ -1188,6 +1210,9 @@ class InvoiceController extends Controller
             return response()->json(['message' => 'unauthorized'], 401);
         }
 
+        $externalId = $request->external_id;
+        $baseCode = explode('_', $externalId)[0];
+
         $invoice = Invoice::with([
             'user',
             'courseItems.course',
@@ -1197,7 +1222,9 @@ class InvoiceController extends Controller
             'privateItems.privateClassSchedule',
             'certificationProgramItems.certificationProgram',
             'bundleEnrollments.bundle.bundleItems.bundleable'
-        ])->where('invoice_code', $request->external_id)->first();
+        ])->where('invoice_code', $externalId)
+          ->orWhere('invoice_code', $baseCode)
+          ->first();
 
         if (!$invoice) {
             return response()->json(['message' => 'Invoice Not Found'], 404);

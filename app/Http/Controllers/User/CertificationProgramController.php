@@ -168,6 +168,7 @@ class CertificationProgramController extends Controller
         $program->load(['schedules', 'socializationSchedules', 'category', 'mentors']);
 
         $hasAccess = false;
+        $activeInstallment = null;
         $pendingInvoice = null;
         $pendingInvoiceUrl = null;
         $regularApplication = null;
@@ -181,30 +182,25 @@ class CertificationProgramController extends Controller
         if (Auth::check()) {
             $userId = Auth::id();
 
-            $hasAccess = Invoice::where('user_id', $userId)
-                ->where('status', 'paid')
+            $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'certification_program', $program->id);
+
+            // Full access: paid normally or installment is 100% completed
+            $hasRegularPaid = Invoice::where('user_id', $userId)
+                ->whereNull('parent_invoice_id')
+                ->where('is_installment', false)
+                ->whereIn('status', ['paid', 'completed'])
                 ->whereHas('certificationProgramItems', function ($query) use ($program) {
                     $query->where('certification_program_id', $program->id);
                 })
                 ->exists();
 
-            // Cek akses via cicilan aktif
-            if (!$hasAccess) {
-                $hasAccess = Invoice::where('user_id', $userId)
-                    ->where('status', 'installment_pending')
-                    ->whereNull('access_suspended_at')
-                    ->whereHas('certificationProgramItems', function ($query) use ($program) {
-                        $query->where('certification_program_id', $program->id);
-                    })
-                    ->whereHas('installmentTerms', function ($q) {
-                        $q->where('installment_number', 1)->where('status', 'paid');
-                    })
-                    ->exists();
-            }
+            $isInstallmentCompleted = $activeInstallment && $activeInstallment['is_fully_paid'];
+            $hasAccess = $hasRegularPaid || $isInstallmentCompleted;
 
-            if (!$hasAccess) {
+            if (!$hasAccess && !$activeInstallment) {
                 $invoice = Invoice::where('user_id', $userId)
                     ->where('status', 'pending')
+                    ->where('is_installment', false)
                     ->whereHas('certificationProgramItems', function ($query) use ($program) {
                         $query->where('certification_program_id', $program->id);
                     })
@@ -244,6 +240,7 @@ class CertificationProgramController extends Controller
         return Inertia::render('user/certification-program/register/index', [
             'program' => $program,
             'hasAccess' => $hasAccess,
+            'activeInstallment' => $activeInstallment,
             'pendingInvoice' => $pendingInvoice,
             'pendingInvoiceUrl' => $pendingInvoiceUrl,
             'regularApplication' => $regularApplication,

@@ -325,7 +325,7 @@ class UserController extends Controller
             ->with([
                 'courseItems.course:id,title,thumbnail,price,user_id',
                 'courseItems.course.user:id,name',
-                'bootcampItems.bootcamp:id,title,thumbnail,price,host_name',
+                'bootcampItems.bootcamp:id,title,thumbnail,price',
                 'bootcampItems.bootcamp.mentors:id,name',
                 'webinarItems.webinar:id,title,thumbnail,price,user_id',
                 'webinarItems.webinar.user:id,name'
@@ -347,7 +347,7 @@ class UserController extends Controller
 
         $bootcampEnrollments = EnrollmentBootcamp::whereIn('invoice_id', $paidInvoiceIds)
             ->with([
-                'bootcamp:id,title,thumbnail,price,host_name',
+                'bootcamp:id,title,thumbnail,price',
                 'bootcamp.mentors:id,name',
                 'invoice:id,status,paid_at'
             ])

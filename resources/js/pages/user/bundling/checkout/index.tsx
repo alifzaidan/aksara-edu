@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
-import InstallmentOptions from '@/components/installment-options';
+import InstallmentOptions, { ActiveInstallmentData, InstallmentTermOption } from '@/components/installment-options';
 import UserLayout from '@/layouts/user-layout';
 import { rupiahFormatter } from '@/lib/utils';
 import { SharedData } from '@/types';
@@ -66,6 +66,7 @@ interface ReferralInfo {
 interface CheckoutBundleProps {
     bundle: Bundle;
     hasAccess: boolean;
+    activeInstallment?: ActiveInstallmentData | null;
     pendingInvoice?: PendingInvoice | null;
     pendingInvoiceUrl?: string | null;
     referralInfo: ReferralInfo;
@@ -111,10 +112,21 @@ function getErrorMessage(error: unknown, fallback: string): string {
     return fallback;
 }
 
-export default function CheckoutBundle({ bundle, hasAccess, pendingInvoice, pendingInvoiceUrl, referralInfo, installmentTerms = [] }: CheckoutBundleProps) {
+export default function CheckoutBundle({
+    bundle,
+    hasAccess,
+    activeInstallment: initialActiveInstallment = null,
+    pendingInvoice,
+    pendingInvoiceUrl,
+    referralInfo,
+    installmentTerms = [],
+}: CheckoutBundleProps) {
     const { auth } = usePage<SharedData>().props;
     const isLoggedIn = !!auth.user;
     const isProfileComplete = isLoggedIn && auth.user?.phone_number && auth.user?.instance && auth.user?.city;
+
+    const [activeInstallment, setActiveInstallment] = useState<ActiveInstallmentData | null>(initialActiveInstallment);
+    const [paymentTab, setPaymentTab] = useState<'full' | 'installment'>(initialActiveInstallment ? 'installment' : 'full');
 
     const [cancellingInvoice, setCancellingInvoice] = useState(false);
 
@@ -277,7 +289,12 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoice, pend
             setCheckingEmail(true);
 
             try {
-                const response = await axios.post('/api/check-email', { email });
+                const response = await axios.post('/api/check-email', {
+                    email,
+                    type: 'bundle',
+                    id: bundle.id,
+                    bundle_id: bundle.id,
+                });
                 const data = response.data;
 
                 if (data.exists) {
@@ -290,17 +307,26 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoice, pend
                         city: data.city || prev.city,
                     }));
                     setUserPoints(data.point_balance || 0);
+
+                    if (data.active_installment) {
+                        setActiveInstallment(data.active_installment);
+                        setPaymentTab('installment');
+                    } else {
+                        setActiveInstallment(null);
+                    }
                 } else {
                     setEmailExists(false);
                     setUserPoints(0);
                     setPointsChecked(false);
                     setPointsToUse(0);
+                    setActiveInstallment(null);
                 }
             } catch {
                 setEmailExists(false);
                 setUserPoints(0);
                 setPointsChecked(false);
                 setPointsToUse(0);
+                setActiveInstallment(null);
             } finally {
                 setCheckingEmail(false);
             }
@@ -356,25 +382,13 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoice, pend
         sessionStorage.setItem('pendingCheckoutBundle', JSON.stringify(pendingCheckoutData));
     };
 
-    const ensureAuthenticated = async (): Promise<boolean> => {
+    const ensureAuth = async (): Promise<boolean> => {
         if (isLoggedIn) return true;
 
-        if (!guestFormData.email || !guestFormData.phone_number) {
-            toast.error('Email dan nomor telepon wajib diisi.');
+        if (!guestFormData.email || !guestFormData.phone_number || !guestFormData.instance || !guestFormData.city) {
+            toast.error('Mohon lengkapi seluruh data diri.');
             return false;
         }
-
-        if (!guestFormData.instance) {
-            toast.error('Instansi wajib diisi.');
-            return false;
-        }
-
-        if (!guestFormData.city) {
-            toast.error('Kota domisili wajib diisi.');
-            return false;
-        }
-
-        setLoading(true);
 
         try {
             if (emailExists) {
@@ -385,21 +399,16 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoice, pend
                     city: guestFormData.city,
                 });
 
-                const loginData = loginResponse.data;
-
-                if (!loginData.success) {
-                    throw new Error(loginData.message || 'Gagal login otomatis.');
+                if (!loginResponse.data?.success) {
+                    throw new Error(loginResponse.data?.message || 'Gagal login otomatis. Pastikan nomor telepon sesuai dengan yang terdaftar.');
                 }
-
-                toast.success('Login berhasil. Melanjutkan checkout...');
             } else {
                 if (!guestFormData.name) {
-                    toast.error('Nama wajib diisi.');
-                    setLoading(false);
+                    toast.error('Nama lengkap wajib diisi.');
                     return false;
                 }
 
-                await axios.post(route('register'), {
+                const regResponse = await axios.post(route('register'), {
                     name: guestFormData.name,
                     email: guestFormData.email,
                     phone_number: guestFormData.phone_number,
@@ -410,19 +419,14 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoice, pend
                     affiliate_code: sessionStorage.getItem('affiliate_code') || new URLSearchParams(window.location.search).get('ref') || referralInfo?.code || '',
                 });
 
-                toast.success('Registrasi berhasil. Melanjutkan checkout...');
+                if (!(regResponse.data?.success || regResponse.status === 200 || regResponse.status === 201)) {
+                    throw new Error('Registrasi gagal.');
+                }
             }
-
-            savePendingCheckout();
-            window.location.reload();
-            return false;
-        } catch (error: unknown) {
-            setLoading(false);
-            if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || getErrorMessage(error, 'Gagal memproses login/registrasi otomatis.'));
-            } else {
-                toast.error(getErrorMessage(error, 'Gagal memproses login/registrasi otomatis.'));
-            }
+            return true;
+        } catch (error: any) {
+            console.error('Login/Register error:', error);
+            toast.error(error.response?.data?.message || error.message || 'Gagal memproses pendaftaran.');
             return false;
         }
     };
@@ -492,6 +496,12 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoice, pend
 
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (activeInstallment && !activeInstallment.is_fully_paid) {
+            toast.error('Anda sedang memiliki program cicilan berjalan. Silakan selesaikan pembayaran melalui tab Cicilan.');
+            setPaymentTab('installment');
+            return;
+        }
 
         // 1. Jika pengguna sudah login
         if (isLoggedIn) {
@@ -712,7 +722,7 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoice, pend
 
                     {/* Right Column - Payment */}
                     <div className="lg:col-span-1">
-                        {hasAccess ? (
+                        {hasAccess && (!activeInstallment || activeInstallment.is_fully_paid) ? (
                             <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
                                 <BadgeCheck size={64} className="text-green-500" />
                                 <h2 className="text-xl font-bold">Anda Sudah Memiliki Akses</h2>
@@ -721,7 +731,7 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoice, pend
                                     <Link href={route('profile.index')}>Lihat Dashboard</Link>
                                 </Button>
                             </div>
-                        ) : (pendingInvoice || pendingInvoiceUrl) ? (
+                        ) : (pendingInvoice || pendingInvoiceUrl) && !activeInstallment ? (
                             <div className="rounded-2xl border bg-white p-6 shadow-xl dark:bg-gray-800">
                                 <div className="flex items-center gap-2 mb-2 text-yellow-600 dark:text-yellow-400">
                                     <Hourglass className="h-5 w-5" />
@@ -866,9 +876,24 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoice, pend
                                     )}
 
                                     {installmentTerms.length > 0 ? (
-                                        <Tabs defaultValue="full" className="w-full">
+                                        <Tabs
+                                            value={paymentTab}
+                                            onValueChange={(val) => {
+                                                if (val === 'full' && activeInstallment && !activeInstallment.is_fully_paid) {
+                                                    toast.error('Anda sedang memiliki program cicilan berjalan. Silakan selesaikan pembayaran melalui tab Cicilan.');
+                                                    return;
+                                                }
+                                                setPaymentTab(val as 'full' | 'installment');
+                                            }}
+                                            className="w-full"
+                                        >
                                             <TabsList className="grid w-full grid-cols-2 mb-4">
-                                                <TabsTrigger value="full">Bayar Penuh</TabsTrigger>
+                                                <TabsTrigger
+                                                    value="full"
+                                                    disabled={!!activeInstallment && !activeInstallment.is_fully_paid}
+                                                >
+                                                    Bayar Penuh
+                                                </TabsTrigger>
                                                 <TabsTrigger value="installment" className="flex items-center gap-1.5">
                                                     <span>Cicilan</span>
                                                     <Badge variant="secondary" className="px-1.5 py-0 text-[10px] bg-primary/10 text-primary">
@@ -1155,8 +1180,16 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoice, pend
                                                     productId={bundle.id}
                                                     productPrice={bundle.price}
                                                     terms={installmentTerms}
+                                                    activeInstallment={activeInstallment}
                                                     termsAccepted={termsAccepted}
                                                     onTermsAcceptedChange={setTermsAccepted}
+                                                    onBeforePay={async () => {
+                                                        if (!activeInstallment && !termsAccepted) {
+                                                            toast.error('Anda harus menyetujui syarat dan ketentuan!');
+                                                            return false;
+                                                        }
+                                                        return await ensureAuth();
+                                                    }}
                                                 />
                                             </TabsContent>
                                         </Tabs>

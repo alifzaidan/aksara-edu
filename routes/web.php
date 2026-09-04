@@ -546,13 +546,11 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
     });
 
     // Installment Term admin routes
-    Route::prefix('admin')->name('admin.')->group(function () {
-        Route::post('products/{type}/{id}/installments/toggle', [InstallmentTermController::class, 'toggleEnabled'])->name('installments.toggle');
-        Route::post('installment-terms', [InstallmentTermController::class, 'store'])->name('installment-terms.store');
-        Route::put('installment-terms/{id}', [InstallmentTermController::class, 'update'])->name('installment-terms.update');
-        Route::delete('installment-terms/{id}', [InstallmentTermController::class, 'destroy'])->name('installment-terms.destroy');
-        Route::post('installments/{id}/send-reminder', [InstallmentController::class, 'sendReminder'])->name('installments.send-reminder');
-    });
+    Route::post('products/{type}/{id}/installments/toggle', [InstallmentTermController::class, 'toggleEnabled'])->name('installments.toggle');
+    Route::post('installment-terms', [InstallmentTermController::class, 'store'])->name('installment-terms.store');
+    Route::put('installment-terms/{id}', [InstallmentTermController::class, 'update'])->name('installment-terms.update');
+    Route::delete('installment-terms/{id}', [InstallmentTermController::class, 'destroy'])->name('installment-terms.destroy');
+    Route::post('installments/{id}/send-reminder', [InstallmentController::class, 'sendReminder'])->name('installments.send-reminder');
 });
 
 Route::post('/api/discount-codes/validate', [DiscountCodeController::class, 'validate'])->name('api.discount-codes.validate');

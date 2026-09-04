@@ -34,6 +34,7 @@ Route::post('/check-email', function (Request $request) {
 
     $response = [
         'exists' => !!$user,
+        'active_installment' => null,
     ];
 
     if ($user) {
@@ -42,6 +43,31 @@ Route::post('/check-email', function (Request $request) {
         $response['instance'] = $user->instance;
         $response['city'] = $user->city;
         $response['point_balance'] = (int) $user->point_balance;
+
+        $type = $request->input('type');
+        $productId = $request->input('id')
+            ?? $request->input('program_id')
+            ?? $request->input('bootcamp_id')
+            ?? $request->input('bundle_id')
+            ?? $request->input('webinar_id')
+            ?? $request->input('course_id')
+            ?? $request->input('private_class_id');
+
+        if ($type && $productId) {
+            $response['active_installment'] = \App\Models\Invoice::getActiveInstallmentForUser($user->id, $type, $productId);
+        } elseif ($request->program_id) {
+            $response['active_installment'] = \App\Models\Invoice::getActiveInstallmentForUser($user->id, 'certification_program', $request->program_id);
+        } elseif ($request->bootcamp_id) {
+            $response['active_installment'] = \App\Models\Invoice::getActiveInstallmentForUser($user->id, 'bootcamp', $request->bootcamp_id);
+        } elseif ($request->bundle_id) {
+            $response['active_installment'] = \App\Models\Invoice::getActiveInstallmentForUser($user->id, 'bundle', $request->bundle_id);
+        } elseif ($request->webinar_id) {
+            $response['active_installment'] = \App\Models\Invoice::getActiveInstallmentForUser($user->id, 'webinar', $request->webinar_id);
+        } elseif ($request->course_id) {
+            $response['active_installment'] = \App\Models\Invoice::getActiveInstallmentForUser($user->id, 'course', $request->course_id);
+        } elseif ($request->private_class_id) {
+            $response['active_installment'] = \App\Models\Invoice::getActiveInstallmentForUser($user->id, 'private', $request->private_class_id);
+        }
     }
 
     // Check scholarship application status from email (works for both registered and unregistered users)

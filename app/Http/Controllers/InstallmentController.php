@@ -287,18 +287,7 @@ class InstallmentController extends Controller
                 throw new \Exception('Termin ke-1 (DP) belum dibayar.');
             }
 
-            // Cek apakah sudah ada Xendit URL aktif
-            if ($nextTerm->invoice_url && $nextTerm->status === 'pending') {
-                // Return existing URL
-                DB::commit();
-                return response()->json([
-                    'success' => true,
-                    'payment_url' => $nextTerm->invoice_url,
-                    'term_number' => $nextTerm->installment_number,
-                ], 200);
-            }
-
-            // Buat Xendit Invoice baru
+            // Buat Xendit Transaction baru yang selalu valid & fresh (mencegah link expired & duplicate external_id)
             $productInvoice = $parentInvoice->load([
                 'courseItems.course',
                 'bootcampItems.bootcamp',
@@ -309,8 +298,13 @@ class InstallmentController extends Controller
             ]);
             $item = $this->getProductFromInvoice($productInvoice);
 
-            $xenditInvoice = $this->createXenditInvoice($nextTerm, $item, Auth::user());
-            $nextTerm->update(['invoice_url' => $xenditInvoice['invoice_url']]);
+            $uniqueExternalId = $nextTerm->invoice_code . '_' . time();
+            $xenditInvoice = $this->createXenditInvoice($nextTerm, $item, Auth::user(), $uniqueExternalId);
+            $nextTerm->update([
+                'status' => 'pending',
+                'invoice_url' => $xenditInvoice['invoice_url'],
+                'expires_at' => Carbon::now()->addHours(24),
+            ]);
 
             DB::commit();
 
@@ -432,10 +426,10 @@ class InstallmentController extends Controller
         }
     }
 
-    private function createXenditInvoice(Invoice $childInvoice, mixed $item, mixed $user)
+    private function createXenditInvoice(Invoice $childInvoice, mixed $item, mixed $user, ?string $externalId = null)
     {
         $xenditRequest = new CreateInvoiceRequest([
-            'external_id' => $childInvoice->invoice_code,
+            'external_id' => $externalId ?: ($childInvoice->invoice_code . '_' . time()),
             'customer' => [
                 'given_names' => $user->name,
                 'email' => $user->email,
