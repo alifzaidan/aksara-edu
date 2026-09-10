@@ -52,7 +52,7 @@ class DokuService
                 : "https://api.doku.com/checkout/v1/payment";
 
             $path = "/checkout/v1/payment";
-            $requestId = uniqid();
+            $requestId = 'REQ-' . $orderId;
             $requestTimestamp = gmdate("Y-m-d\TH:i:s\Z");
 
             $customerId = $customerData['customer_id'] ?? 'CUST-' . time();
@@ -158,10 +158,63 @@ class DokuService
     }
 
     /**
-     * Cancel invoice placeholder
+     * Cancel unpaid order in DOKU using Cancel Order API (v3/cancellations)
      */
-    public function cancelInvoice($invoiceCode): bool
+    public function cancelInvoice($orderId, ?string $originalRequestId = null, string $note = 'Pembatalan invoice'): array
     {
-        return true;
+        try {
+            $url = $this->sandbox
+                ? "https://api-sandbox.doku.com/checkout/v3/cancellations"
+                : "https://api.doku.com/checkout/v3/cancellations";
+
+            $path = "/checkout/v3/cancellations";
+            $requestId = uniqid('CAN-');
+            $requestTimestamp = gmdate("Y-m-d\TH:i:s\Z");
+            $origRequestId = $originalRequestId ?: ('REQ-' . $orderId);
+
+            $body = [
+                "order" => [
+                    "invoice_number" => $orderId,
+                ],
+                "payment" => [
+                    "original_request_id" => $origRequestId,
+                ],
+                "note" => $note,
+            ];
+
+            $digest = base64_encode(hash('sha256', json_encode($body), true));
+
+            $componentSignature = "Client-Id:" . $this->clientId . "\n" .
+                "Request-Id:" . $requestId . "\n" .
+                "Request-Timestamp:" . $requestTimestamp . "\n" .
+                "Request-Target:" . $path . "\n" .
+                "Digest:" . $digest;
+
+            $signature = base64_encode(hash_hmac('sha256', $componentSignature, $this->secretKey, true));
+
+            $response = Http::withHeaders([
+                "Client-Id" => $this->clientId,
+                "Request-Id" => $requestId,
+                "Request-Timestamp" => $requestTimestamp,
+                "Signature" => "HMACSHA256=" . $signature,
+                "Content-Type" => "application/json"
+            ])->post($url, $body);
+
+            $responseData = $response->json();
+
+            Log::info('DOKU Cancel Order API response', [
+                'order_id' => $orderId,
+                'status' => $response->status(),
+                'response' => $responseData,
+            ]);
+
+            return $responseData ?? [];
+        } catch (\Throwable $e) {
+            Log::error('DOKU Cancel Order Error', [
+                'message' => $e->getMessage(),
+                'order_id' => $orderId,
+            ]);
+            return ['error' => $e->getMessage()];
+        }
     }
 }
