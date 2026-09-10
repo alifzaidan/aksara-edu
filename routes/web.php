@@ -146,8 +146,9 @@ Route::get('/certification-programs/{program:slug}/scholarship-apply', [UserCert
 Route::post('/certification-programs/{program:slug}/scholarship-store', [UserCertificationProgramController::class, 'scholarshipStore'])->name('certification-programs.scholarship-store');
 Route::get('/certification-programs/{program:slug}/scholarship-success', [UserCertificationProgramController::class, 'scholarshipSuccess'])->name('certification-programs.scholarship-success');
 
-// Doku redirect callback (user returns after payment)
+// Doku redirect callback (user returns after payment or cancels)
 Route::get('/doku/callback', [InvoiceController::class, 'dokuReturn'])->name('doku.callback.web');
+Route::get('/doku/cancel', [InvoiceController::class, 'dokuCancel'])->name('doku.callback.cancel');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/course/checkout/success', [UserCourseController::class, 'showCheckoutSuccess'])->name('course.checkout.success');

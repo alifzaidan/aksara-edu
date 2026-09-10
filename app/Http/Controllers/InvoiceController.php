@@ -560,18 +560,28 @@ class InvoiceController extends Controller
             // ]);
             // ===== END XENDIT =====
 
+            $cancelUrl = match ($type) {
+                'course' => route('course.checkout', ['course' => $item->slug]),
+                'bootcamp' => route('bootcamp.register', ['bootcamp' => $item->slug]),
+                'webinar' => route('webinar.register', ['webinar' => $item->slug]),
+                'private' => route('private.register', ['privateClass' => $item->slug]),
+                'certification_program' => route('certification-programs.register', ['program' => $item->slug]),
+                default => route('doku.callback.cancel', ['invoice_number' => $invoice_code]),
+            };
+
             // ===== DOKU =====
             $dokuService = app(\App\Services\DokuService::class);
             $dokuResponse = $dokuService->createCheckout(
                 $invoice_code,
                 $totalAmount,
                 [
-                    'customer_id'      => 'USER-' . $userId,
-                    'customer_name'    => Auth::user()->name,
-                    'customer_email'   => Auth::user()->email,
-                    'customer_phone'   => Auth::user()->phone_number,
-                    'item_name'        => $item->title,
-                    'item_description' => 'Pembayaran ' . $type . ' ' . $item->title,
+                    'customer_id'         => 'USER-' . $userId,
+                    'customer_name'       => Auth::user()->name,
+                    'customer_email'      => Auth::user()->email,
+                    'customer_phone'      => Auth::user()->phone_number,
+                    'item_name'           => $item->title,
+                    'item_description'    => 'Pembayaran ' . $type . ' ' . $item->title,
+                    'callback_url_cancel' => $cancelUrl,
                 ]
             );
             $paymentUrl = $dokuResponse['response']['payment']['url'] ?? '';
@@ -815,12 +825,13 @@ class InvoiceController extends Controller
                 $invoice_code,
                 $totalAmount,
                 [
-                    'customer_id'      => 'USER-' . $userId,
-                    'customer_name'    => Auth::user()->name,
-                    'customer_email'   => Auth::user()->email,
-                    'customer_phone'   => Auth::user()->phone_number,
-                    'item_name'        => $bundle->title,
-                    'item_description' => 'Pembayaran Paket Bundling: ' . $bundle->title,
+                    'customer_id'         => 'USER-' . $userId,
+                    'customer_name'       => Auth::user()->name,
+                    'customer_email'      => Auth::user()->email,
+                    'customer_phone'      => Auth::user()->phone_number,
+                    'item_name'           => $bundle->title,
+                    'item_description'    => 'Pembayaran Paket Bundling: ' . $bundle->title,
+                    'callback_url_cancel' => route('bundle.checkout', ['bundle' => $bundle->slug]),
                 ]
             );
             $paymentUrl = $dokuResponse['response']['payment']['url'] ?? '';
@@ -1049,8 +1060,14 @@ class InvoiceController extends Controller
             'webinarItems.webinar',
             'privateItems.privateClass',
             'privateItems.privateClassSchedule',
-            'certificationProgramItems.certificationProgram'
+            'certificationProgramItems.certificationProgram',
+            'bundleEnrollments.bundle'
         ])->findOrFail($id);
+
+        if ($invoice->status === 'pending') {
+            return redirect($this->getInvoiceProductUrl($invoice));
+        }
+
         return Inertia::render('user/checkout/success', ['invoice' => $invoice]);
     }
 
@@ -1413,25 +1430,141 @@ class InvoiceController extends Controller
     /**
      * DOKU Web Redirect Callback (User returns after payment)
      */
+    /**
+     * DOKU Web Redirect Callback (User returns after payment)
+     */
     public function dokuReturn(Request $request)
     {
         $invoiceCode = $request->query('invoice_number');
         $baseCode = $invoiceCode ? explode('_', $invoiceCode)[0] : null;
 
-        $invoice = Invoice::where('invoice_code', $invoiceCode)
-            ->when($baseCode, function ($q) use ($baseCode) {
-                return $q->orWhere('invoice_code', $baseCode);
-            })
-            ->first();
+        $invoice = Invoice::with([
+            'courseItems.course',
+            'bootcampItems.bootcamp',
+            'webinarItems.webinar',
+            'privateItems.privateClass',
+            'privateItems.privateClassSchedule',
+            'certificationProgramItems.certificationProgram',
+            'bundleEnrollments.bundle'
+        ])
+        ->where('invoice_code', $invoiceCode)
+        ->when($baseCode, function ($q) use ($baseCode) {
+            return $q->orWhere('invoice_code', $baseCode);
+        })
+        ->first();
 
         if ($invoice) {
-            $targetId = ($invoice->isInstallmentChild() && $invoice->parent_invoice_id)
-                ? $invoice->parent_invoice_id
-                : $invoice->id;
+            $parentInvoice = ($invoice->isInstallmentChild() && $invoice->parent_invoice_id)
+                ? Invoice::with([
+                    'courseItems.course',
+                    'bootcampItems.bootcamp',
+                    'webinarItems.webinar',
+                    'privateItems.privateClass',
+                    'privateItems.privateClassSchedule',
+                    'certificationProgramItems.certificationProgram',
+                    'bundleEnrollments.bundle'
+                ])->find($invoice->parent_invoice_id)
+                : null;
+
+            // Jika status invoice masih pending (user belum menyelesaikan pembayaran atau menekan Back to Merchant)
+            if ($invoice->status === 'pending') {
+                return redirect($this->getInvoiceProductUrl($parentInvoice ?? $invoice));
+            }
+
+            $targetId = $parentInvoice ? $parentInvoice->id : $invoice->id;
             return redirect()->route('invoice.show', ['id' => $targetId]);
         }
 
         return redirect()->route('home');
+    }
+
+    /**
+     * DOKU Web Cancel Callback (User clicks Back to Merchant / Cancel)
+     */
+    public function dokuCancel(Request $request)
+    {
+        $invoiceCode = $request->query('invoice_number');
+        $baseCode = $invoiceCode ? explode('_', $invoiceCode)[0] : null;
+
+        $invoice = Invoice::with([
+            'courseItems.course',
+            'bootcampItems.bootcamp',
+            'webinarItems.webinar',
+            'privateItems.privateClass',
+            'privateItems.privateClassSchedule',
+            'certificationProgramItems.certificationProgram',
+            'bundleEnrollments.bundle'
+        ])
+        ->where('invoice_code', $invoiceCode)
+        ->when($baseCode, function ($q) use ($baseCode) {
+            return $q->orWhere('invoice_code', $baseCode);
+        })
+        ->first();
+
+        if ($invoice) {
+            return redirect($this->getInvoiceProductUrl($invoice));
+        }
+
+        return redirect()->route('home');
+    }
+
+    /**
+     * Mendapatkan URL halaman pendaftaran/checkout dari suatu invoice
+     */
+    private function getInvoiceProductUrl(Invoice $invoice): string
+    {
+        if ($invoice->isInstallmentChild() && $invoice->parent_invoice_id) {
+            $parent = Invoice::with([
+                'courseItems.course',
+                'bootcampItems.bootcamp',
+                'webinarItems.webinar',
+                'privateItems.privateClass',
+                'certificationProgramItems.certificationProgram',
+                'bundleEnrollments.bundle'
+            ])->find($invoice->parent_invoice_id);
+
+            if ($parent) {
+                $invoice = $parent;
+            }
+        }
+
+        if ($invoice->bundleEnrollments && $invoice->bundleEnrollments->count() > 0) {
+            $bundle = $invoice->bundleEnrollments->first()->bundle;
+            if ($bundle) {
+                return route('bundle.checkout', ['bundle' => $bundle->slug]);
+            }
+        } elseif ($invoice->courseItems && $invoice->courseItems->count() > 0) {
+            $course = $invoice->courseItems->first()->course;
+            if ($course) {
+                return route('course.checkout', ['course' => $course->slug]);
+            }
+        } elseif ($invoice->bootcampItems && $invoice->bootcampItems->count() > 0) {
+            $bootcamp = $invoice->bootcampItems->first()->bootcamp;
+            if ($bootcamp) {
+                return route('bootcamp.register', ['bootcamp' => $bootcamp->slug]);
+            }
+        } elseif ($invoice->webinarItems && $invoice->webinarItems->count() > 0) {
+            $webinar = $invoice->webinarItems->first()->webinar;
+            if ($webinar) {
+                return route('webinar.register', ['webinar' => $webinar->slug]);
+            }
+        } elseif ($invoice->privateItems && $invoice->privateItems->count() > 0) {
+            $private = $invoice->privateItems->first()->privateClass;
+            if ($private) {
+                return route('private.register', ['privateClass' => $private->slug]);
+            }
+        } elseif ($invoice->certificationProgramItems && $invoice->certificationProgramItems->count() > 0) {
+            $program = $invoice->certificationProgramItems->first()->certificationProgram;
+            if ($program) {
+                return route('certification-programs.register', ['program' => $program->slug]);
+            }
+        }
+
+        if ($invoice->is_installment || $invoice->parent_invoice_id) {
+            return route('profile.installments');
+        }
+
+        return route('profile.index');
     }
 
     public function callbackXendit(Request $request)

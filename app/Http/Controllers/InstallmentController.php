@@ -221,17 +221,27 @@ class InstallmentController extends Controller
             // $firstChildInvoice->update(['invoice_url' => $xenditInvoice['invoice_url']]);
             // ===== END XENDIT =====
 
+            $cancelUrl = match ($type) {
+                'course' => route('course.checkout', ['course' => $item->slug]),
+                'bootcamp' => route('bootcamp.register', ['bootcamp' => $item->slug]),
+                'webinar' => route('webinar.register', ['webinar' => $item->slug]),
+                'private' => route('private.register', ['privateClass' => $item->slug]),
+                'certification_program' => route('certification-programs.register', ['program' => $item->slug]),
+                default => route('profile.installments'),
+            };
+
             // ===== DOKU =====
             $dokuService = app(\App\Services\DokuService::class);
             $dokuResponse = $dokuService->createCheckoutInstallment(
                 $firstChildInvoice->invoice_code,
                 $firstChildInvoice->amount,
                 [
-                    'customer_id'    => 'USER-' . $userId,
-                    'customer_name'  => Auth::user()->name,
-                    'customer_email' => Auth::user()->email,
-                    'customer_phone' => Auth::user()->phone_number,
-                    'item_name'      => $item->title,
+                    'customer_id'         => 'USER-' . $userId,
+                    'customer_name'       => Auth::user()->name,
+                    'customer_email'      => Auth::user()->email,
+                    'customer_phone'      => Auth::user()->phone_number,
+                    'item_name'           => $item->title,
+                    'callback_url_cancel' => $cancelUrl,
                 ],
                 $firstChildInvoice->installment_number
             );
@@ -335,11 +345,12 @@ class InstallmentController extends Controller
                 $uniqueExternalId,
                 $nextTerm->amount,
                 [
-                    'customer_id'    => 'USER-' . $userId,
-                    'customer_name'  => Auth::user()->name,
-                    'customer_email' => Auth::user()->email,
-                    'customer_phone' => Auth::user()->phone_number,
-                    'item_name'      => $item?->title ?? 'Produk',
+                    'customer_id'         => 'USER-' . $userId,
+                    'customer_name'       => Auth::user()->name,
+                    'customer_email'      => Auth::user()->email,
+                    'customer_phone'      => Auth::user()->phone_number,
+                    'item_name'           => $item?->title ?? 'Produk',
+                    'callback_url_cancel' => route('profile.installments'),
                 ],
                 $nextTerm->installment_number
             );

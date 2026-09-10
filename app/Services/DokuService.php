@@ -62,13 +62,16 @@ class DokuService
             $itemName = $this->sanitizeForDoku($customerData['item_name'] ?? 'Product');
             $itemDescription = $this->sanitizeForDoku($customerData['item_description'] ?? 'Product Purchase');
 
+            $callbackUrl = $customerData['callback_url'] ?? route('doku.callback.web', ['invoice_number' => $orderId], true);
+            $callbackUrlCancel = $customerData['callback_url_cancel'] ?? route('doku.callback.cancel', ['invoice_number' => $orderId], true);
+
             $body = [
                 "order" => [
                     "invoice_number" => $orderId,
                     "amount" => $amount,
                     "currency" => "IDR",
-                    "callback_url" => route('doku.callback.web', ['invoice_number' => $orderId], true),
-                    "callback_url_cancel" => route('doku.callback.web', ['invoice_number' => $orderId], true),
+                    "callback_url" => $callbackUrl,
+                    "callback_url_cancel" => $callbackUrlCancel,
                 ],
                 "payment" => [
                     "payment_due_date" => 60
