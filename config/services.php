@@ -64,4 +64,10 @@ return [
         'model' => env('OPENAI_MODEL', 'gpt-3.5-turbo'),
     ],
 
+    'doku' => [
+        'client_id'  => env('DOKU_CLIENT_ID'),
+        'secret_key' => env('DOKU_SECRET_KEY'),
+        'sandbox'    => env('DOKU_SANDBOX', true),
+    ],
+
 ];

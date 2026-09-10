@@ -35,9 +35,9 @@ use Inertia\Inertia;
 use Haruncpi\LaravelIdGenerator\IdGenerator;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
-use Xendit\Configuration;
-use Xendit\Invoice\CreateInvoiceRequest;
-use Xendit\Invoice\InvoiceApi;
+// use Xendit\Configuration;
+// use Xendit\Invoice\CreateInvoiceRequest;
+// use Xendit\Invoice\InvoiceApi;
 
 class InvoiceController extends Controller
 {
@@ -45,7 +45,7 @@ class InvoiceController extends Controller
 
     public function __construct()
     {
-        Configuration::setXenditKey(config('xendit.API_KEY'));
+        // Configuration::setXenditKey(config('xendit.API_KEY'));
     }
 
     public function index(Request $request)
@@ -533,32 +533,52 @@ class InvoiceController extends Controller
                 $discountCode->incrementUsage();
             }
 
-            $xendit_create_invoice = new CreateInvoiceRequest([
-                'external_id' => $invoice_code,
-                'customer' => [
-                    'given_names' => Auth::user()->name,
-                    'email' => Auth::user()->email,
-                    'mobile_number' => Auth::user()->phone_number,
-                ],
-                'customer_notification_preference' => [
-                    'invoice_created' => ['email', 'whatsapp'],
-                    'invoice_reminder' => ['email', 'whatsapp'],
-                    'invoice_paid' => ['email'],
-                ],
-                'description' => 'Invoice pembayaran transaksi produk ' . $item->title . ' untuk user ' . Auth::user()->name,
-                'amount' => $totalAmount,
-                'items' => $items,
-                'fees' => $fees,
-                'failure_redirect_url' => route('invoice.show', ['id' => $invoice->id]),
-                'success_redirect_url' => route('invoice.show', ['id' => $invoice->id]),
-            ]);
+            // ===== XENDIT (dicomment) =====
+            // $xendit_create_invoice = new CreateInvoiceRequest([
+            //     'external_id' => $invoice_code,
+            //     'customer' => [
+            //         'given_names' => Auth::user()->name,
+            //         'email' => Auth::user()->email,
+            //         'mobile_number' => Auth::user()->phone_number,
+            //     ],
+            //     'customer_notification_preference' => [
+            //         'invoice_created' => ['email', 'whatsapp'],
+            //         'invoice_reminder' => ['email', 'whatsapp'],
+            //         'invoice_paid' => ['email'],
+            //     ],
+            //     'description' => 'Invoice pembayaran transaksi produk ' . $item->title . ' untuk user ' . Auth::user()->name,
+            //     'amount' => $totalAmount,
+            //     'items' => $items,
+            //     'fees' => $fees,
+            //     'failure_redirect_url' => route('invoice.show', ['id' => $invoice->id]),
+            //     'success_redirect_url' => route('invoice.show', ['id' => $invoice->id]),
+            // ]);
+            // $xendit_api_instance = new InvoiceApi();
+            // $xendit_invoice = $xendit_api_instance->createInvoice($xendit_create_invoice);
+            // $invoice->update([
+            //     'invoice_url' => $xendit_invoice['invoice_url'],
+            // ]);
+            // ===== END XENDIT =====
 
-            $xendit_api_instance = new InvoiceApi();
-            $xendit_invoice = $xendit_api_instance->createInvoice($xendit_create_invoice);
-
+            // ===== DOKU =====
+            $dokuService = app(\App\Services\DokuService::class);
+            $dokuResponse = $dokuService->createCheckout(
+                $invoice_code,
+                $totalAmount,
+                [
+                    'customer_id'      => 'USER-' . $userId,
+                    'customer_name'    => Auth::user()->name,
+                    'customer_email'   => Auth::user()->email,
+                    'customer_phone'   => Auth::user()->phone_number,
+                    'item_name'        => $item->title,
+                    'item_description' => 'Pembayaran ' . $type . ' ' . $item->title,
+                ]
+            );
+            $paymentUrl = $dokuResponse['response']['payment']['url'] ?? '';
             $invoice->update([
-                'invoice_url' => $xendit_invoice['invoice_url'],
+                'invoice_url' => $paymentUrl,
             ]);
+            // ===== END DOKU =====
 
             $enrollmentData = [
                 'invoice_id' => $invoice->id,
@@ -586,7 +606,7 @@ class InvoiceController extends Controller
 
             return response()->json([
                 'success' => true,
-                'payment_url' => $xendit_invoice['invoice_url'],
+                'payment_url' => $paymentUrl,
                 'invoice_id' => $invoice->id,
                 'invoice_code' => $invoice->invoice_code
             ], 200);
@@ -762,39 +782,58 @@ class InvoiceController extends Controller
             }
             $fees[] = ['type' => 'Biaya Transaksi', 'value' => $transactionFee];
 
-            // Create Xendit invoice
-            $xendit_create_invoice = new CreateInvoiceRequest([
-                'external_id' => $invoice_code,
-                'customer' => [
-                    'given_names' => Auth::user()->name,
-                    'email' => Auth::user()->email,
-                    'mobile_number' => Auth::user()->phone_number,
-                ],
-                'customer_notification_preference' => [
-                    'invoice_created' => ['email', 'whatsapp'],
-                    'invoice_reminder' => ['email', 'whatsapp'],
-                    'invoice_paid' => ['email'],
-                ],
-                'description' => 'Invoice pembayaran Paket Bundling: ' . $bundle->title,
-                'amount' => $totalAmount,
-                'items' => $items,
-                'fees' => $fees,
-                'failure_redirect_url' => route('invoice.show', ['id' => $invoice->id]),
-                'success_redirect_url' => route('invoice.show', ['id' => $invoice->id]),
-            ]);
+            // ===== XENDIT (dicomment) =====
+            // $xendit_create_invoice = new CreateInvoiceRequest([
+            //     'external_id' => $invoice_code,
+            //     'customer' => [
+            //         'given_names' => Auth::user()->name,
+            //         'email' => Auth::user()->email,
+            //         'mobile_number' => Auth::user()->phone_number,
+            //     ],
+            //     'customer_notification_preference' => [
+            //         'invoice_created' => ['email', 'whatsapp'],
+            //         'invoice_reminder' => ['email', 'whatsapp'],
+            //         'invoice_paid' => ['email'],
+            //     ],
+            //     'description' => 'Invoice pembayaran Paket Bundling: ' . $bundle->title,
+            //     'amount' => $totalAmount,
+            //     'items' => $items,
+            //     'fees' => $fees,
+            //     'failure_redirect_url' => route('invoice.show', ['id' => $invoice->id]),
+            //     'success_redirect_url' => route('invoice.show', ['id' => $invoice->id]),
+            // ]);
+            // $xendit_api_instance = new InvoiceApi();
+            // $xendit_invoice = $xendit_api_instance->createInvoice($xendit_create_invoice);
+            // $invoice->update([
+            //     'invoice_url' => $xendit_invoice['invoice_url'],
+            // ]);
+            // ===== END XENDIT =====
 
-            $xendit_api_instance = new InvoiceApi();
-            $xendit_invoice = $xendit_api_instance->createInvoice($xendit_create_invoice);
-
+            // ===== DOKU =====
+            $dokuService = app(\App\Services\DokuService::class);
+            $dokuResponse = $dokuService->createCheckout(
+                $invoice_code,
+                $totalAmount,
+                [
+                    'customer_id'      => 'USER-' . $userId,
+                    'customer_name'    => Auth::user()->name,
+                    'customer_email'   => Auth::user()->email,
+                    'customer_phone'   => Auth::user()->phone_number,
+                    'item_name'        => $bundle->title,
+                    'item_description' => 'Pembayaran Paket Bundling: ' . $bundle->title,
+                ]
+            );
+            $paymentUrl = $dokuResponse['response']['payment']['url'] ?? '';
             $invoice->update([
-                'invoice_url' => $xendit_invoice['invoice_url'],
+                'invoice_url' => $paymentUrl,
             ]);
+            // ===== END DOKU =====
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'payment_url' => $xendit_invoice['invoice_url'],
+                'payment_url' => $paymentUrl,
                 'invoice_id' => $invoice->id,
                 'invoice_code' => $invoice->invoice_code
             ], 200);
@@ -1034,7 +1073,13 @@ class InvoiceController extends Controller
 
             $invoice = $query->firstOrFail();
 
-            $this->expireInvoiceInXendit($invoice->invoice_code);
+            // ===== XENDIT (dicomment) =====
+            // $this->expireInvoiceInXendit($invoice->invoice_code);
+            // ===== END XENDIT =====
+
+            // ===== DOKU =====
+            $this->expireInvoiceInDoku($invoice->invoice_code);
+            // ===== END DOKU =====
 
             if ($invoice->discountUsage) {
                 $discountCode = $invoice->discountUsage->discountCode;
@@ -1172,6 +1217,20 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Expire invoice di Doku (placeholder)
+     */
+    private function expireInvoiceInDoku($externalId): void
+    {
+        try {
+            app(\App\Services\DokuService::class)->cancelInvoice($externalId);
+        } catch (\Exception $e) {
+            Log::error('Failed to expire invoice in Doku: ' . $e->getMessage(), [
+                'external_id' => $externalId
+            ]);
+        }
+    }
+
+    /**
      * Check and expire old invoices (to be called by scheduler)
      */
     public function expireOldInvoices()
@@ -1181,7 +1240,8 @@ class InvoiceController extends Controller
             ->get();
 
         foreach ($expiredInvoices as $invoice) {
-            $this->expireInvoiceInXendit($invoice->invoice_code);
+            // $this->expireInvoiceInXendit($invoice->invoice_code);
+            $this->expireInvoiceInDoku($invoice->invoice_code);
             $invoice->update(['status' => 'failed']);
 
             if ($invoice->points_redeemed > 0) {
@@ -1193,6 +1253,185 @@ class InvoiceController extends Controller
             'message' => count($expiredInvoices) . ' invoices expired and updated.',
             'expired_count' => count($expiredInvoices)
         ]);
+    }
+
+    /**
+     * DOKU Server-to-Server Callback
+     */
+    public function callbackDoku(Request $request)
+    {
+        Log::info('=== DOKU CALLBACK RECEIVED ===', [
+            'headers' => $request->headers->all(),
+            'payload' => $request->all()
+        ]);
+
+        try {
+            $dokuService = app(\App\Services\DokuService::class);
+            if (!$dokuService->verifyCallback($request)) {
+                return response()->json(['message' => 'unauthorized'], 401);
+            }
+
+            $invoiceCode = $request->input('order.invoice_number');
+            $baseCode = $invoiceCode ? explode('_', $invoiceCode)[0] : null;
+
+            $invoice = Invoice::with([
+                'user',
+                'courseItems.course',
+                'bootcampItems.bootcamp',
+                'webinarItems.webinar',
+                'privateItems.privateClass',
+                'privateItems.privateClassSchedule',
+                'certificationProgramItems.certificationProgram',
+                'bundleEnrollments.bundle.bundleItems.bundleable'
+            ])->where('invoice_code', $invoiceCode)
+              ->when($baseCode, function ($q) use ($baseCode) {
+                  return $q->orWhere('invoice_code', $baseCode);
+              })
+              ->first();
+
+            if (!$invoice) {
+                return response()->json(['message' => 'Invoice Not Found'], 404);
+            }
+
+            // Hanya proses jika status invoice masih pending untuk menghindari duplikasi
+            if ($invoice->status !== 'pending') {
+                return response()->json(['message' => 'Invoice already processed'], 200);
+            }
+
+            $isSuccess = ($request->input('transaction.status') === 'SUCCESS');
+
+            // ====== INSTALLMENT CHILD HANDLER ======
+            if ($invoice->isInstallmentChild() && $isSuccess) {
+                $invoice->update([
+                    'paid_at' => Carbon::now('Asia/Jakarta'),
+                    'status' => 'paid',
+                    'payment_method' => $request->input('payment.payment_method', 'DOKU'),
+                    'payment_channel' => $request->input('payment.payment_channel', 'DOKU'),
+                ]);
+
+                $parentInvoice = Invoice::with([
+                    'user',
+                    'courseItems.course',
+                    'bootcampItems.bootcamp',
+                    'webinarItems.webinar',
+                    'privateItems.privateClass',
+                    'certificationProgramItems.certificationProgram',
+                    'bundleEnrollments.bundle',
+                ])->find($invoice->parent_invoice_id);
+
+                if ($parentInvoice) {
+                    // Jika termin ke-1 (DP): aktifkan akses
+                    if ($invoice->installment_number === 1) {
+                        $this->activateInstallmentEnrollments($parentInvoice);
+                    }
+
+                    // Pulihkan akses jika sebelumnya dibekukan
+                    $parentInvoice->update(['access_suspended_at' => null]);
+
+                    // Catat komisi affiliate + mentor untuk termin ini
+                    $this->recordAffiliateCommissionForTerm($invoice, $parentInvoice);
+
+                    // Cek apakah semua termin lunas
+                    if ($parentInvoice->isFullyPaid()) {
+                        $parentInvoice->update(['status' => 'paid', 'paid_at' => Carbon::now('Asia/Jakarta')]);
+                        event(new \App\Events\TransactionPaid($parentInvoice));
+                        $this->sendWhatsAppInstallmentComplete($parentInvoice);
+                    } else {
+                        $this->sendWhatsAppTermPaid($invoice, $parentInvoice);
+                    }
+                }
+
+                return response()->json(['message' => 'Success'], 200);
+            }
+            // ====== END INSTALLMENT CHILD HANDLER ======
+
+            if ($isSuccess) {
+                $invoice->update([
+                    'paid_at' => Carbon::now('Asia/Jakarta'),
+                    'status' => 'paid',
+                    'payment_method' => $request->input('payment.payment_method', 'DOKU'),
+                    'payment_channel' => $request->input('payment.payment_channel', 'DOKU')
+                ]);
+
+                if ($invoice->bundleEnrollments->count() > 0) {
+                    Log::info('Processing bundle enrollments (Doku)', [
+                        'invoice_code' => $invoice->invoice_code,
+                        'bundle_count' => $invoice->bundleEnrollments->count()
+                    ]);
+
+                    foreach ($invoice->bundleEnrollments as $bundleEnrollment) {
+                        $bundleEnrollment->createIndividualEnrollments();
+
+                        $bundle = $bundleEnrollment->bundle;
+
+                        Log::info('Processing bundle items (Doku)', [
+                            'bundle_id' => $bundle->id,
+                            'items_count' => $bundle->bundleItems->count()
+                        ]);
+
+                        foreach ($bundle->bundleItems as $item) {
+                            $type = $item->getTypeSlug();
+                            $this->addToCertificateParticipants($type, $item->bundleable_id, $invoice->user_id);
+
+                            Log::info('Added to certificate (Doku)', [
+                                'type' => $type,
+                                'item_id' => $item->bundleable_id,
+                                'user_id' => $invoice->user_id
+                            ]);
+                        }
+                    }
+                }
+
+                $this->recordAffiliateCommission($invoice);
+                $this->addEnrollmentToCertificateParticipants($invoice);
+
+                // Fire event for referral/rewards points
+                event(new \App\Events\TransactionPaid($invoice));
+
+                // Kirim WhatsApp setelah pembayaran berhasil
+                $this->sendWhatsAppNotification($invoice);
+            } else {
+                $invoice->update(['status' => 'failed']);
+
+                // Kirim WhatsApp untuk pembayaran gagal (opsional)
+                $this->sendWhatsAppPaymentFailed($invoice);
+            }
+
+            return response()->json(['message' => 'Success'], 200);
+
+        } catch (\Throwable $e) {
+            Log::error('DOKU CALLBACK ERROR: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'message' => 'Callback processing error',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * DOKU Web Redirect Callback (User returns after payment)
+     */
+    public function dokuReturn(Request $request)
+    {
+        $invoiceCode = $request->query('invoice_number');
+        $baseCode = $invoiceCode ? explode('_', $invoiceCode)[0] : null;
+
+        $invoice = Invoice::where('invoice_code', $invoiceCode)
+            ->when($baseCode, function ($q) use ($baseCode) {
+                return $q->orWhere('invoice_code', $baseCode);
+            })
+            ->first();
+
+        if ($invoice) {
+            $targetId = ($invoice->isInstallmentChild() && $invoice->parent_invoice_id)
+                ? $invoice->parent_invoice_id
+                : $invoice->id;
+            return redirect()->route('invoice.show', ['id' => $targetId]);
+        }
+
+        return redirect()->route('home');
     }
 
     public function callbackXendit(Request $request)
