@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import ProfileLayout from '@/layouts/profile/layout';
 import UserLayout from '@/layouts/user-layout';
+import { formatExternalUrl } from '@/lib/utils';
 import { Head, Link } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -26,6 +27,9 @@ interface Product {
     end_time?: string;
     group_url?: string;
     enrolled_at: string;
+    is_installment?: boolean;
+    is_fully_paid?: boolean;
+    is_suspended?: boolean;
 }
 
 interface ProfileProps {
@@ -206,19 +210,91 @@ export default function Profile({ stats, recentProducts }: ProfileProps) {
                                                             <Progress value={product.progress || 0} className="w-20" />
                                                             <span className="text-xs text-gray-500">{product.progress || 0}%</span>
                                                         </div>
+                                                        {product.is_installment && (
+                                                            <div>
+                                                                <Badge
+                                                                    variant="outline"
+                                                                    className={
+                                                                        product.is_fully_paid
+                                                                            ? 'border-green-300 bg-green-50 text-green-700'
+                                                                            : product.is_suspended
+                                                                              ? 'border-red-300 bg-red-50 text-red-700'
+                                                                              : 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                                                                    }
+                                                                >
+                                                                    {product.is_fully_paid
+                                                                        ? 'Cicilan Lunas'
+                                                                        : product.is_suspended
+                                                                          ? 'Cicilan Dibekukan'
+                                                                          : 'Cicilan Aktif'}
+                                                                </Badge>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ) : product.type === 'certification-program' ? (
-                                                    <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
-                                                        {product.is_scholarship ? 'Beasiswa' : 'Reguler'}
-                                                    </Badge>
+                                                    <div className="flex flex-col items-start gap-1">
+                                                        <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+                                                            {product.is_scholarship ? 'Beasiswa' : 'Reguler'}
+                                                        </Badge>
+                                                        {product.is_installment && (
+                                                            <Badge
+                                                                variant="outline"
+                                                                className={
+                                                                    product.is_fully_paid
+                                                                        ? 'border-green-300 bg-green-50 text-green-700'
+                                                                        : product.is_suspended
+                                                                          ? 'border-red-300 bg-red-50 text-red-700'
+                                                                          : 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                                                                }
+                                                            >
+                                                                {product.is_fully_paid
+                                                                    ? 'Cicilan Lunas'
+                                                                    : product.is_suspended
+                                                                      ? 'Cicilan Dibekukan'
+                                                                      : 'Cicilan Aktif'}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                 ) : (
-                                                    <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
-                                                        Terdaftar
-                                                    </Badge>
+                                                    <div className="flex flex-col items-start gap-1">
+                                                        <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+                                                            Terdaftar
+                                                        </Badge>
+                                                        {product.is_installment && (
+                                                            <Badge
+                                                                variant="outline"
+                                                                className={
+                                                                    product.is_fully_paid
+                                                                        ? 'border-green-300 bg-green-50 text-green-700'
+                                                                        : product.is_suspended
+                                                                          ? 'border-red-300 bg-red-50 text-red-700'
+                                                                          : 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                                                                }
+                                                            >
+                                                                {product.is_fully_paid
+                                                                    ? 'Cicilan Lunas'
+                                                                    : product.is_suspended
+                                                                      ? 'Cicilan Dibekukan'
+                                                                      : 'Cicilan Aktif'}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
+                                                    {product.is_installment && !product.is_fully_paid && (
+                                                        <Button
+                                                            asChild
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-700 dark:text-indigo-300 dark:hover:bg-indigo-900/30"
+                                                        >
+                                                            <Link href={route('profile.installments')}>
+                                                                Cicilan
+                                                            </Link>
+                                                        </Button>
+                                                    )}
                                                     {product.type === 'course' ? (
                                                         <Button asChild size="sm" variant="outline">
                                                             <Link href={route('profile.course.detail', { course: product.slug })}>
@@ -236,7 +312,7 @@ export default function Profile({ stats, recentProducts }: ProfileProps) {
                                                             </Button>
                                                             {product.group_url && (
                                                                 <Button asChild size="sm" variant="default">
-                                                                    <a href={product.group_url} target="_blank" rel="noopener noreferrer">
+                                                                    <a href={formatExternalUrl(product.group_url)} target="_blank" rel="noopener noreferrer">
                                                                         <MessageCircle className="mr-1 h-4 w-4" />
                                                                         Grup WA
                                                                     </a>
@@ -253,7 +329,7 @@ export default function Profile({ stats, recentProducts }: ProfileProps) {
                                                             </Button>
                                                             {product.group_url && (
                                                                 <Button asChild size="sm" variant="default">
-                                                                    <a href={product.group_url} target="_blank" rel="noopener noreferrer">
+                                                                    <a href={formatExternalUrl(product.group_url)} target="_blank" rel="noopener noreferrer">
                                                                         <MessageCircle className="mr-1 h-4 w-4" />
                                                                         Grup WA
                                                                     </a>
