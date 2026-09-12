@@ -3,14 +3,14 @@
 namespace App\Console\Commands;
 
 use App\Models\Invoice;
-use App\Traits\MessaraTrait;
+use App\Traits\WablasTrait;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
 class CheckInstallmentOverdue extends Command
 {
-    use MessaraTrait;
+    use WablasTrait;
 
     protected $signature = 'installment:check-overdue';
     protected $description = 'Cek jatuh tempo cicilan: kirim reminder H-7, H-3, H-0, dan bekukan akses jika melewati jatuh tempo';
@@ -34,9 +34,12 @@ class CheckInstallmentOverdue extends Command
             $daysUntilDue = $today->diffInDays($dueDate, false); // negative = overdue
 
             $parentInvoice = $childInvoice->parentInvoice;
-            if (!$parentInvoice) continue;
+            if (!$parentInvoice)
+                continue;
 
             $user = $parentInvoice->user;
+            if (!$user)
+                continue;
 
             // Overdue: jatuh tempo sudah lewat
             if ($daysUntilDue < 0) {
@@ -73,10 +76,26 @@ class CheckInstallmentOverdue extends Command
         return self::SUCCESS;
     }
 
+    private function formatPhoneNumber(string $phoneNumber): string
+    {
+        $cleaned = preg_replace('/[^0-9]/', '', $phoneNumber);
+
+        if (str_starts_with($cleaned, '0')) {
+            return '62' . substr($cleaned, 1);
+        }
+
+        if (!str_starts_with($cleaned, '62')) {
+            return '62' . $cleaned;
+        }
+
+        return $cleaned;
+    }
+
     private function sendReminderNotification(Invoice $child, Invoice $parent, mixed $user, int $daysLeft): void
     {
         try {
-            if (!$user?->phone_number) return;
+            if (!$user?->phone_number)
+                return;
 
             $phoneNumber = $this->formatPhoneNumber($user->phone_number);
             $dueDate = Carbon::parse($child->installment_due_date)->translatedFormat('d F Y');
@@ -101,7 +120,8 @@ class CheckInstallmentOverdue extends Command
     private function sendSuspensionNotification(Invoice $child, Invoice $parent, mixed $user): void
     {
         try {
-            if (!$user?->phone_number) return;
+            if (!$user?->phone_number)
+                return;
 
             $phoneNumber = $this->formatPhoneNumber($user->phone_number);
             $termNumber = $child->installment_number;

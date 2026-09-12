@@ -24,6 +24,12 @@ trait MessaraTrait
                 return false;
             }
 
+            // Cegah deadlock di lingkungan local jika DOMAIN_SERVER_MESSARA mengarah ke localhost/127.0.0.1
+            if (app()->environment('local') && (str_contains($domain, 'localhost') || str_contains($domain, '127.0.0.1'))) {
+                Log::info('Messara skipped in local environment to prevent deadlock', ['data' => $data]);
+                return true;
+            }
+
             $payload = [
                 "data" => $data
             ];
@@ -39,7 +45,8 @@ trait MessaraTrait
             curl_setopt($curl, CURLOPT_URL, rtrim($domain, '/') . "/api/v2/send-message");
             curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
             curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
-            curl_setopt($curl, CURLOPT_TIMEOUT, 30);
+            curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 5);
+            curl_setopt($curl, CURLOPT_TIMEOUT, 5);
 
             $result = curl_exec($curl);
             $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);

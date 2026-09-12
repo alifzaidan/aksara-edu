@@ -2,12 +2,21 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 class Bootcamp extends Model
 {
     use HasUuids;
+
+    protected function groupUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => $value ? (preg_match('~^https?://~i', trim($value)) ? trim($value) : 'https://' . trim($value)) : $value,
+            set: fn (?string $value) => $value ? (preg_match('~^https?://~i', trim($value)) ? trim($value) : 'https://' . trim($value)) : $value,
+        );
+    }
 
     protected $guarded = ['created_at', 'updated_at'];
 

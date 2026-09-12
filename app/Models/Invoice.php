@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -92,46 +93,6 @@ class Invoice extends Model
         return $this->belongsTo(ProductInstallmentTerm::class, 'installment_term_id');
     }
 
-    // ==================== Installment Helpers ====================
-
-    /**
-     * Scope untuk invoice yang sudah dibeli oleh user (lunas atau cicilan dengan DP terbayar)
-     * Termasuk yang aksesnya sedang dibekukan (agar tetap tampil di dashboard/daftar produk user)
-     */
-    public function scopePurchasedByUser($query, $userId)
-    {
-        return $query->where('user_id', $userId)
-            ->whereNull('parent_invoice_id')
-            ->where(function ($q) {
-                $q->whereIn('status', ['paid', 'completed'])
-                    ->orWhere(function ($iq) {
-                        $iq->where('status', 'installment_pending')
-                            ->whereHas('installmentTerms', function ($tq) {
-                                $tq->where('installment_number', 1)->where('status', 'paid');
-                            });
-                    });
-            });
-    }
-
-    /**
-     * Scope untuk invoice yang aktif dan dapat diakses materinya (lunas, atau cicilan dengan DP terbayar & tidak dibekukan)
-     */
-    public function scopeAccessibleForUser($query, $userId)
-    {
-        return $query->where('user_id', $userId)
-            ->whereNull('parent_invoice_id')
-            ->where(function ($q) {
-                $q->whereIn('status', ['paid', 'completed'])
-                    ->orWhere(function ($iq) {
-                        $iq->where('status', 'installment_pending')
-                            ->whereNull('access_suspended_at')
-                            ->whereHas('installmentTerms', function ($tq) {
-                                $tq->where('installment_number', 1)->where('status', 'paid');
-                            });
-                    });
-            });
-    }
-
     /**
      * Ambil data cicilan aktif milik user untuk produk tertentu
      */
@@ -185,7 +146,7 @@ class Invoice extends Model
                 'amount' => $nextUnpaid->amount,
                 'due_date' => $nextUnpaid->installment_due_date ? $nextUnpaid->installment_due_date->format('Y-m-d') : null,
                 'is_overdue' => $nextUnpaid->installment_due_date
-                    ? \Carbon\Carbon::now('Asia/Jakarta')->gt(\Carbon\Carbon::parse($nextUnpaid->installment_due_date)->endOfDay())
+                    ? Carbon::now('Asia/Jakarta')->gt(Carbon::parse($nextUnpaid->installment_due_date)->endOfDay())
                     : false,
             ] : null,
             'terms' => $terms->map(function ($t) {
@@ -199,6 +160,44 @@ class Invoice extends Model
                 ];
             })->values()->all(),
         ];
+    }
+
+    /**
+     * Scope untuk invoice yang sudah dibeli oleh user (lunas atau cicilan dengan DP terbayar)
+     * Termasuk yang aksesnya sedang dibekukan (agar tetap tampil di dashboard/daftar produk user)
+     */
+    public function scopePurchasedByUser($query, $userId)
+    {
+        return $query->where('user_id', $userId)
+            ->whereNull('parent_invoice_id')
+            ->where(function ($q) {
+                $q->whereIn('status', ['paid', 'completed'])
+                    ->orWhere(function ($iq) {
+                        $iq->where('status', 'installment_pending')
+                            ->whereHas('installmentTerms', function ($tq) {
+                                $tq->where('installment_number', 1)->where('status', 'paid');
+                            });
+                    });
+            });
+    }
+
+    /**
+     * Scope untuk invoice yang aktif dan dapat diakses materinya (lunas, atau cicilan dengan DP terbayar & tidak dibekukan)
+     */
+    public function scopeAccessibleForUser($query, $userId)
+    {
+        return $query->where('user_id', $userId)
+            ->whereNull('parent_invoice_id')
+            ->where(function ($q) {
+                $q->whereIn('status', ['paid', 'completed'])
+                    ->orWhere(function ($iq) {
+                        $iq->where('status', 'installment_pending')
+                            ->whereNull('access_suspended_at')
+                            ->whereHas('installmentTerms', function ($tq) {
+                                $tq->where('installment_number', 1)->where('status', 'paid');
+                            });
+                    });
+            });
     }
 
     /**
@@ -234,6 +233,38 @@ class Invoice extends Model
     public function isAccessSuspended(): bool
     {
         return !is_null($this->access_suspended_at);
+    }
+
+    /**
+     * Cek apakah user memiliki akses aktif ke produk
+     * (lunas, atau cicilan dengan DP/termin 1 terbayar dan tidak sedang dibekukan)
+     */
+    public function hasActiveAccess(): bool
+    {
+        if (!$this->is_installment) {
+            return in_array($this->status, ['paid', 'completed']);
+        }
+
+        if ($this->isAccessSuspended()) {
+            return false;
+        }
+
+        $terms = $this->relationLoaded('installmentTerms')
+            ? $this->installmentTerms
+            : $this->installmentTerms()->get();
+
+        $firstTerm = $terms->firstWhere('installment_number', 1);
+        return (bool) ($firstTerm && $firstTerm->status === 'paid');
+    }
+
+    public function getHasActiveAccessAttribute(): bool
+    {
+        return $this->hasActiveAccess();
+    }
+
+    public function getIsFullyPaidAttribute(): bool
+    {
+        return $this->isFullyPaid();
     }
 
     /**
@@ -291,7 +322,6 @@ class Invoice extends Model
             'courses' => $this->courseItems()->with('course')->get(),
             'bootcamps' => $this->bootcampItems()->with('bootcamp')->get(),
             'webinars' => $this->webinarItems()->with('webinar')->get(),
-            'privates' => $this->privateItems()->with('privateClass', 'privateClassSchedule')->get(),
             'certification_programs' => $this->certificationProgramItems()->with('certificationProgram')->get(),
         ];
     }
@@ -371,8 +401,7 @@ class Invoice extends Model
             case 'webinar':
                 return $this->webinarItems()->where('webinar_id', $productId)->exists();
 
-            case 'private':
-                return $this->privateItems()->where('private_class_id', $productId)->exists();
+
 
             case 'bundle':
                 return $this->bundleEnrollments()->where('bundle_id', $productId)->exists();
@@ -429,5 +458,10 @@ class Invoice extends Model
     public function referralUser()
     {
         return $this->belongsTo(User::class, 'referral_user_id');
+    }
+
+    public function referredByUser()
+    {
+        return $this->belongsTo(User::class, 'referred_by_user_id');
     }
 }

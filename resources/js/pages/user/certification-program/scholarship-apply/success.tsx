@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import UserLayout from '@/layouts/user-layout';
+import { formatExternalUrl } from '@/lib/utils';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowRight, CheckCircle2, MessageCircle, Trophy } from 'lucide-react';
 
@@ -96,7 +97,7 @@ export default function ScholarshipSuccess({ program }: { program: Program }) {
                                     className="w-full border-green-700 bg-gradient-to-r from-green-500 to-emerald-500 transition hover:from-green-600 hover:to-emerald-600"
                                 >
                                     <a
-                                        href={program.socialization_group_url}
+                                        href={formatExternalUrl(program.socialization_group_url)}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center justify-center gap-2"

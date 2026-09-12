@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProfileLayout from '@/layouts/profile/layout';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
+import { formatExternalUrl } from '@/lib/utils';
 import {
     ArrowLeft,
     BellRing,
@@ -169,6 +170,20 @@ export default function CertificationProgramDetail({ invoice, programItem }: Pro
                                 </Link>
                             </Button>
                         </div>
+
+                        {invoice.is_access_suspended ? (
+                            <div className="mt-4 flex justify-center">
+                                <span className="rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 dark:border-red-700 dark:bg-red-900/20 dark:text-red-300">
+                                    ⚠️ Akses program dibekukan karena ada tagihan cicilan yang melewati jatuh tempo. Silakan lakukan pelunasan di menu Transaksi.
+                                </span>
+                            </div>
+                        ) : invoice.is_installment && !invoice.is_fully_paid ? (
+                            <div className="mt-4 flex justify-center">
+                                <span className="rounded-lg border border-amber-200 bg-amber-50/80 px-4 py-2 text-xs font-medium text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300">
+                                    ℹ️ Pembayaran Cicilan Aktif ({invoice.paid_terms}/{invoice.total_terms} Termin). Pastikan membayar termin berikutnya tepat waktu.
+                                </span>
+                            </div>
+                        ) : null}
                     </div>
                 </div>
             </section>
@@ -262,7 +277,7 @@ export default function CertificationProgramDetail({ invoice, programItem }: Pro
                                         </Button>
                                     ) : program.group_url ? (
                                         <Button asChild size="sm" className="mt-2 w-full sm:w-auto">
-                                            <a href={program.group_url} target="_blank" rel="noopener noreferrer">
+                                            <a href={formatExternalUrl(program.group_url)} target="_blank" rel="noopener noreferrer">
                                                 Gabung Grup Kelas
                                             </a>
                                         </Button>
@@ -291,7 +306,7 @@ export default function CertificationProgramDetail({ invoice, programItem }: Pro
                                             variant="outline"
                                             className="border-primary text-primary hover:bg-primary/10 mt-2 w-full sm:w-auto"
                                         >
-                                            <a href={program.program_url} target="_blank" rel="noopener noreferrer">
+                                            <a href={formatExternalUrl(program.program_url)} target="_blank" rel="noopener noreferrer">
                                                 Buka Program
                                             </a>
                                         </Button>
@@ -356,15 +371,21 @@ export default function CertificationProgramDetail({ invoice, programItem }: Pro
                                                                 </div>
                                                             </div>
                                                             {schedule.recording_url && (
-                                                                <Button asChild size="sm" variant="outline" className="mt-2 w-full sm:mt-0 sm:w-auto">
-                                                                    <a href={schedule.recording_url} target="_blank" rel="noopener noreferrer">
-                                                                        <ExternalLink className="mr-1 h-3.5 w-3.5" />
-                                                                        Buka di YouTube
-                                                                    </a>
-                                                                </Button>
+                                                                invoice.is_access_suspended ? (
+                                                                    <Button size="sm" variant="destructive" className="mt-2 w-full sm:mt-0 sm:w-auto" disabled>
+                                                                        <Lock className="mr-1 h-3.5 w-3.5" /> Akses Dibekukan
+                                                                    </Button>
+                                                                ) : (
+                                                                    <Button asChild size="sm" variant="outline" className="mt-2 w-full sm:mt-0 sm:w-auto">
+                                                                        <a href={schedule.recording_url} target="_blank" rel="noopener noreferrer">
+                                                                            <ExternalLink className="mr-1 h-3.5 w-3.5" />
+                                                                            Buka di YouTube
+                                                                        </a>
+                                                                    </Button>
+                                                                )
                                                             )}
                                                         </div>
-                                                        {schedule.recording_url && (() => {
+                                                        {schedule.recording_url && !invoice.is_access_suspended && (() => {
                                                             const videoId = getYoutubeId(schedule.recording_url!);
                                                             const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : '';
                                                             return embedUrl ? (
@@ -429,15 +450,21 @@ export default function CertificationProgramDetail({ invoice, programItem }: Pro
                                                                     </div>
                                                                 </div>
                                                                 {schedule.recording_url && (
-                                                                    <Button asChild size="sm" variant="outline" className="mt-2 w-full sm:mt-0 sm:w-auto">
-                                                                        <a href={schedule.recording_url} target="_blank" rel="noopener noreferrer">
-                                                                            <ExternalLink className="mr-1 h-3.5 w-3.5" />
-                                                                            Buka di YouTube
-                                                                        </a>
-                                                                    </Button>
+                                                                    invoice.is_access_suspended ? (
+                                                                        <Button size="sm" variant="destructive" className="mt-2 w-full sm:mt-0 sm:w-auto" disabled>
+                                                                            <Lock className="mr-1 h-3.5 w-3.5" /> Akses Dibekukan
+                                                                        </Button>
+                                                                    ) : (
+                                                                        <Button asChild size="sm" variant="outline" className="mt-2 w-full sm:mt-0 sm:w-auto">
+                                                                            <a href={schedule.recording_url} target="_blank" rel="noopener noreferrer">
+                                                                                <ExternalLink className="mr-1 h-3.5 w-3.5" />
+                                                                                Buka di YouTube
+                                                                            </a>
+                                                                        </Button>
+                                                                    )
                                                                 )}
                                                             </div>
-                                                            {schedule.recording_url && (() => {
+                                                            {schedule.recording_url && !invoice.is_access_suspended && (() => {
                                                                 const videoId = getYoutubeId(schedule.recording_url!);
                                                                 const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : '';
                                                                 return embedUrl ? (
@@ -464,11 +491,17 @@ export default function CertificationProgramDetail({ invoice, programItem }: Pro
                                                                     Gabung grup sosialisasi untuk informasi lebih lanjut
                                                                 </p>
                                                             </div>
-                                                            <Button asChild size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-                                                                <a href={program.socialization_group_url} target="_blank" rel="noopener noreferrer">
-                                                                    Gabung Grup
-                                                                </a>
-                                                            </Button>
+                                                            {invoice.is_access_suspended ? (
+                                                                <Button size="sm" variant="destructive" disabled>
+                                                                    <Lock className="mr-1.5 h-3.5 w-3.5" /> Akses Dibekukan
+                                                                </Button>
+                                                            ) : (
+                                                                <Button asChild size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                                                                    <a href={formatExternalUrl(program.socialization_group_url)} target="_blank" rel="noopener noreferrer">
+                                                                        Gabung Grup
+                                                                    </a>
+                                                                </Button>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>

@@ -20,21 +20,16 @@ class CertificationProgramController extends Controller
 
         // Explicitly structure data for Inertia
         $myCertificationPrograms = $invoices->map(function ($invoice) {
-            $terms = $invoice->installmentTerms ?: collect();
-            $isInstallment = $invoice->is_installment || $invoice->status === 'installment_pending' || $terms->count() > 0;
-            $paidTerms = $terms->where('status', 'paid')->count();
-            $totalTerms = $terms->count();
-            $isSuspended = $invoice->isAccessSuspended();
-
             return [
                 'id' => $invoice->id,
                 'invoice_code' => $invoice->invoice_code,
                 'invoice_url' => $invoice->invoice_url,
                 'status' => $invoice->status,
-                'is_installment' => $isInstallment,
-                'is_access_suspended' => $isSuspended,
-                'paid_terms' => $paidTerms,
-                'total_terms' => $totalTerms,
+                'is_installment' => $invoice->is_installment,
+                'is_access_suspended' => $invoice->isAccessSuspended(),
+                'paid_terms' => $invoice->paidTermsCount(),
+                'total_terms' => $invoice->installmentTerms->count(),
+                'is_fully_paid' => $invoice->isFullyPaid(),
                 'paid_at' => $invoice->paid_at,
                 'created_at' => $invoice->created_at,
                 'payment_method' => $invoice->payment_method,
@@ -74,6 +69,7 @@ class CertificationProgramController extends Controller
 
         // Get all purchased invoices with certification items
         $invoices = Invoice::with([
+            'installmentTerms',
             'certificationProgramItems.certificationProgram.category',
             'certificationProgramItems.certificationProgram.schedules' => function($q) {
                 $q->orderBy('schedule_date')->orderBy('start_time');
@@ -81,7 +77,6 @@ class CertificationProgramController extends Controller
             'certificationProgramItems.certificationProgram.socializationSchedules' => function($q) {
                 $q->orderBy('schedule_date')->orderBy('start_time');
             },
-            'installmentTerms',
         ])
             ->purchasedByUser($userId)
             ->orderBy('created_at', 'desc')
@@ -105,13 +100,6 @@ class CertificationProgramController extends Controller
             abort(404, 'Sertifikasi program tidak ditemukan atau Anda belum terdaftar.');
         }
 
-        $terms = $matchedInvoice->installmentTerms ?: collect();
-        $isInstallment = $matchedInvoice->is_installment || $matchedInvoice->status === 'installment_pending' || $terms->count() > 0;
-        $paidTerms = $terms->where('status', 'paid')->count();
-        $totalTerms = $terms->count();
-        $isSuspended = $matchedInvoice->isAccessSuspended();
-        $isFullyPaid = $matchedInvoice->status === 'paid' || $matchedInvoice->isFullyPaid();
-
         // Explicitly structure data for Inertia serialization
         return Inertia::render('user/profile/certification-program/detail', [
             'invoice' => [
@@ -122,11 +110,11 @@ class CertificationProgramController extends Controller
                 'nett_amount' => $matchedInvoice->nett_amount,
                 'discount_amount' => $matchedInvoice->discount_amount,
                 'status' => $matchedInvoice->status,
-                'is_installment' => $isInstallment,
-                'is_access_suspended' => $isSuspended,
-                'is_fully_paid' => $isFullyPaid,
-                'paid_terms' => $paidTerms,
-                'total_terms' => $totalTerms,
+                'is_installment' => $matchedInvoice->is_installment,
+                'is_access_suspended' => $matchedInvoice->isAccessSuspended(),
+                'paid_terms' => $matchedInvoice->paidTermsCount(),
+                'total_terms' => $matchedInvoice->installmentTerms->count(),
+                'is_fully_paid' => $matchedInvoice->isFullyPaid(),
                 'paid_at' => $matchedInvoice->paid_at,
                 'created_at' => $matchedInvoice->created_at,
                 'payment_method' => $matchedInvoice->payment_method,

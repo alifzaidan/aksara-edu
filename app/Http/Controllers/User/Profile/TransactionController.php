@@ -23,6 +23,10 @@ class TransactionController extends Controller
             'bundleEnrollments.bundle.bundleItems.bundleable',
             'discountUsage.discountCode',
             'installmentTerms',
+            'parentInvoice.courseItems.course',
+            'parentInvoice.bootcampItems.bootcamp',
+            'parentInvoice.webinarItems.webinar',
+            'parentInvoice.certificationProgramItems.certificationProgram',
         ])
             ->where('user_id', $userId)
             ->whereNull('parent_invoice_id')
@@ -45,10 +49,16 @@ class TransactionController extends Controller
             'bundleEnrollments.bundle.bundleItems.bundleable',
             'discountUsage.discountCode',
             'installmentTerms',
+            'parentInvoice.courseItems.course',
+            'parentInvoice.bootcampItems.bootcamp',
+            'parentInvoice.webinarItems.webinar',
+            'parentInvoice.certificationProgramItems.certificationProgram',
             'parentInvoice.installmentTerms',
-        ])
-            ->where('user_id', $userId)
-            ->findOrFail($id);
+        ])->findOrFail($id);
+
+        if ($invoice->user_id !== Auth::id() && (!Auth::user() || !Auth::user()->hasRole('admin'))) {
+            abort(403);
+        }
 
         // Tambahkan is_overdue ke setiap termin cicilan
         $invoice->installmentTerms->transform(function ($term) {

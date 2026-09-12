@@ -105,9 +105,6 @@ export default function InstallmentConfig({
     // Validasi: total termin TIDAK BOLEH KURANG dari harga produk (boleh sama atau lebih)
     const isTermsValid = totalTermsAmount >= productPrice && productPrice > 0 && terms.length >= 2 && terms.every(t => t.amount > 0 && t.due_date);
 
-    const getCsrfToken = () =>
-        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content || '';
-
     async function handleSave() {
         if (enabled && !isTermsValid) {
             if (productPrice <= 0) {
@@ -118,124 +115,126 @@ export default function InstallmentConfig({
                 toast.error(`Total termin (${rupiahFormatter.format(totalTermsAmount)}) tidak boleh kurang dari harga produk (${rupiahFormatter.format(productPrice)})`);
                 return;
             }
-            if (terms.some(t => !t.due_date)) {
-                toast.error('Semua termin wajib memiliki tanggal jatuh tempo.');
-                return;
-            }
-            if (terms.some(t => t.amount <= 0)) {
-                toast.error('Nominal setiap termin harus lebih dari Rp 0.');
-                return;
-            }
             if (terms.length < 2) {
-                toast.error('Cicilan minimal harus memiliki 2 termin.');
+                toast.error('Minimal harus ada 2 termin cicilan.');
                 return;
             }
+            const invalidTerm = terms.find(t => !t.amount || t.amount <= 0 || !t.due_date);
+            if (invalidTerm) {
+                toast.error(`Harap lengkapi nominal (> Rp 0) dan tanggal jatuh tempo pada Termin ke-${invalidTerm.term_number}.`);
+                return;
+            }
+            return;
         }
 
         setIsSaving(true);
         try {
-            const res = await axios.post('/admin/admin/installment-terms', {
+            const res = await axios.post('/admin/installment-terms', {
                 type: productType,
                 id: productId,
                 installment_enabled: enabled,
-                terms: enabled ? terms : [],
+                terms: enabled ? terms.map(t => ({
+                    term_number: t.term_number,
+                    amount: Number(t.amount),
+                    due_date: t.due_date,
+                })) : [],
             });
 
             if (res.data.success) {
-                toast.success(res.data.message || 'Konfigurasi cicilan berhasil disimpan');
+                toast.success(res.data.message);
+                if (res.data.terms) {
+                    setTerms(res.data.terms.map((t: any) => ({
+                        ...t,
+                        due_date: t.due_date ? format(typeof t.due_date === 'string' ? parseISO(t.due_date) : t.due_date, 'yyyy-MM-dd') : ''
+                    })));
+                }
             } else {
-                toast.error(res.data.message || 'Gagal menyimpan konfigurasi cicilan');
+                toast.error(res.data.message || 'Gagal menyimpan konfigurasi');
             }
         } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Terjadi kesalahan jaringan saat menyimpan konfigurasi.');
+            toast.error(error.response?.data?.message || 'Terjadi kesalahan saat menyimpan');
         } finally {
             setIsSaving(false);
         }
     }
 
     function addTerm() {
-        setTerms(prev => {
-            const lastTerm = prev[prev.length - 1];
-            let nextDueDate = '';
-            if (lastTerm?.due_date) {
-                try {
-                    const lastDate = parseISO(lastTerm.due_date);
-                    if (!isNaN(lastDate.getTime())) {
-                        nextDueDate = format(addWeeks(lastDate, 3), 'yyyy-MM-dd');
-                    }
-                } catch {
-                    nextDueDate = '';
-                }
-            }
-            return [...prev, { term_number: prev.length + 1, amount: 0, due_date: nextDueDate }];
-        });
+        const nextNumber = terms.length + 1;
+        const lastDueDate = terms[terms.length - 1]?.due_date;
+        const baseDate = lastDueDate ? parseISO(lastDueDate) : getDefaultTerm1Date();
+        const newDueDate = format(addWeeks(baseDate, 3), 'yyyy-MM-dd');
+
+        setTerms(prev => [...prev, {
+            term_number: nextNumber,
+            amount: 0,
+            due_date: newDueDate,
+        }]);
     }
 
     function removeTerm(index: number) {
-        if (terms.length <= 2) return;
-        setTerms(prev => prev.filter((_, i) => i !== index).map((t, i) => ({ ...t, term_number: i + 1 })));
-    }
-
-    function updateTerm(index: number, field: keyof InstallmentTerm, value: string | number) {
-        setTerms(prev => prev.map((t, i) => i === index ? { ...t, [field]: value } : t));
-    }
-
-    // Jika produk gratis (Rp 0), tampilkan card informasi tanpa switch
-    if (isFree) {
-        return (
-            <div className="rounded-xl border border-border bg-card p-6 space-y-4 shadow-sm">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                            <CalendarDays className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-foreground">Pengaturan Cicilan</h3>
-                            <p className="text-sm text-muted-foreground">Konfigurasi opsi pembayaran cicilan untuk produk ini</p>
-                        </div>
-                    </div>
-                    <Badge variant="secondary" className="text-xs font-normal">
-                        Tidak Tersedia (Produk Gratis)
-                    </Badge>
-                </div>
-                <div className="rounded-lg border border-border bg-muted/40 p-4 text-xs text-muted-foreground flex items-center gap-2.5">
-                    <Info className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                    <span>
-                        Fitur pembayaran cicilan tidak tersedia untuk produk gratis (<strong>Rp 0</strong>). Anda dapat mengatur harga berbayar pada menu <strong>Edit Produk</strong> jika ingin mengaktifkan opsi cicilan.
-                    </span>
-                </div>
-            </div>
+        if (terms.length <= 2) {
+            toast.error('Minimal harus ada 2 termin cicilan');
+            return;
+        }
+        setTerms(prev =>
+            prev.filter((_, i) => i !== index).map((t, i) => ({ ...t, term_number: i + 1 }))
         );
+    }
+
+    function updateTerm(index: number, field: keyof InstallmentTerm, value: any) {
+        setTerms(prev => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], [field]: value };
+            return updated;
+        });
     }
 
     const difference = totalTermsAmount - productPrice;
 
     return (
-        <div className="rounded-xl border border-border bg-card p-6 space-y-5 shadow-sm">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        <CalendarDays className="h-5 w-5" />
+        <div className="space-y-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+            {/* Header & Toggle */}
+            <div className="flex items-center justify-between gap-4">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                        <CalendarDays className="h-5 w-5 text-primary" />
+                        <h3 className="text-base font-semibold text-foreground">Konfigurasi Pembayaran Cicilan</h3>
+                        {enabled && (
+                            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20 font-medium">
+                                Aktif ({terms.length}x Termin)
+                            </Badge>
+                        )}
                     </div>
-                    <div>
-                        <h3 className="font-semibold text-foreground">Pengaturan Cicilan</h3>
-                        <p className="text-sm text-muted-foreground">Konfigurasi opsi pembayaran cicilan untuk produk ini</p>
-                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        Aktifkan metode pembayaran bertahap (cicilan) untuk produk ini.
+                    </p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-muted-foreground">{enabled ? 'Aktif' : 'Nonaktif'}</span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    <Label htmlFor="installment-toggle" className="text-xs font-medium text-foreground cursor-pointer">
+                        {enabled ? 'Cicilan Aktif' : 'Nonaktif'}
+                    </Label>
                     <Switch
+                        id="installment-toggle"
                         checked={enabled}
-                        onCheckedChange={(checked) => setEnabled(checked)}
-                        id={`installment-toggle-${productId}`}
+                        onCheckedChange={setEnabled}
+                        disabled={isFree}
                     />
                 </div>
             </div>
 
-            {enabled && (
-                <div className="space-y-4 pt-2">
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-foreground">Daftar Termin</p>
+            {isFree && (
+                <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3.5 py-2.5 text-xs text-amber-600 dark:text-amber-400">
+                    <Info className="h-4 w-4 flex-shrink-0" />
+                    <span>Cicilan tidak dapat diaktifkan pada produk gratis (harga Rp 0).</span>
+                </div>
+            )}
+
+            {/* Termin List & Configurations */}
+            {enabled && !isFree && (
+                <div className="space-y-4 pt-2 border-t border-border">
+                    {/* Ringkasan Nominal */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted/50 px-3.5 py-2.5">
+                        <span className="text-xs font-medium text-muted-foreground">Perbandingan Nominal</span>
                         <div className="flex items-center gap-2 text-sm">
                             <span className={cn(
                                 "font-medium",

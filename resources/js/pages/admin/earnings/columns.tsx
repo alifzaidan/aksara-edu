@@ -51,8 +51,7 @@ interface CertificationProgram {
     title: string;
 }
 interface EnrollmentCertification {
-    certification_program?: CertificationProgram;
-    certificationProgram?: CertificationProgram;
+    certification_program: CertificationProgram;
     price: number;
 }
 
@@ -64,25 +63,17 @@ interface BundleEnrollment {
     price: number;
 }
 
-interface InvoiceProductItems {
-    course_items?: EnrollmentCourse[];
-    courseItems?: EnrollmentCourse[];
-    bootcamp_items?: EnrollmentBootcamp[];
-    bootcampItems?: EnrollmentBootcamp[];
-    webinar_items?: EnrollmentWebinar[];
-    webinarItems?: EnrollmentWebinar[];
-    bundle_enrollments?: BundleEnrollment[];
-    bundleEnrollments?: BundleEnrollment[];
-    certification_program_items?: EnrollmentCertification[];
-    certificationProgramItems?: EnrollmentCertification[];
-}
-
-interface Invoice extends InvoiceProductItems {
+interface Invoice {
     invoice_code: string;
     nett_amount: number;
     user: User;
-    parent_invoice?: InvoiceProductItems | null;
-    parentInvoice?: InvoiceProductItems | null;
+    course_items?: EnrollmentCourse[];
+    bootcamp_items?: EnrollmentBootcamp[];
+    webinar_items?: EnrollmentWebinar[];
+    bundle_enrollments?: BundleEnrollment[];
+    certification_program_items?: EnrollmentCertification[];
+    parent_invoice?: Invoice;
+    parentInvoice?: Invoice;
 }
 
 export type Earning = {
@@ -100,23 +91,14 @@ export const getColumns = (isAdmin: boolean, isStaff: boolean = false): ColumnDe
             id: 'items',
             header: 'Nama Produk',
             cell: ({ row }) => {
-                const invoice = row.original.invoice;
-                // Untuk cicilan, fallback ke parentInvoice jika tidak ada item di invoice anak
-                const source: InvoiceProductItems =
-                    (invoice.courseItems?.length || invoice.course_items?.length ||
-                     invoice.bootcampItems?.length || invoice.bootcamp_items?.length ||
-                     invoice.webinarItems?.length || invoice.webinar_items?.length ||
-                     invoice.bundleEnrollments?.length || invoice.bundle_enrollments?.length ||
-                     invoice.certificationProgramItems?.length || invoice.certification_program_items?.length)
-                        ? invoice
-                        : (invoice.parentInvoice || invoice.parent_invoice || invoice);
-
-                const courseTitles = (source.courseItems || source.course_items || []).map((item: EnrollmentCourse) => item.course?.title || '');
-                const bootcampTitles = (source.bootcampItems || source.bootcamp_items || []).map((item: EnrollmentBootcamp) => item.bootcamp?.title || '');
-                const webinarTitles = (source.webinarItems || source.webinar_items || []).map((item: EnrollmentWebinar) => item.webinar?.title || '');
-                const bundleTitles = (source.bundleEnrollments || source.bundle_enrollments || []).map((item: BundleEnrollment) => item.bundle?.title || '');
-                const certTitles = (source.certificationProgramItems || source.certification_program_items || []).map((item: EnrollmentCertification) => item.certificationProgram?.title || item.certification_program?.title || '');
-                const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles, ...certTitles].filter(Boolean);
+                const rawInvoice = row.original.invoice;
+                const invoice = rawInvoice?.parent_invoice || rawInvoice?.parentInvoice || rawInvoice;
+                const courseTitles = invoice?.course_items?.map((item) => item.course?.title).filter(Boolean) || [];
+                const bootcampTitles = invoice?.bootcamp_items?.map((item) => item.bootcamp?.title).filter(Boolean) || [];
+                const webinarTitles = invoice?.webinar_items?.map((item) => item.webinar?.title).filter(Boolean) || [];
+                const bundleTitles = invoice?.bundle_enrollments?.map((item) => item.bundle?.title).filter(Boolean) || [];
+                const certTitles = invoice?.certification_program_items?.map((item) => item.certification_program?.title).filter(Boolean) || [];
+                const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles, ...certTitles];
                 const fullTitleString = allTitles.length > 0 ? allTitles.join(', ') : '-';
 
                 return (
@@ -197,7 +179,7 @@ export const getColumns = (isAdmin: boolean, isStaff: boolean = false): ColumnDe
         },
     ];
 
-    // Jika pengguna adalah admin dan bukan staff, tambahkan kolom Aksi di awal
+    // Jika pengguna adalah admin, tambahkan kolom Aksi di awal
     if (isAdmin && !isStaff) {
         columns.unshift({
             id: 'actions',

@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import UserLayout from '@/layouts/user-layout';
+import { formatExternalUrl } from '@/lib/utils';
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, Award, BadgeCheck, Calendar, CheckCircle, Clock, Download, Eye, MessageSquare, Upload, Users, X, Youtube } from 'lucide-react';
 import { useState } from 'react';
@@ -60,6 +61,11 @@ interface WebinarProps {
     webinar_items: EnrollmentWebinarItem[];
     created_at: string;
     updated_at: string;
+    is_installment?: boolean;
+    installment_terms?: any[];
+    access_suspended_at?: string | null;
+    has_active_access?: boolean;
+    is_fully_paid?: boolean;
 }
 
 interface Certificate {
@@ -128,7 +134,28 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
     const webinarItem = webinar.webinar_items?.[0];
     const webinarData = webinarItem?.webinar;
     const webinarInvoiceStatus = webinar.status;
-    const benefitList = parseList(webinarData.benefits);
+    const isInstallment = !!webinar.is_installment;
+    const isSuspended = !!webinar.access_suspended_at;
+    const terms = webinar.installment_terms || (webinar as any).installmentTerms || [];
+    const firstTermPaid = terms.some((t: any) => t.installment_number === 1 && t.status === 'paid');
+
+    const hasActiveAccess = Boolean(
+        webinar.has_active_access ?? (
+            isInstallment
+                ? (!isSuspended && firstTermPaid)
+                : (webinarInvoiceStatus === 'paid' || webinarInvoiceStatus === 'completed')
+        )
+    );
+
+    const isFullyPaid = Boolean(
+        webinar.is_fully_paid ?? (
+            isInstallment
+                ? (terms.length > 0 && terms.every((t: any) => t.status === 'paid'))
+                : (webinarInvoiceStatus === 'paid' || webinarInvoiceStatus === 'completed')
+        )
+    );
+
+    const benefitList = parseList(webinarData?.benefits);
     const [isLoading, setIsLoading] = useState(true);
 
     const [submittingForm, setSubmittingForm] = useState(false);
@@ -214,7 +241,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
     const isAttendanceVerified = webinarItem.attendance_verified;
     const hasReview = webinarItem.review && webinarItem.rating;
 
-    const hasCertificate = certificate && isCompleted && webinarInvoiceStatus === 'paid' && isAttendanceVerified && hasReview;
+    const hasCertificate = certificate && isCompleted && isFullyPaid && isAttendanceVerified && hasReview;
 
     return (
         <UserLayout>
@@ -258,9 +285,36 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                         <p className="mb-6 text-lg text-gray-600 dark:text-gray-400">{webinarData.description}</p>
 
                         <div className="flex items-center justify-center gap-4">
-                            <span className={`font-semibold ${webinarInvoiceStatus === 'paid' ? 'text-green-600' : 'text-red-600'}`}>
-                                {webinarInvoiceStatus !== 'paid' ? 'Selesaikan Pembayaran Untuk Bergabung Webinar!!' : ''}
-                            </span>
+                            {isSuspended ? (
+                                <div className="text-center">
+                                    <span className="block font-semibold text-red-600">
+                                        ⚠️ Akses webinar dibekukan karena ada tagihan cicilan yang melewati jatuh tempo.
+                                    </span>
+                                    <span className="block text-sm text-red-600/90">
+                                        Silakan lakukan pelunasan di menu Transaksi.
+                                    </span>
+                                </div>
+                            ) : !hasActiveAccess ? (
+                                <div className="text-center">
+                                    <span className="block font-semibold text-red-600">
+                                        ⚠️ Status Pembayaran: {webinarInvoiceStatus.toUpperCase()}
+                                    </span>
+                                    <span className="block text-sm text-gray-600 dark:text-gray-400">
+                                        {webinarInvoiceStatus === 'failed'
+                                            ? 'Pembayaran gagal atau dibatalkan. Silakan lakukan pembelian ulang.'
+                                            : 'Selesaikan pembayaran untuk mengakses webinar.'}
+                                    </span>
+                                </div>
+                            ) : isInstallment && !isFullyPaid ? (
+                                <div className="text-center">
+                                    <span className="block font-semibold text-amber-600 dark:text-amber-400">
+                                        ℹ️ Pembayaran Cicilan Aktif
+                                    </span>
+                                    <span className="block text-sm text-amber-700/90 dark:text-amber-300/90">
+                                        Anda memiliki akses penuh ke webinar dan grup WhatsApp.
+                                    </span>
+                                </div>
+                            ) : null}
                         </div>
                     </div>
                 </div>
@@ -443,7 +497,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
 
                     {/* Sidebar */}
                     <div className="col-span-1 space-y-6">
-                        {isCompleted && webinarInvoiceStatus === 'paid' && !hasReview && (
+                        {isCompleted && hasActiveAccess && !hasReview && (
                             <div className="rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 p-6 dark:border-purple-800 dark:from-purple-900/20 dark:to-pink-900/20">
                                 <div className="mb-4 flex items-center gap-3">
                                     <div className="rounded-full bg-purple-100 p-2 dark:bg-purple-800">
@@ -683,8 +737,8 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                             <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
                                                 {!certificate
                                                     ? 'Sertifikat belum dibuat untuk webinar ini.'
-                                                    : webinarInvoiceStatus !== 'paid'
-                                                      ? 'Selesaikan pembayaran untuk mendapatkan sertifikat.'
+                                                    : !isFullyPaid
+                                                      ? (isInstallment ? 'Lunasi seluruh cicilan untuk membuka sertifikat.' : 'Selesaikan pembayaran untuk mendapatkan sertifikat.')
                                                       : !hasReview
                                                         ? 'Lengkapi bukti kehadiran dan review untuk mendapatkan sertifikat.'
                                                         : 'Sertifikat akan tersedia setelah webinar selesai.'}
@@ -693,8 +747,8 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                 <Download size={16} className="mr-2" />
                                                 {!certificate
                                                     ? 'Sertifikat Belum Tersedia'
-                                                    : webinarInvoiceStatus !== 'paid'
-                                                      ? 'Selesaikan Pembayaran'
+                                                    : !isFullyPaid
+                                                      ? (isInstallment ? 'Lunasi Cicilan' : 'Selesaikan Pembayaran')
                                                       : !hasReview
                                                         ? 'Lengkapi Data Diperlukan'
                                                         : 'Menunggu Webinar Selesai'}
@@ -718,8 +772,11 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                     <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">{webinarData.short_description}</p>
                                     <Button
                                         className="mt-4 w-full"
-                                        disabled={webinarInvoiceStatus !== 'paid'}
-                                        onClick={() => window.open(webinarData.group_url ?? undefined, '_blank')}
+                                        disabled={!hasActiveAccess}
+                                        onClick={() => {
+                                            const url = formatExternalUrl(webinarData.group_url);
+                                            if (url) window.open(url, '_blank');
+                                        }}
                                     >
                                         <Users size={16} className="mr-2" />
                                         Gabung Grup WA

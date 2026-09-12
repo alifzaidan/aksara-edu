@@ -38,6 +38,7 @@ class BootcampController extends Controller
         $userId = Auth::id();
 
         $bootcamp = Invoice::with([
+            'installmentTerms',
             'bootcampItems' => function ($query) use ($slug) {
                 $query->whereHas('bootcamp', function ($q) use ($slug) {
                     $q->where('slug', $slug);
@@ -45,8 +46,7 @@ class BootcampController extends Controller
             },
             'bootcampItems.bootcamp.category',
             'bootcampItems.bootcamp.schedules',
-            'bootcampItems.attendances.bootcampSchedule',
-            'installmentTerms',
+            'bootcampItems.attendances.bootcampSchedule'
         ])
             ->purchasedByUser($userId)
             ->whereHas('bootcampItems.bootcamp', function ($query) use ($slug) {
@@ -71,6 +71,8 @@ class BootcampController extends Controller
                 ->where('user_id', $userId)
                 ->first();
         }
+
+        $bootcamp->append(['has_active_access', 'is_fully_paid']);
 
         return Inertia::render('user/profile/bootcamp/detail', [
             'bootcamp' => $bootcamp,
@@ -185,14 +187,14 @@ class BootcampController extends Controller
             $userId = Auth::id();
 
             $bootcamp = Invoice::with([
+                'installmentTerms',
                 'bootcampItems' => function ($query) use ($slug) {
                     $query->whereHas('bootcamp', function ($q) use ($slug) {
                         $q->where('slug', $slug);
                     })->with(['bootcamp.schedules', 'attendances']); // ✅ eager load dengan filter slug
                 },
             ])
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->whereHas('bootcampItems.bootcamp', function ($query) use ($slug) {
                     $query->where('slug', $slug);
                 })
@@ -200,6 +202,10 @@ class BootcampController extends Controller
 
             if (!$bootcamp) {
                 return back()->with('error', 'Bootcamp tidak ditemukan atau Anda belum terdaftar.');
+            }
+
+            if ($bootcamp->is_installment && !$bootcamp->isFullyPaid()) {
+                return back()->with('error', 'Sertifikat kelulusan hanya dapat diunduh setelah seluruh termin cicilan lunas.');
             }
 
             $enrollment = $bootcamp->bootcampItems->first(); // ✅ sekarang sudah difilter by slug
@@ -253,14 +259,14 @@ class BootcampController extends Controller
             $userId = Auth::id();
 
             $bootcamp = Invoice::with([
+                'installmentTerms',
                 'bootcampItems' => function ($query) use ($slug) {
                     $query->whereHas('bootcamp', function ($q) use ($slug) {
                         $q->where('slug', $slug);
                     })->with(['bootcamp.schedules', 'attendances']); // ✅ eager load dengan filter slug
                 },
             ])
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->whereHas('bootcampItems.bootcamp', function ($query) use ($slug) {
                     $query->where('slug', $slug);
                 })
@@ -268,6 +274,10 @@ class BootcampController extends Controller
 
             if (!$bootcamp) {
                 return back()->with('error', 'Bootcamp tidak ditemukan atau Anda belum terdaftar.');
+            }
+
+            if ($bootcamp->is_installment && !$bootcamp->isFullyPaid()) {
+                return back()->with('error', 'Sertifikat kelulusan hanya dapat diunduh setelah seluruh termin cicilan lunas.');
             }
 
             $enrollment = $bootcamp->bootcampItems->first(); // ✅ sekarang sudah difilter by slug

@@ -33,7 +33,7 @@ class ProfileController extends Controller
         })->count();
 
         // Ambil enrollment courses dengan progress
-        $enrolledCourses = EnrollmentCourse::with(['course:id,title,slug,group_url', 'invoice'])
+        $enrolledCourses = EnrollmentCourse::with(['course:id,title,slug,group_url', 'invoice.installmentTerms'])
             ->whereHas('invoice', function ($query) use ($userId) {
                 $query->purchasedByUser($userId);
             })
@@ -41,6 +41,7 @@ class ProfileController extends Controller
             ->limit(5)
             ->get()
             ->map(function ($enrollment) {
+                $invoice = $enrollment->invoice;
                 return [
                     'id' => $enrollment->course->id,
                     'title' => $enrollment->course->title,
@@ -50,11 +51,14 @@ class ProfileController extends Controller
                     'progress' => $enrollment->progress,
                     'completed_at' => $enrollment->completed_at,
                     'enrolled_at' => $enrollment->created_at,
+                    'is_installment' => $invoice?->is_installment ?? false,
+                    'is_fully_paid' => $invoice ? $invoice->isFullyPaid() : true,
+                    'is_suspended' => $invoice ? $invoice->isAccessSuspended() : false,
                 ];
             });
 
         // Ambil enrollment bootcamps dengan jadwal dan group URL
-        $enrolledBootcamps = EnrollmentBootcamp::with(['bootcamp:id,title,slug,start_date,end_date,group_url', 'invoice'])
+        $enrolledBootcamps = EnrollmentBootcamp::with(['bootcamp:id,title,slug,start_date,end_date,group_url', 'invoice.installmentTerms'])
             ->whereHas('invoice', function ($query) use ($userId) {
                 $query->purchasedByUser($userId);
             })
@@ -62,6 +66,7 @@ class ProfileController extends Controller
             ->limit(5)
             ->get()
             ->map(function ($enrollment) {
+                $invoice = $enrollment->invoice;
                 return [
                     'id' => $enrollment->bootcamp->id,
                     'title' => $enrollment->bootcamp->title,
@@ -71,11 +76,14 @@ class ProfileController extends Controller
                     'end_date' => $enrollment->bootcamp->end_date,
                     'group_url' => $enrollment->bootcamp->group_url,
                     'enrolled_at' => $enrollment->created_at,
+                    'is_installment' => $invoice?->is_installment ?? false,
+                    'is_fully_paid' => $invoice ? $invoice->isFullyPaid() : true,
+                    'is_suspended' => $invoice ? $invoice->isAccessSuspended() : false,
                 ];
             });
 
         // Ambil enrollment webinars dengan jadwal dan group URL
-        $enrolledWebinars = EnrollmentWebinar::with(['webinar:id,title,slug,start_time,end_time,group_url', 'invoice'])
+        $enrolledWebinars = EnrollmentWebinar::with(['webinar:id,title,slug,start_time,end_time,group_url', 'invoice.installmentTerms'])
             ->whereHas('invoice', function ($query) use ($userId) {
                 $query->purchasedByUser($userId);
             })
@@ -83,6 +91,7 @@ class ProfileController extends Controller
             ->limit(5)
             ->get()
             ->map(function ($enrollment) {
+                $invoice = $enrollment->invoice;
                 return [
                     'id' => $enrollment->webinar->id,
                     'title' => $enrollment->webinar->title,
@@ -92,10 +101,13 @@ class ProfileController extends Controller
                     'end_time' => $enrollment->webinar->end_time,
                     'group_url' => $enrollment->webinar->group_url,
                     'enrolled_at' => $enrollment->created_at,
+                    'is_installment' => $invoice?->is_installment ?? false,
+                    'is_fully_paid' => $invoice ? $invoice->isFullyPaid() : true,
+                    'is_suspended' => $invoice ? $invoice->isAccessSuspended() : false,
                 ];
             });
 
-        $enrolledCertificationPrograms = EnrollmentCertificationProgram::with(['certificationProgram:id,title,slug,group_url', 'invoice'])
+        $enrolledCertificationPrograms = EnrollmentCertificationProgram::with(['certificationProgram:id,title,slug,group_url', 'invoice.installmentTerms'])
             ->whereHas('invoice', function ($query) use ($userId) {
                 $query->purchasedByUser($userId);
             })
@@ -103,6 +115,7 @@ class ProfileController extends Controller
             ->limit(5)
             ->get()
             ->map(function ($enrollment) {
+                $invoice = $enrollment->invoice;
                 return [
                     'id' => $enrollment->certificationProgram->id,
                     'title' => $enrollment->certificationProgram->title,
@@ -112,6 +125,9 @@ class ProfileController extends Controller
                     'group_url' => $enrollment->certificationProgram->group_url,
                     'is_scholarship' => $enrollment->is_scholarship,
                     'enrolled_at' => $enrollment->created_at,
+                    'is_installment' => $invoice?->is_installment ?? false,
+                    'is_fully_paid' => $invoice ? $invoice->isFullyPaid() : true,
+                    'is_suspended' => $invoice ? $invoice->isAccessSuspended() : false,
                 ];
             });
 
