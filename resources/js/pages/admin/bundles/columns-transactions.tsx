@@ -134,21 +134,26 @@ export const columns: ColumnDef<BundleTransactionInvoice>[] = [
                 const isSuspended = !!invoice.access_suspended_at;
 
                 return (
-                    <div className="flex flex-col gap-1 items-start">
-                        {isFullyPaid ? (
-                            <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">
-                                Cicilan Lunas
-                            </Badge>
-                        ) : isSuspended ? (
-                            <Badge variant="destructive">
-                                Akses Dibekukan
-                            </Badge>
-                        ) : (
-                            <Badge className="bg-amber-100 text-amber-800 border-amber-300">
-                                Cicilan ({paidCount}/{totalCount || '?'})
-                            </Badge>
-                        )}
-                    </div>
+                    <InstallmentMonitorModal
+                        invoice={invoice as any}
+                        trigger={
+                            <div className="flex flex-col gap-1 items-start cursor-pointer hover:opacity-80 transition-opacity" title="Klik untuk monitor cicilan">
+                                {isFullyPaid ? (
+                                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 cursor-pointer">
+                                        Cicilan Lunas
+                                    </Badge>
+                                ) : isSuspended ? (
+                                    <Badge variant="destructive" className="cursor-pointer">
+                                        Akses Dibekukan
+                                    </Badge>
+                                ) : (
+                                    <Badge className="bg-amber-100 text-amber-800 border-amber-300 cursor-pointer">
+                                        Cicilan ({paidCount}/{totalCount || '?'})
+                                    </Badge>
+                                )}
+                            </div>
+                        }
+                    />
                 );
             }
 

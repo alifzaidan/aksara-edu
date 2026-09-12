@@ -119,12 +119,29 @@ export default function InstallmentMonitorModal({
     // Determine product title
     const resolvedProductTitle =
         productTitle ||
-        invoice.course_items?.[0]?.course?.title ||
-        invoice.bootcamp_items?.[0]?.bootcamp?.title ||
-        invoice.webinar_items?.[0]?.webinar?.title ||
-        invoice.certification_program_items?.[0]?.certification_program?.title ||
-        invoice.bundle_enrollments?.[0]?.bundle?.title ||
+        (invoice.course_items || (invoice as any).courseItems)?.[0]?.course?.title ||
+        (invoice.bootcamp_items || (invoice as any).bootcampItems)?.[0]?.bootcamp?.title ||
+        (invoice.webinar_items || (invoice as any).webinarItems)?.[0]?.webinar?.title ||
+        (invoice.certification_program_items || (invoice as any).certificationProgramItems)?.[0]?.certification_program?.title ||
+        (invoice.certification_program_items || (invoice as any).certificationProgramItems)?.[0]?.certificationProgram?.title ||
+        (invoice.bundle_enrollments || (invoice as any).bundleEnrollments)?.[0]?.bundle?.title ||
         'Produk Program';
+
+    const defaultTrigger = (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="size-8 text-primary hover:text-primary hover:bg-primary/10">
+                    <Clock className="size-4" />
+                    <span className="sr-only">Monitor Cicilan & Reminder WA</span>
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+                <p>Monitor Cicilan & Reminder WA</p>
+            </TooltipContent>
+        </Tooltip>
+    );
+
+    const triggerElement = trigger !== undefined ? trigger : (!isControlled ? defaultTrigger : null);
 
     // Kirim Reminder Otomatis via Gateway Backend
     async function handleSendAutomatedReminder(term: InstallmentTermItem, customMessage?: string) {
@@ -163,8 +180,9 @@ export default function InstallmentMonitorModal({
         }
 
         const dueDateStr = term.installment_due_date || term.due_date;
-        const formattedDueDate = dueDateStr
-            ? format(new Date(dueDateStr), 'dd MMMM yyyy', { locale: id })
+        const dueDateObj = dueDateStr ? new Date(dueDateStr) : null;
+        const formattedDueDate = dueDateObj && !isNaN(dueDateObj.getTime())
+            ? format(dueDateObj, 'dd MMMM yyyy', { locale: id })
             : '-';
         const formattedAmount = rupiahFormatter.format(term.amount);
         const payUrl = term.invoice_url || `${window.location.origin}/profile/installments`;
@@ -196,7 +214,19 @@ export default function InstallmentMonitorModal({
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+            {triggerElement && (
+                <DialogTrigger asChild>
+                    <span
+                        className="inline-flex cursor-pointer"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setOpen(true);
+                        }}
+                    >
+                        {triggerElement}
+                    </span>
+                </DialogTrigger>
+            )}
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
                 <DialogHeader className="pb-2 border-b border-border">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -306,7 +336,8 @@ export default function InstallmentMonitorModal({
                                     const isPaid = term.status === 'paid';
                                     const dueDateStr = term.installment_due_date || term.due_date;
                                     const dueDateObj = dueDateStr ? new Date(dueDateStr) : null;
-                                    const isOverdue = !isPaid && dueDateObj && new Date() > dueDateObj;
+                                    const isValidDueDate = dueDateObj && !isNaN(dueDateObj.getTime());
+                                    const isOverdue = !isPaid && isValidDueDate && new Date() > dueDateObj;
                                     const isSending = sendingReminderId === term.id;
 
                                     return (
@@ -354,11 +385,11 @@ export default function InstallmentMonitorModal({
                                                     <span className="flex items-center gap-1">
                                                         <Calendar className="size-3" />
                                                         Jatuh Tempo:{' '}
-                                                        {dueDateObj
-                                                            ? format(dueDateObj, 'dd MMM yyyy', { locale: id })
+                                                        {isValidDueDate
+                                                            ? format(dueDateObj!, 'dd MMM yyyy', { locale: id })
                                                             : '-'}
                                                     </span>
-                                                    {isPaid && term.paid_at && (
+                                                    {isPaid && term.paid_at && !isNaN(new Date(term.paid_at).getTime()) && (
                                                         <>
                                                             <span>•</span>
                                                             <span className="text-emerald-600 dark:text-emerald-400">

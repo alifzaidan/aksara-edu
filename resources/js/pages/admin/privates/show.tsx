@@ -216,13 +216,21 @@ export default function ShowPrivate({ privateClass, transactions, flash }: Props
                                                             <TableCell>{trx.user?.email || '-'}</TableCell>
                                                             <TableCell>
                                                                 {isInstallment ? (
-                                                                    isFullyPaid ? (
-                                                                        <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">Cicilan Lunas</Badge>
-                                                                    ) : isSuspended ? (
-                                                                        <Badge variant="destructive">Akses Dibekukan</Badge>
-                                                                    ) : (
-                                                                        <Badge className="bg-amber-100 text-amber-800 border-amber-300">Cicilan ({paidCount}/{totalCount || '?'})</Badge>
-                                                                    )
+                                                                    <InstallmentMonitorModal
+                                                                        invoice={trx as any}
+                                                                        productTitle={privateClass.title}
+                                                                        trigger={
+                                                                            <div className="cursor-pointer hover:opacity-80 transition-opacity inline-flex" title="Klik untuk monitor cicilan">
+                                                                                {isFullyPaid ? (
+                                                                                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 cursor-pointer">Cicilan Lunas</Badge>
+                                                                                ) : isSuspended ? (
+                                                                                    <Badge variant="destructive" className="cursor-pointer">Akses Dibekukan</Badge>
+                                                                                ) : (
+                                                                                    <Badge className="bg-amber-100 text-amber-800 border-amber-300 cursor-pointer">Cicilan ({paidCount}/{totalCount || '?'})</Badge>
+                                                                                )}
+                                                                            </div>
+                                                                        }
+                                                                    />
                                                                 ) : (
                                                                     <Badge className={`capitalize border-0 ${trx.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-800'}`}>{trx.status}</Badge>
                                                                 )}
