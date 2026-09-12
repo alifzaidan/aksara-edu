@@ -188,7 +188,7 @@ export default function InstallmentMonitorModal({
         const payUrl = term.invoice_url || `${window.location.origin}/profile/installments`;
 
         const message =
-            `*[Kompeten - Pengingat Pembayaran Cicilan]*\n\n` +
+            `*[Aksademy - Pengingat Pembayaran Cicilan]*\n\n` +
             `Halo *${user.name}*,\n\n` +
             `Kami mengingatkan tagihan cicilan untuk program *${resolvedProductTitle}*:\n` +
             `• *Termin:* Ke-${term.installment_number} dari ${totalTerms}\n` +
@@ -197,7 +197,7 @@ export default function InstallmentMonitorModal({
             `Silakan lakukan pembayaran melalui tautan berikut:\n` +
             `🔗 ${payUrl}\n\n` +
             `Pastikan pembayaran dilakukan sebelum jatuh tempo agar akses belajar Anda tetap aktif.\n\n` +
-            `Terima kasih!\n*Kompeten Support*`;
+            `Terima kasih!\n*Aksademy Support*`;
 
         const encodedMessage = encodeURIComponent(message);
         window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
