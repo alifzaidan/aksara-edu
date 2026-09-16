@@ -26,7 +26,8 @@ class RedisCheckCommand extends Command
      */
     public function handle()
     {
-        $this->info('=== Aksademy Redis Health & Status Check ===');
+        $appName = config('app.name', 'Kompeten');
+        $this->info("=== {$appName} Redis Health & Status Check ===");
         $this->newLine();
 
         $client = config('database.redis.client', 'phpredis');
@@ -36,7 +37,7 @@ class RedisCheckCommand extends Command
 
         $connections = [
             'default' => [
-                'purpose' => 'Default / Queue',
+                'purpose' => 'Default',
                 'db' => config('database.redis.default.database', 0),
             ],
             'cache' => [
@@ -46,6 +47,10 @@ class RedisCheckCommand extends Command
             'session' => [
                 'purpose' => 'User Sessions',
                 'db' => config('database.redis.session.database', 2),
+            ],
+            'queue' => [
+                'purpose' => 'Queue Jobs',
+                'db' => config('database.redis.queue.database', 0),
             ],
         ];
 
