@@ -8,6 +8,7 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Milon\Barcode\DNS2D;
 
 class CertificatePdfService
@@ -166,5 +167,39 @@ class CertificatePdfService
         }
 
         return 'Program';
+    }
+
+    public static function resolveImageUrl(?string $relativePath): ?string
+    {
+        if (empty($relativePath)) {
+            return null;
+        }
+
+        if (str_starts_with($relativePath, 'http://') || str_starts_with($relativePath, 'https://') || str_starts_with($relativePath, 'data:')) {
+            return $relativePath;
+        }
+
+        $localPath = storage_path('app/public/' . $relativePath);
+        if (file_exists($localPath) && is_file($localPath)) {
+            return $localPath;
+        }
+
+        $publicStoragePath = public_path('storage/' . $relativePath);
+        if (file_exists($publicStoragePath) && is_file($publicStoragePath)) {
+            return $publicStoragePath;
+        }
+
+        try {
+            $disk = Storage::disk(config('filesystems.default') === 's3' ? 's3' : 'public');
+            if ($disk->exists($relativePath)) {
+                $content = $disk->get($relativePath);
+                $mimeType = $disk->mimeType($relativePath) ?? 'image/png';
+                return 'data:' . $mimeType . ';base64,' . base64_encode($content);
+            }
+        } catch (\Throwable $e) {
+            Log::warning("CertificatePdfService: Failed to fetch image from storage [{$relativePath}]: " . $e->getMessage());
+        }
+
+        return $localPath;
     }
 }

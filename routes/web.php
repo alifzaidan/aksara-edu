@@ -48,6 +48,9 @@ use App\Http\Controllers\Admin\InstallmentTermController;
 use App\Http\Controllers\WebinarController;
 use App\Http\Controllers\User\QuizController as UserQuizController;
 use App\Http\Controllers\BiinsightImportController;
+use App\Http\Controllers\ReferralController;
+use App\Http\Controllers\Admin\ReferralAdminController;
+use App\Http\Controllers\StorageFallbackController;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -539,14 +542,14 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
 
     // Referral & Reward point admin routes
     Route::middleware(['role_or_permission:admin|referral.view'])->group(function () {
-        Route::get('referral/settings', [App\Http\Controllers\Admin\ReferralAdminController::class, 'settings'])->name('admin.referral.settings');
-        Route::get('referral/report', [App\Http\Controllers\Admin\ReferralAdminController::class, 'report'])->name('admin.referral.report');
-        Route::get('referral/transactions', [App\Http\Controllers\Admin\ReferralAdminController::class, 'transactions'])->name('admin.referral.transactions');
-        Route::get('referral/search-users', [App\Http\Controllers\Admin\ReferralAdminController::class, 'searchUsers'])->name('admin.referral.search-users');
+        Route::get('referral/settings', [ReferralAdminController::class, 'settings'])->name('admin.referral.settings');
+        Route::get('referral/report', [ReferralAdminController::class, 'report'])->name('admin.referral.report');
+        Route::get('referral/transactions', [ReferralAdminController::class, 'transactions'])->name('admin.referral.transactions');
+        Route::get('referral/search-users', [ReferralAdminController::class, 'searchUsers'])->name('admin.referral.search-users');
     });
     Route::middleware(['role_or_permission:admin|referral.manage'])->group(function () {
-        Route::post('referral/settings', [App\Http\Controllers\Admin\ReferralAdminController::class, 'updateSettings'])->name('admin.referral.settings.update');
-        Route::post('referral/adjust-points', [App\Http\Controllers\Admin\ReferralAdminController::class, 'adjustPoints'])->name('admin.referral.adjust-points');
+        Route::post('referral/settings', [ReferralAdminController::class, 'updateSettings'])->name('admin.referral.settings.update');
+        Route::post('referral/adjust-points', [ReferralAdminController::class, 'adjustPoints'])->name('admin.referral.adjust-points');
     });
 
     // Installment Term admin routes
@@ -561,6 +564,10 @@ Route::post('/api/discount-codes/validate', [DiscountCodeController::class, 'val
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
+
+Route::get('/storage/{path}', [StorageFallbackController::class, 'show'])
+    ->where('path', '.*')
+    ->name('storage.fallback');
 
 Route::fallback(function () {
     return Inertia::render('errors/not-found');
