@@ -190,17 +190,31 @@ class CleanLocalStorage extends Command
 
         $deletedCount = 0;
         $failedCount = 0;
+        $actualFreedBytes = 0;
+        $lastFailureReason = '';
 
         foreach ($toDelete as $item) {
             $pathname = $item['file']->getPathname();
             try {
                 if (file_exists($pathname)) {
-                    @unlink($pathname);
-                    $deletedCount++;
+                    if (@unlink($pathname)) {
+                        $deletedCount++;
+                        $actualFreedBytes += $item['size'];
+                    } else {
+                        $failedCount++;
+                        $lastError = error_get_last();
+                        $lastFailureReason = $lastError['message'] ?? 'Permission denied';
+                        if ($failedCount <= 3) {
+                            $this->error("Failed to delete {$item['relativePath']}: {$lastFailureReason}");
+                        }
+                    }
                 }
             } catch (\Throwable $e) {
                 $failedCount++;
-                $this->error("Failed to delete {$item['relativePath']}: " . $e->getMessage());
+                $lastFailureReason = $e->getMessage();
+                if ($failedCount <= 3) {
+                    $this->error("Failed to delete {$item['relativePath']}: {$lastFailureReason}");
+                }
             }
         }
 
@@ -208,12 +222,18 @@ class CleanLocalStorage extends Command
         $this->cleanEmptyDirectories($baseDir);
 
         $this->newLine();
-        $this->info("Successfully deleted {$deletedCount} local files, freeing {$readableFreed} of disk space!");
+        $freedDisplay = $this->formatBytes($actualFreedBytes);
+        $this->info("Successfully deleted {$deletedCount} local files, freeing {$freedDisplay} of disk space!");
+
         if ($failedCount > 0) {
-            $this->warn("{$failedCount} files failed to delete.");
+            $this->error("{$failedCount} files failed to delete.");
+            $this->warn("Last failure reason: {$lastFailureReason}");
+            $this->warn("Tip: Check file/directory permissions or run the command with sudo / as the web server user:");
+            $this->line("     sudo php artisan storage:clean-local --include-unmigrated");
+            $this->line("  or: sudo -u www-data php artisan storage:clean-local --include-unmigrated");
         }
 
-        return 0;
+        return $failedCount > 0 ? 1 : 0;
     }
 
     /**

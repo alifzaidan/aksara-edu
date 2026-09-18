@@ -123,8 +123,9 @@ class MigrateStorageToS3 extends Command
                 if (!$overwrite && $s3->exists($relativePath)) {
                     $skipped++;
                     if ($deleteLocal && !$dryRun) {
-                        @unlink($file->getPathname());
-                        $deletedLocally++;
+                        if (@unlink($file->getPathname())) {
+                            $deletedLocally++;
+                        }
                     }
                     $bar->advance();
                     continue;
@@ -140,8 +141,9 @@ class MigrateStorageToS3 extends Command
                     }
 
                     if ($deleteLocal) {
-                        @unlink($file->getPathname());
-                        $deletedLocally++;
+                        if (@unlink($file->getPathname())) {
+                            $deletedLocally++;
+                        }
                     }
                 }
 
