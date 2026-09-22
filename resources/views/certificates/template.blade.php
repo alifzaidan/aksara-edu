@@ -38,7 +38,7 @@
         }
 
         .page-1 {
-            background-image: url("{{ public_path('storage/' . $certificate->design->image_1) }}");
+            background-image: url("{{ \App\Services\CertificatePdfService::resolveImageUrl($certificate->design->image_1) }}");
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -46,9 +46,9 @@
 
         .page-2 {
             @if ($certificate->design && $certificate->design->image_2)
-                background-image: url("{{ public_path('storage/' . $certificate->design->image_2) }}");
+                background-image: url("{{ \App\Services\CertificatePdfService::resolveImageUrl($certificate->design->image_2) }}");
             @else
-                background-image: url("{{ public_path('storage/' . $certificate->design->image_1) }}");
+                background-image: url("{{ \App\Services\CertificatePdfService::resolveImageUrl($certificate->design->image_1) }}");
             @endif
             background-size: cover;
             background-position: center;
@@ -404,7 +404,7 @@
             width: 297mm;
             min-height: 210mm;
             @if(!empty($certificate->design->image_2))
-                background-image: url("{{ public_path('storage/' . $certificate->design->image_2) }}");
+                background-image: url("{{ \App\Services\CertificatePdfService::resolveImageUrl($certificate->design->image_2) }}");
                 background-size: cover;
                 background-position: center;
                 background-repeat: no-repeat;
@@ -580,7 +580,7 @@
                         </div>
                         <div class="signature-space">
                             @if ($certificate->sign && $certificate->sign->image)
-                                <img src="{{ public_path('storage/' . $certificate->sign->image) }}" alt="Tanda Tangan"
+                                <img src="{{ \App\Services\CertificatePdfService::resolveImageUrl($certificate->sign->image) }}" alt="Tanda Tangan"
                                     class="signature-image">
                             @else
                                 <div style="color: #9ca3af; font-style: italic; font-size: 10px;">Tanda Tangan</div>
