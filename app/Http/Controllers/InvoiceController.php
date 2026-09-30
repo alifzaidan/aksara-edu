@@ -60,6 +60,7 @@ class InvoiceController extends Controller
         // Buat query dasar (hanya transaksi utama / parent invoice)
         $invoicesQuery = Invoice::with([
             'user.referrer',
+            'referralUser',
             'installmentTerms',
             'courseItems.course',
             'bootcampItems.bootcamp',
@@ -1200,6 +1201,141 @@ class InvoiceController extends Controller
                 'message' => 'Gagal membatalkan invoice. ' . $e->getMessage(),
                 'success' => false
             ], 400);
+        }
+    }
+
+    /**
+     * Approve a pending invoice manually (mark as paid with DOKU payment method)
+     * Also records affiliate commission and fires TransactionPaid event
+     */
+    public function approvePending($id)
+    {
+        DB::beginTransaction();
+        try {
+            $invoice = Invoice::with([
+                'user',
+                'courseItems.course',
+                'bootcampItems.bootcamp',
+                'webinarItems.webinar',
+                'certificationProgramItems.certificationProgram',
+                'bundleEnrollments.bundle.bundleItems.bundleable',
+            ])
+                ->where('id', $id)
+                ->where('status', 'pending')
+                ->firstOrFail();
+
+            // Update invoice to paid with DOKU payment method
+            $invoice->update([
+                'status'           => 'paid',
+                'paid_at'          => Carbon::now('Asia/Jakarta'),
+                'payment_method'   => 'DOKU',
+                'payment_channel'  => 'DOKU',
+            ]);
+
+            // Process bundle individual enrollments if any
+            if ($invoice->bundleEnrollments && $invoice->bundleEnrollments->count() > 0) {
+                foreach ($invoice->bundleEnrollments as $bundleEnrollment) {
+                    $bundleEnrollment->createIndividualEnrollments();
+                    $bundle = $bundleEnrollment->bundle;
+                    if ($bundle && $bundle->bundleItems) {
+                        foreach ($bundle->bundleItems as $item) {
+                            $this->addToCertificateParticipantsHelper($item->getTypeSlug(), $item->bundleable_id, $invoice->user_id);
+                        }
+                    }
+                }
+            }
+
+            // Add to certificate participants for course/bootcamp/webinar items
+            $this->addEnrollmentToCertificateParticipantsHelper($invoice);
+
+            // Record affiliate commission
+            $this->recordAffiliateCommissionHelper($invoice);
+
+            // Fire event for referral rewards & other side effects
+            event(new \App\Events\TransactionPaid($invoice));
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Transaksi berhasil di-approve dan statusnya menjadi Paid.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to approve invoice: ' . $e->getMessage(), ['invoice_id' => $id]);
+            return redirect()->back()->with('error', 'Gagal meng-approve transaksi: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Record affiliate commission for an invoice (helper for approvePending)
+     */
+    private function recordAffiliateCommissionHelper(Invoice $invoice)
+    {
+        // Di Aksademy referal diambil dari table users (referred_by_user_id)
+        $referredByUserId = $invoice->user?->referred_by_user_id ?? $invoice->referral_user_id;
+
+        if (!$referredByUserId) {
+            $defaultAffiliate = User::where('affiliate_code', 'ATM2025')->first()
+                ?? User::role('affiliate')->first();
+            if ($defaultAffiliate && $defaultAffiliate->id !== $invoice->user_id) {
+                $referredByUserId = $defaultAffiliate->id;
+                $invoice->user?->update(['referred_by_user_id' => $referredByUserId]);
+            }
+        }
+
+        if ($referredByUserId) {
+            $affiliate = User::find($referredByUserId);
+            if ($affiliate && $affiliate->affiliate_status === 'Active' && $affiliate->commission > 0) {
+                // Avoid duplicate affiliate earning for this invoice
+                $alreadyExists = AffiliateEarning::where('invoice_id', $invoice->id)
+                    ->where('affiliate_user_id', $affiliate->id)
+                    ->exists();
+
+                if (!$alreadyExists) {
+                    $commissionAmount = $invoice->nett_amount * ($affiliate->commission / 100);
+                    AffiliateEarning::create([
+                        'affiliate_user_id' => $affiliate->id,
+                        'invoice_id'        => $invoice->id,
+                        'amount'            => $commissionAmount,
+                        'rate'              => $affiliate->commission,
+                        'status'            => 'approved',
+                    ]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Add a single item to certificate participants (helper for approvePending)
+     */
+    private function addToCertificateParticipantsHelper($type, $itemId, $userId)
+    {
+        $certificate = match ($type) {
+            'course'   => Certificate::where('course_id', $itemId)->first(),
+            'bootcamp' => Certificate::where('bootcamp_id', $itemId)->first(),
+            'webinar'  => Certificate::where('webinar_id', $itemId)->first(),
+            default    => null,
+        };
+
+        if ($certificate) {
+            CertificateParticipant::firstOrCreate([
+                'certificate_id' => $certificate->id,
+                'user_id'        => $userId,
+            ]);
+        }
+    }
+
+    /**
+     * Add all enrollment items to certificate participants (helper for approvePending)
+     */
+    private function addEnrollmentToCertificateParticipantsHelper(Invoice $invoice)
+    {
+        foreach ($invoice->courseItems as $courseItem) {
+            $this->addToCertificateParticipantsHelper('course', $courseItem->course_id, $invoice->user_id);
+        }
+        foreach ($invoice->bootcampItems as $bootcampItem) {
+            $this->addToCertificateParticipantsHelper('bootcamp', $bootcampItem->bootcamp_id, $invoice->user_id);
+        }
+        foreach ($invoice->webinarItems as $webinarItem) {
+            $this->addToCertificateParticipantsHelper('webinar', $webinarItem->webinar_id, $invoice->user_id);
         }
     }
 

@@ -4,6 +4,14 @@ import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { router } from '@inertiajs/react';
 import type { Row } from '@tanstack/react-table';
@@ -11,7 +19,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import InstallmentMonitorModal, { InstallmentTermItem } from '@/components/admin/installment-monitor-modal';
-import { Clock, FileText, Trash } from 'lucide-react';
+import { CheckCircle2, Clock, FileText, Trash } from 'lucide-react';
 import { useState } from 'react';
 
 interface Referrer {
@@ -72,6 +80,8 @@ interface CertificationProgramItem {
 export interface Invoice {
     id: string;
     user: User;
+    referral_user?: Referrer | null;
+    referralUser?: Referrer | null;
     invoice_code: string;
     invoice_url: string | null;
     nett_amount: number;
@@ -132,6 +142,7 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
     }
 
     const [loading, setLoading] = useState(false);
+    const [approveDialogOpen, setApproveDialogOpen] = useState(false);
 
     const handleDelete = async () => {
         setLoading(true);
@@ -140,6 +151,20 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
             {},
             {
                 onFinish: () => setLoading(false),
+            },
+        );
+    };
+
+    const handleApprove = () => {
+        setLoading(true);
+        router.post(
+            route('transactions.approve', { id: invoice.id }),
+            {},
+            {
+                onFinish: () => {
+                    setLoading(false);
+                    setApproveDialogOpen(false);
+                },
             },
         );
     };
@@ -199,28 +224,83 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
             )}
 
             {invoice.status === 'pending' && canManageTransaction && (
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <div>
-                            <DeleteConfirmDialog
-                                trigger={
-                                    <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer" disabled={loading}>
-                                        <Trash />
-                                        <span className="sr-only">Gagalkan Transaksi</span>
-                                    </Button>
-                                }
-                                title="Apakah Anda yakin ingin menggagalkan transaksi ini?"
-                                description="Transaksi yang digagalkan tidak dapat dikembalikan."
-                                itemName={invoice.invoice_code}
-                                onConfirm={handleDelete}
-                                confirmText="Ya, Gagalkan"
-                            />
-                        </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Batalkan Transaksi</p>
-                    </TooltipContent>
-                </Tooltip>
+                <>
+                    {/* Approve Button */}
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                disabled={loading}
+                                onClick={() => setApproveDialogOpen(true)}
+                            >
+                                <CheckCircle2 className="size-4" />
+                                <span className="sr-only">Approve Transaksi</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Approve Transaksi</p>
+                        </TooltipContent>
+                    </Tooltip>
+
+                    {/* Approve Confirmation Dialog */}
+                    <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Approve Transaksi?</DialogTitle>
+                                <DialogDescription>
+                                    Transaksi <strong>{invoice.invoice_code}</strong> akan diubah menjadi{' '}
+                                    <strong>Paid</strong> dengan metode pembayaran <strong>DOKU</strong>.
+                                    <br />
+                                    <br />
+                                    Tgl. Pembayaran akan otomatis tercatat pada saat ini, dan komisi afiliasi
+                                    akan dicatat sesuai data transaksi. Tindakan ini tidak dapat dibatalkan.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setApproveDialogOpen(false)}
+                                    disabled={loading}
+                                >
+                                    Batal
+                                </Button>
+                                <Button
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    onClick={handleApprove}
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Memproses...' : 'Ya, Approve'}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+
+                    {/* Cancel / Gagalkan Button */}
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div>
+                                <DeleteConfirmDialog
+                                    trigger={
+                                        <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer" disabled={loading}>
+                                            <Trash />
+                                            <span className="sr-only">Gagalkan Transaksi</span>
+                                        </Button>
+                                    }
+                                    title="Apakah Anda yakin ingin menggagalkan transaksi ini?"
+                                    description="Transaksi yang digagalkan tidak dapat dikembalikan."
+                                    itemName={invoice.invoice_code}
+                                    onConfirm={handleDelete}
+                                    confirmText="Ya, Gagalkan"
+                                />
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Batalkan Transaksi</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </>
             )}
         </div>
     );
@@ -312,9 +392,13 @@ export const columns: ColumnDef<Invoice>[] = [
         cell: ({ row }) => <PriceCell row={row} />,
     },
     {
-        accessorKey: 'user.referrer.name',
+        id: 'referral_user',
+        accessorFn: (row) => (row.user?.referrer ?? row.referral_user ?? row.referralUser)?.name ?? null,
         header: ({ column }) => <DataTableColumnHeader column={column} title="Afiliasi" />,
-        cell: ({ row }) => <p>{row.original.user.referrer?.name || '-'}</p>,
+        cell: ({ row }) => {
+            const referrer = row.original.user?.referrer ?? row.original.referral_user ?? row.original.referralUser;
+            return <p>{referrer?.name || '-'}</p>;
+        },
     },
     {
         accessorKey: 'status',

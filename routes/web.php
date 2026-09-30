@@ -515,6 +515,10 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
         Route::get('transactions/export', [InvoiceController::class, 'export'])->name('transactions.export');
     });
 
+    Route::middleware(['role_or_permission:admin|transactions.manage'])->group(function () {
+        Route::post('transactions/{id}/approve', [InvoiceController::class, 'approvePending'])->name('transactions.approve');
+    });
+
     // Promotions
     Route::middleware(['role_or_permission:admin|promotions.manage'])->group(function () {
         Route::get('promotions/create', [PromotionController::class, 'create'])->name('promotions.create');
