@@ -1187,16 +1187,24 @@ class InvoiceController extends Controller
 
             DB::commit();
 
+            if (request()->header('X-Inertia')) {
+                return redirect()->back()->with('success', 'Transaksi berhasil dibatalkan.');
+            }
+
             if (request()->wantsJson() || request()->ajax()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Invoice berhasil dibatalkan.'
+                    'message' => 'Transaksi berhasil dibatalkan.'
                 ]);
             }
 
-            return redirect()->back()->with('success', 'Invoice berhasil dibatalkan.');
+            return redirect()->back()->with('success', 'Transaksi berhasil dibatalkan.');
         } catch (\Exception $e) {
             DB::rollBack();
+            if (request()->header('X-Inertia')) {
+                return redirect()->back()->with('error', 'Gagal membatalkan transaksi: ' . $e->getMessage());
+            }
+
             return response()->json([
                 'message' => 'Gagal membatalkan invoice. ' . $e->getMessage(),
                 'success' => false
@@ -1255,6 +1263,16 @@ class InvoiceController extends Controller
             event(new \App\Events\TransactionPaid($invoice));
 
             DB::commit();
+
+            // Kirim notifikasi WhatsApp via Wablas setelah transaksi berhasil di-approve
+            try {
+                $this->sendWhatsAppNotification($invoice);
+            } catch (\Exception $e) {
+                Log::error('Failed to send WhatsApp notification after manual approve', [
+                    'invoice_id' => $invoice->id,
+                    'error'      => $e->getMessage(),
+                ]);
+            }
 
             return redirect()->back()->with('success', 'Transaksi berhasil di-approve dan statusnya menjadi Paid.');
         } catch (\Exception $e) {
