@@ -242,7 +242,7 @@ class PrivateController extends Controller
             'scheduleOptions' => $scheduleOptions,
             'activeInstallment' => $activeInstallment,
             'referralInfo' => $this->getReferralInfo(),
-            'installmentTerms' => $privateClass->installmentTerms()->get(['term_number', 'amount', 'due_date']),
+            'installmentTerms' => $privateClass->installment_enabled ? $privateClass->installmentTerms()->get(['term_number', 'amount', 'due_date']) : [],
         ]);
     }
 

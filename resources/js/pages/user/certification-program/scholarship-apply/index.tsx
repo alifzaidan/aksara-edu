@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import UserLayout from '@/layouts/user-layout';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Head, router } from '@inertiajs/react';
-import { CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -111,35 +110,6 @@ export default function ScholarshipApply({ program }: { program: Program }) {
 
                 {/* Content */}
                 <div className="mx-auto w-full max-w-5xl px-4 py-8">
-                    {/* Requirements */}
-                    <div className="mb-8 space-y-6 rounded-xl border-0 bg-gradient-to-br from-blue-50 to-indigo-50 p-2 shadow-md md:p-8 dark:from-blue-950/30 dark:to-indigo-950/30">
-                        <div className="rounded-lg bg-white/60 p-3 text-center backdrop-blur-sm md:p-6 dark:bg-zinc-800/40">
-                            <p className="font-semibold text-gray-900 md:text-lg dark:text-gray-100">
-                                Aksademy membuka Program Beasiswa bagi mahasiswa yang ingin meningkatkan kemampuan dan memperoleh sertifikasi profesional yang dibutuhkan di dunia kerja.
-                            </p>
-                        </div>
-                        <div>
-                            <h3 className="mb-4 flex items-center justify-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
-                                <span className="md:text-2xl">🎓</span> Persyaratan Peserta
-                            </h3>
-                            <div className="grid gap-3">
-                                {['Mahasiswa aktif jenjang D1–S1', 'Memiliki IPK minimal 3,00', 'Maksimal berada pada semester 8', 'Bersedia mengikuti seluruh tahapan seleksi'].map((req, i) => (
-                                    <div key={i} className="flex items-start gap-3 rounded-lg bg-white/60 p-3 backdrop-blur-sm dark:bg-zinc-800/40">
-                                        <CheckCircle2 className="mt-0.5 size-5 flex-shrink-0 text-green-500" />
-                                        <span className="text-sm text-gray-700 md:text-base dark:text-gray-300">{req}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="to-primary rounded-lg bg-gradient-to-tl from-black p-4 text-white shadow-lg">
-                            <p className="mb-3 text-xs font-semibold md:text-sm">📞 Untuk informasi lebih lanjut, silakan hubungi:</p>
-                            <div className="space-y-1">
-                                <p className="text-sm">📧 <span className="font-medium">aksarateknologimandiri@gmail.com</span></p>
-                                <p className="text-sm">💬 <span className="font-medium">+6285142505794</span></p>
-                            </div>
-                        </div>
-                    </div>
-
                     {/* Form */}
                     <div className="rounded-xl border-0 bg-white shadow-lg dark:bg-zinc-800">
                         <div className="to-primary rounded-t-xl border-b border-gray-200 bg-gradient-to-tl from-black px-6 py-6 dark:border-zinc-700">

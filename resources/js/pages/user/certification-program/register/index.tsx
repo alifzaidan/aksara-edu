@@ -639,7 +639,7 @@ export default function Register({
             }
 
             if (requiresDocumentUpload && !hasApprovedDocument) {
-                if (isDocumentPending || isDocumentRejected) {
+                if (isDocumentPending) {
                     return;
                 }
                 setIsDocumentDialogOpen(true);
@@ -700,7 +700,7 @@ export default function Register({
             }
 
             if (requiresDocumentUpload && !hasApprovedDocument) {
-                if (isDocumentPending || isDocumentRejected) {
+                if (isDocumentPending) {
                     setIsLoading(false);
                     return;
                 }
@@ -927,7 +927,7 @@ export default function Register({
 
     const handlePrimaryAction = () => {
         if (requiresDocumentUpload && !hasApprovedDocument) {
-            if (isDocumentPending || isDocumentRejected) {
+            if (isDocumentPending) {
                 return;
             }
 
@@ -1136,9 +1136,20 @@ export default function Register({
                                         )}
                                         {isDocumentPending && <p>Dokumen sudah dikirim dan sedang menunggu verifikasi admin.</p>}
                                         {isDocumentRejected && (
-                                            <p className="text-red-600 dark:text-red-300">
-                                                Dokumen Anda ditolak. Silakan hubungi admin untuk tindak lanjut.
-                                            </p>
+                                            <div className="space-y-2">
+                                                <p className="text-red-600 dark:text-red-300 font-semibold">
+                                                    Dokumen Anda ditolak. Silakan unggah ulang dokumen yang sesuai untuk diverifikasi kembali.
+                                                </p>
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    className="w-full rounded-full border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300"
+                                                    variant="outline"
+                                                    onClick={() => handlePrimaryAction()}
+                                                >
+                                                    Unggah Ulang Dokumen
+                                                </Button>
+                                            </div>
                                         )}
                                     </AlertDescription>
                                 </Alert>
@@ -1163,7 +1174,18 @@ export default function Register({
                                         {regularApplication.status === 'pending' ? (
                                             'Dokumen Anda sedang diverifikasi oleh admin.'
                                         ) : (
-                                            <span className="text-red-600 dark:text-red-300">Dokumen Anda ditolak. Silakan ajukan ulang.</span>
+                                            <div className="space-y-2">
+                                                <span className="text-red-600 dark:text-red-300 font-semibold">Dokumen Anda ditolak. Silakan ajukan ulang.</span>
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    className="mt-1 w-full"
+                                                    variant="secondary"
+                                                    onClick={() => handlePrimaryAction()}
+                                                >
+                                                    Unggah Ulang Dokumen
+                                                </Button>
+                                            </div>
                                         )}
                                     </AlertDescription>
                                 </Alert>
@@ -1243,7 +1265,7 @@ export default function Register({
                         {/* Right - Pricing & CTA */}
                         <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-md dark:border-zinc-700 dark:bg-zinc-800">
                             <h3 className="mb-2 font-semibold">Ringkasan Pendaftaran</h3>
-                            {!isScholarship && displayPrice > 0 && installmentTerms.length > 0 ? (
+                            {!isScholarship && displayPrice > 0 && ((installmentTerms && installmentTerms.length > 0) || (activeInstallment && !activeInstallment.is_fully_paid)) ? (
                                 <Tabs
                                     value={paymentTab}
                                     onValueChange={(val) => {
@@ -1265,7 +1287,7 @@ export default function Register({
                                         <TabsTrigger value="installment" className="flex items-center gap-1.5">
                                             <span>Cicilan</span>
                                             <Badge variant="secondary" className="px-1.5 py-0 text-[10px] bg-primary/10 text-primary">
-                                                {installmentTerms.length}x
+                                                {activeInstallment && !activeInstallment.is_fully_paid ? (activeInstallment.total_terms || activeInstallment.terms?.length) : installmentTerms.length}x
                                             </Badge>
                                         </TabsTrigger>
                                     </TabsList>
@@ -1528,9 +1550,9 @@ export default function Register({
                                                     isLoading ||
                                                     showScholarshipWarning ||
                                                     (!isLoggedIn && !isGuestFormComplete()) ||
-                                                    (requiresDocumentUpload && (isDocumentPending || isDocumentRejected)) ||
+                                                    (requiresDocumentUpload && isDocumentPending) ||
                                                     (!!regularApplication &&
-                                                        regularApplication.status !== 'approved' &&
+                                                        regularApplication.status === 'pending' &&
                                                         !isScholarship &&
                                                         requiresDocumentUpload) ||
                                                     scholarshipNotApproved ||
@@ -1541,8 +1563,10 @@ export default function Register({
                                                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                                 {isLoading
                                                     ? 'Memproses...'
-                                                    : requiresDocumentUpload && !hasApprovedDocument && !isDocumentPending && !isDocumentRejected
-                                                      ? 'Upload Dokumen Pendukung'
+                                                    : requiresDocumentUpload && !hasApprovedDocument && !isDocumentPending
+                                                              ? isDocumentRejected
+                                                                  ? 'Unggah Ulang Dokumen'
+                                                                  : 'Upload Dokumen Pendukung'
                                                       : 'Lanjutkan ke Pembayaran'}
                                             </Button>
                                             <Button asChild variant="outline" className="w-full">
@@ -1838,9 +1862,9 @@ export default function Register({
                                                 isLoading ||
                                                 showScholarshipWarning ||
                                                 (!isLoggedIn && !isGuestFormComplete()) ||
-                                                (requiresDocumentUpload && (isDocumentPending || isDocumentRejected)) ||
+                                                (requiresDocumentUpload && isDocumentPending) ||
                                                 (!!regularApplication &&
-                                                    regularApplication.status !== 'approved' &&
+                                                    regularApplication.status === 'pending' &&
                                                     !isScholarship &&
                                                     requiresDocumentUpload) ||
                                                 scholarshipNotApproved ||
@@ -1851,8 +1875,10 @@ export default function Register({
                                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                             {isLoading
                                                 ? 'Memproses...'
-                                                : requiresDocumentUpload && !hasApprovedDocument && !isDocumentPending && !isDocumentRejected
-                                                  ? 'Upload Dokumen Pendukung'
+                                                : requiresDocumentUpload && !hasApprovedDocument && !isDocumentPending
+                                                              ? isDocumentRejected
+                                                                  ? 'Unggah Ulang Dokumen'
+                                                                  : 'Upload Dokumen Pendukung'
                                                   : 'Lanjutkan ke Pembayaran'}
                                         </Button>
                                         <Button asChild variant="outline" className="w-full">

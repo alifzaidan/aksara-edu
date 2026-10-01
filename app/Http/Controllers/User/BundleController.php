@@ -288,7 +288,7 @@ class BundleController extends Controller
             'pendingInvoice' => $pendingInvoice,
             'pendingInvoiceUrl' => $pendingInvoiceUrl,
             'referralInfo' => $this->getReferralInfo(),
-            'installmentTerms' => $bundle->installmentTerms()->get(['term_number', 'amount', 'due_date']),
+            'installmentTerms' => $bundle->installment_enabled ? $bundle->installmentTerms()->get(['term_number', 'amount', 'due_date']) : [],
         ]);
     }
 

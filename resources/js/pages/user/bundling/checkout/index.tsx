@@ -875,7 +875,7 @@ export default function CheckoutBundle({
                                         </div>
                                     )}
 
-                                    {installmentTerms.length > 0 ? (
+                                    {((installmentTerms && installmentTerms.length > 0) || (activeInstallment && !activeInstallment.is_fully_paid)) ? (
                                         <Tabs
                                             value={paymentTab}
                                             onValueChange={(val) => {
@@ -897,7 +897,7 @@ export default function CheckoutBundle({
                                                 <TabsTrigger value="installment" className="flex items-center gap-1.5">
                                                     <span>Cicilan</span>
                                                     <Badge variant="secondary" className="px-1.5 py-0 text-[10px] bg-primary/10 text-primary">
-                                                        {installmentTerms.length}x
+                                                        {activeInstallment && !activeInstallment.is_fully_paid ? (activeInstallment.total_terms || activeInstallment.terms?.length) : installmentTerms.length}x
                                                     </Badge>
                                                 </TabsTrigger>
                                             </TabsList>
