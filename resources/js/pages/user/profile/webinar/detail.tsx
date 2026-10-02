@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import UserLayout from '@/layouts/user-layout';
 import { formatExternalUrl } from '@/lib/utils';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Award, BadgeCheck, Calendar, CheckCircle, Clock, Download, Eye, MessageSquare, Upload, Users, X, Youtube } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Award, BadgeCheck, Calendar, CheckCircle, Clock, Download, Eye, MessageSquare, Sparkles, Upload, Users, X, Youtube } from 'lucide-react';
 import { useState } from 'react';
 
 interface Category {
@@ -31,6 +31,19 @@ interface Webinar {
     group_url: string | null;
     status: string;
     user_id: string;
+    has_certificate?: boolean;
+    requires_review?: boolean;
+    next_step_product?: {
+        id: string;
+        title: string;
+        slug: string;
+        thumbnail?: string | null;
+        price: number;
+        strikethrough_price?: number;
+        type: string;
+        type_label: string;
+        url: string;
+    } | null;
     created_at: string;
     updated_at: string;
 }
@@ -241,7 +254,15 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
     const isAttendanceVerified = webinarItem.attendance_verified;
     const hasReview = webinarItem.review && webinarItem.rating;
 
-    const hasCertificate = certificate && isCompleted && isFullyPaid && isAttendanceVerified && hasReview;
+        const offersCertificate = webinarData.has_certificate ?? true;
+    const requiresReview = webinarData.requires_review ?? true;
+
+    const hasCertificate =
+        offersCertificate &&
+        Boolean(certificate) &&
+        isCompleted &&
+        isFullyPaid &&
+        (!requiresReview || (isAttendanceVerified && hasReview));
 
     return (
         <UserLayout>
@@ -431,6 +452,69 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Next Step Pelatihan Recommendation Card */}
+                                {webinarData.next_step_product && (
+                                    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+                                        <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-3 dark:border-zinc-700">
+                                            <div className="flex items-center gap-2">
+                                                <Sparkles className="h-5 w-5 text-amber-500" />
+                                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Langkah Pelatihan Selanjutnya</h3>
+                                            </div>
+                                            <span className="rounded-full bg-primary/10 px-3 py-0.5 text-xs font-semibold text-primary">
+                                                {webinarData.next_step_product.type_label}
+                                            </span>
+                                        </div>
+                                        <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+                                            Tingkatkan skill Anda ke level berikutnya dengan program lanjutan yang kami rekomendasikan
+                                        </p>
+                                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                            <div className="flex flex-1 items-start gap-4">
+                                                {webinarData.next_step_product.thumbnail ? (
+                                                    <img
+                                                        src={webinarData.next_step_product.thumbnail}
+                                                        alt={webinarData.next_step_product.title}
+                                                        className="h-20 w-32 shrink-0 rounded-lg object-cover shadow-sm"
+                                                    />
+                                                ) : (
+                                                    <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-400 dark:bg-zinc-700">
+                                                        <Sparkles className="h-8 w-8" />
+                                                    </div>
+                                                )}
+                                                <div className="space-y-1">
+                                                    <h4 className="line-clamp-2 text-base font-bold text-gray-900 dark:text-white">
+                                                        {webinarData.next_step_product.title}
+                                                    </h4>
+                                                    <div className="flex items-baseline gap-2">
+                                                        {webinarData.next_step_product.price === 0 ? (
+                                                            <span className="text-base font-bold text-green-600 dark:text-green-400">Gratis</span>
+                                                        ) : (
+                                                            <>
+                                                                <span className="text-base font-bold text-gray-900 dark:text-white">
+                                                                    Rp {webinarData.next_step_product.price.toLocaleString('id-ID')}
+                                                                </span>
+                                                                {webinarData.next_step_product.strikethrough_price != null &&
+                                                                webinarData.next_step_product.strikethrough_price > webinarData.next_step_product.price ? (
+                                                                    <span className="text-xs text-gray-400 line-through">
+                                                                        Rp {webinarData.next_step_product.strikethrough_price.toLocaleString('id-ID')}
+                                                                    </span>
+                                                                ) : null}
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="sm:shrink-0">
+                                                <Button asChild className="w-full sm:w-auto">
+                                                    <a href={webinarData.next_step_product.url} target="_blank" rel="noopener noreferrer">
+                                                        Daftar Sekarang
+                                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                                    </a>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </>
                     ) : (
@@ -491,13 +575,76 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                         ))}
                                     </div>
                                 </div>
+
+                                {/* Next Step Pelatihan Recommendation Card */}
+                                {webinarData.next_step_product && (
+                                    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+                                        <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-3 dark:border-zinc-700">
+                                            <div className="flex items-center gap-2">
+                                                <Sparkles className="h-5 w-5 text-amber-500" />
+                                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Langkah Pelatihan Selanjutnya</h3>
+                                            </div>
+                                            <span className="rounded-full bg-primary/10 px-3 py-0.5 text-xs font-semibold text-primary">
+                                                {webinarData.next_step_product.type_label}
+                                            </span>
+                                        </div>
+                                        <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+                                            Tingkatkan skill Anda ke level berikutnya dengan program lanjutan yang kami rekomendasikan
+                                        </p>
+                                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                            <div className="flex flex-1 items-start gap-4">
+                                                {webinarData.next_step_product.thumbnail ? (
+                                                    <img
+                                                        src={webinarData.next_step_product.thumbnail}
+                                                        alt={webinarData.next_step_product.title}
+                                                        className="h-20 w-32 shrink-0 rounded-lg object-cover shadow-sm"
+                                                    />
+                                                ) : (
+                                                    <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-400 dark:bg-zinc-700">
+                                                        <Sparkles className="h-8 w-8" />
+                                                    </div>
+                                                )}
+                                                <div className="space-y-1">
+                                                    <h4 className="line-clamp-2 text-base font-bold text-gray-900 dark:text-white">
+                                                        {webinarData.next_step_product.title}
+                                                    </h4>
+                                                    <div className="flex items-baseline gap-2">
+                                                        {webinarData.next_step_product.price === 0 ? (
+                                                            <span className="text-base font-bold text-green-600 dark:text-green-400">Gratis</span>
+                                                        ) : (
+                                                            <>
+                                                                <span className="text-base font-bold text-gray-900 dark:text-white">
+                                                                    Rp {webinarData.next_step_product.price.toLocaleString('id-ID')}
+                                                                </span>
+                                                                {webinarData.next_step_product.strikethrough_price != null &&
+                                                                webinarData.next_step_product.strikethrough_price > webinarData.next_step_product.price ? (
+                                                                    <span className="text-xs text-gray-400 line-through">
+                                                                        Rp {webinarData.next_step_product.strikethrough_price.toLocaleString('id-ID')}
+                                                                    </span>
+                                                                ) : null}
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="sm:shrink-0">
+                                                <Button asChild className="w-full sm:w-auto">
+                                                    <a href={webinarData.next_step_product.url} target="_blank" rel="noopener noreferrer">
+                                                        Daftar Sekarang
+                                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                                    </a>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </>
                     )}
 
                     {/* Sidebar */}
                     <div className="col-span-1 space-y-6">
-                        {isCompleted && hasActiveAccess && !hasReview && (
+                        {isCompleted && hasActiveAccess && !hasReview && offersCertificate && requiresReview && (
                             <div className="rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 p-6 dark:border-purple-800 dark:from-purple-900/20 dark:to-pink-900/20">
                                 <div className="mb-4 flex items-center gap-3">
                                     <div className="rounded-full bg-purple-100 p-2 dark:bg-purple-800">
@@ -669,8 +816,22 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                         </div>
                                     ) : null}
 
-                                    <div className="relative">
-                                        {hasCertificate ? (
+                                    {!offersCertificate ? (
+                                        <div className="space-y-3 py-6 text-center">
+                                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-700">
+                                                <Award className="h-7 w-7 text-gray-400" />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-semibold text-gray-900 dark:text-white">Tanpa Sertifikat</h4>
+                                                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                                    Webinar ini tidak menyediakan sertifikat kelulusan. Anda dapat langsung menikmati seluruh materi dan rekaman yang tersedia.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="relative">
+                                                {hasCertificate ? (
                                             <div className={`group ${isLoading ? 'absolute opacity-0' : 'relative opacity-100'}`}>
                                                 <iframe
                                                     src={`${route('profile.webinar.certificate.preview', { webinar: webinarData.slug })}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
@@ -739,7 +900,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                     ? 'Sertifikat belum dibuat untuk webinar ini.'
                                                     : !isFullyPaid
                                                       ? (isInstallment ? 'Lunasi seluruh cicilan untuk membuka sertifikat.' : 'Selesaikan pembayaran untuk mendapatkan sertifikat.')
-                                                      : !hasReview
+                                                      : requiresReview && !hasReview
                                                         ? 'Lengkapi bukti kehadiran dan review untuk mendapatkan sertifikat.'
                                                         : 'Sertifikat akan tersedia setelah webinar selesai.'}
                                             </p>
@@ -749,10 +910,12 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                     ? 'Sertifikat Belum Tersedia'
                                                     : !isFullyPaid
                                                       ? (isInstallment ? 'Lunasi Cicilan' : 'Selesaikan Pembayaran')
-                                                      : !hasReview
+                                                      : requiresReview && !hasReview
                                                         ? 'Lengkapi Data Diperlukan'
                                                         : 'Menunggu Webinar Selesai'}
                                             </Button>
+                                        </>
+                                    )}
                                         </>
                                     )}
                                 </div>

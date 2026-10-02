@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Certificate;
 use App\Models\CertificateParticipant;
+use App\Models\EnrollmentWebinar;
+use App\Models\EnrollmentCourse;
+use App\Models\EnrollmentBootcamp;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -49,6 +52,63 @@ class CertificateParticipantController extends Controller
                 })->first();
 
             if ($user) {
+                // Pastikan participant records terbuat untuk webinar yang eligible
+                $webinarEnrollments = EnrollmentWebinar::with(['webinar', 'invoice'])
+                    ->whereHas('invoice', function ($query) use ($user) {
+                        $query->where('user_id', $user->id);
+                    })
+                    ->get();
+
+                foreach ($webinarEnrollments as $webinarEnrollment) {
+                    if ($webinarEnrollment->canDownloadCertificate()) {
+                        $cert = Certificate::where('webinar_id', $webinarEnrollment->webinar_id)->first();
+                        if ($cert) {
+                            CertificateParticipant::firstOrCreate([
+                                'certificate_id' => $cert->id,
+                                'user_id' => $user->id,
+                            ]);
+                        }
+                    }
+                }
+
+                // Pastikan participant records terbuat untuk bootcamp yang eligible
+                $bootcampEnrollments = EnrollmentBootcamp::with(['bootcamp.schedules', 'invoice', 'attendances'])
+                    ->whereHas('invoice', function ($query) use ($user) {
+                        $query->where('user_id', $user->id);
+                    })
+                    ->get();
+
+                foreach ($bootcampEnrollments as $bootcampEnrollment) {
+                    if ($bootcampEnrollment->canDownloadCertificate()) {
+                        $cert = Certificate::where('bootcamp_id', $bootcampEnrollment->bootcamp_id)->first();
+                        if ($cert) {
+                            CertificateParticipant::firstOrCreate([
+                                'certificate_id' => $cert->id,
+                                'user_id' => $user->id,
+                            ]);
+                        }
+                    }
+                }
+
+                // Pastikan participant records terbuat untuk course yang eligible
+                $courseEnrollments = EnrollmentCourse::with(['invoice'])
+                    ->whereHas('invoice', function ($query) use ($user) {
+                        $query->where('user_id', $user->id);
+                    })
+                    ->get();
+
+                foreach ($courseEnrollments as $courseEnrollment) {
+                    if ($courseEnrollment->canDownloadCertificate()) {
+                        $cert = Certificate::where('course_id', $courseEnrollment->course_id)->first();
+                        if ($cert) {
+                            CertificateParticipant::firstOrCreate([
+                                'certificate_id' => $cert->id,
+                                'user_id' => $user->id,
+                            ]);
+                        }
+                    }
+                }
+
                 $participants = CertificateParticipant::where('user_id', $user->id)
                     ->with(['user', 'certificate.course', 'certificate.bootcamp', 'certificate.webinar', 'certificate.design'])
                     ->orderBy('created_at', 'desc')

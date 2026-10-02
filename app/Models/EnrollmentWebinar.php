@@ -32,8 +32,19 @@ class EnrollmentWebinar extends Model
      */
     public function canDownloadCertificate(): bool
     {
-        if (!$this->invoice || $this->invoice->status !== 'paid') {
+        // Must have webinar and certificate enabled
+        if (!$this->webinar || !$this->webinar->has_certificate) {
             return false;
+        }
+
+        // Must be paid (or fully paid for installment)
+        if (!$this->invoice || !$this->invoice->isFullyPaid()) {
+            return false;
+        }
+
+        // If requires review is disabled, can download immediately after payment
+        if (!$this->webinar->requires_review) {
+            return true;
         }
 
         // Must have attendance proof and verified
@@ -47,5 +58,34 @@ class EnrollmentWebinar extends Model
         }
 
         return true;
+    }
+
+    /**
+     * Get missing requirements for certificate
+     */
+    public function getMissingRequirements(): array
+    {
+        $missing = [];
+
+        if (!$this->webinar || !$this->webinar->has_certificate) {
+            $missing[] = 'Webinar ini tidak menyediakan sertifikat';
+            return $missing;
+        }
+
+        if (!$this->invoice || !$this->invoice->isFullyPaid()) {
+            $missing[] = 'Selesaikan pembayaran';
+        }
+
+        if ($this->webinar->requires_review) {
+            if (is_null($this->attendance_proof) || !$this->attendance_verified) {
+                $missing[] = 'Lengkapi bukti kehadiran yang terverifikasi';
+            }
+
+            if (is_null($this->rating) || is_null($this->review)) {
+                $missing[] = 'Berikan rating dan review';
+            }
+        }
+
+        return $missing;
     }
 }

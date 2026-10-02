@@ -84,3 +84,53 @@ export function parseHtmlList(items?: string | null): string[] {
         .filter(Boolean);
 }
 
+export function decodeHtmlEntities(text: string): string {
+    if (!text) return '';
+    return text
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#039;/g, "'")
+        .replace(/&#39;/g, "'")
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\u00A0/g, ' ');
+}
+
+export function parseList(items?: string | null): string[] {
+    if (!items) return [];
+
+    const liRegex = /<li\b[^>]*>([\s\S]*?)<\/li>/gi;
+    const list: string[] = [];
+    let match: RegExpExecArray | null;
+
+    while ((match = liRegex.exec(items)) !== null) {
+        let text = match[1]
+            .replace(/<[^>]*>/g, '')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/\u00A0/g, ' ');
+        text = decodeHtmlEntities(text).trim();
+        text = text.replace(/^[-*•–—\u2022]+\s+/, '').trim();
+        if (text) {
+            list.push(text);
+        }
+    }
+
+    if (list.length > 0) {
+        return list;
+    }
+
+    const cleanText = items
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/?(p|div|tr|h[1-6])\b[^>]*>/gi, '\n')
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\u00A0/g, ' ');
+
+    const decoded = decodeHtmlEntities(cleanText);
+
+    return decoded
+        .split(/\r?\n/)
+        .map((s) => s.replace(/^[-*•–—\u2022]+\s+/, '').trim())
+        .filter((s) => s.length > 0);
+}

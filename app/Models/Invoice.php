@@ -206,7 +206,7 @@ class Invoice extends Model
     public function isFullyPaid(): bool
     {
         if (!$this->is_installment) {
-            return $this->status === 'paid';
+            return in_array($this->status, ['paid', 'completed']);
         }
         return $this->installmentTerms()->where('status', '!=', 'paid')->doesntExist();
     }

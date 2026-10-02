@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bootcamp;
+use App\Models\Webinar;
 use App\Models\BootcampSchedule;
+use App\Models\CertificationProgram;
 use App\Models\Category;
 use App\Models\Certificate;
 use App\Models\Invoice;
@@ -157,7 +159,18 @@ class BootcampController extends Controller
 
         $mentors = User::role('mentor')->get(['id', 'name', 'bio', 'avatar']);
 
-        return Inertia::render('admin/bootcamps/create', ['categories' => $categories, 'tools' => $tools, 'mentors' => $mentors]);
+        $availablePrograms = [
+            'webinars' => Webinar::select('id', 'title', 'batch')->orderBy('title')->get(),
+            'bootcamps' => Bootcamp::select('id', 'title', 'batch')->orderBy('title')->get(),
+            'certification_programs' => CertificationProgram::select('id', 'title', 'batch')->orderBy('title')->get(),
+        ];
+
+        return Inertia::render('admin/bootcamps/create', [
+            'categories' => $categories,
+            'tools' => $tools,
+            'mentors' => $mentors,
+            'availablePrograms' => $availablePrograms,
+        ]);
     }
 
     public function store(Request $request)
@@ -185,9 +198,17 @@ class BootcampController extends Controller
             'requirement_1' => 'nullable|string',
             'requirement_2' => 'nullable|string',
             'requirement_3' => 'nullable|string',
+            'has_certificate' => 'nullable|boolean',
+            'requires_review' => 'nullable|boolean',
+            'next_step_type' => 'nullable|string|in:webinar,bootcamp,certification_program',
+            'next_step_id' => 'nullable|string|max:36',
         ]);
 
         $data = $request->except(['tools', 'schedules', 'mentor_ids', 'user_id']);
+        $data['has_certificate'] = $request->boolean('has_certificate', true);
+        $data['requires_review'] = $data['has_certificate'] ? $request->boolean('requires_review', true) : false;
+        $data['next_step_type'] = $request->input('next_step_type') ?: null;
+        $data['next_step_id'] = $request->input('next_step_id') ?: null;
         foreach (['start_date', 'end_date', 'registration_deadline'] as $field) {
             if (!empty($data[$field])) {
                 $data[$field] = Carbon::parse($data[$field])
@@ -390,7 +411,19 @@ class BootcampController extends Controller
 
         $mentors = User::role('mentor')->get(['id', 'name', 'bio', 'avatar']);
 
-        return Inertia::render('admin/bootcamps/edit', ['bootcamp' => $bootcamp, 'categories' => $categories, 'tools' => $tools, 'mentors' => $mentors]);
+        $availablePrograms = [
+            'webinars' => Webinar::select('id', 'title', 'batch')->orderBy('title')->get(),
+            'bootcamps' => Bootcamp::where('id', '!=', $id)->select('id', 'title', 'batch')->orderBy('title')->get(),
+            'certification_programs' => CertificationProgram::select('id', 'title', 'batch')->orderBy('title')->get(),
+        ];
+
+        return Inertia::render('admin/bootcamps/edit', [
+            'bootcamp' => $bootcamp,
+            'categories' => $categories,
+            'tools' => $tools,
+            'mentors' => $mentors,
+            'availablePrograms' => $availablePrograms,
+        ]);
     }
 
     public function update(Request $request, string $id)
@@ -416,12 +449,20 @@ class BootcampController extends Controller
             'requirement_1' => 'nullable|string',
             'requirement_2' => 'nullable|string',
             'requirement_3' => 'nullable|string',
+            'has_certificate' => 'nullable|boolean',
+            'requires_review' => 'nullable|boolean',
+            'next_step_type' => 'nullable|string|in:webinar,bootcamp,certification_program',
+            'next_step_id' => 'nullable|string|max:36',
             'mentor_ids' => 'required|array|min:1',
             'mentor_ids.*' => 'required|exists:users,id',
         ]);
 
         $bootcamp = Bootcamp::findOrFail($id);
         $data = $request->except(['tools', 'schedules', 'mentor_ids', 'user_id']);
+        $data['has_certificate'] = $request->boolean('has_certificate', true);
+        $data['requires_review'] = $data['has_certificate'] ? $request->boolean('requires_review', true) : false;
+        $data['next_step_type'] = $request->input('next_step_type') ?: null;
+        $data['next_step_id'] = $request->input('next_step_id') ?: null;
 
         foreach (['start_date', 'end_date', 'registration_deadline'] as $field) {
             if (!empty($data[$field])) {

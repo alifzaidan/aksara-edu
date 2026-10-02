@@ -82,35 +82,47 @@ class CertificateParticipant extends Model
 
         // 1. Course Certificate
         if ($certificate->course_id) {
-            $enrollment = EnrollmentCourse::with(['invoice'])
+            $enrollments = EnrollmentCourse::with(['invoice'])
                 ->where('course_id', $certificate->course_id)
                 ->whereHas('invoice', function ($query) {
                     $query->where('user_id', $this->user_id);
-                })->first();
+                })->get();
             
-            return $enrollment && $enrollment->canDownloadCertificate();
+            if ($enrollments->isNotEmpty()) {
+                return $enrollments->contains(fn($enrollment) => $enrollment->canDownloadCertificate());
+            }
+
+            return true;
         }
 
         // 2. Webinar Certificate
         if ($certificate->webinar_id) {
-            $enrollment = EnrollmentWebinar::with(['invoice'])
+            $enrollments = EnrollmentWebinar::with(['invoice', 'webinar'])
                 ->where('webinar_id', $certificate->webinar_id)
                 ->whereHas('invoice', function ($query) {
                     $query->where('user_id', $this->user_id);
-                })->first();
+                })->get();
 
-            return $enrollment && $enrollment->canDownloadCertificate();
+            if ($enrollments->isNotEmpty()) {
+                return $enrollments->contains(fn($enrollment) => $enrollment->canDownloadCertificate());
+            }
+
+            return true;
         }
 
         // 3. Bootcamp Certificate
         if ($certificate->bootcamp_id) {
-            $enrollment = EnrollmentBootcamp::with(['invoice', 'bootcamp.schedules', 'attendances'])
+            $enrollments = EnrollmentBootcamp::with(['invoice', 'bootcamp.schedules', 'attendances'])
                 ->where('bootcamp_id', $certificate->bootcamp_id)
                 ->whereHas('invoice', function ($query) {
                     $query->where('user_id', $this->user_id);
-                })->first();
+                })->get();
 
-            return $enrollment && $enrollment->canDownloadCertificate();
+            if ($enrollments->isNotEmpty()) {
+                return $enrollments->contains(fn($enrollment) => $enrollment->canDownloadCertificate());
+            }
+
+            return true;
         }
 
         // Independent or other certificates

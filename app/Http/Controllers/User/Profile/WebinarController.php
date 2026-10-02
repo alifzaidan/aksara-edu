@@ -67,6 +67,14 @@ class WebinarController extends Controller
             $certificateParticipant = CertificateParticipant::where('certificate_id', $certificate->id)
                 ->where('user_id', $userId)
                 ->first();
+
+            $webinarItem = $webinar->webinarItems->first();
+            if (!$certificateParticipant && $webinar->isFullyPaid() && $webinarItem->canDownloadCertificate()) {
+                $certificateParticipant = CertificateParticipant::create([
+                    'certificate_id' => $certificate->id,
+                    'user_id' => $userId,
+                ]);
+            }
         }
 
         $webinar->append(['has_active_access', 'is_fully_paid']);
@@ -150,8 +158,9 @@ class WebinarController extends Controller
 
             $webinarData = $enrollmentWebinar->webinar;
 
-            if (!$enrollmentWebinar->attendance_verified || !$enrollmentWebinar->review || !$enrollmentWebinar->rating) {
-                return back()->with('error', 'Silakan upload bukti kehadiran dan berikan review terlebih dahulu.');
+            if ($webinarData->requires_review && !$enrollmentWebinar->canDownloadCertificate()) {
+                $missing = $enrollmentWebinar->getMissingRequirements();
+                return back()->with('error', 'Persyaratan belum lengkap: ' . implode(', ', $missing));
             }
 
             $webinarEndDate = new \Carbon\Carbon($webinarData->end_time);
@@ -224,8 +233,9 @@ class WebinarController extends Controller
 
             $webinarData = $enrollmentWebinar->webinar;
 
-            if (!$enrollmentWebinar->attendance_verified || !$enrollmentWebinar->review || !$enrollmentWebinar->rating) {
-                return back()->with('error', 'Silakan upload bukti kehadiran dan berikan review terlebih dahulu.');
+            if ($webinarData->requires_review && !$enrollmentWebinar->canDownloadCertificate()) {
+                $missing = $enrollmentWebinar->getMissingRequirements();
+                return back()->with('error', 'Persyaratan belum lengkap: ' . implode(', ', $missing));
             }
 
             $webinarEndDate = new \Carbon\Carbon($webinarData->end_time);

@@ -43,14 +43,24 @@ class EnrollmentBootcamp extends Model
      */
     public function canDownloadCertificate(): bool
     {
-        // Must be paid
-        if ($this->invoice->status !== 'paid') {
+        // Must have bootcamp and certificate enabled
+        if (!$this->bootcamp || !$this->bootcamp->has_certificate) {
             return false;
         }
 
+        // Must be paid (or fully paid for installment)
+        if (!$this->invoice || !$this->invoice->isFullyPaid()) {
+            return false;
+        }
+
+        // If requires review is disabled, can download immediately after payment
+        if (!$this->bootcamp->requires_review) {
+            return true;
+        }
+
         // Must have all attendances verified
-        $totalSchedules = $this->bootcamp->schedules->count();
-        $verifiedAttendances = $this->attendances->where('verified', true)->count();
+        $totalSchedules = $this->bootcamp->schedules ? $this->bootcamp->schedules->count() : 0;
+        $verifiedAttendances = $this->attendances ? $this->attendances->where('verified', true)->count() : 0;
 
         if ($verifiedAttendances < $totalSchedules) {
             return false;
@@ -78,27 +88,34 @@ class EnrollmentBootcamp extends Model
     {
         $missing = [];
 
-        if ($this->invoice->status !== 'paid') {
+        if (!$this->bootcamp || !$this->bootcamp->has_certificate) {
+            $missing[] = 'Bootcamp ini tidak menyediakan sertifikat';
+            return $missing;
+        }
+
+        if (!$this->invoice || !$this->invoice->isFullyPaid()) {
             $missing[] = 'Selesaikan pembayaran';
         }
 
-        $totalSchedules = $this->bootcamp->schedules->count();
-        $verifiedAttendances = $this->attendances->where('verified', true)->count();
+        if ($this->bootcamp->requires_review) {
+            $totalSchedules = $this->bootcamp->schedules ? $this->bootcamp->schedules->count() : 0;
+            $verifiedAttendances = $this->attendances ? $this->attendances->where('verified', true)->count() : 0;
 
-        if ($verifiedAttendances < $totalSchedules) {
-            $missing[] = "Lengkapi bukti kehadiran ({$verifiedAttendances}/{$totalSchedules} terverifikasi)";
-        }
-
-        if ($this->bootcamp->has_submission_link) {
-            if (!$this->submission) {
-                $missing[] = 'Upload link submission project';
-            } elseif (!$this->submission_verified) {
-                $missing[] = 'Menunggu verifikasi submission';
+            if ($verifiedAttendances < $totalSchedules) {
+                $missing[] = "Lengkapi bukti kehadiran ({$verifiedAttendances}/{$totalSchedules} terverifikasi)";
             }
-        }
 
-        if (!$this->rating || !$this->review) {
-            $missing[] = 'Berikan rating dan review';
+            if ($this->bootcamp->has_submission_link) {
+                if (!$this->submission) {
+                    $missing[] = 'Upload link submission project';
+                } elseif (!$this->submission_verified) {
+                    $missing[] = 'Menunggu verifikasi submission';
+                }
+            }
+
+            if (!$this->rating || !$this->review) {
+                $missing[] = 'Berikan rating dan review';
+            }
         }
 
         return $missing;

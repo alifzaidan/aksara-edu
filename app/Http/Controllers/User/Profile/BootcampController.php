@@ -70,6 +70,14 @@ class BootcampController extends Controller
             $certificateParticipant = CertificateParticipant::where('certificate_id', $certificate->id)
                 ->where('user_id', $userId)
                 ->first();
+
+            $bootcampItem = $bootcamp->bootcampItems->first();
+            if (!$certificateParticipant && $bootcamp->isFullyPaid() && $bootcampItem->canDownloadCertificate()) {
+                $certificateParticipant = CertificateParticipant::create([
+                    'certificate_id' => $certificate->id,
+                    'user_id' => $userId,
+                ]);
+            }
         }
 
         $bootcamp->append(['has_active_access', 'is_fully_paid']);
@@ -299,8 +307,8 @@ class BootcampController extends Controller
                 if ($lastScheduleDateTime->isFuture()) {
                     return back()->with('error', 'Sertifikat belum tersedia. Bootcamp masih berlangsung.');
                 }
-            } else {
-                return back()->with('error', 'Jadwal bootcamp tidak ditemukan.');
+            } elseif ($bootcampEndDate->isFuture()) {
+                return back()->with('error', 'Sertifikat belum tersedia. Bootcamp masih berlangsung.');
             }
 
             if (!$enrollment->canDownloadCertificate()) {

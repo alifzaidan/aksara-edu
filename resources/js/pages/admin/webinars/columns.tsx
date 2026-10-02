@@ -12,14 +12,11 @@ import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Award, Folder, Trash } from 'lucide-react';
-
 import { usePermission } from '@/hooks/use-permission';
 
 export default function WebinarActions({ webinar }: { webinar: Webinar }) {
-    const { auth } = usePage<SharedData>().props;
     const { canManage } = usePermission();
-    const isAffiliate = auth.role.includes('affiliate');
-    const canManageWebinar = canManage('webinars') && !isAffiliate;
+    const canManageWebinars = canManage('webinars');
 
     const handleDelete = () => {
         router.delete(route('webinars.destroy', webinar.id));
@@ -40,7 +37,7 @@ export default function WebinarActions({ webinar }: { webinar: Webinar }) {
                     <p>Lihat Webinar</p>
                 </TooltipContent>
             </Tooltip>
-            {canManageWebinar && (
+            {canManageWebinars && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div>
@@ -81,6 +78,23 @@ export type Webinar = {
     status: 'draft' | 'published' | 'archived';
     recording_url?: string | null;
     installment_enabled?: boolean;
+    has_certificate?: boolean;
+    requires_review?: boolean;
+    next_step_type?: string | null;
+    next_step_id?: string | null;
+    next_step_product?: {
+        id: string;
+        title: string;
+        slug: string;
+        batch?: string | null;
+        thumbnail?: string | null;
+        price: number;
+        strikethrough_price: number;
+        type: string;
+        type_label: string;
+        url?: string | null;
+        admin_url?: string | null;
+    } | null;
     certificate?: {
         id: string;
         title: string;
@@ -89,19 +103,22 @@ export type Webinar = {
     } | null;
 };
 
-function WebinarPriceCell({ webinar }: { webinar: Webinar }) {
-    const { auth } = usePage<SharedData>().props;
+function PriceCell({ row }: { row: { original: Webinar } }) {
     const { roles, isAdmin } = usePermission();
-    const isStaff = (roles?.includes('staff') || auth?.role?.includes('staff')) && !isAdmin && !auth?.role?.includes('admin');
+    const isStaff = roles.includes('staff') && !isAdmin;
 
-    const price = webinar.price;
+    const strikethroughPrice = row.original.strikethrough_price;
+    const price = row.original.price;
+    const webinar = row.original;
+
     if (price === 0) {
         return <div className="text-base font-semibold">Gratis</div>;
     }
+
     if (isStaff) {
         return <div className="text-base font-semibold text-muted-foreground">Rp ***</div>;
     }
-    const strikethroughPrice = webinar.strikethrough_price;
+
     return (
         <div>
             {strikethroughPrice > 0 && <div className="text-xs text-gray-500 line-through">{rupiahFormatter.format(strikethroughPrice)}</div>}
@@ -130,7 +147,7 @@ export const columns: ColumnDef<Webinar>[] = [
         header: ({ column }) => <DataTableColumnHeader column={column} title="Judul" />,
         cell: ({ row }) => {
             return (
-                <Link href={route('webinars.show', row.original.id)} className="text-primary font-medium hover:underline">
+                <Link href={route('webinars.show', row.original.id)} className="text-foreground font-medium hover:underline">
                     {row.original.title}
                 </Link>
             );
@@ -182,16 +199,19 @@ export const columns: ColumnDef<Webinar>[] = [
     {
         accessorKey: 'price',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
-        cell: ({ row }) => <WebinarPriceCell webinar={row.original} />,
+        cell: ({ row }) => <PriceCell row={row} />,
     },
     {
         id: 'recording_status',
-        accessorFn: (row) => row.recording_url ? 'yes' : 'no',
+        accessorFn: (row) => (row.recording_url ? 'yes' : 'no'),
         header: ({ column }) => <DataTableColumnHeader column={column} title="Status Rekaman" />,
         cell: ({ row }) => {
             const hasRecording = row.getValue('recording_status') === 'yes';
             return (
-                <Badge variant="outline" className={hasRecording ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 bg-gray-50 text-gray-600'}>
+                <Badge
+                    variant="outline"
+                    className={hasRecording ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 bg-gray-50 text-gray-600'}
+                >
                     {hasRecording ? 'Ada' : 'Belum Ada'}
                 </Badge>
             );
@@ -212,59 +232,88 @@ export const columns: ColumnDef<Webinar>[] = [
     },
     {
         accessorKey: 'certificate',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Sertifikat" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Sertifikat & Alur" />,
         cell: ({ row }) => {
-            const certificate = row.original.certificate;
-
-            if (certificate) {
-                return (
-                    <div className="flex items-center gap-2">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="sm" asChild>
-                                    <Link href={route('certificates.show', { certificate: certificate.id })}>
-                                        <Award className="h-4 w-4 text-green-600" />
-                                        <Badge variant="outline" className="ml-1 border-green-200 bg-green-50 text-green-700">
-                                            Tersedia
-                                        </Badge>
-                                    </Link>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <div className="text-xs">
-                                    <p className="font-medium">{certificate.title}</p>
-                                    <p className="text-muted-foreground">
-                                        Dibuat: {format(new Date(certificate.created_at), 'dd MMM yyyy', { locale: id })}
-                                    </p>
-                                </div>
-                            </TooltipContent>
-                        </Tooltip>
-                    </div>
-                );
-            }
+            const webinar = row.original;
+            const certificate = webinar.certificate;
+            const certificateRequired = webinar.has_certificate !== false && (webinar.has_certificate as any) !== 0;
 
             return (
-                <div className="flex items-center gap-2">
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="sm" asChild>
-                                <Link
-                                    href={route('certificates.create', {
-                                        program_type: 'webinar',
-                                        webinar_id: row.original.id,
-                                    })}
-                                >
-                                    <Award className="h-4 w-4 text-gray-400" />
-                                    <Badge variant="outline" className="ml-1 border-gray-200 bg-gray-50 text-gray-600">
-                                        Belum Ada
+                <div className="space-y-1">
+                    <div className="flex items-center gap-1.5">
+                        {!certificateRequired ? (
+                            <Badge variant="outline" className="border-gray-200 bg-gray-50 text-gray-500 text-[11px]">
+                                Tanpa Sertifikat
+                            </Badge>
+                        ) : certificate ? (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-6 px-1.5" asChild>
+                                        <Link href={route('certificates.show', { certificate: certificate.id })}>
+                                            <Award className="h-3.5 w-3.5 text-green-600" />
+                                            <Badge variant="outline" className="ml-1 border-green-200 bg-green-50 text-green-700 text-[11px]">
+                                                Tersedia
+                                            </Badge>
+                                        </Link>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <div className="text-xs">
+                                        <p className="font-medium">{certificate.title}</p>
+                                        <p className="text-muted-foreground">
+                                            Dibuat: {format(new Date(certificate.created_at), 'dd MMM yyyy', { locale: id })}
+                                        </p>
+                                    </div>
+                                </TooltipContent>
+                            </Tooltip>
+                        ) : (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-6 px-1.5" asChild>
+                                        <Link
+                                            href={route('certificates.create', {
+                                                program_type: 'webinar',
+                                                webinar_id: webinar.id,
+                                            })}
+                                        >
+                                            <Award className="h-3.5 w-3.5 text-gray-400" />
+                                            <Badge variant="outline" className="ml-1 border-gray-200 bg-gray-50 text-gray-600 text-[11px]">
+                                                Belum Ada
+                                            </Badge>
+                                        </Link>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="text-xs">Klik untuk membuat sertifikat</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-1 flex-wrap">
+                        {webinar.requires_review === false || !certificateRequired ? (
+                            <Badge variant="outline" className="border-gray-100 bg-gray-50/70 text-gray-700 text-[10px] px-1 py-0 font-normal">
+                                Tanpa Review
+                            </Badge>
+                        ) : (
+                            <Badge variant="outline" className="border-blue-100 bg-blue-50/70 text-blue-700 text-[10px] px-1 py-0 font-normal">
+                                Wajib Review
+                            </Badge>
+                        )}
+
+                        {webinar.next_step_product && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Badge variant="outline" className="border-purple-200 bg-purple-50 text-purple-700 text-[10px] px-1 py-0 font-normal cursor-help">
+                                        Next: {webinar.next_step_product.type_label}
                                     </Badge>
-                                </Link>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p className="text-xs">Klik untuk membuat sertifikat</p>
-                        </TooltipContent>
-                    </Tooltip>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="text-xs font-medium">Lanjutan: {webinar.next_step_product.title}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        )}
+                    </div>
                 </div>
             );
         },

@@ -8,6 +8,9 @@ use App\Models\CertificateDesign;
 use App\Models\CertificateParticipant;
 use App\Models\CertificateSign;
 use App\Models\Course;
+use App\Models\EnrollmentWebinar;
+use App\Models\EnrollmentCourse;
+use App\Models\EnrollmentBootcamp;
 use App\Models\Webinar;
 use App\Services\CertificatePdfService;
 use Carbon\Carbon;
@@ -273,7 +276,8 @@ class CertificateController extends Controller
             $data['assessment_subjects'] = null;
         }
 
-        Certificate::create($data);
+        $certificate = Certificate::create($data);
+        $this->syncEligibleParticipants($certificate);
 
         return redirect()->route('certificates.index')
             ->with('success', 'Sertifikat berhasil ditambahkan');
@@ -388,6 +392,7 @@ class CertificateController extends Controller
         }
 
         $certificate->update($data);
+        $this->syncEligibleParticipants($certificate);
 
         return redirect()->route('certificates.show', $certificate->id)
             ->with('success', 'Sertifikat berhasil diperbarui');
@@ -404,6 +409,53 @@ class CertificateController extends Controller
     /**
      * Preview sertifikat dalam bentuk PDF
      */
+        /**
+     * Sync eligible participants for a course, bootcamp, or webinar certificate
+     */
+    private function syncEligibleParticipants(Certificate $certificate): void
+    {
+        if ($certificate->webinar_id) {
+            $enrollments = EnrollmentWebinar::with(['invoice', 'webinar'])
+                ->where('webinar_id', $certificate->webinar_id)
+                ->whereHas('invoice')
+                ->get();
+            foreach ($enrollments as $enrollment) {
+                if ($enrollment->canDownloadCertificate()) {
+                    CertificateParticipant::firstOrCreate([
+                        'certificate_id' => $certificate->id,
+                        'user_id' => $enrollment->invoice->user_id,
+                    ]);
+                }
+            }
+        } elseif ($certificate->bootcamp_id) {
+            $enrollments = EnrollmentBootcamp::with(['invoice', 'bootcamp.schedules', 'attendances'])
+                ->where('bootcamp_id', $certificate->bootcamp_id)
+                ->whereHas('invoice')
+                ->get();
+            foreach ($enrollments as $enrollment) {
+                if ($enrollment->canDownloadCertificate()) {
+                    CertificateParticipant::firstOrCreate([
+                        'certificate_id' => $certificate->id,
+                        'user_id' => $enrollment->invoice->user_id,
+                    ]);
+                }
+            }
+        } elseif ($certificate->course_id) {
+            $enrollments = EnrollmentCourse::with(['invoice'])
+                ->where('course_id', $certificate->course_id)
+                ->whereHas('invoice')
+                ->get();
+            foreach ($enrollments as $enrollment) {
+                if ($enrollment->canDownloadCertificate()) {
+                    CertificateParticipant::firstOrCreate([
+                        'certificate_id' => $certificate->id,
+                        'user_id' => $enrollment->invoice->user_id,
+                    ]);
+                }
+            }
+        }
+    }
+
     public function preview(Certificate $certificate)
     {
         try {

@@ -12,14 +12,11 @@ import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Award, Folder, Trash } from 'lucide-react';
-
 import { usePermission } from '@/hooks/use-permission';
 
 export default function BootcampActions({ bootcamp }: { bootcamp: Bootcamp }) {
-    const { auth } = usePage<SharedData>().props;
     const { canManage } = usePermission();
-    const isAffiliate = auth.role.includes('affiliate');
-    const canManageBootcamp = canManage('bootcamps') && !isAffiliate;
+    const canManageBootcamps = canManage('bootcamps');
 
     const handleDelete = () => {
         router.delete(route('bootcamps.destroy', bootcamp.id));
@@ -40,7 +37,7 @@ export default function BootcampActions({ bootcamp }: { bootcamp: Bootcamp }) {
                     <p>Lihat Bootcamp</p>
                 </TooltipContent>
             </Tooltip>
-            {canManageBootcamp && (
+            {canManageBootcamps && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div>
@@ -79,10 +76,6 @@ export type Bootcamp = {
     category: {
         name: string;
     };
-    mentors?: {
-        id: string;
-        name: string;
-    }[];
     title: string;
     thumbnail: string | null;
     strikethrough_price: number;
@@ -91,6 +84,23 @@ export type Bootcamp = {
     end_date: string;
     status: 'draft' | 'published' | 'archived' | 'hidden';
     installment_enabled?: boolean;
+    has_certificate?: boolean;
+    requires_review?: boolean;
+    next_step_type?: string | null;
+    next_step_id?: string | null;
+    next_step_product?: {
+        id: string;
+        title: string;
+        slug: string;
+        batch?: string | null;
+        thumbnail?: string | null;
+        price: number;
+        strikethrough_price: number;
+        type: string;
+        type_label: string;
+        url?: string | null;
+        admin_url?: string | null;
+    } | null;
     certificate?: {
         id: string;
         title: string;
@@ -99,19 +109,22 @@ export type Bootcamp = {
     } | null;
 };
 
-function BootcampPriceCell({ bootcamp }: { bootcamp: Bootcamp }) {
-    const { auth } = usePage<SharedData>().props;
+function PriceCell({ row }: { row: { original: Bootcamp } }) {
     const { roles, isAdmin } = usePermission();
-    const isStaff = (roles?.includes('staff') || auth?.role?.includes('staff')) && !isAdmin && !auth?.role?.includes('admin');
+    const isStaff = roles.includes('staff') && !isAdmin;
 
-    const price = bootcamp.price;
+    const strikethroughPrice = row.original.strikethrough_price;
+    const price = row.original.price;
+    const bootcamp = row.original;
+
     if (price === 0) {
         return <div className="text-base font-semibold">Gratis</div>;
     }
+
     if (isStaff) {
         return <div className="text-base font-semibold text-muted-foreground">Rp ***</div>;
     }
-    const strikethroughPrice = bootcamp.strikethrough_price;
+
     return (
         <div>
             {strikethroughPrice > 0 && <div className="text-xs text-gray-500 line-through">{rupiahFormatter.format(strikethroughPrice)}</div>}
@@ -140,7 +153,7 @@ export const columns: ColumnDef<Bootcamp>[] = [
         header: ({ column }) => <DataTableColumnHeader column={column} title="Judul" />,
         cell: ({ row }) => {
             return (
-                <Link href={route('bootcamps.show', row.original.id)} className="text-primary font-medium hover:underline">
+                <Link href={route('bootcamps.show', row.original.id)} className="text-foreground font-medium hover:underline">
                     {row.original.title}
                 </Link>
             );
@@ -151,29 +164,6 @@ export const columns: ColumnDef<Bootcamp>[] = [
         header: ({ column }) => <DataTableColumnHeader column={column} title="Kategori" />,
     },
     {
-        accessorKey: 'mentors',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Mentor" />,
-        cell: ({ row }) => {
-            const mentors = row.original.mentors ?? [];
-            if (mentors.length === 0) {
-                return <span className="text-muted-foreground text-sm">-</span>;
-            }
-            return (
-                <div className="flex flex-col gap-0.5">
-                    {mentors.map((mentor) => (
-                        <Link
-                            key={mentor.id}
-                            href={route('mentors.show', mentor.id)}
-                            className="text-primary text-sm font-medium hover:underline"
-                        >
-                            {mentor.name}
-                        </Link>
-                    ))}
-                </div>
-            );
-        },
-    },
-    {
         accessorKey: 'thumbnail',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Thumbnail" />,
         cell: ({ row }) => {
@@ -182,11 +172,6 @@ export const columns: ColumnDef<Bootcamp>[] = [
             const thumbnailUrl = thumbnail ? `/storage/${thumbnail}` : '/assets/images/placeholder.png';
             return <img src={thumbnailUrl} alt={title} className="h-16 rounded object-cover" />;
         },
-    },
-    {
-        accessorKey: 'price',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
-        cell: ({ row }) => <BootcampPriceCell bootcamp={row.original} />,
     },
     {
         accessorKey: 'start_date',
@@ -230,6 +215,11 @@ export const columns: ColumnDef<Bootcamp>[] = [
         },
     },
     {
+        accessorKey: 'price',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
+        cell: ({ row }) => <PriceCell row={row} />,
+    },
+    {
         id: 'recording_status',
         accessorFn: (row) => {
             const schedules = row.schedules ?? [];
@@ -254,11 +244,23 @@ export const columns: ColumnDef<Bootcamp>[] = [
             const status = row.getValue('recording_status') as string;
 
             if (status === 'full') {
-                return <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">Lengkap</Badge>;
+                return (
+                    <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+                        Lengkap
+                    </Badge>
+                );
             } else if (status === 'partial') {
-                return <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">Sebagian</Badge>;
+                return (
+                    <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                        Sebagian
+                    </Badge>
+                );
             } else {
-                return <Badge variant="outline" className="border-gray-200 bg-gray-50 text-gray-600">Belum Ada</Badge>;
+                return (
+                    <Badge variant="outline" className="border-gray-200 bg-gray-50 text-gray-600">
+                        Belum Ada
+                    </Badge>
+                );
             }
         },
         enableSorting: false,
@@ -278,59 +280,88 @@ export const columns: ColumnDef<Bootcamp>[] = [
     },
     {
         accessorKey: 'certificate',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Sertifikat" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Sertifikat & Alur" />,
         cell: ({ row }) => {
-            const certificate = row.original.certificate;
-
-            if (certificate) {
-                return (
-                    <div className="flex items-center gap-2">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="sm" asChild>
-                                    <Link href={route('certificates.show', { certificate: certificate.id })}>
-                                        <Award className="h-4 w-4 text-green-600" />
-                                        <Badge variant="outline" className="ml-1 border-green-200 bg-green-50 text-green-700">
-                                            Tersedia
-                                        </Badge>
-                                    </Link>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <div className="text-xs">
-                                    <p className="font-medium">{certificate.title}</p>
-                                    <p className="text-muted-foreground">
-                                        Dibuat: {format(new Date(certificate.created_at), 'dd MMM yyyy', { locale: id })}
-                                    </p>
-                                </div>
-                            </TooltipContent>
-                        </Tooltip>
-                    </div>
-                );
-            }
+            const bootcamp = row.original;
+            const certificate = bootcamp.certificate;
+            const certificateRequired = bootcamp.has_certificate !== false && (bootcamp.has_certificate as any) !== 0;
 
             return (
-                <div className="flex items-center gap-2">
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="sm" asChild>
-                                <Link
-                                    href={route('certificates.create', {
-                                        program_type: 'bootcamp',
-                                        bootcamp_id: row.original.id,
-                                    })}
-                                >
-                                    <Award className="h-4 w-4 text-gray-400" />
-                                    <Badge variant="outline" className="ml-1 border-gray-200 bg-gray-50 text-gray-600">
-                                        Belum Ada
+                <div className="space-y-1">
+                    <div className="flex items-center gap-1.5">
+                        {!certificateRequired ? (
+                            <Badge variant="outline" className="border-gray-200 bg-gray-50 text-gray-500 text-[11px]">
+                                Tanpa Sertifikat
+                            </Badge>
+                        ) : certificate ? (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-6 px-1.5" asChild>
+                                        <Link href={route('certificates.show', { certificate: certificate.id })}>
+                                            <Award className="h-3.5 w-3.5 text-green-600" />
+                                            <Badge variant="outline" className="ml-1 border-green-200 bg-green-50 text-green-700 text-[11px]">
+                                                Tersedia
+                                            </Badge>
+                                        </Link>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <div className="text-xs">
+                                        <p className="font-medium">{certificate.title}</p>
+                                        <p className="text-muted-foreground">
+                                            Dibuat: {format(new Date(certificate.created_at), 'dd MMM yyyy', { locale: id })}
+                                        </p>
+                                    </div>
+                                </TooltipContent>
+                            </Tooltip>
+                        ) : (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-6 px-1.5" asChild>
+                                        <Link
+                                            href={route('certificates.create', {
+                                                program_type: 'bootcamp',
+                                                bootcamp_id: bootcamp.id,
+                                            })}
+                                        >
+                                            <Award className="h-3.5 w-3.5 text-gray-400" />
+                                            <Badge variant="outline" className="ml-1 border-gray-200 bg-gray-50 text-gray-600 text-[11px]">
+                                                Belum Ada
+                                            </Badge>
+                                        </Link>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="text-xs">Klik untuk membuat sertifikat</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-1 flex-wrap">
+                        {bootcamp.requires_review === false || !certificateRequired ? (
+                            <Badge variant="outline" className="border-gray-100 bg-gray-50/70 text-gray-700 text-[10px] px-1 py-0 font-normal">
+                                Tanpa Review
+                            </Badge>
+                        ) : (
+                            <Badge variant="outline" className="border-blue-100 bg-blue-50/70 text-blue-700 text-[10px] px-1 py-0 font-normal">
+                                Wajib Review
+                            </Badge>
+                        )}
+
+                        {bootcamp.next_step_product && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Badge variant="outline" className="border-purple-200 bg-purple-50 text-purple-700 text-[10px] px-1 py-0 font-normal cursor-help">
+                                        Next: {bootcamp.next_step_product.type_label}
                                     </Badge>
-                                </Link>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p className="text-xs">Klik untuk membuat sertifikat</p>
-                        </TooltipContent>
-                    </Tooltip>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="text-xs font-medium">Lanjutan: {bootcamp.next_step_product.title}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        )}
+                    </div>
                 </div>
             );
         },

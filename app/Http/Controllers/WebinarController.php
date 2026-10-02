@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bootcamp;
+use App\Models\CertificationProgram;
 use App\Models\Category;
 use App\Models\Certificate;
 use App\Models\Invoice;
@@ -145,7 +147,18 @@ class WebinarController extends Controller
 
         $mentors = User::role('mentor')->get(['id', 'name', 'bio', 'avatar']);
 
-        return Inertia::render('admin/webinars/create', ['categories' => $categories, 'tools' => $tools, 'mentors' => $mentors]);
+        $availablePrograms = [
+            'webinars' => Webinar::select('id', 'title', 'batch')->orderBy('title')->get(),
+            'bootcamps' => Bootcamp::select('id', 'title', 'batch')->orderBy('title')->get(),
+            'certification_programs' => CertificationProgram::select('id', 'title', 'batch')->orderBy('title')->get(),
+        ];
+
+        return Inertia::render('admin/webinars/create', [
+            'categories' => $categories,
+            'tools' => $tools,
+            'mentors' => $mentors,
+            'availablePrograms' => $availablePrograms,
+        ]);
     }
 
     public function store(Request $request)
@@ -169,9 +182,17 @@ class WebinarController extends Controller
             'requirement_1' => 'nullable|string',
             'requirement_2' => 'nullable|string',
             'requirement_3' => 'nullable|string',
+            'has_certificate' => 'nullable|boolean',
+            'requires_review' => 'nullable|boolean',
+            'next_step_type' => 'nullable|string|in:webinar,bootcamp,certification_program',
+            'next_step_id' => 'nullable|string|max:36',
         ]);
 
         $data = $request->all();
+        $data['has_certificate'] = $request->boolean('has_certificate', true);
+        $data['requires_review'] = $data['has_certificate'] ? $request->boolean('requires_review', true) : false;
+        $data['next_step_type'] = $request->input('next_step_type') ?: null;
+        $data['next_step_id'] = $request->input('next_step_id') ?: null;
         foreach (['start_time', 'end_time', 'registration_deadline'] as $field) {
             if (!empty($data[$field])) {
                 $data[$field] = Carbon::parse($data[$field])
@@ -318,7 +339,19 @@ class WebinarController extends Controller
 
         $mentors = User::role('mentor')->get(['id', 'name', 'bio', 'avatar']);
 
-        return Inertia::render('admin/webinars/edit', ['webinar' => $webinar, 'categories' => $categories, 'tools' => $tools, 'mentors' => $mentors]);
+        $availablePrograms = [
+            'webinars' => Webinar::where('id', '!=', $id)->select('id', 'title', 'batch')->orderBy('title')->get(),
+            'bootcamps' => Bootcamp::select('id', 'title', 'batch')->orderBy('title')->get(),
+            'certification_programs' => CertificationProgram::select('id', 'title', 'batch')->orderBy('title')->get(),
+        ];
+
+        return Inertia::render('admin/webinars/edit', [
+            'webinar' => $webinar,
+            'categories' => $categories,
+            'tools' => $tools,
+            'mentors' => $mentors,
+            'availablePrograms' => $availablePrograms,
+        ]);
     }
 
     public function update(Request $request, string $id)
@@ -342,10 +375,18 @@ class WebinarController extends Controller
             'requirement_1' => 'nullable|string',
             'requirement_2' => 'nullable|string',
             'requirement_3' => 'nullable|string',
+            'has_certificate' => 'nullable|boolean',
+            'requires_review' => 'nullable|boolean',
+            'next_step_type' => 'nullable|string|in:webinar,bootcamp,certification_program',
+            'next_step_id' => 'nullable|string|max:36',
         ]);
 
         $webinar = Webinar::findOrFail($id);
         $data = $request->all();
+        $data['has_certificate'] = $request->boolean('has_certificate', true);
+        $data['requires_review'] = $data['has_certificate'] ? $request->boolean('requires_review', true) : false;
+        $data['next_step_type'] = $request->input('next_step_type') ?: null;
+        $data['next_step_id'] = $request->input('next_step_id') ?: null;
 
         foreach (['start_time', 'end_time', 'registration_deadline'] as $field) {
             if (!empty($data[$field])) {

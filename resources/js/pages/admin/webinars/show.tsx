@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -7,10 +8,11 @@ import { BreadcrumbItem, SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { AlertTriangle, Award, CircleX, Copy, Plus, Send, SquarePen, Trash } from 'lucide-react';
+import { AlertTriangle, Award, CheckCircle2, CircleX, Copy, Plus, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { WebinarParticipant } from './columns-participants';
+import { usePermission } from '@/hooks/use-permission';
 import { WebinarRating } from './columns-ratings';
 import { Invoice } from './columns-transactions';
 import AddRecordingDialog from './create-recording-url';
@@ -40,6 +42,23 @@ interface Webinar {
     benefits?: string | null;
     group_url?: string | null;
     created_at: string | Date;
+    has_certificate?: boolean;
+    requires_review?: boolean;
+    next_step_type?: string | null;
+    next_step_id?: string | null;
+    next_step_product?: {
+        id: string;
+        title: string;
+        slug: string;
+        batch?: string | null;
+        thumbnail?: string | null;
+        price: number;
+        strikethrough_price: number;
+        type: string;
+        type_label: string;
+        url?: string | null;
+        admin_url?: string | null;
+    } | null;
     user?: {
         id: string;
         name: string;
@@ -72,14 +91,11 @@ interface WebinarProps {
     };
 }
 
-import { usePermission } from '@/hooks/use-permission';
-
 export default function ShowWebinar({ webinar, transactions, participants, ratings, averageRating, certificate, flash }: WebinarProps) {
-    const { auth } = usePage<SharedData>().props;
-    const { canManage } = usePermission();
-    const role = auth.role[0];
-    const isAffiliate = role === 'affiliate';
-    const canManageWebinar = canManage('webinars') && !isAffiliate;
+    const { canManage, canView, roles } = usePermission();
+    const isAffiliate = roles.includes('affiliate');
+    const canManageWebinars = canManage('webinars');
+    const canViewTransactions = canView('transactions') || canManageWebinars;
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -110,6 +126,8 @@ export default function ShowWebinar({ webinar, transactions, participants, ratin
     const needsRecording = isWebinarEnded && !webinar.recording_url;
 
     const paidTransactions = transactions.filter((t) => t.status === 'paid');
+    const certificateRequired = webinar.has_certificate !== false && (webinar.has_certificate as any) !== 0;
+    const canPublish = !certificateRequired || Boolean(certificate);
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
@@ -117,7 +135,7 @@ export default function ShowWebinar({ webinar, transactions, participants, ratin
             <div className="px-4 py-4 md:px-6">
                 <h1 className="mb-4 text-2xl font-semibold">{`Detail ${webinar.title}`}</h1>
 
-                {canManageWebinar && needsRecording && (
+                {!isAffiliate && needsRecording && (
                     <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
                         <div className="flex items-start gap-3">
                             <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
@@ -133,31 +151,31 @@ export default function ShowWebinar({ webinar, transactions, participants, ratin
                     </div>
                 )}
 
-                <div className={`${canManageWebinar ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
-                    <Tabs defaultValue="detail" className={canManageWebinar ? "lg:col-span-2" : "w-full"}>
+                <div className={`${canManageWebinars ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
+                    <Tabs defaultValue="detail" className="lg:col-span-2">
                         <TabsList>
                             <TabsTrigger value="detail">Detail</TabsTrigger>
-                            {!isAffiliate && (
-                                <>
-                                    <TabsTrigger value="peserta">
-                                        Peserta
-                                        {participants.length > 0 && (
-                                            <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{participants.length}</span>
-                                        )}
-                                    </TabsTrigger>
-                                    <TabsTrigger value="transaksi">
-                                        Transaksi
-                                        {transactions.length > 0 && (
-                                            <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{paidTransactions.length}</span>
-                                        )}
-                                    </TabsTrigger>
-                                    <TabsTrigger value="rating">
-                                        Rating & Ulasan
-                                        {ratings.length > 0 && (
-                                            <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{ratings.length}</span>
-                                        )}
-                                    </TabsTrigger>
-                                </>
+                            <TabsTrigger value="peserta">
+                                Peserta
+                                {participants.length > 0 && (
+                                    <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{participants.length}</span>
+                                )}
+                            </TabsTrigger>
+                            {canViewTransactions && (
+                                <TabsTrigger value="transaksi">
+                                    Transaksi
+                                    {transactions.length > 0 && (
+                                        <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{paidTransactions.length}</span>
+                                    )}
+                                </TabsTrigger>
+                            )}
+                            {canManageWebinars && (
+                                <TabsTrigger value="rating">
+                                    Rating & Ulasan
+                                    {ratings.length > 0 && (
+                                        <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{ratings.length}</span>
+                                    )}
+                                </TabsTrigger>
                             )}
                         </TabsList>
                         <TabsContent value="detail">
@@ -166,32 +184,43 @@ export default function ShowWebinar({ webinar, transactions, participants, ratin
                         <TabsContent value="peserta">
                             <WebinarParticipantSection participants={participants} />
                         </TabsContent>
-                        <TabsContent value="transaksi">
-                            <WebinarTransaction transactions={transactions} webinarId={webinar.id} />
-                        </TabsContent>
-                        <TabsContent value="rating">
-                            <WebinarRatingComponent ratings={ratings} averageRating={averageRating} />
-                        </TabsContent>
+                        {canViewTransactions && (
+                            <TabsContent value="transaksi">
+                                <WebinarTransaction transactions={transactions} webinarId={webinar.id} />
+                            </TabsContent>
+                        )}
+                        {canManageWebinars && (
+                            <TabsContent value="rating">
+                                <WebinarRatingComponent ratings={ratings} averageRating={averageRating} />
+                            </TabsContent>
+                        )}
                     </Tabs>
 
-                    {/* Sidebar remains the same */}
-                    {canManageWebinar && (
+                    {/* Sidebar */}
+                    {canManageWebinars && (
                         <div>
                             <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
                             <div className="space-y-4 rounded-lg border p-4">
                                 {(webinar.status === 'draft' || webinar.status === 'archived') && (
                                     <>
-                                        {!certificate && (
+                                        {certificateRequired && !certificate && (
                                             <div className="mb-4 rounded-lg bg-red-50 p-3 text-center text-sm text-red-700">
                                                 Sertifikat belum dibuat. Silakan buat sertifikat terlebih dahulu sebelum menerbitkan webinar.
                                             </div>
                                         )}
-                                        <Button asChild className="w-full" disabled={!certificate}>
-                                            <Link method="post" href={route('webinars.publish', { webinar: webinar.id })}>
+                                        {canPublish ? (
+                                            <Button asChild className="w-full">
+                                                <Link method="post" href={route('webinars.publish', { webinar: webinar.id })}>
+                                                    <Send />
+                                                    Terbitkan
+                                                </Link>
+                                            </Button>
+                                        ) : (
+                                            <Button disabled className="w-full">
                                                 <Send />
                                                 Terbitkan
-                                            </Link>
-                                        </Button>
+                                            </Button>
+                                        )}
                                     </>
                                 )}
                                 {webinar.status === 'published' && (
@@ -234,64 +263,123 @@ export default function ShowWebinar({ webinar, transactions, participants, ratin
                                 <AddRecordingDialog webinarId={webinar.id} currentRecordingUrl={webinar.recording_url} />
 
                                 <Separator />
-                                {certificate ? (
-                                    <Button asChild className="w-full" variant="outline">
-                                        <Link href={route('certificates.show', { certificate: certificate.id })}>
-                                            <Award />
-                                            Lihat Data Sertifikat
-                                        </Link>
-                                    </Button>
+                                {certificateRequired ? (
+                                    certificate ? (
+                                        <Button asChild className="w-full" variant="outline">
+                                            <Link href={route('certificates.show', { certificate: certificate.id })}>
+                                                <Award />
+                                                Lihat Data Sertifikat
+                                            </Link>
+                                        </Button>
+                                    ) : (
+                                        <Button asChild className="w-full" variant="outline">
+                                            <Link
+                                                href={route('certificates.create', {
+                                                    program_type: 'webinar',
+                                                    webinar_id: webinar.id,
+                                                })}
+                                            >
+                                                <Plus />
+                                                Buat Sertifikat
+                                            </Link>
+                                        </Button>
+                                    )
                                 ) : (
-                                    <Button asChild className="w-full" variant="outline">
-                                        <Link
-                                            href={route('certificates.create', {
-                                                program_type: 'webinar',
-                                                webinar_id: webinar.id,
-                                            })}
-                                        >
-                                            <Plus />
-                                            Buat Sertifikat
-                                        </Link>
-                                    </Button>
+                                    <div className="rounded-md border border-dashed p-2.5 text-center text-xs text-muted-foreground">
+                                        Webinar ini diatur tanpa sertifikat
+                                    </div>
                                 )}
                             </div>
                             <div className="mt-4 space-y-4 rounded-lg border p-4">
-                                <h3 className="text-sm font-medium">Informasi Sertifikat</h3>
-                                {certificate ? (
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-muted-foreground">Status:</span>
-                                            <span className="flex items-center gap-1 text-green-600">
-                                                <Award className="h-3 w-3" />
-                                                Tersedia
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-muted-foreground">Judul:</span>
-                                            <span className="text-right font-medium">{certificate.title}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-muted-foreground">Nomor:</span>
-                                            <code className="rounded bg-gray-100 px-1 py-0.5 text-right text-xs">
-                                                {certificate.certificate_number}
-                                            </code>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-muted-foreground">Dibuat:</span>
-                                            <span className="text-right text-xs">
-                                                {format(new Date(certificate.created_at), 'dd MMM yyyy', { locale: id })}
-                                            </span>
-                                        </div>
+                                <h3 className="text-sm font-medium">Informasi Sertifikat & Pelatihan</h3>
+                                <div className="space-y-3 text-sm">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-muted-foreground">Sertifikat:</span>
+                                        {certificateRequired ? (
+                                            certificate ? (
+                                                <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 flex items-center gap-1">
+                                                    <Award className="h-3 w-3" />
+                                                    Tersedia
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                                                    Belum Dibuat
+                                                </Badge>
+                                            )
+                                        ) : (
+                                            <Badge variant="secondary" className="text-xs">
+                                                Tanpa Sertifikat
+                                            </Badge>
+                                        )}
                                     </div>
-                                ) : (
-                                    <div className="text-muted-foreground text-center text-sm">
-                                        <Award className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                                        <p>Belum ada sertifikat untuk webinar ini.</p>
-                                        <p className="mt-1 text-xs">
-                                            Buat sertifikat untuk memberikan penghargaan kepada peserta yang mengikuti webinar.
-                                        </p>
+
+                                    {certificateRequired && certificate && (
+                                        <>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-muted-foreground">Judul Sertifikat:</span>
+                                                <span className="text-right font-medium">{certificate.title}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-muted-foreground">Nomor:</span>
+                                                <code className="rounded bg-gray-100 px-1 py-0.5 text-right text-xs">
+                                                    {certificate.certificate_number}
+                                                </code>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-muted-foreground">Dibuat:</span>
+                                                <span className="text-right text-xs">
+                                                    {format(new Date(certificate.created_at), 'dd MMM yyyy', { locale: id })}
+                                                </span>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    <Separator />
+
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-muted-foreground">Review & Absensi:</span>
+                                        {!certificateRequired || webinar.requires_review === false ? (
+                                            <Badge variant="outline" className="border-gray-200 bg-gray-50 text-gray-700 text-xs">
+                                                Tanpa Review (Otomatis)
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 text-xs">
+                                                Wajib Review & Absensi
+                                            </Badge>
+                                        )}
                                     </div>
-                                )}
+
+                                    {webinar.next_step_product && (
+                                        <div className="pt-2">
+                                            <span className="text-xs text-muted-foreground block mb-1.5">Langkah Pelatihan Selanjutnya:</span>
+                                            <div className="rounded-lg border bg-muted/40 p-2.5 text-xs">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <Badge variant="secondary" className="text-[10px] uppercase font-semibold">
+                                                        {webinar.next_step_product.type_label}
+                                                    </Badge>
+                                                    {webinar.next_step_product.batch && (
+                                                        <span className="text-muted-foreground text-[11px]">
+                                                            Batch {webinar.next_step_product.batch}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="font-medium text-foreground line-clamp-2">
+                                                    {webinar.next_step_product.title}
+                                                </div>
+                                                {webinar.next_step_product.admin_url && (
+                                                    <div className="mt-2 text-right">
+                                                        <Link
+                                                            href={webinar.next_step_product.admin_url}
+                                                            className="text-primary hover:underline text-[11px] inline-flex items-center gap-0.5"
+                                                        >
+                                                            Lihat Program →
+                                                        </Link>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}

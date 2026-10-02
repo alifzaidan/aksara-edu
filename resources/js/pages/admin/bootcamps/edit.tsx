@@ -9,6 +9,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useInitials } from '@/hooks/use-initials';
@@ -18,7 +19,7 @@ import { BreadcrumbItem } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Head, router } from '@inertiajs/react';
 import { Editor } from '@tinymce/tinymce-react';
-import { BookMarked, CalendarFold, Check, ChevronDownIcon, ChevronsUpDown, UserRound } from 'lucide-react';
+import { Award, BookMarked, BookOpen, CalendarFold, Check, ChevronDownIcon, ChevronsUpDown, Coins, Compass, Sparkles, UserRound, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -53,9 +54,25 @@ interface Bootcamp {
     host_name?: string | null;
     host_description?: string | null;
     has_submission_link?: boolean;
+    has_certificate?: boolean;
+    requires_review?: boolean;
+    next_step_type?: string | null;
+    next_step_id?: string | null;
     created_at: string | Date;
     tools?: { id: string; name: string; description?: string | null }[];
     mentors?: { id: string; name: string; bio?: string; avatar?: string }[];
+}
+
+interface ProgramItem {
+    id: string;
+    title: string;
+    batch?: string | number | null;
+}
+
+interface AvailablePrograms {
+    webinars: ProgramItem[];
+    bootcamps: ProgramItem[];
+    certification_programs: ProgramItem[];
 }
 
 interface Mentor {
@@ -88,6 +105,10 @@ const formSchema = z
         requirement_1: z.string().nullable(),
         requirement_2: z.string().nullable(),
         requirement_3: z.string().nullable(),
+        has_certificate: z.boolean(),
+        requires_review: z.boolean(),
+        next_step_type: z.string().nullable(),
+        next_step_id: z.string().nullable(),
     })
     .refine(
         (data) => {
@@ -107,11 +128,13 @@ export default function EditBootcamp({
     categories,
     tools,
     mentors,
+    availablePrograms,
 }: {
     bootcamp: Bootcamp;
     categories: { id: string; name: string }[];
     tools: { id: string; name: string }[];
     mentors: Mentor[];
+    availablePrograms?: AvailablePrograms;
 }) {
     const getInitials = useInitials();
     const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
@@ -165,6 +188,10 @@ export default function EditBootcamp({
             requirement_1: bootcamp.requirement_1 ?? '',
             requirement_2: bootcamp.requirement_2 ?? '',
             requirement_3: bootcamp.requirement_3 ?? '',
+            has_certificate: bootcamp.has_certificate ?? true,
+            requires_review: bootcamp.requires_review ?? true,
+            next_step_type: bootcamp.next_step_type ?? '',
+            next_step_id: bootcamp.next_step_id ?? '',
         },
     });
 
@@ -238,11 +265,14 @@ export default function EditBootcamp({
                 </p>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
-                        <div className="space-y-6 rounded-lg border p-4">
-                            <div className="flex items-center gap-2">
-                                <BookMarked size={16} />
-                                <h3 className="font-medium">Detail Informasi Bootcamp</h3>
-                            </div>
+                        {/* Kolom Kiri */}
+                        <div className="space-y-6">
+                            {/* Card 1: Detail Informasi Bootcamp */}
+                            <div className="space-y-6 rounded-lg border bg-card p-5 shadow-xs">
+                                <div className="flex items-center gap-2 border-b pb-3">
+                                    <BookMarked size={18} className="text-primary" />
+                                    <h3 className="font-semibold text-foreground">Detail Informasi Bootcamp</h3>
+                                </div>
                             <FormField
                                 control={form.control}
                                 name="title"
@@ -421,7 +451,16 @@ export default function EditBootcamp({
                                     </FormItem>
                                 )}
                             />
-                            <div className="space-y-4 rounded-md border p-4">
+                        </div>
+
+                        {/* Card 2: Biaya & Kuota */}
+                        <div className="space-y-6 rounded-lg border bg-card p-5 shadow-xs">
+                            <div className="flex items-center gap-2 border-b pb-3">
+                                <Coins size={18} className="text-primary" />
+                                <h3 className="font-semibold text-foreground">Biaya & Kuota</h3>
+                            </div>
+
+                            <div className="space-y-4 rounded-lg border bg-muted/30 p-3.5">
                                 <div className="flex items-center space-x-2">
                                     <Switch
                                         id="show-strikethrough"
@@ -433,7 +472,7 @@ export default function EditBootcamp({
                                             }
                                         }}
                                     />
-                                    <Label htmlFor="show-strikethrough">Aktifkan Harga Coret (Opsional)</Label>
+                                    <Label htmlFor="show-strikethrough" className="cursor-pointer font-medium">Aktifkan Harga Coret (Opsional)</Label>
                                 </div>
 
                                 {showStrikethroughPrice && (
@@ -518,12 +557,165 @@ export default function EditBootcamp({
                                     </FormItem>
                                 )}
                             />
+                        </div>
+
+                        {/* Card 3: Pengaturan Sertifikat & Review */}
+                        <div className="space-y-6 rounded-lg border bg-card p-5 shadow-xs">
+                            <div className="flex items-center gap-2 border-b pb-3">
+                                <Award size={18} className="text-primary" />
+                                <h3 className="font-semibold text-foreground">Pengaturan Sertifikat & Review</h3>
+                            </div>
+                            <div className="space-y-3">
+                                <FormField
+                                    control={form.control}
+                                    name="has_certificate"
+                                    render={({ field }) => (
+                                        <FormItem className="flex items-center justify-between rounded-lg border bg-muted/30 p-3.5">
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="cursor-pointer font-medium">Menyediakan Sertifikat</FormLabel>
+                                                <FormDescription>
+                                                    Aktifkan jika peserta bootcamp ini akan mendapatkan sertifikat setelah selesai.
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={(checked) => {
+                                                        field.onChange(checked);
+                                                        if (!checked) {
+                                                            form.setValue('requires_review', false);
+                                                        }
+                                                    }}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+
+                                {form.watch('has_certificate') && (
+                                    <FormField
+                                        control={form.control}
+                                        name="requires_review"
+                                        render={({ field }) => (
+                                            <FormItem className="flex items-center justify-between rounded-lg border bg-muted/30 p-3.5">
+                                                <div className="space-y-0.5">
+                                                    <FormLabel className="cursor-pointer font-medium">Wajibkan Review & Bukti Kehadiran</FormLabel>
+                                                    <FormDescription>
+                                                        Jika dinonaktifkan, sertifikat akan langsung terbuka otomatis setelah bootcamp selesai tanpa perlu upload bukti kehadiran atau review.
+                                                    </FormDescription>
+                                                </div>
+                                                <FormControl>
+                                                    <Switch
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                    />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Card 4: Langkah Pelatihan Selanjutnya (Opsional) */}
+                        <div className="space-y-6 rounded-lg border bg-card p-5 shadow-xs">
+                            <div className="flex items-center gap-2 border-b pb-3">
+                                <Compass size={18} className="text-primary" />
+                                <div>
+                                    <h3 className="font-semibold text-foreground">Langkah Pelatihan Selanjutnya (Opsional)</h3>
+                                    <p className="text-xs text-muted-foreground">
+                                        Rekomendasikan program pelatihan lanjutan kepada peserta setelah menyelesaikan bootcamp ini.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <FormField
+                                    control={form.control}
+                                    name="next_step_type"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Tipe Program Lanjutan</FormLabel>
+                                            <Select
+                                                value={field.value || 'none'}
+                                                onValueChange={(val) => {
+                                                    const actualVal = val === 'none' ? '' : val;
+                                                    field.onChange(actualVal);
+                                                    form.setValue('next_step_id', '');
+                                                }}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Pilih tipe program" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="none">Tidak Ada (Nonaktif)</SelectItem>
+                                                    <SelectItem value="webinar">Webinar</SelectItem>
+                                                    <SelectItem value="bootcamp">Bootcamp</SelectItem>
+                                                    <SelectItem value="certification_program">Program Sertifikasi</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                {form.watch('next_step_type') && form.watch('next_step_type') !== 'none' && (
+                                    <FormField
+                                        control={form.control}
+                                        name="next_step_id"
+                                        render={({ field }) => {
+                                            const currentType = form.watch('next_step_type');
+                                            const items =
+                                                currentType === 'webinar'
+                                                    ? availablePrograms?.webinars || []
+                                                    : currentType === 'bootcamp'
+                                                      ? availablePrograms?.bootcamps || []
+                                                      : currentType === 'certification_program'
+                                                        ? availablePrograms?.certification_programs || []
+                                                        : [];
+
+                                            return (
+                                                <FormItem>
+                                                    <FormLabel>Pilih Program</FormLabel>
+                                                    <Select
+                                                        value={field.value || ''}
+                                                        onValueChange={field.onChange}
+                                                    >
+                                                        <FormControl>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Pilih program lanjutan" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            {items.map((item) => (
+                                                                <SelectItem key={item.id} value={item.id}>
+                                                                    {item.title} {item.batch ? `(Batch ${item.batch})` : ''}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            );
+                                        }}
+                                    />
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Card 5: Kurikulum Bootcamp */}
+                        <div className="space-y-6 rounded-lg border bg-card p-5 shadow-xs">
+                            <div className="flex items-center gap-2 border-b pb-3">
+                                <BookOpen size={18} className="text-primary" />
+                                <h3 className="font-semibold text-foreground">Kurikulum Bootcamp</h3>
+                            </div>
                             <FormField
                                 control={form.control}
                                 name="curriculum"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Kurikum</FormLabel>
                                         <Editor
                                             apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
                                             value={field.value ?? ''}
@@ -560,28 +752,16 @@ export default function EditBootcamp({
                                     </FormItem>
                                 )}
                             />
-                            <FormField
-                                control={form.control}
-                                name="group_url"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Link Group Peserta</FormLabel>
-                                        <Textarea
-                                            {...field}
-                                            value={field.value ?? ''}
-                                            className="w-full rounded border p-2"
-                                            placeholder="Masukkan link grup peserta"
-                                            autoComplete="off"
-                                        />
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
                         </div>
-                        <div className="space-y-6 rounded-lg border p-4">
-                            <div className="flex items-center gap-2">
-                                <CalendarFold size={16} />
-                                <h3 className="font-medium">Tanggal dan Informasi Pemateri</h3>
+                    </div>
+
+                    {/* Kolom Kanan */}
+                    <div className="space-y-6">
+                        {/* Card 1: Tanggal dan Informasi Pemateri */}
+                        <div className="space-y-6 rounded-lg border bg-card p-5 shadow-xs">
+                            <div className="flex items-center gap-2 border-b pb-3">
+                                <CalendarFold size={18} className="text-primary" />
+                                <h3 className="font-semibold text-foreground">Tanggal dan Informasi Pemateri</h3>
                             </div>
                             <div className="flex flex-col gap-4 lg:flex-row">
                                 <FormField
@@ -895,6 +1075,14 @@ export default function EditBootcamp({
                                     </FormItem>
                                 )}
                             />
+                        </div>
+
+                        {/* Card 2: Benefit & Syarat Peserta */}
+                        <div className="space-y-6 rounded-lg border bg-card p-5 shadow-xs">
+                            <div className="flex items-center gap-2 border-b pb-3">
+                                <Sparkles size={18} className="text-primary" />
+                                <h3 className="font-semibold text-foreground">Benefit & Syarat Peserta</h3>
+                            </div>
                             <FormField
                                 control={form.control}
                                 name="requirements"
@@ -979,6 +1167,47 @@ export default function EditBootcamp({
                                     </FormItem>
                                 )}
                             />
+                        </div>
+
+                        {/* Card 3: Grup & Persyaratan Pendaftaran */}
+                        <div className="space-y-6 rounded-lg border bg-card p-5 shadow-xs">
+                            <div className="flex items-center gap-2 border-b pb-3">
+                                <Users size={18} className="text-primary" />
+                                <h3 className="font-semibold text-foreground">Grup & Persyaratan Pendaftaran</h3>
+                            </div>
+                            <FormField
+                                control={form.control}
+                                name="group_url"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Link Group Peserta</FormLabel>
+                                        <Textarea
+                                            {...field}
+                                            value={field.value ?? ''}
+                                            className="w-full rounded border p-2"
+                                            placeholder="Masukkan link grup peserta"
+                                            autoComplete="off"
+                                        />
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="rounded-lg border bg-muted/30 p-3.5">
+                                <FormField
+                                    control={form.control}
+                                    name="has_submission_link"
+                                    render={({ field }) => (
+                                        <FormItem className="flex items-center space-y-0 space-x-2">
+                                            <FormControl>
+                                                <Switch id="has-submission-link" checked={field.value} onCheckedChange={field.onChange} />
+                                            </FormControl>
+                                            <Label htmlFor="has-submission-link" className="cursor-pointer font-medium">
+                                                Apakah bootcamp ini memiliki link submission?
+                                            </Label>
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
                             <FormField
                                 control={form.control}
                                 name="requirement_1"
@@ -1033,26 +1262,15 @@ export default function EditBootcamp({
                                     </FormItem>
                                 )}
                             />
-                            <div className="flex items-center space-x-2">
-                                <FormField
-                                    control={form.control}
-                                    name="has_submission_link"
-                                    render={({ field }) => (
-                                        <FormItem className="flex items-center space-y-0 space-x-2">
-                                            <FormControl>
-                                                <Switch id="has-submission-link" checked={field.value} onCheckedChange={field.onChange} />
-                                            </FormControl>
-                                            <Label htmlFor="has-submission-link" className="cursor-pointer font-normal">
-                                                Apakah bootcamp ini memiliki link submission?
-                                            </Label>
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
                         </div>
-                        <Button type="submit" className="hover:cursor-pointer">
+                    </div>
+
+                    {/* Tombol Simpan */}
+                    <div className="col-span-full flex items-center justify-end gap-3 pt-2">
+                        <Button type="submit" size="lg" className="w-full sm:w-auto min-w-[200px] cursor-pointer">
                             Simpan Perubahan
                         </Button>
+                    </div>
                     </form>
                 </Form>
             </div>

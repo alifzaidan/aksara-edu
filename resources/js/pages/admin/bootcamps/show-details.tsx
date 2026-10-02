@@ -1,6 +1,5 @@
 import DeleteConfirmDialog from '@/components/delete-dialog';
 import InstallmentConfig from '@/components/admin/installment-config';
-
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +7,7 @@ import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { useInitials } from '@/hooks/use-initials';
 import { rupiahFormatter } from '@/lib/utils';
 import { SharedData } from '@/types';
-import { router, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { ExternalLink, LinkIcon, Trash2 } from 'lucide-react';
@@ -55,8 +54,25 @@ interface Bootcamp {
     }>;
     has_submission_link?: boolean;
     created_at: string | Date;
+    has_certificate?: boolean;
+    requires_review?: boolean;
+    next_step_type?: string | null;
+    next_step_id?: string | null;
+    next_step_product?: {
+        id: string;
+        title: string;
+        slug: string;
+        batch?: string | null;
+        thumbnail?: string | null;
+        price: number;
+        strikethrough_price: number;
+        type: string;
+        type_label: string;
+        url?: string | null;
+        admin_url?: string | null;
+    } | null;
     installment_enabled?: boolean;
-    installment_terms?: Array<{ id: string; term_number: number; amount: number; due_date: string }>;
+    installment_terms?: any[];
 }
 
 function getYoutubeId(url: string) {
@@ -208,7 +224,7 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                 </p>
             ) : (
                 <p className="text-center text-sm text-red-500">
-                    Bootcamp ini belum diterbitkan. Silahkan terbitkan bootcamp terlebih dahulu untuk membagikan link akses bootcamp.
+                    Bootcamp ini belum diterbitkan. Silakan terbitkan bootcamp terlebih dahulu untuk membagikan link akses bootcamp.
                 </p>
             )}
 
