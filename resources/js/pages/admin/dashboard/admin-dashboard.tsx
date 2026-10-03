@@ -39,6 +39,10 @@ interface RecentSale {
         name: string;
     };
     nett_amount: number;
+    installment_number?: number | null;
+    parent_invoice_id?: string | null;
+    parentInvoice?: any;
+    parent_invoice?: any;
     course_items?: { course: { title: string } }[];
     courseItems?: { course: { title: string } }[];
     bootcamp_items?: { bootcamp: { title: string } }[];
@@ -135,19 +139,21 @@ const formatCurrency = (amount: number | string) => {
 };
 
 const getInvoiceItemName = (invoice: RecentSale): string => {
-    const courses = invoice.courseItems || invoice.course_items;
+    const source = invoice.parentInvoice || invoice.parent_invoice || invoice;
+
+    const courses = source.courseItems || source.course_items;
     if (courses?.length && courses.length > 0) return `Kelas: ${courses[0].course.title}`;
 
-    const bootcamps = invoice.bootcampItems || invoice.bootcamp_items;
+    const bootcamps = source.bootcampItems || source.bootcamp_items;
     if (bootcamps?.length && bootcamps.length > 0) return `Bootcamp: ${bootcamps[0].bootcamp.title}`;
 
-    const webinars = invoice.webinarItems || invoice.webinar_items;
+    const webinars = source.webinarItems || source.webinar_items;
     if (webinars?.length && webinars.length > 0) return `Webinar: ${webinars[0].webinar.title}`;
 
-    const bundles = invoice.bundleEnrollments || invoice.bundle_enrollments;
+    const bundles = source.bundleEnrollments || source.bundle_enrollments;
     if (bundles?.length && bundles.length > 0) return `Bundle: ${bundles[0].bundle.title}`;
 
-    const certs = invoice.certificationProgramItems || invoice.certification_program_items;
+    const certs = source.certificationProgramItems || source.certification_program_items;
     if (certs?.length && certs.length > 0) {
         const certItem = certs[0];
         const title = certItem.certificationProgram?.title || certItem.certification_program?.title;
@@ -470,7 +476,14 @@ export default function AdminDashboard({ stats, filters }: StatsProps) {
                                 stats.recent_sales.map((sale) => (
                                     <div key={sale.id} className="flex items-center">
                                         <div className="flex-1 space-y-1">
-                                            <p className="text-sm leading-none font-medium">{sale.user.name}</p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-sm leading-none font-medium">{sale.user?.name || sale.parentInvoice?.user?.name || '-'}</p>
+                                                {sale.installment_number && (
+                                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300">
+                                                        Cicilan ke-{sale.installment_number}
+                                                    </Badge>
+                                                )}
+                                            </div>
                                             <p className="text-muted-foreground text-sm">{getInvoiceItemName(sale)}</p>
                                         </div>
                                         <div className="font-medium">{formatCurrency(sale.nett_amount)}</div>

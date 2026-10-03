@@ -13,14 +13,15 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import type { Row } from '@tanstack/react-table';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import InstallmentMonitorModal, { InstallmentTermItem } from '@/components/admin/installment-monitor-modal';
+import InstallmentMonitorModal, { InstallmentInvoiceData, InstallmentTermItem } from '@/components/admin/installment-monitor-modal';
 import { CheckCircle2, Clock, FileText, Trash } from 'lucide-react';
 import { useState } from 'react';
+import { usePermission } from '@/hooks/use-permission';
 
 interface Referrer {
     id: string;
@@ -47,8 +48,15 @@ interface Webinar {
     id: string;
     title: string;
 }
-
 interface Bundle {
+    id: string;
+    title: string;
+}
+interface CertificationProgram {
+    id: string;
+    title: string;
+}
+interface PrivateClass {
     id: string;
     title: string;
 }
@@ -62,19 +70,17 @@ interface EnrollmentBootcamp {
 interface EnrollmentWebinar {
     webinar: Webinar;
 }
-
 interface BundleEnrollment {
     bundle: Bundle;
 }
-
-interface CertificationProgram {
-    id: string;
-    title: string;
-}
-
 interface CertificationProgramItem {
     certification_program?: CertificationProgram;
     certificationProgram?: CertificationProgram;
+}
+interface PrivateItem {
+    id?: string;
+    privateClass?: PrivateClass;
+    private_class?: PrivateClass;
 }
 
 export interface Invoice {
@@ -88,6 +94,10 @@ export interface Invoice {
     amount?: number;
     status: 'paid' | 'pending' | 'failed' | 'installment_pending';
     is_installment?: boolean;
+    installment_number?: number | null;
+    parent_invoice_id?: string | null;
+    parentInvoice?: Invoice | null;
+    parent_invoice?: Invoice | null;
     access_suspended_at?: string | null;
     paid_at: string | null;
     course_items?: EnrollmentCourse[];
@@ -100,12 +110,104 @@ export interface Invoice {
     bundleEnrollments?: BundleEnrollment[];
     certification_program_items?: CertificationProgramItem[];
     certificationProgramItems?: CertificationProgramItem[];
+    private_items?: PrivateItem[];
+    privateItems?: PrivateItem[];
     installment_terms?: InstallmentTermItem[];
     installmentTerms?: InstallmentTermItem[];
     created_at: string;
 }
 
-import { usePermission } from '@/hooks/use-permission';
+interface ProductLinkInfo {
+    title: string;
+    url: string;
+}
+
+function getProductLinks(invoice: Invoice): ProductLinkInfo[] {
+    const target = invoice.parentInvoice || invoice.parent_invoice || invoice;
+    const links: ProductLinkInfo[] = [];
+
+    (target.courseItems || target.course_items || []).forEach((item) => {
+        if (item.course?.title) {
+            links.push({
+                title: item.course.title,
+                url: route('courses.show', item.course.id),
+            });
+        }
+    });
+
+    (target.bootcampItems || target.bootcamp_items || []).forEach((item) => {
+        if (item.bootcamp?.title) {
+            links.push({
+                title: item.bootcamp.title,
+                url: route('bootcamps.show', item.bootcamp.id),
+            });
+        }
+    });
+
+    (target.webinarItems || target.webinar_items || []).forEach((item) => {
+        if (item.webinar?.title) {
+            links.push({
+                title: item.webinar.title,
+                url: route('webinars.show', item.webinar.id),
+            });
+        }
+    });
+
+    (target.bundleEnrollments || target.bundle_enrollments || []).forEach((item) => {
+        if (item.bundle?.title) {
+            links.push({
+                title: item.bundle.title,
+                url: route('bundles.show', item.bundle.id),
+            });
+        }
+    });
+
+    (target.certificationProgramItems || target.certification_program_items || []).forEach((item) => {
+        const program = item.certificationProgram || item.certification_program;
+        if (program?.title) {
+            links.push({
+                title: program.title,
+                url: route('certification-programs.show', program.id),
+            });
+        }
+    });
+
+    (target.privateItems || target.private_items || []).forEach((item) => {
+        const pc = item.privateClass || item.private_class;
+        if (pc?.title) {
+            links.push({
+                title: pc.title,
+                url: route('privates.show', pc.id),
+            });
+        }
+    });
+
+    return links;
+}
+
+function getMonitorInvoice(invoice: Invoice): InstallmentInvoiceData | null {
+    const parent = invoice.parentInvoice || invoice.parent_invoice;
+    if (parent) {
+        return {
+            ...parent,
+            user: parent.user || invoice.user,
+            installment_terms: parent.installment_terms || parent.installmentTerms || [],
+            course_items: parent.course_items || parent.courseItems,
+            bootcamp_items: parent.bootcamp_items || parent.bootcampItems,
+            webinar_items: parent.webinar_items || parent.webinarItems,
+            certification_program_items: parent.certification_program_items || parent.certificationProgramItems,
+            bundle_enrollments: parent.bundle_enrollments || parent.bundleEnrollments,
+        } as InstallmentInvoiceData;
+    }
+    const terms = invoice.installment_terms || invoice.installmentTerms || [];
+    if (invoice.is_installment || invoice.status === 'installment_pending' || terms.length > 0 || invoice.installment_number) {
+        return {
+            ...invoice,
+            installment_terms: terms,
+        } as InstallmentInvoiceData;
+    }
+    return null;
+}
 
 function PriceCell({ row }: { row: Row<Invoice> }) {
     const { roles, isAdmin } = usePermission();
@@ -128,9 +230,8 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
     const canManageTransaction = canManage('transactions');
     const isStaff = roles.includes('staff') && !isAdmin;
     const invoice = row.original;
-    const user = invoice.user;
-    const terms = invoice.installment_terms || invoice.installmentTerms || [];
-    const isInstallment = invoice.is_installment || invoice.status === 'installment_pending' || terms.length > 0;
+    const user = invoice.user || (invoice.parentInvoice || invoice.parent_invoice)?.user;
+    const monitorInvoice = getMonitorInvoice(invoice);
     let whatsappUrl = '';
 
     if (user?.phone_number) {
@@ -186,9 +287,9 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
                 </Tooltip>
             )}
 
-            {isInstallment && (
+            {monitorInvoice && (
                 <InstallmentMonitorModal
-                    invoice={invoice as any}
+                    invoice={monitorInvoice}
                     trigger={
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -320,11 +421,13 @@ export const columns: ColumnDef<Invoice>[] = [
     {
         id: 'product_type',
         accessorFn: (row) => {
-            if (row.course_items && row.course_items.length > 0) return 'course';
-            if (row.bootcamp_items && row.bootcamp_items.length > 0) return 'bootcamp';
-            if (row.webinar_items && row.webinar_items.length > 0) return 'webinar';
-            if (row.bundle_enrollments && row.bundle_enrollments.length > 0) return 'bundle';
-            if (row.certification_program_items && row.certification_program_items.length > 0) return 'certification_program';
+            const target = row.parentInvoice || row.parent_invoice || row;
+            if ((target.course_items && target.course_items.length > 0) || (target.courseItems && target.courseItems.length > 0)) return 'course';
+            if ((target.bootcamp_items && target.bootcamp_items.length > 0) || (target.bootcampItems && target.bootcampItems.length > 0)) return 'bootcamp';
+            if ((target.webinar_items && target.webinar_items.length > 0) || (target.webinarItems && target.webinarItems.length > 0)) return 'webinar';
+            if ((target.bundle_enrollments && target.bundle_enrollments.length > 0) || (target.bundleEnrollments && target.bundleEnrollments.length > 0)) return 'bundle';
+            if ((target.certification_program_items && target.certification_program_items.length > 0) || (target.certificationProgramItems && target.certificationProgramItems.length > 0)) return 'certification_program';
+            if ((target.private_items && target.private_items.length > 0) || (target.privateItems && target.privateItems.length > 0)) return 'private';
             return 'unknown';
         },
         header: () => null,
@@ -337,7 +440,19 @@ export const columns: ColumnDef<Invoice>[] = [
     {
         accessorKey: 'user.name',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Nama Pembeli" />,
-        cell: ({ row }) => <div className="font-medium">{row.original.user?.name || '-'}</div>,
+        cell: ({ row }) => {
+            const user = row.original.user || (row.original.parentInvoice || row.original.parent_invoice)?.user;
+            if (!user) return <div className="font-medium">-</div>;
+            return (
+                <Link
+                    href={route('users.show', user.id)}
+                    className="font-medium text-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {user.name}
+                </Link>
+            );
+        },
     },
     {
         accessorKey: 'invoice_code',
@@ -348,36 +463,48 @@ export const columns: ColumnDef<Invoice>[] = [
         header: 'Nama Produk',
         filterFn: (row, _columnId, filterValue) => {
             const invoice = row.original;
-            const courseTitles = (invoice.courseItems || invoice.course_items || []).map((item) => item.course.title);
-            const bootcampTitles = (invoice.bootcampItems || invoice.bootcamp_items || []).map((item) => item.bootcamp.title);
-            const webinarTitles = (invoice.webinarItems || invoice.webinar_items || []).map((item) => item.webinar.title);
-            const bundleTitles = (invoice.bundleEnrollments || invoice.bundle_enrollments || []).map((item) => item.bundle.title);
-            const certTitles = (invoice.certificationProgramItems || invoice.certification_program_items || []).map(
+            const target = invoice.parentInvoice || invoice.parent_invoice || invoice;
+            const courseTitles = (target.courseItems || target.course_items || []).map((item) => item.course?.title || '');
+            const bootcampTitles = (target.bootcampItems || target.bootcamp_items || []).map((item) => item.bootcamp?.title || '');
+            const webinarTitles = (target.webinarItems || target.webinar_items || []).map((item) => item.webinar?.title || '');
+            const bundleTitles = (target.bundleEnrollments || target.bundle_enrollments || []).map((item) => item.bundle?.title || '');
+            const certTitles = (target.certificationProgramItems || target.certification_program_items || []).map(
                 (item) => item.certificationProgram?.title || item.certification_program?.title || '',
             );
+            const privateTitles = (target.privateItems || target.private_items || []).map(
+                (item) => item.privateClass?.title || item.private_class?.title || '',
+            );
 
-            const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles, ...certTitles];
+            const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles, ...certTitles, ...privateTitles].filter(Boolean);
             return allTitles.some((title) =>
                 title.toLowerCase().includes(String(filterValue).toLowerCase()),
             );
         },
         cell: ({ row }) => {
-            const invoice = row.original;
-            const courseTitles = (invoice.courseItems || invoice.course_items || []).map((item) => item.course.title);
-            const bootcampTitles = (invoice.bootcampItems || invoice.bootcamp_items || []).map((item) => item.bootcamp.title);
-            const webinarTitles = (invoice.webinarItems || invoice.webinar_items || []).map((item) => item.webinar.title);
-            const bundleTitles = (invoice.bundleEnrollments || invoice.bundle_enrollments || []).map((item) => item.bundle.title);
-            const certTitles = (invoice.certificationProgramItems || invoice.certification_program_items || []).map(
-                (item) => item.certificationProgram?.title || item.certification_program?.title || '',
-            );
+            const links = getProductLinks(row.original);
+            if (links.length === 0) {
+                return <span>-</span>;
+            }
 
-            const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles, ...certTitles].filter(Boolean);
-            const fullTitleString = allTitles.length > 0 ? allTitles.join(', ') : '-';
+            const fullTitleString = links.map((l) => l.title).join(', ');
 
             return (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <div className="w-40 truncate">{fullTitleString}</div>
+                        <div className="w-44 truncate">
+                            {links.map((link, idx) => (
+                                <span key={idx}>
+                                    {idx > 0 && ', '}
+                                    <Link
+                                        href={link.url}
+                                        className="text-primary hover:underline font-medium"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        {link.title}
+                                    </Link>
+                                </span>
+                            ))}
+                        </div>
                     </TooltipTrigger>
                     <TooltipContent>
                         <p>{fullTitleString}</p>
@@ -393,10 +520,10 @@ export const columns: ColumnDef<Invoice>[] = [
     },
     {
         id: 'referral_user',
-        accessorFn: (row) => (row.user?.referrer ?? row.referral_user ?? row.referralUser)?.name ?? null,
+        accessorFn: (row) => (row.user?.referrer ?? (row.parentInvoice || row.parent_invoice)?.user?.referrer ?? row.referral_user ?? row.referralUser)?.name ?? null,
         header: ({ column }) => <DataTableColumnHeader column={column} title="Afiliasi" />,
         cell: ({ row }) => {
-            const referrer = row.original.user?.referrer ?? row.original.referral_user ?? row.original.referralUser;
+            const referrer = row.original.user?.referrer ?? (row.original.parentInvoice || row.original.parent_invoice)?.user?.referrer ?? row.original.referral_user ?? row.original.referralUser;
             return <p>{referrer?.name || '-'}</p>;
         },
     },
@@ -405,10 +532,42 @@ export const columns: ColumnDef<Invoice>[] = [
         header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
         cell: ({ row }) => {
             const invoice = row.original;
+            const monitorInvoice = getMonitorInvoice(invoice);
+            const isChildTerm = invoice.installment_number != null;
+
+            if (monitorInvoice && isChildTerm) {
+                const termNum = invoice.installment_number;
+                const isPaid = invoice.status === 'paid';
+                const isSuspended = !!(invoice.access_suspended_at || (invoice.parentInvoice || invoice.parent_invoice)?.access_suspended_at);
+
+                return (
+                    <InstallmentMonitorModal
+                        invoice={monitorInvoice}
+                        trigger={
+                            <div className="flex flex-col gap-1 items-start cursor-pointer hover:opacity-80 transition-opacity" title="Klik untuk monitor cicilan">
+                                {isPaid ? (
+                                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 cursor-pointer">
+                                        Cicilan {termNum} Lunas
+                                    </Badge>
+                                ) : isSuspended ? (
+                                    <Badge variant="destructive" className="cursor-pointer">
+                                        Akses Dibekukan
+                                    </Badge>
+                                ) : (
+                                    <Badge className="bg-amber-100 text-amber-800 border-amber-300 cursor-pointer">
+                                        Cicilan {termNum} Pending
+                                    </Badge>
+                                )}
+                            </div>
+                        }
+                    />
+                );
+            }
+
             const terms = invoice.installment_terms || invoice.installmentTerms || [];
             const isInstallment = invoice.is_installment || invoice.status === 'installment_pending' || terms.length > 0;
 
-            if (isInstallment) {
+            if (isInstallment && monitorInvoice) {
                 const paidCount = terms.filter((t) => t.status === 'paid').length;
                 const totalCount = terms.length;
                 const isFullyPaid = totalCount > 0 && paidCount === totalCount;
@@ -416,7 +575,7 @@ export const columns: ColumnDef<Invoice>[] = [
 
                 return (
                     <InstallmentMonitorModal
-                        invoice={invoice as any}
+                        invoice={monitorInvoice}
                         trigger={
                             <div className="flex flex-col gap-1 items-start cursor-pointer hover:opacity-80 transition-opacity" title="Klik untuk monitor cicilan">
                                 {isFullyPaid ? (
@@ -440,7 +599,7 @@ export const columns: ColumnDef<Invoice>[] = [
 
             const status = invoice.status;
             const statusText = status.charAt(0).toUpperCase() + status.slice(1);
-            const statusClasses = {
+            const statusClasses: Record<string, string> = {
                 paid: 'bg-green-100 text-green-800',
                 completed: 'bg-green-100 text-green-800',
                 pending: 'bg-yellow-100 text-yellow-800',

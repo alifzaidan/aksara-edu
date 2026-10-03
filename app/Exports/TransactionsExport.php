@@ -49,20 +49,39 @@ class TransactionsExport implements
     {
         $query = Invoice::with([
             'user.referrer',
+            'parentInvoice.user.referrer',
             'courseItems.course',
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
             'privateItems.privateClass',
             'bundleEnrollments.bundle',
-            'certificationProgramItems.certificationProgram'
-        ]);
+            'certificationProgramItems.certificationProgram',
+            'parentInvoice.courseItems.course',
+            'parentInvoice.bootcampItems.bootcamp',
+            'parentInvoice.webinarItems.webinar',
+            'parentInvoice.privateItems.privateClass',
+            'parentInvoice.bundleEnrollments.bundle',
+            'parentInvoice.certificationProgramItems.certificationProgram',
+        ])->where(function ($q) {
+            $q->where(function ($sq) {
+                $sq->whereNull('parent_invoice_id')->where('is_installment', false);
+            })->orWhereNotNull('parent_invoice_id');
+        });
 
         // Apply date filter
         if ($this->startDate && $this->endDate) {
-            $query->whereBetween('created_at', [
-                Carbon::parse($this->startDate)->startOfDay(),
-                Carbon::parse($this->endDate)->endOfDay()
-            ]);
+            $start = Carbon::parse($this->startDate)->startOfDay();
+            $end = Carbon::parse($this->endDate)->endOfDay();
+
+            $query->where(function ($q) use ($start, $end) {
+                $q->where(function ($q2) use ($start, $end) {
+                    $q2->where('status', 'paid')
+                        ->whereBetween('paid_at', [$start, $end]);
+                })->orWhere(function ($q2) use ($start, $end) {
+                    $q2->where('status', '!=', 'paid')
+                        ->whereBetween('created_at', [$start, $end]);
+                });
+            });
         }
 
         // Apply status filter
@@ -83,71 +102,103 @@ class TransactionsExport implements
                 case 'course':
                     if ($this->courseId) {
                         // Filter by specific course
-                        $query->whereHas('courseItems', function ($q) {
-                            $q->where('course_id', $this->courseId);
+                        $query->where(function ($q) {
+                            $q->whereHas('courseItems', fn($sq) => $sq->where('course_id', $this->courseId))
+                                ->orWhereHas('parentInvoice.courseItems', fn($sq) => $sq->where('course_id', $this->courseId));
                         });
                     } else {
                         // All courses
-                        $query->whereHas('courseItems');
+                        $query->where(function ($q) {
+                            $q->whereHas('courseItems')->orWhereHas('parentInvoice.courseItems');
+                        });
                     }
-                    $query->doesntHave('bundleEnrollments');
+                    $query->where(function ($q) {
+                        $q->doesntHave('bundleEnrollments')->doesntHave('parentInvoice.bundleEnrollments');
+                    });
                     break;
                 case 'bootcamp':
                     if ($this->bootcampId) {
                         // Filter by specific bootcamp
-                        $query->whereHas('bootcampItems', function ($q) {
-                            $q->where('bootcamp_id', $this->bootcampId);
+                        $query->where(function ($q) {
+                            $q->whereHas('bootcampItems', fn($sq) => $sq->where('bootcamp_id', $this->bootcampId))
+                                ->orWhereHas('parentInvoice.bootcampItems', fn($sq) => $sq->where('bootcamp_id', $this->bootcampId));
                         });
                     } else {
                         // All bootcamps
-                        $query->whereHas('bootcampItems');
+                        $query->where(function ($q) {
+                            $q->whereHas('bootcampItems')->orWhereHas('parentInvoice.bootcampItems');
+                        });
                     }
-                    $query->doesntHave('bundleEnrollments');
+                    $query->where(function ($q) {
+                        $q->doesntHave('bundleEnrollments')->doesntHave('parentInvoice.bundleEnrollments');
+                    });
                     break;
                 case 'webinar':
                     if ($this->webinarId) {
                         // Filter by specific webinar
-                        $query->whereHas('webinarItems', function ($q) {
-                            $q->where('webinar_id', $this->webinarId);
+                        $query->where(function ($q) {
+                            $q->whereHas('webinarItems', fn($sq) => $sq->where('webinar_id', $this->webinarId))
+                                ->orWhereHas('parentInvoice.webinarItems', fn($sq) => $sq->where('webinar_id', $this->webinarId));
                         });
                     } else {
                         // All webinars
-                        $query->whereHas('webinarItems');
+                        $query->where(function ($q) {
+                            $q->whereHas('webinarItems')->orWhereHas('parentInvoice.webinarItems');
+                        });
                     }
-                    $query->doesntHave('bundleEnrollments');
+                    $query->where(function ($q) {
+                        $q->doesntHave('bundleEnrollments')->doesntHave('parentInvoice.bundleEnrollments');
+                    });
                     break;
                 case 'bundle':
                     if ($this->bundleId) {
                         // Filter by specific bundle
-                        $query->whereHas('bundleEnrollments', function ($q) {
-                            $q->where('bundle_id', $this->bundleId);
+                        $query->where(function ($q) {
+                            $q->whereHas('bundleEnrollments', fn($sq) => $sq->where('bundle_id', $this->bundleId))
+                                ->orWhereHas('parentInvoice.bundleEnrollments', fn($sq) => $sq->where('bundle_id', $this->bundleId));
                         });
                     } else {
                         // All bundles
-                        $query->whereHas('bundleEnrollments');
+                        $query->where(function ($q) {
+                            $q->whereHas('bundleEnrollments')->orWhereHas('parentInvoice.bundleEnrollments');
+                        });
                     }
                     break;
                 case 'private':
-                    $query->whereHas('privateItems');
-                    $query->doesntHave('bundleEnrollments');
+                    $query->where(function ($q) {
+                        $q->whereHas('privateItems')->orWhereHas('parentInvoice.privateItems');
+                    });
+                    $query->where(function ($q) {
+                        $q->doesntHave('bundleEnrollments')->doesntHave('parentInvoice.bundleEnrollments');
+                    });
                     break;
                 case 'certification_program':
                     if ($this->certificationProgramId) {
-                        $query->whereHas('certificationProgramItems', function ($q) {
-                            $q->where('certification_program_id', $this->certificationProgramId);
+                        $query->where(function ($q) {
+                            $q->whereHas('certificationProgramItems', fn($sq) => $sq->where('certification_program_id', $this->certificationProgramId))
+                                ->orWhereHas('parentInvoice.certificationProgramItems', fn($sq) => $sq->where('certification_program_id', $this->certificationProgramId));
                         });
                     } else {
-                        $query->whereHas('certificationProgramItems');
+                        $query->where(function ($q) {
+                            $q->whereHas('certificationProgramItems')->orWhereHas('parentInvoice.certificationProgramItems');
+                        });
                     }
-                    $query->doesntHave('bundleEnrollments');
+                    $query->where(function ($q) {
+                        $q->doesntHave('bundleEnrollments')->doesntHave('parentInvoice.bundleEnrollments');
+                    });
                     break;
             }
         }
 
         // Apply user name filter
         if ($this->userName) {
-            $query->whereHas('user', function ($q) {
-                $q->where('name', 'like', '%' . $this->userName . '%');
+            $userName = $this->userName;
+            $query->where(function ($q) use ($userName) {
+                $q->whereHas('user', function ($sq) use ($userName) {
+                    $sq->where('name', 'like', '%' . $userName . '%');
+                })->orWhereHas('parentInvoice.user', function ($sq) use ($userName) {
+                    $sq->where('name', 'like', '%' . $userName . '%');
+                });
             });
         }
 
@@ -157,61 +208,61 @@ class TransactionsExport implements
             if ($this->productType) {
                 switch ($this->productType) {
                     case 'course':
-                        $query->whereHas('courseItems.course', function ($q) use ($title) {
-                            $q->where('title', 'like', '%' . $title . '%');
+                        $query->where(function ($q) use ($title) {
+                            $q->whereHas('courseItems.course', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'))
+                                ->orWhereHas('parentInvoice.courseItems.course', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'));
                         });
                         break;
                     case 'bootcamp':
-                        $query->whereHas('bootcampItems.bootcamp', function ($q) use ($title) {
-                            $q->where('title', 'like', '%' . $title . '%');
+                        $query->where(function ($q) use ($title) {
+                            $q->whereHas('bootcampItems.bootcamp', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'))
+                                ->orWhereHas('parentInvoice.bootcampItems.bootcamp', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'));
                         });
                         break;
                     case 'webinar':
-                        $query->whereHas('webinarItems.webinar', function ($q) use ($title) {
-                            $q->where('title', 'like', '%' . $title . '%');
+                        $query->where(function ($q) use ($title) {
+                            $q->whereHas('webinarItems.webinar', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'))
+                                ->orWhereHas('parentInvoice.webinarItems.webinar', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'));
                         });
                         break;
                     case 'private':
-                        $query->whereHas('privateItems.privateClass', function ($q) use ($title) {
-                            $q->where('title', 'like', '%' . $title . '%');
+                        $query->where(function ($q) use ($title) {
+                            $q->whereHas('privateItems.privateClass', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'))
+                                ->orWhereHas('parentInvoice.privateItems.privateClass', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'));
                         });
                         break;
                     case 'bundle':
-                        $query->whereHas('bundleEnrollments.bundle', function ($q) use ($title) {
-                            $q->where('title', 'like', '%' . $title . '%');
+                        $query->where(function ($q) use ($title) {
+                            $q->whereHas('bundleEnrollments.bundle', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'))
+                                ->orWhereHas('parentInvoice.bundleEnrollments.bundle', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'));
                         });
                         break;
                     case 'certification_program':
-                        $query->whereHas('certificationProgramItems.certificationProgram', function ($q) use ($title) {
-                            $q->where('title', 'like', '%' . $title . '%');
+                        $query->where(function ($q) use ($title) {
+                            $q->whereHas('certificationProgramItems.certificationProgram', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'))
+                                ->orWhereHas('parentInvoice.certificationProgramItems.certificationProgram', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'));
                         });
                         break;
                 }
             } else {
                 $query->where(function ($q) use ($title) {
-                    $q->whereHas('courseItems.course', function ($q2) use ($title) {
-                        $q2->where('title', 'like', '%' . $title . '%');
-                    })
-                    ->orWhereHas('bootcampItems.bootcamp', function ($q2) use ($title) {
-                        $q2->where('title', 'like', '%' . $title . '%');
-                    })
-                    ->orWhereHas('webinarItems.webinar', function ($q2) use ($title) {
-                        $q2->where('title', 'like', '%' . $title . '%');
-                    })
-                    ->orWhereHas('privateItems.privateClass', function ($q2) use ($title) {
-                        $q2->where('title', 'like', '%' . $title . '%');
-                    })
-                    ->orWhereHas('bundleEnrollments.bundle', function ($q2) use ($title) {
-                        $q2->where('title', 'like', '%' . $title . '%');
-                    })
-                    ->orWhereHas('certificationProgramItems.certificationProgram', function ($q2) use ($title) {
-                        $q2->where('title', 'like', '%' . $title . '%');
-                    });
+                    $q->whereHas('courseItems.course', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'))
+                        ->orWhereHas('parentInvoice.courseItems.course', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'))
+                        ->orWhereHas('bootcampItems.bootcamp', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'))
+                        ->orWhereHas('parentInvoice.bootcampItems.bootcamp', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'))
+                        ->orWhereHas('webinarItems.webinar', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'))
+                        ->orWhereHas('parentInvoice.webinarItems.webinar', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'))
+                        ->orWhereHas('privateItems.privateClass', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'))
+                        ->orWhereHas('parentInvoice.privateItems.privateClass', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'))
+                        ->orWhereHas('bundleEnrollments.bundle', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'))
+                        ->orWhereHas('parentInvoice.bundleEnrollments.bundle', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'))
+                        ->orWhereHas('certificationProgramItems.certificationProgram', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'))
+                        ->orWhereHas('parentInvoice.certificationProgramItems.certificationProgram', fn($sq) => $sq->where('title', 'like', '%' . $title . '%'));
                 });
             }
         }
 
-        return $query->latest();
+        return $query->orderByRaw('COALESCE(paid_at, created_at) DESC');
     }
 
     public function headings(): array
@@ -266,22 +317,30 @@ class TransactionsExport implements
         static $index = 0;
         $index++;
 
+        $user = $invoice->user ?? $invoice->parentInvoice?->user;
+        $referrer = $user?->referrer ?? $invoice->parentInvoice?->user?->referrer;
+
+        $statusLabel = ucfirst($invoice->status);
+        if ($invoice->installment_number) {
+            $statusLabel = 'Cicilan ke-' . $invoice->installment_number . ' (' . ($invoice->status === 'paid' ? 'Lunas' : ucfirst($invoice->status)) . ')';
+        }
+
         if ($this->isStaff) {
             return [
                 $index,
                 $invoice->invoice_code,
-                $invoice->user->name ?? '-',
-                $invoice->user->email ?? '-',
-                $invoice->user->phone_number ?? '-',
-                $invoice->user->instance ?? '-',
-                $invoice->user->city ?? '-',
+                $user->name ?? '-',
+                $user->email ?? '-',
+                $user->phone_number ?? '-',
+                $user->instance ?? '-',
+                $user->city ?? '-',
                 $this->getProductNames($invoice),
                 $this->getProductType($invoice),
-                ucfirst($invoice->status),
+                $statusLabel,
                 $invoice->nett_amount === 0 ? 'Gratis' : 'Berbayar',
                 $invoice->payment_method ?? '-',
                 $invoice->payment_channel ?? '-',
-                $invoice->user->referrer->name ?? '-',
+                $referrer->name ?? '-',
                 $invoice->created_at ? $invoice->created_at->format('d M Y, H:i') : '-',
                 $invoice->paid_at ? Carbon::parse($invoice->paid_at)->format('d M Y, H:i') : '-',
             ];
@@ -290,22 +349,22 @@ class TransactionsExport implements
         return [
             $index,
             $invoice->invoice_code,
-            $invoice->user->name ?? '-',
-            $invoice->user->email ?? '-',
-            $invoice->user->phone_number ?? '-',
-            $invoice->user->instance ?? '-',
-            $invoice->user->city ?? '-',
+            $user->name ?? '-',
+            $user->email ?? '-',
+            $user->phone_number ?? '-',
+            $user->instance ?? '-',
+            $user->city ?? '-',
             $this->getProductNames($invoice),
             $this->getProductType($invoice),
             'Rp ' . number_format($invoice->amount, 0, ',', '.'),
             'Rp ' . number_format($invoice->discount_amount ?? 0, 0, ',', '.'),
             'Rp ' . number_format($invoice->transaction_fee ?? 0, 0, ',', '.'),
             'Rp ' . number_format($invoice->nett_amount, 0, ',', '.'),
-            ucfirst($invoice->status),
+            $statusLabel,
             $invoice->nett_amount === 0 ? 'Gratis' : 'Berbayar',
             $invoice->payment_method ?? '-',
             $invoice->payment_channel ?? '-',
-            $invoice->user->referrer->name ?? '-',
+            $referrer->name ?? '-',
             $invoice->created_at ? $invoice->created_at->format('d M Y, H:i') : '-',
             $invoice->paid_at ? Carbon::parse($invoice->paid_at)->format('d M Y, H:i') : '-',
         ];
@@ -375,51 +434,52 @@ class TransactionsExport implements
 
     private function getProductNames($invoice): string
     {
+        $target = $invoice->parentInvoice ?? $invoice;
         $names = [];
 
         if (empty($this->productType) || $this->productType === 'course') {
-            if ($invoice->courseItems) {
-                foreach ($invoice->courseItems as $item) {
+            if ($target->courseItems) {
+                foreach ($target->courseItems as $item) {
                     $names[] = $item->course->title ?? '-';
                 }
             }
         }
 
         if (empty($this->productType) || $this->productType === 'bootcamp') {
-            if ($invoice->bootcampItems) {
-                foreach ($invoice->bootcampItems as $item) {
+            if ($target->bootcampItems) {
+                foreach ($target->bootcampItems as $item) {
                     $names[] = $item->bootcamp->title ?? '-';
                 }
             }
         }
 
         if (empty($this->productType) || $this->productType === 'webinar') {
-            if ($invoice->webinarItems) {
-                foreach ($invoice->webinarItems as $item) {
+            if ($target->webinarItems) {
+                foreach ($target->webinarItems as $item) {
                     $names[] = $item->webinar->title ?? '-';
                 }
             }
         }
 
         if (empty($this->productType) || $this->productType === 'private') {
-            if ($invoice->privateItems) {
-                foreach ($invoice->privateItems as $item) {
+            if ($target->privateItems) {
+                foreach ($target->privateItems as $item) {
                     $names[] = $item->privateClass->title ?? '-';
                 }
             }
         }
 
         if (empty($this->productType) || $this->productType === 'bundle') {
-            if ($invoice->bundleEnrollments) {
-                foreach ($invoice->bundleEnrollments as $item) {
+            if ($target->bundleEnrollments) {
+                foreach ($target->bundleEnrollments as $item) {
                     $names[] = $item->bundle->title ?? '-';
                 }
             }
         }
 
         if (empty($this->productType) || $this->productType === 'certification_program') {
-            if ($invoice->certificationProgramItems) {
-                foreach ($invoice->certificationProgramItems as $item) {
+            if ($target->certificationProgramItems) {
+                foreach ($target->certificationProgramItems as $item) {
                     $names[] = $item->certificationProgram->title ?? '-';
                 }
             }
@@ -441,12 +501,14 @@ class TransactionsExport implements
             }
         }
 
-        if ($invoice->bundleEnrollments && $invoice->bundleEnrollments->count() > 0) return 'Bundle';
-        if ($invoice->courseItems && $invoice->courseItems->count() > 0) return 'Kelas Online';
-        if ($invoice->bootcampItems && $invoice->bootcampItems->count() > 0) return 'Bootcamp';
-        if ($invoice->webinarItems && $invoice->webinarItems->count() > 0) return 'Webinar';
-        if ($invoice->privateItems && $invoice->privateItems->count() > 0) return 'Private Class';
-        if ($invoice->certificationProgramItems && $invoice->certificationProgramItems->count() > 0) return 'Sertifikasi';
+        $target = $invoice->parentInvoice ?? $invoice;
+
+        if ($target->bundleEnrollments && $target->bundleEnrollments->count() > 0) return 'Bundle';
+        if ($target->courseItems && $target->courseItems->count() > 0) return 'Kelas Online';
+        if ($target->bootcampItems && $target->bootcampItems->count() > 0) return 'Bootcamp';
+        if ($target->webinarItems && $target->webinarItems->count() > 0) return 'Webinar';
+        if ($target->privateItems && $target->privateItems->count() > 0) return 'Private Class';
+        if ($target->certificationProgramItems && $target->certificationProgramItems->count() > 0) return 'Sertifikasi';
         return '-';
     }
 }

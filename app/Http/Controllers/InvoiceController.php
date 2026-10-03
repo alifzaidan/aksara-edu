@@ -57,19 +57,32 @@ class InvoiceController extends Controller
         $paymentType = $request->input('payment_type');
         $productType = $request->input('product_type');
 
-        // Buat query dasar (hanya transaksi utama / parent invoice)
+        // Buat query dasar: transaksi reguler + transaksi per termin cicilan (spread cicilan per termin)
         $invoicesQuery = Invoice::with([
             'user.referrer',
             'referralUser',
             'installmentTerms',
+            'parentInvoice.user.referrer',
+            'parentInvoice.referralUser',
+            'parentInvoice.installmentTerms',
             'courseItems.course',
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
             'privateItems.privateClass',
             'privateItems.privateClassSchedule',
             'certificationProgramItems.certificationProgram',
-            'bundleEnrollments.bundle'
-        ])->whereNull('parent_invoice_id');
+            'bundleEnrollments.bundle',
+            'parentInvoice.courseItems.course',
+            'parentInvoice.bootcampItems.bootcamp',
+            'parentInvoice.webinarItems.webinar',
+            'parentInvoice.privateItems.privateClass',
+            'parentInvoice.certificationProgramItems.certificationProgram',
+            'parentInvoice.bundleEnrollments.bundle',
+        ])->where(function ($q) {
+            $q->where(function ($sq) {
+                $sq->whereNull('parent_invoice_id')->where('is_installment', false);
+            })->orWhereNotNull('parent_invoice_id');
+        });
 
         // Apply date filter jika ada
         if ($startDate && $endDate) {
@@ -81,7 +94,7 @@ class InvoiceController extends Controller
                     $q2->where('status', 'paid')
                         ->whereBetween('paid_at', [$start, $end]);
                 })->orWhere(function ($q2) use ($start, $end) {
-                    $q2->whereIn('status', ['paid', 'pending', 'failed'])
+                    $q2->where('status', '!=', 'paid')
                         ->whereBetween('created_at', [$start, $end]);
                 });
             });
@@ -121,9 +134,13 @@ class InvoiceController extends Controller
                 foreach ($productTypes as $idx => $pType) {
                     $relation = $relationMap[$pType] ?? (\Illuminate\Support\Str::camel($pType) . 'Items');
                     if ($idx === 0) {
-                        $q->whereHas($relation);
+                        $q->where(function ($sq) use ($relation) {
+                            $sq->whereHas($relation)->orWhereHas('parentInvoice.' . $relation);
+                        });
                     } else {
-                        $q->orWhereHas($relation);
+                        $q->orWhere(function ($sq) use ($relation) {
+                            $sq->whereHas($relation)->orWhereHas('parentInvoice.' . $relation);
+                        });
                     }
                 }
             });
@@ -134,8 +151,16 @@ class InvoiceController extends Controller
             $search = $request->input('search');
             $invoicesQuery->where(function ($q) use ($search) {
                 $q->where('invoice_code', 'like', "%{$search}%")
+                    ->orWhereHas('parentInvoice', function ($pq) use ($search) {
+                        $pq->where('invoice_code', 'like', "%{$search}%");
+                    })
                     ->orWhereHas('user', function ($uq) use ($search) {
                         $uq->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('phone_number', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('parentInvoice.user', function ($puq) use ($search) {
+                        $puq->where('name', 'like', "%{$search}%")
                             ->orWhere('email', 'like', "%{$search}%")
                             ->orWhere('phone_number', 'like', "%{$search}%");
                     });
@@ -162,11 +187,12 @@ class InvoiceController extends Controller
         $paidEnrollments = (clone $statsBase)->where('status', 'paid')->where('nett_amount', '>', 0)->count();
 
         // Product Type Breakdown
-        $courseTransactions = (clone $statsBase)->whereHas('courseItems')->count();
-        $bootcampTransactions = (clone $statsBase)->whereHas('bootcampItems')->count();
-        $webinarTransactions = (clone $statsBase)->whereHas('webinarItems')->count();
-        $privateTransactions = (clone $statsBase)->whereHas('privateItems')->count();
-        $bundleTransactions = (clone $statsBase)->whereHas('bundleEnrollments')->count();
+        $courseTransactions = (clone $statsBase)->where(fn($q) => $q->whereHas('courseItems')->orWhereHas('parentInvoice.courseItems'))->count();
+        $bootcampTransactions = (clone $statsBase)->where(fn($q) => $q->whereHas('bootcampItems')->orWhereHas('parentInvoice.bootcampItems'))->count();
+        $webinarTransactions = (clone $statsBase)->where(fn($q) => $q->whereHas('webinarItems')->orWhereHas('parentInvoice.webinarItems'))->count();
+        $privateTransactions = (clone $statsBase)->where(fn($q) => $q->whereHas('privateItems')->orWhereHas('parentInvoice.privateItems'))->count();
+        $bundleTransactions = (clone $statsBase)->where(fn($q) => $q->whereHas('bundleEnrollments')->orWhereHas('parentInvoice.bundleEnrollments'))->count();
+        $certificationTransactions = (clone $statsBase)->where(fn($q) => $q->whereHas('certificationProgramItems')->orWhereHas('parentInvoice.certificationProgramItems'))->count();
 
         $todayTransactions = (clone $statsBase)->whereDate('paid_at', Carbon::today())->count();
         $todayRevenue = $isStaff ? 0 : (clone $statsBase)->where('status', 'paid')->whereDate('paid_at', Carbon::today())->sum('nett_amount');
@@ -206,6 +232,7 @@ class InvoiceController extends Controller
                 'webinar' => $webinarTransactions,
                 'private' => $privateTransactions,
                 'bundle' => $bundleTransactions,
+                'certification_program' => $certificationTransactions,
             ],
             'period' => [
                 'today_transactions' => $todayTransactions,
@@ -217,7 +244,7 @@ class InvoiceController extends Controller
 
         // Paginate invoices per page
         $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
-        $invoices = $invoicesQuery->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
+        $invoices = $invoicesQuery->orderByRaw('COALESCE(paid_at, created_at) DESC')->paginate($perPage)->withQueryString();
 
         return Inertia::render('admin/transactions/index', [
             'invoices' => $invoices,

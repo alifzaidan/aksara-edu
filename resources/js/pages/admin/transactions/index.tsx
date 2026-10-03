@@ -52,6 +52,7 @@ interface Statistics {
         bootcamp: number;
         webinar: number;
         bundle: number;
+        certification_program?: number;
     };
     period: {
         today_transactions: number;
@@ -190,6 +191,10 @@ export default function Transactions({ invoices, statistics, filters, flash }: T
                                             <div className="flex justify-between">
                                                 <span className="text-muted-foreground">Webinar</span>
                                                 <span className="font-medium">{statistics.product_breakdown.webinar}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Sertifikasi</span>
+                                                <span className="font-medium">{statistics.product_breakdown.certification_program ?? 0}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -346,6 +351,10 @@ export default function Transactions({ invoices, statistics, filters, flash }: T
                                 <div className="flex items-center justify-between">
                                     <span className="text-muted-foreground">Webinar</span>
                                     <span className="font-medium">{statistics.product_breakdown.webinar}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">Program Sertifikasi</span>
+                                    <span className="font-medium">{statistics.product_breakdown.certification_program ?? 0}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-muted-foreground">Bundle</span>

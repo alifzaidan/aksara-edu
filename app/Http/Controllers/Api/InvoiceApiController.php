@@ -21,10 +21,19 @@ class InvoiceApiController extends Controller
             'status' => 'nullable|in:paid,pending,failed',
         ]);
 
-        $query = Invoice::whereHas('user', function ($q) {
-            $q->role('user');
+        $query = Invoice::where(function ($q) {
+            $q->whereHas('user', function ($sq) {
+                $sq->role('user');
+            })->orWhereHas('parentInvoice.user', function ($sq) {
+                $sq->role('user');
+            });
         })
             ->where('amount', '>', 0)
+            ->where(function ($q) {
+                $q->where(function ($sq) {
+                    $sq->whereNull('parent_invoice_id')->where('is_installment', false);
+                })->orWhereNotNull('parent_invoice_id');
+            })
             ->with([
                 'user:id,name,email,phone_number,avatar',
                 'courseItems.course:id,title,slug,price,thumbnail',
@@ -33,18 +42,25 @@ class InvoiceApiController extends Controller
                 'bundleEnrollments.bundle:id,title,slug,price,thumbnail',
                 'privateItems.privateClass:id,title,slug,price,thumbnail',
                 'certificationProgramItems.certificationProgram:id,title,slug,price,thumbnail',
+                'parentInvoice.user:id,name,email,phone_number,avatar',
+                'parentInvoice.courseItems.course:id,title,slug,price,thumbnail',
+                'parentInvoice.bootcampItems.bootcamp:id,title,slug,price,thumbnail',
+                'parentInvoice.webinarItems.webinar:id,title,slug,price,thumbnail',
+                'parentInvoice.bundleEnrollments.bundle:id,title,slug,price,thumbnail',
+                'parentInvoice.privateItems.privateClass:id,title,slug,price,thumbnail',
+                'parentInvoice.certificationProgramItems.certificationProgram:id,title,slug,price,thumbnail',
             ]);
 
         // Filter by product_type
         if ($request->has('product_type') && $request->product_type) {
             $type = $request->product_type;
             match ($type) {
-                'course' => $query->whereHas('courseItems'),
-                'bootcamp' => $query->whereHas('bootcampItems'),
-                'webinar' => $query->whereHas('webinarItems'),
-                'bundle' => $query->whereHas('bundleEnrollments'),
-                'private' => $query->whereHas('privateItems'),
-                'certification_program', 'certification' => $query->whereHas('certificationProgramItems'),
+                'course' => $query->where(fn($q) => $q->whereHas('courseItems')->orWhereHas('parentInvoice.courseItems')),
+                'bootcamp' => $query->where(fn($q) => $q->whereHas('bootcampItems')->orWhereHas('parentInvoice.bootcampItems')),
+                'webinar' => $query->where(fn($q) => $q->whereHas('webinarItems')->orWhereHas('parentInvoice.webinarItems')),
+                'bundle' => $query->where(fn($q) => $q->whereHas('bundleEnrollments')->orWhereHas('parentInvoice.bundleEnrollments')),
+                'private' => $query->where(fn($q) => $q->whereHas('privateItems')->orWhereHas('parentInvoice.privateItems')),
+                'certification_program', 'certification' => $query->where(fn($q) => $q->whereHas('certificationProgramItems')->orWhereHas('parentInvoice.certificationProgramItems')),
                 default => null,
             };
         }
@@ -56,7 +72,13 @@ class InvoiceApiController extends Controller
 
         // Filter by invoice code
         if ($request->has('invoice_code') && $request->invoice_code) {
-            $query->where('invoice_code', 'like', '%' . $request->invoice_code . '%');
+            $code = $request->invoice_code;
+            $query->where(function ($q) use ($code) {
+                $q->where('invoice_code', 'like', '%' . $code . '%')
+                    ->orWhereHas('parentInvoice', function ($pq) use ($code) {
+                        $pq->where('invoice_code', 'like', '%' . $code . '%');
+                    });
+            });
         }
 
         // Filter by user_id
@@ -83,13 +105,33 @@ class InvoiceApiController extends Controller
             $query->where('payment_method', $request->payment_method);
         }
 
-        // Filter by date range
+        // Filter by date range (if status is paid, prioritizes paid_at)
         if ($request->has('start_date') && $request->start_date) {
-            $query->whereDate('created_at', '>=', $request->start_date);
+            $startDate = $request->start_date;
+            if (!empty($validated['status']) && $validated['status'] === 'paid') {
+                $query->whereDate('paid_at', '>=', $startDate);
+            } else {
+                $query->where(function ($q) use ($startDate) {
+                    $q->whereDate('paid_at', '>=', $startDate)
+                        ->orWhere(function ($sq) use ($startDate) {
+                            $sq->whereNull('paid_at')->whereDate('created_at', '>=', $startDate);
+                        });
+                });
+            }
         }
 
         if ($request->has('end_date') && $request->end_date) {
-            $query->whereDate('created_at', '<=', $request->end_date);
+            $endDate = $request->end_date;
+            if (!empty($validated['status']) && $validated['status'] === 'paid') {
+                $query->whereDate('paid_at', '<=', $endDate);
+            } else {
+                $query->where(function ($q) use ($endDate) {
+                    $q->whereDate('paid_at', '<=', $endDate)
+                        ->orWhere(function ($sq) use ($endDate) {
+                            $sq->whereNull('paid_at')->whereDate('created_at', '<=', $endDate);
+                        });
+                });
+            }
         }
 
         // Filter by paid date range
@@ -115,6 +157,9 @@ class InvoiceApiController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('invoice_code', 'like', '%' . $search . '%')
+                    ->orWhereHas('parentInvoice', function ($pq) use ($search) {
+                        $pq->where('invoice_code', 'like', '%' . $search . '%');
+                    })
                     ->orWhereHas('user', function ($userQuery) use ($search) {
                         $userQuery->where('name', 'like', '%' . $search . '%')
                             ->orWhere('email', 'like', '%' . $search . '%');
@@ -125,7 +170,11 @@ class InvoiceApiController extends Controller
         // Sorting
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
-        $query->orderBy($sortBy, $sortOrder);
+        if ($sortBy === 'paid_at') {
+            $query->orderByRaw('COALESCE(paid_at, created_at) ' . (strtolower($sortOrder) === 'asc' ? 'ASC' : 'DESC'));
+        } else {
+            $query->orderBy($sortBy, $sortOrder);
+        }
 
         // Pagination
         $perPage = $request->get('per_page', 15);
@@ -165,6 +214,13 @@ class InvoiceApiController extends Controller
                 'bundleEnrollments.bundle:id,title,slug,price,thumbnail',
                 'privateItems.privateClass:id,title,slug,price,thumbnail',
                 'certificationProgramItems.certificationProgram:id,title,slug,price,thumbnail',
+                'parentInvoice.user:id,name,email,phone_number,avatar',
+                'parentInvoice.courseItems.course:id,title,slug,price,thumbnail',
+                'parentInvoice.bootcampItems.bootcamp:id,title,slug,price,thumbnail',
+                'parentInvoice.webinarItems.webinar:id,title,slug,price,thumbnail',
+                'parentInvoice.bundleEnrollments.bundle:id,title,slug,price,thumbnail',
+                'parentInvoice.privateItems.privateClass:id,title,slug,price,thumbnail',
+                'parentInvoice.certificationProgramItems.certificationProgram:id,title,slug,price,thumbnail',
             ])->find($id);
 
         if (!$invoice) {
@@ -193,10 +249,19 @@ class InvoiceApiController extends Controller
             'status' => 'nullable|in:paid,pending,failed',
         ]);
 
-        $invoices = Invoice::whereHas('user', function ($q) {
-            $q->role('user');
+        $invoices = Invoice::where(function ($q) {
+            $q->whereHas('user', function ($sq) {
+                $sq->role('user');
+            })->orWhereHas('parentInvoice.user', function ($sq) {
+                $sq->role('user');
+            });
         })
             ->where('amount', '>', 0)
+            ->where(function ($q) {
+                $q->where(function ($sq) {
+                    $sq->whereNull('parent_invoice_id')->where('is_installment', false);
+                })->orWhereNotNull('parent_invoice_id');
+            })
             ->when(!empty($validated['status']), function ($query) use ($validated) {
                 $query->where('status', $validated['status']);
             })
@@ -358,10 +423,25 @@ class InvoiceApiController extends Controller
         $products = [];
         $productType = null;
 
+        // If this is a child invoice (installment term), resolve product items from parent invoice
+        $source = $invoice;
+        if (!empty($invoice->parent_invoice_id)) {
+            $source = ($invoice->relationLoaded('parentInvoice') && $invoice->parentInvoice)
+                ? $invoice->parentInvoice
+                : ($invoice->parentInvoice()->with([
+                    'bundleEnrollments.bundle',
+                    'courseItems.course',
+                    'bootcampItems.bootcamp',
+                    'webinarItems.webinar',
+                    'privateItems.privateClass',
+                    'certificationProgramItems.certificationProgram',
+                ])->first() ?? $invoice);
+        }
+
         // Check for bundle enrollments first
-        if ($invoice->bundleEnrollments->count() > 0) {
+        if ($source->bundleEnrollments && $source->bundleEnrollments->count() > 0) {
             $productType = 'bundle';
-            foreach ($invoice->bundleEnrollments as $enrollment) {
+            foreach ($source->bundleEnrollments as $enrollment) {
                 $products[] = [
                     'type' => 'bundle',
                     'type_label' => 'Bundle',
@@ -375,9 +455,9 @@ class InvoiceApiController extends Controller
         }
 
         // Check for course items
-        if ($invoice->courseItems->count() > 0) {
+        if ($source->courseItems && $source->courseItems->count() > 0) {
             $productType = $productType ?? 'course';
-            foreach ($invoice->courseItems as $item) {
+            foreach ($source->courseItems as $item) {
                 $products[] = [
                     'type' => 'course',
                     'type_label' => 'Kelas Online',
@@ -391,9 +471,9 @@ class InvoiceApiController extends Controller
         }
 
         // Check for bootcamp items
-        if ($invoice->bootcampItems->count() > 0) {
+        if ($source->bootcampItems && $source->bootcampItems->count() > 0) {
             $productType = $productType ?? 'bootcamp';
-            foreach ($invoice->bootcampItems as $item) {
+            foreach ($source->bootcampItems as $item) {
                 $products[] = [
                     'type' => 'bootcamp',
                     'type_label' => 'Bootcamp',
@@ -407,9 +487,9 @@ class InvoiceApiController extends Controller
         }
 
         // Check for webinar items
-        if ($invoice->webinarItems->count() > 0) {
+        if ($source->webinarItems && $source->webinarItems->count() > 0) {
             $productType = $productType ?? 'webinar';
-            foreach ($invoice->webinarItems as $item) {
+            foreach ($source->webinarItems as $item) {
                 $products[] = [
                     'type' => 'webinar',
                     'type_label' => 'Webinar',
@@ -423,9 +503,9 @@ class InvoiceApiController extends Controller
         }
 
         // Check for private items
-        if ($invoice->privateItems && $invoice->privateItems->count() > 0) {
+        if ($source->privateItems && $source->privateItems->count() > 0) {
             $productType = $productType ?? 'private';
-            foreach ($invoice->privateItems as $item) {
+            foreach ($source->privateItems as $item) {
                 $products[] = [
                     'type' => 'private',
                     'type_label' => 'Private Class',
@@ -439,9 +519,9 @@ class InvoiceApiController extends Controller
         }
 
         // Check for certification program items
-        if ($invoice->certificationProgramItems && $invoice->certificationProgramItems->count() > 0) {
+        if ($source->certificationProgramItems && $source->certificationProgramItems->count() > 0) {
             $productType = $productType ?? 'certification_program';
-            foreach ($invoice->certificationProgramItems as $item) {
+            foreach ($source->certificationProgramItems as $item) {
                 $products[] = [
                     'type' => 'certification_program',
                     'type_label' => 'Program Sertifikasi',
@@ -453,6 +533,8 @@ class InvoiceApiController extends Controller
                 ];
             }
         }
+
+        $buyerUser = $invoice->user ?? $source->user ?? null;
 
         return [
             'id' => $invoice->id,
@@ -468,12 +550,15 @@ class InvoiceApiController extends Controller
             'expires_at' => $invoice->expires_at,
             'created_at' => $invoice->created_at,
             'updated_at' => $invoice->updated_at,
-            'buyer' => $invoice->user ? [
-                'id' => $invoice->user->id,
-                'name' => $invoice->user->name,
-                'email' => $invoice->user->email,
-                'phone_number' => $invoice->user->phone_number,
-                'avatar' => $invoice->user->avatar,
+            'is_installment' => (bool) ($invoice->is_installment || $invoice->parent_invoice_id),
+            'installment_number' => $invoice->installment_number,
+            'parent_invoice_id' => $invoice->parent_invoice_id,
+            'buyer' => $buyerUser ? [
+                'id' => $buyerUser->id,
+                'name' => $buyerUser->name,
+                'email' => $buyerUser->email,
+                'phone_number' => $buyerUser->phone_number,
+                'avatar' => $buyerUser->avatar,
             ] : null,
             'product_type' => $productType,
             'product_type_label' => $this->getProductTypeLabel($productType),

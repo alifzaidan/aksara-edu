@@ -452,6 +452,7 @@ class AdminController extends Controller
             'total_webinars' => Webinar::count(),
             'recent_sales' => Invoice::with([
                 'user',
+                'parentInvoice.user',
                 'courseItems.course',
                 'bootcampItems.bootcamp',
                 'webinarItems.webinar',
@@ -463,14 +464,11 @@ class AdminController extends Controller
                 'parentInvoice.bundleEnrollments.bundle',
                 'parentInvoice.certificationProgramItems.certificationProgram',
             ])
-                ->whereNull('parent_invoice_id') // Hanya invoice induk, bukan anak cicilan
+                ->where('status', 'paid')
                 ->where(function ($q) {
-                    $q->whereIn('status', ['paid', 'completed'])
-                        ->orWhere(function ($iq) {
-                            // Parent installment yang sudah DP (termin 1 terbayar)
-                            $iq->where('status', 'installment_pending')
-                                ->whereHas('installmentTerms', fn ($tq) => $tq->where('installment_number', 1)->where('status', 'paid'));
-                        });
+                    $q->where(function ($sq) {
+                        $sq->whereNull('parent_invoice_id')->where('is_installment', false);
+                    })->orWhereNotNull('parent_invoice_id');
                 })
                 ->orderByRaw('COALESCE(paid_at, created_at) DESC')
                 ->take(5)
