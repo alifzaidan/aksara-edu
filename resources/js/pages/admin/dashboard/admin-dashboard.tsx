@@ -35,7 +35,7 @@ interface CertificationItem {
 
 interface RecentSale {
     id: number | string;
-    user: {
+    user?: {
         name: string;
     };
     nett_amount: number;
@@ -53,6 +53,8 @@ interface RecentSale {
     bundleEnrollments?: { bundle: { title: string } }[];
     certification_program_items?: CertificationItem[];
     certificationProgramItems?: CertificationItem[];
+    private_items?: { private_class?: { title: string }; privateClass?: { title: string } }[];
+    privateItems?: { private_class?: { title: string }; privateClass?: { title: string } }[];
 }
 
 interface PopularProduct {

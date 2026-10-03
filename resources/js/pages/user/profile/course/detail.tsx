@@ -241,7 +241,7 @@ export default function DetailMyCourse({
                             <div className="mt-4">
                                 <p className="text-sm text-gray-700 dark:text-gray-300">
                                     No. Sertifikat: {String(certificateParticipant.certificate_number).padStart(4, '0')}/
-                                    {certificate.certificate_number}
+                                    {certificate?.certificate_number}
                                 </p>
                                 <Link
                                     href={route('certificate.participant.detail', {

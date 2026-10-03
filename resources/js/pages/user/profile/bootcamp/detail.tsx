@@ -1037,7 +1037,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                 <div className="mt-2 text-center">
                                                     <p className="text-xs text-blue-600 dark:text-blue-400">
                                                         No. Sertifikat: {String(certificateParticipant.certificate_number).padStart(4, '0')}/
-                                                        {certificate.certificate_number}
+                                                        {certificate?.certificate_number}
                                                     </p>
                                                     <Link
                                                         href={route('certificate.participant.detail', {
