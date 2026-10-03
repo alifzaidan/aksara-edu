@@ -458,11 +458,13 @@ class AdminController extends Controller
                 'webinarItems.webinar',
                 'bundleEnrollments.bundle',
                 'certificationProgramItems.certificationProgram',
+                'privateItems.privateClass',
                 'parentInvoice.courseItems.course',
                 'parentInvoice.bootcampItems.bootcamp',
                 'parentInvoice.webinarItems.webinar',
                 'parentInvoice.bundleEnrollments.bundle',
                 'parentInvoice.certificationProgramItems.certificationProgram',
+                'parentInvoice.privateItems.privateClass',
             ])
                 ->where('status', 'paid')
                 ->where(function ($q) {
