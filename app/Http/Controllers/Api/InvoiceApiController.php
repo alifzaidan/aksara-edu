@@ -353,6 +353,9 @@ class InvoiceApiController extends Controller
             }
         }
 
+        // Build yearly_nominal: semua tahun dari tahun pertama invoice paid hingga tahun berjalan
+        $yearlyNominal = $this->buildYearlyNominal($paidInvoices, $monthLabels, $currentYear);
+
         // Success rate
         $successRate = $totalTransactions > 0
             ? ($paidTransactions / $totalTransactions) * 100
@@ -367,6 +370,7 @@ class InvoiceApiController extends Controller
                 'total_nominal_last_month' => $totalNominalLastMonth,
                 'total_nominal_this_year' => $totalNominalThisYear,
                 'monthly_nominal_this_year' => $monthlyNominalThisYear,
+                'yearly_nominal' => $yearlyNominal,
                 'paid_transactions' => $paidTransactions,
                 'pending_transactions' => $pendingTransactions,
                 'failed_transactions' => $failedTransactions,
@@ -375,6 +379,67 @@ class InvoiceApiController extends Controller
                 'success_rate' => round($successRate, 2),
             ],
         ]);
+    }
+
+    /**
+     * Build yearly nominal breakdown for all years from the first paid invoice to the current year.
+     * Automatically includes new years as time passes — no code changes needed.
+     *
+     * @param \Illuminate\Support\Collection $paidInvoices
+     * @param array $monthLabels
+     * @param int $currentYear
+     * @return array
+     */
+    private function buildYearlyNominal($paidInvoices, array $monthLabels, int $currentYear): array
+    {
+        if ($paidInvoices->isEmpty()) {
+            return [];
+        }
+
+        // Tentukan tahun pertama dari invoice paid yang memiliki paid_at
+        $firstPaidAt = $paidInvoices
+            ->filter(fn($inv) => !empty($inv->paid_at))
+            ->min('paid_at');
+
+        if (!$firstPaidAt) {
+            return [];
+        }
+
+        $firstYear = Carbon::parse($firstPaidAt)->year;
+
+        // Bangun struktur kosong untuk semua tahun dari firstYear hingga currentYear
+        $yearlyNominal = [];
+        for ($year = $firstYear; $year <= $currentYear; $year++) {
+            $yearlyNominal[$year] = [
+                'total' => 0,
+                'monthly' => collect($monthLabels)
+                    ->mapWithKeys(fn($label) => [$label => 0])
+                    ->all(),
+            ];
+        }
+
+        // Isi nominal berdasarkan invoice paid
+        foreach ($paidInvoices as $invoice) {
+            if (empty($invoice->paid_at)) {
+                continue;
+            }
+
+            $paidAt   = Carbon::parse($invoice->paid_at);
+            $year     = $paidAt->year;
+            $monthKey = $monthLabels[$paidAt->month] ?? null;
+
+            if (!isset($yearlyNominal[$year]) || $monthKey === null) {
+                continue;
+            }
+
+            $yearlyNominal[$year]['total']             += $invoice->nett_amount;
+            $yearlyNominal[$year]['monthly'][$monthKey] += $invoice->nett_amount;
+        }
+
+        // Urutkan dari tahun terbaru ke terlama agar lebih mudah dikonsumsi frontend
+        krsort($yearlyNominal);
+
+        return $yearlyNominal;
     }
 
     /**
