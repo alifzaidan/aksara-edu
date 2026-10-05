@@ -67,12 +67,16 @@ export default function InstallmentOptions({
 }: InstallmentOptionsProps) {
     const [isLoading, setIsLoading] = useState(false);
 
+    const ADMIN_FEE = 5000;
+
     const hasActiveInstallment = !!activeInstallment && activeInstallment.terms?.length > 0;
     const isFullyPaid = hasActiveInstallment && activeInstallment.is_fully_paid;
     const nextTerm = hasActiveInstallment ? activeInstallment.next_term : null;
 
-    const totalAmount = terms.reduce((sum, t) => sum + Number(t.amount || 0), 0);
-    const dpAmount = terms[0]?.amount ?? 0;
+    const baseTotalAmount = terms.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    const totalAmount = baseTotalAmount + (terms.length * ADMIN_FEE);
+    const baseDpAmount = Number(terms[0]?.amount ?? 0);
+    const dpAmount = baseDpAmount > 0 ? baseDpAmount + ADMIN_FEE : 0;
 
     const remainingAmount = hasActiveInstallment
         ? activeInstallment.terms.filter((t) => t.status !== 'paid').reduce((sum, t) => sum + Number(t.amount || 0), 0)
@@ -264,9 +268,9 @@ export default function InstallmentOptions({
                                             </p>
                                         </div>
                                     </div>
-                                    <span className={`font-semibold ${isPaid ? 'text-green-700 dark:text-green-400 line-through' : 'text-foreground'}`}>
-                                        {rupiahFormatter.format(term.amount)}
-                                    </span>
+                                        <span className={`font-semibold ${isPaid ? 'text-green-700 dark:text-green-400 line-through' : 'text-foreground'}`}>
+                                            {rupiahFormatter.format(term.amount)}
+                                        </span>
                                 </div>
                             );
                         })}
@@ -306,10 +310,16 @@ export default function InstallmentOptions({
                 <div className="rounded-lg bg-card border border-border p-3.5 shadow-sm">
                     <p className="text-xs text-muted-foreground mb-1">Bayar Sekarang (DP)</p>
                     <p className="font-bold text-primary text-xl">{rupiahFormatter.format(dpAmount)}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {rupiahFormatter.format(baseDpAmount)} + Admin Rp 5.000
+                    </p>
                 </div>
                 <div className="rounded-lg bg-card border border-border p-3.5 shadow-sm">
                     <p className="text-xs text-muted-foreground mb-1">Total Keseluruhan</p>
                     <p className="font-bold text-foreground text-xl">{rupiahFormatter.format(totalAmount)}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Termasuk admin {terms.length}x transaksi
+                    </p>
                 </div>
             </div>
 
@@ -323,28 +333,40 @@ export default function InstallmentOptions({
                 </div>
 
                 <div className="space-y-2 pt-1">
-                    {terms.map((term, i) => (
-                        <div key={i} className="flex items-center justify-between gap-3 rounded-md bg-muted/40 p-2.5 text-xs">
-                            <div className="flex items-center gap-2.5">
-                                <div className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${i === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted-foreground/20 text-muted-foreground'}`}>
-                                    {term.term_number}
+                    {terms.map((term, i) => {
+                        const termGross = Number(term.amount) + ADMIN_FEE;
+                        return (
+                            <div key={i} className="flex items-center justify-between gap-3 rounded-md bg-muted/40 p-2.5 text-xs">
+                                <div className="flex items-center gap-2.5">
+                                    <div className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${i === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted-foreground/20 text-muted-foreground'}`}>
+                                        {term.term_number}
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-foreground">{i === 0 ? 'Termin 1 (DP)' : `Termin ke-${term.term_number}`}</p>
+                                        <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                                            <Clock className="h-3 w-3" />
+                                            {format(parseISO(term.due_date), 'dd MMMM yyyy', { locale: id })}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-medium text-foreground">{i === 0 ? 'Termin 1 (DP)' : `Termin ke-${term.term_number}`}</p>
-                                    <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                                        <Clock className="h-3 w-3" />
-                                        {format(parseISO(term.due_date), 'dd MMMM yyyy', { locale: id })}
+                                <div className="text-right flex-shrink-0">
+                                    <span className="font-semibold text-foreground">{rupiahFormatter.format(termGross)}</span>
+                                    <p className="text-[10px] text-muted-foreground">
+                                        {rupiahFormatter.format(term.amount)} + Admin Rp 5.000
                                     </p>
                                 </div>
                             </div>
-                            <span className="font-semibold text-foreground">{rupiahFormatter.format(term.amount)}</span>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 
             {/* Ketentuan Cicilan */}
             <div className="rounded-lg bg-muted/30 border border-border p-3 space-y-1.5 text-xs text-muted-foreground">
+                <div className="flex items-start gap-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                    <span>Setiap transaksi termin dikenakan biaya admin Rp 5.000.</span>
+                </div>
                 <div className="flex items-start gap-2">
                     <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
                     <span>Akses materi/program langsung aktif segera setelah DP dibayar.</span>
@@ -391,7 +413,7 @@ export default function InstallmentOptions({
                 id="btn-pay-installment"
             >
                 <CreditCard className="h-4 w-4" />
-                {isLoading ? 'Memproses...' : `Bayar DP ${rupiahFormatter.format(dpAmount)}`}
+                {isLoading ? 'Memproses...' : `Bayar DP ${rupiahFormatter.format(dpAmount)} (Termasuk Biaya Admin)`}
             </Button>
         </div>
     );

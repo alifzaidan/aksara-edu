@@ -3,15 +3,18 @@
 namespace Tests\Feature;
 
 use App\Models\AffiliateEarning;
+use App\Models\Category;
 use App\Models\CertificationProgram;
 use App\Models\EnrollmentCertificationProgram;
 use App\Models\Invoice;
 use App\Models\ProductInstallmentTerm;
 use App\Models\User;
+use App\Services\DokuService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Mockery;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -44,15 +47,17 @@ class InstallmentFlowTest extends TestCase
         $this->affiliate->assignRole('affiliate');
 
         $this->buyer = User::factory()->create([
+            'name' => 'Buyer Test',
             'email' => 'buyer@test.com',
+            'phone_number' => '081234567890',
             'referred_by_user_id' => $this->affiliate->id,
         ]);
         $this->buyer->assignRole('user');
 
-        $category = \App\Models\Category::create([
-            'name' => 'Finance',
-            'slug' => 'finance',
-        ]);
+        $category = Category::firstOrCreate(
+            ['slug' => 'finance'],
+            ['name' => 'Finance']
+        );
 
         $this->program = CertificationProgram::create([
             'title' => 'Sertifikasi Keuangan Profesional',
@@ -194,8 +199,7 @@ class InstallmentFlowTest extends TestCase
             'paid_at' => Carbon::now(),
         ]);
 
-        // The query rule: paid regular direct invoices (is_installment=false AND parent_invoice_id IS NULL)
-        // PLUS paid child term invoices (parent_invoice_id IS NOT NULL)
+        // Revenue query: paid direct invoices + paid child term invoices
         $revenueQuery = Invoice::where('status', 'paid')
             ->where(function ($q) {
                 $q->where(function ($sq) {
@@ -206,7 +210,6 @@ class InstallmentFlowTest extends TestCase
         $totalRevenue = $revenueQuery->sum('nett_amount');
 
         // Expected: 500.000 (regular) + 250.000 (T1) + 600.000 (T2) = 1.350.000
-        // NOT 2.200.000 (which would happen if parent 850k was also added)
         $this->assertEquals(1350000, $totalRevenue);
     }
 
@@ -288,7 +291,7 @@ class InstallmentFlowTest extends TestCase
         ]);
 
         // Term 2 is overdue
-        $overdueTerm = Invoice::create([
+        Invoice::create([
             'user_id' => $this->buyer->id,
             'invoice_code' => 'AKS-INST-004-T2',
             'amount' => 600000,
@@ -311,20 +314,243 @@ class InstallmentFlowTest extends TestCase
     }
 
     /**
-     * Test 5: Affiliate commission recorded per term child invoice correctly links to parent product
+     * Test 5: Active installment guard prevents duplicate installment and check-email returns active installment
+     */
+    public function test_active_installment_guard_prevents_duplicate_installment_and_check_email_detects_it()
+    {
+        ProductInstallmentTerm::create([
+            'termable_type' => CertificationProgram::class,
+            'termable_id' => $this->program->id,
+            'term_number' => 1,
+            'amount' => 400000,
+            'due_date' => Carbon::now()->addDays(5),
+        ]);
+        ProductInstallmentTerm::create([
+            'termable_type' => CertificationProgram::class,
+            'termable_id' => $this->program->id,
+            'term_number' => 2,
+            'amount' => 600000,
+            'due_date' => Carbon::now()->addDays(20),
+        ]);
+
+        $parent = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-INST-005',
+            'amount' => 1010000,
+            'nett_amount' => 1000000,
+            'status' => 'installment_pending',
+            'is_installment' => true,
+        ]);
+
+        EnrollmentCertificationProgram::create([
+            'invoice_id' => $parent->id,
+            'certification_program_id' => $this->program->id,
+            'price' => 1000000,
+        ]);
+
+        Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-INST-005-T1',
+            'amount' => 405000,
+            'nett_amount' => 400000,
+            'status' => 'paid',
+            'is_installment' => false,
+            'parent_invoice_id' => $parent->id,
+            'installment_number' => 1,
+            'paid_at' => Carbon::now(),
+        ]);
+
+        Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-INST-005-T2',
+            'amount' => 605000,
+            'nett_amount' => 600000,
+            'status' => 'pending',
+            'is_installment' => false,
+            'parent_invoice_id' => $parent->id,
+            'installment_number' => 2,
+            'installment_due_date' => Carbon::now()->addDays(15),
+        ]);
+
+        // 1. Attempting duplicate installment returns 422
+        $response = $this->actingAs($this->buyer)
+            ->postJson('/invoice/installment', [
+                'type' => 'certification_program',
+                'id' => $this->program->id,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Anda memiliki transaksi cicilan yang sedang aktif untuk program ini. Silakan lanjutkan pembayaran termin cicilan Anda.',
+            ]);
+
+        // 2. /api/check-email returns active_installment
+        $checkEmailResponse = $this->postJson('/api/check-email', [
+            'email' => $this->buyer->email,
+            'program_id' => $this->program->id,
+        ]);
+
+        $checkEmailResponse->assertStatus(200)
+            ->assertJson([
+                'exists' => true,
+                'active_installment' => [
+                    'parent_invoice_id' => $parent->id,
+                    'is_fully_paid' => false,
+                    'paid_terms' => 1,
+                    'total_terms' => 2,
+                ],
+            ]);
+    }
+
+    /**
+     * Test 6: Store installment creates parent and terms with payment URL and admin fee
+     */
+    public function test_store_installment_creates_parent_and_terms_with_payment_url()
+    {
+        ProductInstallmentTerm::create([
+            'termable_type' => CertificationProgram::class,
+            'termable_id' => $this->program->id,
+            'term_number' => 1,
+            'amount' => 400000,
+            'due_date' => Carbon::now()->addDays(5),
+        ]);
+        ProductInstallmentTerm::create([
+            'termable_type' => CertificationProgram::class,
+            'termable_id' => $this->program->id,
+            'term_number' => 2,
+            'amount' => 600000,
+            'due_date' => Carbon::now()->addDays(20),
+        ]);
+
+        $mockDoku = Mockery::mock(DokuService::class);
+        $mockDoku->shouldReceive('createCheckout')
+            ->once()
+            ->andReturn([
+                'response' => [
+                    'payment' => [
+                        'url' => 'https://mock.payment.com/checkout/12345',
+                    ],
+                ],
+            ]);
+        $this->app->instance(DokuService::class, $mockDoku);
+
+        $response = $this->actingAs($this->buyer)
+            ->postJson('/invoice/installment', [
+                'type' => 'certification_program',
+                'id' => $this->program->id,
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'payment_url' => 'https://mock.payment.com/checkout/12345',
+                'dp_amount' => 405000,
+                'total_terms' => 2,
+            ]);
+
+        $parent = Invoice::where('user_id', $this->buyer->id)
+            ->where('is_installment', true)
+            ->first();
+
+        $this->assertNotNull($parent);
+        $this->assertEquals('installment_pending', $parent->status);
+        $this->assertEquals(1010000, $parent->amount);
+
+        $terms = $parent->installmentTerms()->orderBy('installment_number')->get();
+        $this->assertCount(2, $terms);
+        $this->assertEquals(405000, $terms[0]->amount);
+        $this->assertEquals('https://mock.payment.com/checkout/12345', $terms[0]->invoice_url);
+        $this->assertEquals(605000, $terms[1]->amount);
+    }
+
+    /**
+     * Test 7: PayTerm generates payment URL for next unpaid term with admin fee
+     */
+    public function test_pay_term_generates_payment_url_for_next_unpaid_term()
+    {
+        $parent = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-INST-007',
+            'amount' => 1010000,
+            'nett_amount' => 1000000,
+            'status' => 'installment_pending',
+            'is_installment' => true,
+        ]);
+
+        EnrollmentCertificationProgram::create([
+            'invoice_id' => $parent->id,
+            'certification_program_id' => $this->program->id,
+            'price' => 1000000,
+        ]);
+
+        // Term 1 paid
+        Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-INST-007-T1',
+            'amount' => 405000,
+            'nett_amount' => 400000,
+            'status' => 'paid',
+            'is_installment' => false,
+            'parent_invoice_id' => $parent->id,
+            'installment_number' => 1,
+            'paid_at' => Carbon::now()->subDays(5),
+        ]);
+
+        // Term 2 pending and NOT overdue
+        $term2 = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-INST-007-T2',
+            'amount' => 605000,
+            'nett_amount' => 600000,
+            'status' => 'pending',
+            'is_installment' => false,
+            'parent_invoice_id' => $parent->id,
+            'installment_number' => 2,
+            'installment_due_date' => Carbon::now()->addDays(10),
+        ]);
+
+        $mockDoku = Mockery::mock(DokuService::class);
+        $mockDoku->shouldReceive('createCheckout')
+            ->once()
+            ->andReturn([
+                'response' => [
+                    'payment' => [
+                        'url' => 'https://mock.payment.com/checkout/term2-67890',
+                    ],
+                ],
+            ]);
+        $this->app->instance(DokuService::class, $mockDoku);
+
+        $response = $this->actingAs($this->buyer)
+            ->postJson("/installment/{$parent->id}/pay");
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'payment_url' => 'https://mock.payment.com/checkout/term2-67890',
+                'term_number' => 2,
+                'amount' => 605000,
+            ]);
+
+        $term2->refresh();
+        $this->assertEquals('https://mock.payment.com/checkout/term2-67890', $term2->invoice_url);
+    }
+
+    /**
+     * Test 8: Affiliate commission recorded per term child invoice correctly links to parent product
      */
     public function test_affiliate_earning_product_name_resolution_for_installment_terms()
     {
         $parent = Invoice::create([
             'user_id' => $this->buyer->id,
-            'invoice_code' => 'AKS-INST-005',
+            'invoice_code' => 'AKS-INST-008',
             'amount' => 850000,
             'nett_amount' => 850000,
             'status' => 'installment_pending',
             'is_installment' => true,
         ]);
 
-        // Attach enrollment to parent invoice
         EnrollmentCertificationProgram::create([
             'invoice_id' => $parent->id,
             'certification_program_id' => $this->program->id,
@@ -334,7 +560,7 @@ class InstallmentFlowTest extends TestCase
         // Child Term 1
         $term1 = Invoice::create([
             'user_id' => $this->buyer->id,
-            'invoice_code' => 'AKS-INST-005-T1',
+            'invoice_code' => 'AKS-INST-008-T1',
             'amount' => 250000,
             'nett_amount' => 250000,
             'status' => 'paid',
@@ -353,7 +579,6 @@ class InstallmentFlowTest extends TestCase
             'status' => 'approved',
         ]);
 
-        // Query with eager loading as done in AffiliateController
         $loadedEarning = AffiliateEarning::with([
             'invoice.parentInvoice.certificationProgramItems.certificationProgram',
         ])->find($earning->id);
@@ -367,13 +592,13 @@ class InstallmentFlowTest extends TestCase
     }
 
     /**
-     * Test 6: PDF invoice generation for paid child terms and access control
+     * Test 9: PDF invoice generation for paid child terms and access control
      */
     public function test_pdf_invoice_generation_and_access_control()
     {
         $parent = Invoice::create([
             'user_id' => $this->buyer->id,
-            'invoice_code' => 'AKS-INST-006',
+            'invoice_code' => 'AKS-INST-009',
             'amount' => 850000,
             'nett_amount' => 850000,
             'status' => 'installment_pending',
@@ -389,7 +614,7 @@ class InstallmentFlowTest extends TestCase
         // Child Term 1 (Paid)
         $term1 = Invoice::create([
             'user_id' => $this->buyer->id,
-            'invoice_code' => 'AKS-INST-006-T1',
+            'invoice_code' => 'AKS-INST-009-T1',
             'amount' => 250000,
             'nett_amount' => 250000,
             'status' => 'paid',
@@ -402,7 +627,7 @@ class InstallmentFlowTest extends TestCase
         // Child Term 2 (Unpaid)
         $term2 = Invoice::create([
             'user_id' => $this->buyer->id,
-            'invoice_code' => 'AKS-INST-006-T2',
+            'invoice_code' => 'AKS-INST-009-T2',
             'amount' => 600000,
             'nett_amount' => 600000,
             'status' => 'pending',
@@ -416,7 +641,7 @@ class InstallmentFlowTest extends TestCase
             ->get("/invoice/{$term1->invoice_code}/pdf");
         $responsePaid->assertStatus(200);
 
-        // 2. Unpaid parent invoice (still in installment_pending) cannot download full invoice PDF
+        // 2. Unpaid parent invoice cannot download full invoice PDF
         $responseUnpaidParent = $this->actingAs($this->buyer)
             ->get("/invoice/{$parent->invoice_code}/pdf");
         $responseUnpaidParent->assertStatus(403);
@@ -435,13 +660,13 @@ class InstallmentFlowTest extends TestCase
     }
 
     /**
-     * Test 7: Admin dashboard recent_sales only includes parent invoices, not duplicate child terms
+     * Test 10: Admin dashboard recent_sales only includes parent invoices, not duplicate child terms
      */
     public function test_admin_dashboard_recent_sales_only_includes_parent_invoices()
     {
         $parent = Invoice::create([
             'user_id' => $this->buyer->id,
-            'invoice_code' => 'AKS-INST-007',
+            'invoice_code' => 'AKS-INST-010',
             'amount' => 850000,
             'nett_amount' => 850000,
             'status' => 'installment_pending',
@@ -458,7 +683,7 @@ class InstallmentFlowTest extends TestCase
         // Term 1 (Paid)
         Invoice::create([
             'user_id' => $this->buyer->id,
-            'invoice_code' => 'AKS-INST-007-T1',
+            'invoice_code' => 'AKS-INST-010-T1',
             'amount' => 250000,
             'nett_amount' => 250000,
             'status' => 'paid',
@@ -471,7 +696,7 @@ class InstallmentFlowTest extends TestCase
         // Term 2 (Paid)
         Invoice::create([
             'user_id' => $this->buyer->id,
-            'invoice_code' => 'AKS-INST-007-T2',
+            'invoice_code' => 'AKS-INST-010-T2',
             'amount' => 600000,
             'nett_amount' => 600000,
             'status' => 'paid',
@@ -497,9 +722,149 @@ class InstallmentFlowTest extends TestCase
 
         // Exactly 1 entry for this transaction (the parent), child terms are NOT listed
         $this->assertCount(1, $recentSales);
-        $this->assertEquals('AKS-INST-007', $recentSales->first()->invoice_code);
+        $this->assertEquals('AKS-INST-010', $recentSales->first()->invoice_code);
         $this->assertCount(1, $recentSales->first()->certificationProgramItems);
         $this->assertEquals('Sertifikasi Keuangan Profesional', $recentSales->first()->certificationProgramItems->first()->certificationProgram->title);
     }
-}
 
+    /**
+     * Test 11: Installment terms include Rp 5.000 admin fee per transaction
+     */
+    public function test_installment_terms_include_admin_fee_per_transaction()
+    {
+        $adminFeePerTerm = 5000;
+        $term1Nett = 250000;
+        $term2Nett = 600000;
+        $totalNett = $term1Nett + $term2Nett;
+        $totalGross = $totalNett + (2 * $adminFeePerTerm);
+
+        $parent = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-INST-011',
+            'amount' => $totalGross,
+            'nett_amount' => $totalNett,
+            'status' => 'installment_pending',
+            'is_installment' => true,
+        ]);
+
+        EnrollmentCertificationProgram::create([
+            'invoice_id' => $parent->id,
+            'certification_program_id' => $this->program->id,
+            'price' => $totalNett,
+        ]);
+
+        $child1 = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-INST-011-T1',
+            'amount' => $term1Nett + $adminFeePerTerm,
+            'nett_amount' => $term1Nett,
+            'status' => 'pending',
+            'is_installment' => false,
+            'parent_invoice_id' => $parent->id,
+            'installment_number' => 1,
+            'installment_due_date' => Carbon::now()->addDays(5),
+        ]);
+
+        $child2 = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-INST-011-T2',
+            'amount' => $term2Nett + $adminFeePerTerm,
+            'nett_amount' => $term2Nett,
+            'status' => 'pending',
+            'is_installment' => false,
+            'parent_invoice_id' => $parent->id,
+            'installment_number' => 2,
+            'installment_due_date' => Carbon::now()->addDays(35),
+        ]);
+
+        // 1. Verify parent amounts
+        $this->assertEquals(860000, $parent->amount);
+        $this->assertEquals(850000, $parent->nett_amount);
+
+        // 2. Verify child amounts include 5.000 admin fee
+        $this->assertEquals(255000, $child1->amount);
+        $this->assertEquals(250000, $child1->nett_amount);
+        $this->assertEquals(5000, $child1->transaction_fee);
+
+        $this->assertEquals(605000, $child2->amount);
+        $this->assertEquals(600000, $child2->nett_amount);
+        $this->assertEquals(5000, $child2->transaction_fee);
+
+        // 3. Verify getActiveInstallmentForUser returns amounts including admin fee
+        $activeData = Invoice::getActiveInstallmentForUser($this->buyer->id, 'certification_program', $this->program->id);
+        $this->assertNotNull($activeData);
+        $this->assertEquals(860000, $activeData['amount']);
+        $this->assertEquals(255000, $activeData['next_term']['amount']);
+        $this->assertEquals(255000, $activeData['terms'][0]['amount']);
+        $this->assertEquals(605000, $activeData['terms'][1]['amount']);
+    }
+
+    /**
+     * Test 12: Installment WhatsApp message contains access steps, group link, and settlement link
+     */
+    public function test_installment_whatsapp_message_contains_comprehensive_details()
+    {
+        $this->program->update(['group_url' => 'https://chat.whatsapp.com/test-group']);
+
+        $parent = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-INST-012',
+            'amount' => 860000,
+            'nett_amount' => 850000,
+            'status' => 'installment_pending',
+            'is_installment' => true,
+        ]);
+
+        EnrollmentCertificationProgram::create([
+            'invoice_id' => $parent->id,
+            'certification_program_id' => $this->program->id,
+            'price' => 850000,
+        ]);
+
+        $child1 = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-INST-012-T1',
+            'amount' => 255000,
+            'nett_amount' => 250000,
+            'status' => 'paid',
+            'is_installment' => false,
+            'parent_invoice_id' => $parent->id,
+            'installment_number' => 1,
+            'paid_at' => Carbon::now(),
+        ]);
+
+        $child2 = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-INST-012-T2',
+            'amount' => 605000,
+            'nett_amount' => 600000,
+            'status' => 'pending',
+            'is_installment' => false,
+            'parent_invoice_id' => $parent->id,
+            'installment_number' => 2,
+            'installment_due_date' => Carbon::now()->addDays(30),
+        ]);
+
+        $controller = app(\App\Http\Controllers\InvoiceController::class);
+        $method = new \ReflectionMethod($controller, 'createWhatsAppInstallmentMessage');
+        $method->setAccessible(true);
+
+        // 1. Intermediate term message (Term 1 paid, Term 2 pending)
+        $message = $method->invoke($controller, $child1, $parent, false);
+
+        $this->assertStringContainsString('Pembayaran DP Cicilan', $message);
+        $this->assertStringContainsString('Cara Mengakses Materi', $message);
+        $this->assertStringContainsString('/profile/installments', $message);
+        $this->assertStringContainsString('https://chat.whatsapp.com/test-group', $message);
+        $this->assertStringContainsString('Informasi Tagihan Selanjutnya', $message);
+        $this->assertStringContainsString('Penting untuk Peserta Cicilan', $message);
+
+        // 2. Completed installment message
+        $messageCompleted = $method->invoke($controller, $child2, $parent, true);
+
+        $this->assertStringContainsString('Pelunasan Cicilan', $messageCompleted);
+        $this->assertStringContainsString('LUNAS', $messageCompleted);
+        $this->assertStringContainsString('Cara Mengakses Materi', $messageCompleted);
+        $this->assertStringContainsString('https://chat.whatsapp.com/test-group', $messageCompleted);
+    }
+}

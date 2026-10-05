@@ -1530,7 +1530,7 @@ class InvoiceController extends Controller
                     if ($parentInvoice->isFullyPaid()) {
                         $parentInvoice->update(['status' => 'paid', 'paid_at' => Carbon::now('Asia/Jakarta')]);
                         event(new \App\Events\TransactionPaid($parentInvoice));
-                        $this->sendWhatsAppInstallmentComplete($parentInvoice);
+                        $this->sendWhatsAppInstallmentComplete($parentInvoice, $invoice);
                     } else {
                         $this->sendWhatsAppTermPaid($invoice, $parentInvoice);
                     }
@@ -1822,7 +1822,7 @@ class InvoiceController extends Controller
                     if ($parentInvoice->isFullyPaid()) {
                         $parentInvoice->update(['status' => 'paid', 'paid_at' => Carbon::now('Asia/Jakarta')]);
                         event(new \App\Events\TransactionPaid($parentInvoice));
-                        $this->sendWhatsAppInstallmentComplete($parentInvoice);
+                        $this->sendWhatsAppInstallmentComplete($parentInvoice, $invoice);
                     } else {
                         $this->sendWhatsAppTermPaid($invoice, $parentInvoice);
                     }
@@ -1906,6 +1906,23 @@ class InvoiceController extends Controller
     private function sendWhatsAppNotification(Invoice $invoice)
     {
         try {
+            if ($invoice->isInstallmentChild()) {
+                $parentInvoice = $invoice->parentInvoice ?? Invoice::find($invoice->parent_invoice_id);
+                if ($parentInvoice) {
+                    if ($parentInvoice->isFullyPaid()) {
+                        $this->sendWhatsAppInstallmentComplete($parentInvoice, $invoice);
+                    } else {
+                        $this->sendWhatsAppTermPaid($invoice, $parentInvoice);
+                    }
+                    return;
+                }
+            }
+
+            if ($invoice->isInstallmentParent()) {
+                $this->sendWhatsAppInstallmentComplete($invoice);
+                return;
+            }
+
             $user = $invoice->user;
 
             if (!$user->phone_number) {
@@ -2032,28 +2049,327 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Buat pesan WhatsApp komprehensif untuk pembayaran cicilan (per termin maupun pelunasan)
+     * Format dan kelengkapan informasi disamakan dengan pembayaran normal & gratis:
+     * - Header & sapaan pengguna
+     * - Detail tagihan & termin cicilan
+     * - Informasi termin selanjutnya & link pelunasan
+     * - Step-by-step cara mengakses materi di website
+     * - Jadwal & link grup pelatihan (webinar, bootcamp, private class, sertifikasi, bundle, kelas)
+     * - Catatan penting cicilan & kontak customer support
+     *
+     * @param Invoice $childInvoice
+     * @param Invoice $parentInvoice
+     * @param bool $isCompleted
+     * @return string
+     */
+    private function createWhatsAppInstallmentMessage(Invoice $childInvoice, Invoice $parentInvoice, bool $isCompleted = false): string
+    {
+        $parentInvoice->loadMissing([
+            'user',
+            'courseItems.course',
+            'bootcampItems.bootcamp',
+            'webinarItems.webinar',
+            'privateItems.privateClass',
+            'privateItems.privateClassSchedule',
+            'certificationProgramItems.certificationProgram',
+            'bundleEnrollments.bundle.bundleItems.bundleable',
+            'installmentTerms',
+        ]);
+
+        $user = $parentInvoice->user;
+        $loginUrl = route('login');
+        $profileUrl = route('profile.index');
+        $installmentUrl = route('profile.installments');
+
+        $itemType = null;
+        $itemData = null;
+        $typeInfo = null;
+
+        if ($parentInvoice->bundleEnrollments->count() > 0) {
+            $itemType = 'bundle';
+            $bundleEnrollment = $parentInvoice->bundleEnrollments->first();
+            $bundle = $bundleEnrollment->bundle;
+
+            $typeInfo = [
+                'icon' => '📦',
+                'name' => 'Paket Bundling',
+                'menu' => 'Dashboard',
+                'title' => $bundle->title,
+                'item' => $bundle
+            ];
+        } elseif ($parentInvoice->courseItems->count() > 0) {
+            $itemType = 'course';
+            $itemData = $parentInvoice->courseItems->first();
+            $typeInfo = [
+                'icon' => '📚',
+                'name' => 'Kelas Online',
+                'menu' => 'Kelas Saya',
+                'title' => $itemData->course->title,
+                'item' => $itemData->course
+            ];
+        } elseif ($parentInvoice->bootcampItems->count() > 0) {
+            $itemType = 'bootcamp';
+            $itemData = $parentInvoice->bootcampItems->first();
+            $typeInfo = [
+                'icon' => '🎯',
+                'name' => 'Bootcamp',
+                'menu' => 'Bootcamp Saya',
+                'title' => $itemData->bootcamp->title,
+                'item' => $itemData->bootcamp
+            ];
+        } elseif ($parentInvoice->webinarItems->count() > 0) {
+            $itemType = 'webinar';
+            $itemData = $parentInvoice->webinarItems->first();
+            $typeInfo = [
+                'icon' => '📺',
+                'name' => 'Webinar',
+                'menu' => 'Webinar Saya',
+                'title' => $itemData->webinar->title,
+                'item' => $itemData->webinar
+            ];
+        } elseif ($parentInvoice->privateItems->count() > 0) {
+            $itemType = 'private';
+            $itemData = $parentInvoice->privateItems->first();
+            $typeInfo = [
+                'icon' => '🎓',
+                'name' => 'Private Class',
+                'menu' => 'Dashboard',
+                'title' => $itemData->privateClass->title,
+                'item' => $itemData->privateClass
+            ];
+        } elseif ($parentInvoice->certificationProgramItems->count() > 0) {
+            $itemType = 'certification_program';
+            $itemData = $parentInvoice->certificationProgramItems->first();
+            $typeInfo = [
+                'icon' => '🧾',
+                'name' => 'Sertifikasi Program',
+                'menu' => 'Sertifikasi Saya',
+                'title' => $itemData->certificationProgram->title,
+                'item' => $itemData->certificationProgram
+            ];
+        } else {
+            $typeInfo = [
+                'icon' => '📚',
+                'name' => 'Program',
+                'menu' => 'Dashboard',
+                'title' => 'Program Aksademy',
+                'item' => null
+            ];
+        }
+
+        $termNumber = $childInvoice->installment_number ?? 1;
+        $totalTerms = $parentInvoice->installmentTerms()->count();
+        $nextTerm = $parentInvoice->nextUnpaidTerm();
+
+        // 1. Header Pembuka
+        if ($isCompleted) {
+            $message = "*[Aksademy - Pelunasan Cicilan {$typeInfo['name']} Berhasil]* 🎉\n\n";
+            $message .= "Hai *{$user->name}*,\n\n";
+            $message .= "Selamat! Pembayaran cicilan ke-{$termNumber} dari {$totalTerms} telah berhasil diproses dan seluruh pembayaran cicilan untuk program *{$typeInfo['title']}* telah *LUNAS*.\n\n";
+        } else {
+            $isDp = ($termNumber === 1);
+            $message = "*[Aksademy - Pembayaran " . ($isDp ? 'DP Cicilan' : 'Cicilan') . " {$typeInfo['name']} Berhasil]* ✅\n\n";
+            $message .= "Hai *{$user->name}*,\n\n";
+            $message .= "Terima kasih! Pembayaran " . ($isDp ? 'DP (Termin ke-1)' : "Termin ke-{$termNumber}") . " dari {$totalTerms} untuk {$typeInfo['name']} Anda telah berhasil diproses.\n\n";
+        }
+
+        // 2. Detail Pembayaran Cicilan
+        $message .= "*Detail Pembayaran:*\n";
+        $message .= "🧾 Invoice Termin: *{$childInvoice->invoice_code}*\n";
+        $message .= "📋 No. Tagihan Cicilan: *{$parentInvoice->invoice_code}*\n";
+        $message .= "{$typeInfo['icon']} {$typeInfo['name']}: *{$typeInfo['title']}*\n";
+
+        if ($itemType === 'bundle') {
+            $bundle = $typeInfo['item'];
+            if ($bundle) {
+                $count = $bundle->bundle_items_count ?? $bundle->bundleItems->count();
+                $message .= "📦 Berisi: *{$count} Program*\n";
+            }
+        }
+
+        $message .= "🔢 Status Termin: *Ke-{$termNumber} dari {$totalTerms}*\n";
+        $message .= "💰 Nominal Dibayar: *Rp " . number_format($childInvoice->amount, 0, ',', '.') . "* (Termasuk Biaya Admin)\n";
+        $paidTime = $childInvoice->paid_at ? Carbon::parse($childInvoice->paid_at)->format('d M Y H:i') : Carbon::now('Asia/Jakarta')->format('d M Y H:i');
+        $message .= "📅 Dibayar: {$paidTime} WIB\n\n";
+
+        // 3. Info Termin Selanjutnya & Link Pelunasan
+        if (!$isCompleted && $nextTerm) {
+            $nextTermNumber = $nextTerm->installment_number;
+            $nextDue = $nextTerm->installment_due_date ? Carbon::parse($nextTerm->installment_due_date)->translatedFormat('d F Y') : '-';
+            $nextAmount = ($nextTerm->status !== 'paid' && $nextTerm->amount == $nextTerm->nett_amount)
+                ? $nextTerm->amount + 5000
+                : $nextTerm->amount;
+
+            $message .= "*Informasi Tagihan Selanjutnya:*\n";
+            $message .= "⏳ Termin: *Ke-{$nextTermNumber} dari {$totalTerms}*\n";
+            $message .= "💰 Nominal: *Rp " . number_format($nextAmount, 0, ',', '.') . "* (Termasuk Biaya Admin)\n";
+            $message .= "📅 Jatuh Tempo: *{$nextDue}*\n";
+            $message .= "🔗 Link Pembayaran/Pelunasan: {$installmentUrl}\n\n";
+        } elseif ($isCompleted) {
+            $message .= "*Status Cicilan:*\n";
+            $message .= "🎉 Status: *LUNAS (Semua {$totalTerms} termin selesai)*\n";
+            $message .= "🏆 Sertifikat program dapat diakses melalui profil Anda setelah menyelesaikan pembelajaran.\n\n";
+        }
+
+        // 4. Cara Mengakses Materi
+        $message .= "*Cara Mengakses Materi:*\n";
+        $message .= "1. Login ke akun Anda: {$loginUrl}\n";
+        $message .= "2. Kunjungi dashboard: {$profileUrl}\n";
+        if ($itemType === 'bundle') {
+            $message .= "3. Semua program sudah bisa diakses dari menu masing-masing\n";
+            $message .= "4. Mulai belajar dan raih sertifikat untuk setiap program! 🎓\n\n";
+
+            $bundle = $typeInfo['item'];
+            $hasGroupUrl = false;
+            $groupLinks = "";
+
+            if ($bundle && $bundle->bundleItems) {
+                foreach ($bundle->bundleItems as $bItem) {
+                    $program = $bItem->bundleable;
+                    if ($program && !empty($program->group_url)) {
+                        $hasGroupUrl = true;
+                        $groupLinks .= "👥 {$program->title}:\n{$program->group_url}\n\n";
+                    }
+                }
+            }
+
+            if ($hasGroupUrl) {
+                $message .= "*Join Group Pelatihan:*\n";
+                $message .= $groupLinks;
+                $message .= "⚠️ *Penting:*\n";
+                $message .= "• Bergabung dengan group untuk mendapatkan info penting dan diskusi\n";
+                $message .= "• Aktif mengikuti seluruh kegiatan program\n\n";
+            }
+        } else {
+            $message .= "3. Pilih menu '{$typeInfo['menu']}'\n";
+            $message .= "4. Mulai belajar dan raih sertifikat! 🎓\n\n";
+        }
+
+        // 5. Detail Jadwal & Join Group Khusus Produk
+        if ($itemType === 'course') {
+            $course = $typeInfo['item'];
+            if ($course && !empty($course->group_url)) {
+                $message .= "*Join Group Kelas:*\n";
+                $message .= "👥 {$course->group_url}\n\n";
+                $message .= "⚠️ *Penting:*\n";
+                $message .= "• Bergabung dengan group untuk mendapatkan info materi dan diskusi\n\n";
+            }
+        } elseif ($itemType === 'webinar') {
+            $webinar = $typeInfo['item'];
+            if ($webinar && !empty($webinar->start_time)) {
+                $startTime = Carbon::parse($webinar->start_time);
+                $message .= "*Jadwal Webinar:*\n";
+                $message .= "📅 {$startTime->format('d M Y')}\n";
+                $message .= "🕐 {$startTime->format('H:i')} WIB\n\n";
+            }
+
+            if (!empty($webinar->group_url)) {
+                $message .= "*Join Group Webinar:*\n";
+                $message .= "👥 {$webinar->group_url}\n\n";
+                $message .= "⚠️ *Penting:* \n";
+                $message .= "• Bergabung dengan group untuk update terbaru\n";
+                $message .= "• Jangan lupa attend sesuai jadwal!\n\n";
+            } else {
+                $message .= "⚠️ *Penting:* Jangan lupa bergabung sesuai jadwal!\n\n";
+            }
+        } elseif ($itemType === 'bootcamp') {
+            $bootcamp = $typeInfo['item'];
+            if ($bootcamp && !empty($bootcamp->start_date) && !empty($bootcamp->end_date)) {
+                $startDate = Carbon::parse($bootcamp->start_date);
+                $endDate = Carbon::parse($bootcamp->end_date);
+                $message .= "*Periode Bootcamp:*\n";
+                $message .= "📅 {$startDate->format('d M Y')} - {$endDate->format('d M Y')}\n\n";
+            }
+
+            if (!empty($bootcamp->group_url)) {
+                $message .= "*Join Group Bootcamp:*\n";
+                $message .= "👥 {$bootcamp->group_url}\n\n";
+                $message .= "⚠️ *Penting:* \n";
+                $message .= "• Bergabung dengan group untuk mendapatkan info penting dan diskusi\n";
+                $message .= "• Aktif mengikuti seluruh kegiatan bootcamp\n\n";
+            }
+        } elseif ($itemType === 'private') {
+            $privateClass = $typeInfo['item'];
+            $privateSchedule = $itemData?->privateClassSchedule;
+
+            if ($privateSchedule && !empty($privateSchedule->start_time)) {
+                $startTime = Carbon::parse($privateSchedule->start_time);
+                $endTime = Carbon::parse($privateSchedule->end_time);
+                $message .= "*Jadwal Private Class:*\n";
+                $message .= "📅 {$startTime->format('d M Y')}\n";
+                $message .= "🕐 {$startTime->format('H:i')} - {$endTime->format('H:i')} WIB\n\n";
+            } elseif (!empty($privateClass->start_time)) {
+                $startTime = Carbon::parse($privateClass->start_time);
+                $message .= "*Jadwal Private Class:*\n";
+                $message .= "📅 {$startTime->format('d M Y')}\n";
+                $message .= "🕐 {$startTime->format('H:i')} WIB\n\n";
+            }
+
+            if (!empty($privateClass->mode)) {
+                $modeText = $privateClass->mode === 'offline' ? 'Offline' : 'Online';
+                $message .= "📍 Mode: *{$modeText}*\n";
+                if ($privateClass->mode === 'offline' && !empty($privateClass->location)) {
+                    $message .= "📌 Lokasi: {$privateClass->location}\n";
+                }
+                $message .= "\n";
+            }
+
+            if (!empty($privateClass->group_url)) {
+                $message .= "*Join Group Private Class:*\n";
+                $message .= "👥 {$privateClass->group_url}\n\n";
+            }
+        } elseif ($itemType === 'certification_program') {
+            $program = $typeInfo['item'];
+
+            if (!empty($program->group_url)) {
+                $message .= "*Join Group Sertifikasi:*\n";
+                $message .= "👥 {$program->group_url}\n\n";
+                $message .= "⚠️ *Penting:*\n";
+                $message .= "• Bergabung dengan group untuk mendapatkan info penting\n";
+                $message .= "• Ikuti jadwal program yang tersedia\n\n";
+            }
+
+            if (!empty($program->socialization_group_url)) {
+                $message .= "*Join Group Sosialisasi:*\n";
+                $message .= "👥 {$program->socialization_group_url}\n\n";
+            }
+        }
+
+        // 6. Catatan Khusus Cicilan
+        if (!$isCompleted) {
+            $message .= "⚠️ *Penting untuk Peserta Cicilan:*\n";
+            $message .= "• Akses materi Anda sudah *aktif* dan dapat dipelajari langsung.\n";
+            if ($nextTerm && $nextTerm->installment_due_date) {
+                $nextDueText = Carbon::parse($nextTerm->installment_due_date)->translatedFormat('d F Y');
+                $message .= "• Mohon selesaikan pembayaran termin berikutnya sebelum tanggal jatuh tempo (*{$nextDueText}*) agar akses belajar Anda tidak dibekukan.\n";
+            }
+            $message .= "• Riwayat pembayaran dan link pelunasan dapat dicek kapan saja di: {$installmentUrl}\n\n";
+        } else {
+            $message .= "✨ *Catatan:* Semua kewajiban pembayaran cicilan Anda telah selesai. Akses belajar Anda tetap aktif tanpa batas waktu.\n\n";
+        }
+
+        // 7. CS & Penutup
+        $message .= "Jika Anda memiliki pertanyaan atau membutuhkan bantuan, silakan hubungi Admin kami via WhatsApp di nomor *6285142505794* (atau klik wa.me/6285142505794).\n\n";
+        $message .= "Selamat belajar! 🚀\n\n";
+        $message .= "*Aksademy - Customer Support*";
+
+        return $message;
+    }
+
+    /**
      * Kirim WhatsApp saat satu termin cicilan berhasil dibayar (belum lunas)
      */
     private function sendWhatsAppTermPaid(Invoice $childInvoice, Invoice $parentInvoice): void
     {
         try {
             $user = $parentInvoice->user;
-            if (!$user?->phone_number)
+            if (!$user?->phone_number) {
                 return;
+            }
 
             $phoneNumber = $this->formatPhoneNumber($user->phone_number);
-            $termNumber = $childInvoice->installment_number;
-            $totalTerms = $parentInvoice->installmentTerms()->count();
-            $nextTerm = $parentInvoice->nextUnpaidTerm();
-            $nextDue = $nextTerm ? Carbon::parse($nextTerm->installment_due_date)->translatedFormat('d F Y') : '-';
-
-            $message = "*[Aksademy - Cicilan Berhasil]*\n\n";
-            $message .= "Hai *{$user->name}*,\n\n";
-            $message .= "Cicilan ke-*{$termNumber}/{$totalTerms}* sebesar *Rp " . number_format($childInvoice->amount, 0, ',', '.') . "* berhasil dibayar.\n\n";
-            if ($nextTerm) {
-                $message .= "Cicilan ke-*" . ($termNumber + 1) . "/{$totalTerms}* jatuh tempo pada *{$nextDue}*.\n\n";
-            }
-            $message .= "Terima kasih!\n\n*Aksademy - Customer Support*";
+            $message = $this->createWhatsAppInstallmentMessage($childInvoice, $parentInvoice, false);
 
             self::sendText([['phone' => $phoneNumber, 'message' => $message, 'isGroup' => 'false']]);
         } catch (\Throwable $e) {
@@ -2064,20 +2380,20 @@ class InvoiceController extends Controller
     /**
      * Kirim WhatsApp saat semua termin cicilan lunas
      */
-    private function sendWhatsAppInstallmentComplete(Invoice $parentInvoice): void
+    private function sendWhatsAppInstallmentComplete(Invoice $parentInvoice, ?Invoice $childInvoice = null): void
     {
         try {
             $user = $parentInvoice->user;
-            if (!$user?->phone_number)
+            if (!$user?->phone_number) {
                 return;
+            }
+
+            if (!$childInvoice) {
+                $childInvoice = $parentInvoice->installmentTerms()->orderByDesc('installment_number')->first() ?? $parentInvoice;
+            }
 
             $phoneNumber = $this->formatPhoneNumber($user->phone_number);
-
-            $message = "*[Aksademy - Cicilan Lunas]*\n\n";
-            $message .= "Hai *{$user->name}*,\n\n";
-            $message .= "Selamat! Semua cicilan untuk invoice *{$parentInvoice->invoice_code}* telah lunas.\n\n";
-            $message .= "Sertifikat tersedia untuk diunduh melalui profil Anda.\n\n";
-            $message .= "Terima kasih!\n\n*Aksademy - Customer Support*";
+            $message = $this->createWhatsAppInstallmentMessage($childInvoice, $parentInvoice, true);
 
             self::sendText([['phone' => $phoneNumber, 'message' => $message, 'isGroup' => 'false']]);
         } catch (\Throwable $e) {

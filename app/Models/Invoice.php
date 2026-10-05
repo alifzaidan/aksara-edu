@@ -132,18 +132,24 @@ class Invoice extends Model
         $nextUnpaid = $parentInvoice->nextUnpaidTerm();
         $isFullyPaid = $parentInvoice->isFullyPaid() || ($paidTerms === $totalTerms && $totalTerms > 0);
 
+        $parentGrossAmount = ($parentInvoice->amount == $parentInvoice->nett_amount && $totalTerms > 0)
+            ? (float) $parentInvoice->amount + ($totalTerms * 5000)
+            : (float) $parentInvoice->amount;
+
         return [
             'parent_invoice_id' => $parentInvoice->id,
             'invoice_code' => $parentInvoice->invoice_code,
             'status' => $parentInvoice->status,
-            'amount' => $parentInvoice->amount,
+            'amount' => $parentGrossAmount,
             'total_terms' => $totalTerms,
             'paid_terms' => $paidTerms,
             'is_fully_paid' => $isFullyPaid,
             'next_term' => $nextUnpaid ? [
                 'id' => $nextUnpaid->id,
                 'term_number' => $nextUnpaid->installment_number,
-                'amount' => $nextUnpaid->amount,
+                'amount' => ($nextUnpaid->status !== 'paid' && $nextUnpaid->amount == $nextUnpaid->nett_amount)
+                    ? (float) $nextUnpaid->amount + 5000
+                    : (float) $nextUnpaid->amount,
                 'due_date' => $nextUnpaid->installment_due_date ? $nextUnpaid->installment_due_date->format('Y-m-d') : null,
                 'is_overdue' => $nextUnpaid->installment_due_date
                     ? Carbon::now('Asia/Jakarta')->gt(Carbon::parse($nextUnpaid->installment_due_date)->endOfDay())
@@ -153,7 +159,9 @@ class Invoice extends Model
                 return [
                     'id' => $t->id,
                     'term_number' => $t->installment_number,
-                    'amount' => $t->amount,
+                    'amount' => ($t->status !== 'paid' && $t->amount == $t->nett_amount)
+                        ? (float) $t->amount + 5000
+                        : (float) $t->amount,
                     'due_date' => $t->installment_due_date ? $t->installment_due_date->format('Y-m-d') : null,
                     'status' => $t->status,
                     'paid_at' => $t->paid_at ? $t->paid_at->format('Y-m-d H:i') : null,
@@ -265,6 +273,14 @@ class Invoice extends Model
     public function getIsFullyPaidAttribute(): bool
     {
         return $this->isFullyPaid();
+    }
+
+    public function getTransactionFeeAttribute(): float
+    {
+        if ($this->amount > $this->nett_amount) {
+            return (float) ($this->amount - $this->nett_amount);
+        }
+        return 0;
     }
 
     /**

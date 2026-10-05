@@ -243,9 +243,14 @@ function InstallmentCard({ item }: { item: Installment }) {
                                         )}
                                     </div>
                                 </div>
-                                <p className="font-semibold text-sm flex-shrink-0 mt-0.5">
-                                    {rupiahFormatter.format(term.amount)}
-                                </p>
+                                <div className="text-right flex-shrink-0 mt-0.5">
+                                    <p className="font-semibold text-sm">
+                                        {rupiahFormatter.format(term.amount)}
+                                    </p>
+                                    {term.status !== 'paid' && (
+                                        <p className="text-[10px] text-muted-foreground">Termasuk admin Rp 5.000</p>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>
