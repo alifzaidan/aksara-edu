@@ -153,23 +153,28 @@ Route::get('/certification-programs/{program:slug}/scholarship-success', [UserCe
 Route::get('/doku/callback', [InvoiceController::class, 'dokuReturn'])->name('doku.callback.web');
 Route::get('/doku/cancel', [InvoiceController::class, 'dokuCancel'])->name('doku.callback.cancel');
 
+Route::middleware(['auth'])->group(function () {
+    Route::post('/invoice', [InvoiceController::class, 'store'])->name('invoice.store');
+    Route::post('/invoice-bundle', [InvoiceController::class, 'storeBundle'])->name('invoice.store.bundle');
+    Route::post('/enroll/free', [InvoiceController::class, 'enrollFree'])->name('enroll.free');
+    Route::post('/certification-programs/{program:slug}/apply-regular', [UserCertificationProgramController::class, 'applyRegular'])->name('certification-programs.apply-regular');
+    Route::post('/invoice/{id}/cancel', [InvoiceController::class, 'cancel'])->name('invoice.cancel');
+    Route::post('/invoice/expire-old', [InvoiceController::class, 'expireOldInvoices'])->name('invoice.expire-old');
+
+    // Installment routes (tidak perlu verified — user baru harus bisa bayar)
+    Route::post('/invoice/installment', [InstallmentController::class, 'store'])->name('installment.store');
+    Route::post('/installment/{id}/pay', [InstallmentController::class, 'payTerm'])->name('installment.pay-term');
+});
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/course/checkout/success', [UserCourseController::class, 'showCheckoutSuccess'])->name('course.checkout.success');
     Route::get('/bootcamp/register/success', [UserBootcampController::class, 'showRegisterSuccess'])->name('bootcamp.register.success');
     Route::get('/webinar/register/success', [UserWebinarController::class, 'showRegisterSuccess'])->name('webinar.register.success');
     Route::get('/private/register/success', [UserPrivateController::class, 'showRegisterSuccess'])->name('private.register.success');
 
-    Route::post('/invoice', [InvoiceController::class, 'store'])->name('invoice.store');
-    Route::post('/invoice-bundle', [InvoiceController::class, 'storeBundle'])->name('invoice.store.bundle');
-    Route::post('/enroll/free', [InvoiceController::class, 'enrollFree'])->name('enroll.free');
-    Route::post('/certification-programs/{program:slug}/apply-regular', [UserCertificationProgramController::class, 'applyRegular'])->name('certification-programs.apply-regular');
     Route::get('/invoice/{id}', [InvoiceController::class, 'show'])->name('invoice.show');
-    Route::post('/invoice/{id}/cancel', [InvoiceController::class, 'cancel'])->name('invoice.cancel');
-    Route::post('/invoice/expire-old', [InvoiceController::class, 'expireOldInvoices'])->name('invoice.expire-old');
 
-    // Installment routes
-    Route::post('/invoice/installment', [InstallmentController::class, 'store'])->name('installment.store');
-    Route::post('/installment/{id}/pay', [InstallmentController::class, 'payTerm'])->name('installment.pay-term');
+    // Installment list (butuh verified untuk akses profile)
     Route::get('/profile/installments', [InstallmentController::class, 'index'])->name('profile.installments');
 
     Route::redirect('profile', 'profile/dashboard');

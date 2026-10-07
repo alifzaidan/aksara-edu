@@ -2899,14 +2899,17 @@ class InvoiceController extends Controller
         }
 
         // Izinkan download jika:
-        // 1. Invoice reguler yang sudah paid
-        // 2. Invoice parent cicilan yang sudah lunas (status=paid)
-        // 3. Invoice anak cicilan (termin) yang statusnya paid
+        // 1. Invoice reguler yang sudah paid/completed
+        // 2. Invoice anak cicilan (termin) yang statusnya paid
+        // 3. Invoice induk cicilan (installment_pending) yang minimal 1 termin sudah dibayar
         $isAllowed = false;
-        if ($invoice->status === 'paid') {
+        if (in_array($invoice->status, ['paid', 'completed'])) {
             $isAllowed = true;
         } elseif ($invoice->isInstallmentChild() && $invoice->status === 'paid') {
             $isAllowed = true;
+        } elseif ($invoice->isInstallmentParent()) {
+            // Invoice induk cicilan: izinkan jika minimal termin 1 (DP) sudah lunas
+            $isAllowed = $invoice->installmentTerms()->where('status', 'paid')->exists();
         }
 
         if (!$isAllowed) {

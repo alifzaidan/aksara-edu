@@ -15,6 +15,7 @@ import {
     CalendarDays,
     CheckCircle2,
     Clock,
+    CreditCard,
     ExternalLink,
     FileText,
     Home,
@@ -23,6 +24,7 @@ import {
     ReceiptText,
     Users,
 } from 'lucide-react';
+import ProfileInstallmentAction from '@/components/profile-installment-action';
 
 interface Schedule {
     id: string;
@@ -85,6 +87,7 @@ interface Invoice {
 interface Props {
     invoice: Invoice;
     programItem: CertificationProgramItem;
+    active_installment?: any | null;
 }
 
 function parseList(items?: string | null): string[] {
@@ -100,7 +103,7 @@ function getYoutubeId(url: string) {
     return match && match[2].length === 11 ? match[2] : '';
 }
 
-export default function CertificationProgramDetail({ invoice, programItem }: Props) {
+export default function CertificationProgramDetail({ invoice, programItem, active_installment }: Props) {
     const program = programItem?.certificationProgram;
     const isScholarship = programItem?.is_scholarship;
 
@@ -178,10 +181,17 @@ export default function CertificationProgramDetail({ invoice, programItem }: Pro
                                 </span>
                             </div>
                         ) : invoice.is_installment && !invoice.is_fully_paid ? (
-                            <div className="mt-4 flex justify-center">
-                                <span className="rounded-lg border border-amber-200 bg-amber-50/80 px-4 py-2 text-xs font-medium text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300">
-                                    ℹ️ Pembayaran Cicilan Aktif ({invoice.paid_terms}/{invoice.total_terms} Termin). Pastikan membayar termin berikutnya tepat waktu.
-                                </span>
+                            <div className="mt-4 flex justify-center w-full">
+                                <ProfileInstallmentAction
+                                    variant="banner"
+                                    activeInstallment={active_installment}
+                                    invoiceId={invoice.id}
+                                    isInstallment={invoice.is_installment}
+                                    isFullyPaid={invoice.is_fully_paid}
+                                    isSuspended={invoice.is_access_suspended}
+                                    paidTerms={invoice.paid_terms}
+                                    totalTerms={invoice.total_terms}
+                                />
                             </div>
                         ) : null}
                     </div>
@@ -635,12 +645,18 @@ export default function CertificationProgramDetail({ invoice, programItem }: Pro
                                         </Button>
                                     )}
                                     {invoice.is_installment && (
-                                        <Button asChild variant="outline" className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400" size="sm">
-                                            <Link href={route('profile.installments')}>
-                                                <Clock className="mr-2 h-4 w-4" />
-                                                Kelola Cicilan Saya
-                                            </Link>
-                                        </Button>
+                                        <div className="mt-4">
+                                            <ProfileInstallmentAction
+                                                variant="card"
+                                                activeInstallment={active_installment}
+                                                invoiceId={invoice.id}
+                                                isInstallment={invoice.is_installment}
+                                                isFullyPaid={invoice.is_fully_paid}
+                                                isSuspended={invoice.is_access_suspended}
+                                                paidTerms={invoice.paid_terms}
+                                                totalTerms={invoice.total_terms}
+                                            />
+                                        </div>
                                     )}
                                 </CardContent>
                             </Card>

@@ -9,6 +9,7 @@ import { id } from 'date-fns/locale';
 import { AlertCircle, CheckCircle2, Clock, CreditCard, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { usePage } from '@inertiajs/react';
 
 export interface InstallmentTermOption {
     term_number: number;
@@ -66,6 +67,7 @@ export default function InstallmentOptions({
     onBeforePay,
 }: InstallmentOptionsProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const { auth } = usePage<{ auth: { user: any | null } }>().props;
 
     const ADMIN_FEE = 5000;
 
@@ -84,6 +86,12 @@ export default function InstallmentOptions({
 
     async function handlePayNextTerm() {
         if (!activeInstallment || !nextTerm) return;
+
+        if (!auth?.user) {
+            toast.error('Silakan masuk terlebih dahulu untuk melanjutkan pembayaran.');
+            window.location.href = '/login';
+            return;
+        }
 
         setIsLoading(true);
         try {
@@ -114,6 +122,12 @@ export default function InstallmentOptions({
     }
 
     async function handlePayInstallment() {
+        if (!auth?.user) {
+            toast.error('Silakan masuk terlebih dahulu untuk melanjutkan pembayaran cicilan.');
+            window.location.href = '/login';
+            return;
+        }
+
         if (termsAccepted !== undefined && !termsAccepted) {
             toast.error('Silakan setujui syarat dan ketentuan terlebih dahulu.');
             return;

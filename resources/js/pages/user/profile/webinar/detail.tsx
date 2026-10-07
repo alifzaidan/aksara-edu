@@ -5,8 +5,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import UserLayout from '@/layouts/user-layout';
 import { formatExternalUrl } from '@/lib/utils';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, ArrowRight, Award, BadgeCheck, Calendar, CheckCircle, Clock, Download, Eye, MessageSquare, Sparkles, Upload, Users, X, Youtube } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Award, BadgeCheck, Calendar, CheckCircle, Clock, CreditCard, Download, Eye, MessageSquare, Sparkles, Upload, Users, X, Youtube } from 'lucide-react';
 import { useState } from 'react';
+import axios from 'axios';
+import { toast } from 'sonner';
+import ProfileInstallmentAction from '@/components/profile-installment-action';
 
 interface Category {
     id: string;
@@ -98,6 +101,7 @@ interface DetailWebinarProps {
     webinar: WebinarProps;
     certificate?: Certificate | null;
     certificateParticipant?: CertificateParticipant | null;
+    active_installment?: any | null;
 }
 
 function parseList(items?: string | null): string[] {
@@ -143,7 +147,7 @@ const StarRating = ({
     );
 };
 
-export default function DetailMyWebinar({ webinar, certificate, certificateParticipant }: DetailWebinarProps) {
+export default function DetailMyWebinar({ webinar, certificate, certificateParticipant, active_installment }: DetailWebinarProps) {
     const webinarItem = webinar.webinar_items?.[0];
     const webinarData = webinarItem?.webinar;
     const webinarInvoiceStatus = webinar.status;
@@ -176,6 +180,24 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [reviewText, setReviewText] = useState('');
     const [rating, setRating] = useState(0);
+    const [isPayingCert, setIsPayingCert] = useState(false);
+
+    const handlePayCertInstallment = async () => {
+        setIsPayingCert(true);
+        try {
+            const res = await axios.post(`/installment/${webinar.id}/pay`);
+            if (res.data?.success && res.data?.payment_url) {
+                toast.success('Mengarahkan ke pembayaran...');
+                window.location.href = res.data.payment_url;
+            } else {
+                toast.error(res.data?.message || 'Gagal memproses pembayaran cicilan');
+                setIsPayingCert(false);
+            }
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Terjadi kesalahan saat memproses pembayaran');
+            setIsPayingCert(false);
+        }
+    };
 
     const handleIframeLoad = () => {
         setIsLoading(false);
@@ -327,13 +349,18 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                     </span>
                                 </div>
                             ) : isInstallment && !isFullyPaid ? (
-                                <div className="text-center">
-                                    <span className="block font-semibold text-amber-600 dark:text-amber-400">
-                                        ℹ️ Pembayaran Cicilan Aktif
-                                    </span>
-                                    <span className="block text-sm text-amber-700/90 dark:text-amber-300/90">
-                                        Anda memiliki akses penuh ke webinar dan grup WhatsApp.
-                                    </span>
+                                <div className="w-full">
+                                    <ProfileInstallmentAction
+                                        variant="banner"
+                                        activeInstallment={active_installment}
+                                        invoiceId={webinar.id}
+                                        isInstallment={isInstallment}
+                                        isFullyPaid={isFullyPaid}
+                                        isSuspended={isSuspended}
+                                        paidTerms={terms.filter((t: any) => t.status === 'paid').length}
+                                        totalTerms={terms.length}
+                                        installmentTerms={terms}
+                                    />
                                 </div>
                             ) : null}
                         </div>
@@ -904,16 +931,28 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                         ? 'Lengkapi bukti kehadiran dan review untuk mendapatkan sertifikat.'
                                                         : 'Sertifikat akan tersedia setelah webinar selesai.'}
                                             </p>
-                                            <Button variant="outline" className="mt-3 w-full" disabled>
-                                                <Download size={16} className="mr-2" />
-                                                {!certificate
-                                                    ? 'Sertifikat Belum Tersedia'
-                                                    : !isFullyPaid
-                                                      ? (isInstallment ? 'Lunasi Cicilan' : 'Selesaikan Pembayaran')
-                                                      : requiresReview && !hasReview
-                                                        ? 'Lengkapi Data Diperlukan'
-                                                        : 'Menunggu Webinar Selesai'}
-                                            </Button>
+                                            {isInstallment && !isFullyPaid ? (
+                                                <Button
+                                                    className="mt-3 w-full bg-primary hover:bg-primary/90 text-primary-foreground gap-2 font-semibold"
+                                                    onClick={handlePayCertInstallment}
+                                                    disabled={isPayingCert || isSuspended}
+                                                    id="btn-lunasi-sertifikat-webinar"
+                                                >
+                                                    <CreditCard size={16} />
+                                                    {isPayingCert ? 'Mengarahkan...' : 'Lunasi Cicilan Sekarang'}
+                                                </Button>
+                                            ) : (
+                                                <Button variant="outline" className="mt-3 w-full" disabled>
+                                                    <Download size={16} className="mr-2" />
+                                                    {!certificate
+                                                        ? 'Sertifikat Belum Tersedia'
+                                                        : !isFullyPaid
+                                                          ? 'Selesaikan Pembayaran'
+                                                          : requiresReview && !hasReview
+                                                            ? 'Lengkapi Data Diperlukan'
+                                                            : 'Menunggu Webinar Selesai'}
+                                                </Button>
+                                            )}
                                         </>
                                     )}
                                         </>
@@ -921,7 +960,20 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                 </div>
                             </div>
                         ) : (
-                            <div className="sticky top-6">
+                            <div className="sticky top-6 space-y-4">
+                                {isInstallment && (
+                                    <ProfileInstallmentAction
+                                        variant="card"
+                                        activeInstallment={active_installment}
+                                        invoiceId={webinar.id}
+                                        isInstallment={isInstallment}
+                                        isFullyPaid={isFullyPaid}
+                                        isSuspended={isSuspended}
+                                        paidTerms={terms.filter((t: any) => t.status === 'paid').length}
+                                        totalTerms={terms.length}
+                                        installmentTerms={terms}
+                                    />
+                                )}
                                 <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
                                     <h3 className="mb-4 text-center font-semibold">{webinarData.title}</h3>
                                     <div className="group relative">

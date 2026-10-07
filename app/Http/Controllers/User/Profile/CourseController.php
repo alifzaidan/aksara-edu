@@ -75,11 +75,18 @@ class CourseController extends Controller
 
         $course->append(['has_active_access', 'is_fully_paid']);
 
+        $courseId = $course->courseItems->first()?->course_id;
+        $activeInstallment = null;
+        if ($courseId && $course->is_installment) {
+            $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'course', $courseId);
+        }
+
         return Inertia::render('user/profile/course/detail', [
             'course' => $course,
             'courseRating' => $courseRating,
             'certificate' => $certificate,
-            'certificateParticipant' => $certificateParticipant
+            'certificateParticipant' => $certificateParticipant,
+            'active_installment' => $activeInstallment,
         ]);
     }
 

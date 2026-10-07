@@ -100,6 +100,12 @@ class CertificationProgramController extends Controller
             abort(404, 'Sertifikasi program tidak ditemukan atau Anda belum terdaftar.');
         }
 
+        $programId = $matchedItem->certification_program_id ?? $matchedItem->certificationProgram?->id;
+        $activeInstallment = null;
+        if ($programId && $matchedInvoice->is_installment) {
+            $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'certification_program', $programId);
+        }
+
         // Explicitly structure data for Inertia serialization
         return Inertia::render('user/profile/certification-program/detail', [
             'invoice' => [
@@ -165,6 +171,7 @@ class CertificationProgramController extends Controller
                     })->toArray(),
                 ],
             ],
+            'active_installment' => $activeInstallment,
         ]);
     }
 }

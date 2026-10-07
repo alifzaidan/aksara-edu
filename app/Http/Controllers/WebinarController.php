@@ -85,7 +85,16 @@ class WebinarController extends Controller
         $webinarsWithRecording = (clone $baseStats)->whereNotNull('recording_url')->where('recording_url', '!=', '')->count();
         $webinarsWithoutRecording = max(0, $totalWebinars - $webinarsWithRecording);
 
-        $totalParticipants = Invoice::where('status', 'paid')
+        $totalParticipants = Invoice::where(function ($q) {
+                $q->whereIn('status', ['paid', 'completed'])
+                    ->orWhere(function ($sq) {
+                        $sq->where('status', 'installment_pending')
+                            ->whereHas('installmentTerms', function ($tq) {
+                                $tq->where('installment_number', 1)->where('status', 'paid');
+                            });
+                    });
+            })
+            ->whereNull('parent_invoice_id')
             ->whereHas('webinarItems')
             ->count();
 
@@ -94,7 +103,16 @@ class WebinarController extends Controller
 
         $totalRevenue = $isStaff
             ? 0
-            : Invoice::where('status', 'paid')
+            : Invoice::where(function ($q) {
+                    $q->whereIn('status', ['paid', 'completed'])
+                        ->orWhere(function ($sq) {
+                            $sq->where('status', 'installment_pending')
+                                ->whereHas('installmentTerms', function ($tq) {
+                                    $tq->where('installment_number', 1)->where('status', 'paid');
+                                });
+                        });
+                })
+                ->whereNull('parent_invoice_id')
                 ->whereHas('webinarItems')
                 ->sum('nett_amount');
 
@@ -273,7 +291,16 @@ class WebinarController extends Controller
                 $query->where('webinar_id', $id);
             }
         ])
-            ->where('status', 'paid')
+            ->where(function ($q) {
+                $q->whereIn('status', ['paid', 'completed'])
+                    ->orWhere(function ($sq) {
+                        $sq->where('status', 'installment_pending')
+                            ->whereHas('installmentTerms', function ($tq) {
+                                $tq->where('installment_number', 1)->where('status', 'paid');
+                            });
+                    });
+            })
+            ->whereNull('parent_invoice_id')
             ->whereHas('webinarItems', function ($query) use ($id) {
                 $query->where('webinar_id', $id);
             })

@@ -127,58 +127,83 @@ class InstallmentController extends Controller
      */
     public function store(Request $request)
     {
-        DB::beginTransaction();
+        $userId = Auth::id();
+        $type = $request->input('type');
+        $itemId = $request->input('id');
+        $privateClassScheduleId = $request->input('private_class_schedule_id');
+
+        // Cek apakah user sudah memiliki cicilan aktif yang belum lunas
+        if ($userId) {
+            $activeInstallment = Invoice::getActiveInstallmentForUser($userId, $type, $itemId);
+            if ($activeInstallment && !$activeInstallment['is_fully_paid']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda memiliki transaksi cicilan yang sedang aktif untuk program ini. Silakan lanjutkan pembayaran termin cicilan Anda.',
+                ], 422);
+            }
+        }
+
+        // Validasi: cicilan tidak bisa dikombinasikan dengan poin/voucher
+        if ($request->input('discount_code_id') || $request->input('points_redeemed', 0) > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cicilan tidak dapat dikombinasikan dengan poin atau voucher.',
+            ], 422);
+        }
+
         try {
-            $userId = Auth::id();
-            $type = $request->input('type');
-            $itemId = $request->input('id');
-            $privateClassScheduleId = $request->input('private_class_schedule_id');
-
-            // Cek apakah user sudah memiliki cicilan aktif yang belum lunas
-            if ($userId) {
-                $activeInstallment = Invoice::getActiveInstallmentForUser($userId, $type, $itemId);
-                if ($activeInstallment && !$activeInstallment['is_fully_paid']) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Anda memiliki transaksi cicilan yang sedang aktif untuk program ini. Silakan lanjutkan pembayaran termin cicilan Anda.',
-                    ], 422);
-                }
-            }
-
-            // Validasi: cicilan tidak bisa dikombinasikan dengan poin/voucher
-            if ($request->input('discount_code_id') || $request->input('points_redeemed', 0) > 0) {
-                throw new \Exception('Cicilan tidak dapat dikombinasikan dengan poin atau voucher.');
-            }
-
             // Ambil produk
             [$item, $enrollmentTable, $enrollmentField] = $this->resolveProduct($type, $itemId, $privateClassScheduleId);
-            $selectedPrivateSchedule = null;
-            if ($type === 'private') {
-                $selectedPrivateSchedule = PrivateClassSchedule::findOrFail($privateClassScheduleId);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membuat cicilan: ' . $e->getMessage(),
+            ], 422);
+        }
+
+        $selectedPrivateSchedule = null;
+        if ($type === 'private') {
+            $selectedPrivateSchedule = PrivateClassSchedule::find($privateClassScheduleId);
+            if (!$selectedPrivateSchedule) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jadwal private class tidak ditemukan.',
+                ], 404);
             }
+        }
 
-            // Validasi cicilan tersedia
-            if (!$item->installment_enabled) {
-                throw new \Exception('Produk ini tidak tersedia untuk pembayaran cicilan.');
-            }
+        // Validasi cicilan tersedia
+        if (!$item->installment_enabled) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membuat cicilan: Produk ini tidak tersedia untuk pembayaran cicilan.',
+            ], 422);
+        }
 
-            $terms = ProductInstallmentTerm::where('termable_type', get_class($item))
-                ->where('termable_id', $item->id)
-                ->orderBy('term_number')
-                ->get();
+        $terms = ProductInstallmentTerm::where('termable_type', get_class($item))
+            ->where('termable_id', $item->id)
+            ->orderBy('term_number')
+            ->get();
 
-            if ($terms->isEmpty()) {
-                throw new \Exception('Konfigurasi termin cicilan belum diatur oleh admin.');
-            }
+        if ($terms->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membuat cicilan: Konfigurasi termin cicilan belum diatur oleh admin.',
+            ], 422);
+        }
 
-            $adminFeePerTerm = 5000;
-            $termsCount = $terms->count();
-            $totalNettAmount = $terms->sum('amount');
-            $totalGrossAmount = $totalNettAmount + ($termsCount * $adminFeePerTerm);
-            $dpTerm = $terms->first();
-            $dpGrossAmount = $dpTerm->amount + $adminFeePerTerm;
+        $adminFeePerTerm = 5000;
+        $termsCount = $terms->count();
+        $totalNettAmount = $terms->sum('amount');
+        $totalGrossAmount = $totalNettAmount + ($termsCount * $adminFeePerTerm);
+        $dpTerm = $terms->first();
+        $dpGrossAmount = $dpTerm->amount + $adminFeePerTerm;
 
-            // Generate kode invoice induk
+        // Generate kode invoice induk
+        if (DB::getDriverName() === 'sqlite') {
+            $count = Invoice::whereNull('parent_invoice_id')->count() + 1;
+            $parentCode = 'AKS-' . date('y') . str_pad($count, 5, '0', STR_PAD_LEFT);
+        } else {
             $parentCode = IdGenerator::generate([
                 'table' => 'invoices',
                 'field' => 'invoice_code',
@@ -186,7 +211,10 @@ class InstallmentController extends Controller
                 'reset_on_prefix_change' => true,
                 'prefix' => 'AKS-' . date('y'),
             ]);
+        }
 
+        DB::beginTransaction();
+        try {
             // Buat invoice induk
             $parentInvoice = Invoice::create([
                 'user_id' => $userId,
@@ -299,72 +327,71 @@ class InstallmentController extends Controller
     }
 
     /**
-     * Generate Xendit payment URL untuk termin berikutnya
+     * Generate payment URL untuk termin berikutnya
      */
     public function payTerm(Request $request, string $parentInvoiceId)
     {
+        $userId = Auth::id();
+
+        $parentInvoice = Invoice::with(['installmentTerms'])
+            ->where('id', $parentInvoiceId)
+            ->where('user_id', $userId)
+            ->where('is_installment', true)
+            ->whereNull('parent_invoice_id')
+            ->firstOrFail();
+
+        if ($parentInvoice->status === 'paid') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Semua cicilan sudah lunas.',
+            ], 422);
+        }
+
+        $nextTerm = $parentInvoice->nextUnpaidTerm();
+        if (!$nextTerm) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada termin yang perlu dibayar.',
+            ], 422);
+        }
+
+        // Validasi overdue: tidak bisa bayar mandiri jika jatuh tempo sudah terlewat
+        if ($nextTerm->installment_due_date) {
+            $dueDate = Carbon::parse($nextTerm->installment_due_date)->endOfDay();
+            if (Carbon::now('Asia/Jakarta')->gt($dueDate)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Batas waktu pembayaran untuk termin ini telah melewati jatuh tempo. Pembayaran online ditutup, silakan hubungi admin untuk penyelesaian cicilan.',
+                ], 422);
+            }
+        }
+
+        // Pastikan termin ke-1 (DP) sudah dibayar jika sedang membayar termin berikutnya (jangan loncat)
+        if ($nextTerm->installment_number > 1) {
+            $dp = $parentInvoice->installmentTerms()->where('installment_number', 1)->first();
+            if ($dp && $dp->status !== 'paid') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Termin ke-1 (DP) belum dibayar.',
+                ], 422);
+            }
+        }
+
+        // Buat DOKU Transaction baru yang selalu valid & fresh (mencegah link expired & duplicate external_id)
+        $productInvoice = $parentInvoice->load([
+            'courseItems.course',
+            'bootcampItems.bootcamp',
+            'webinarItems.webinar',
+            'privateItems.privateClass',
+            'certificationProgramItems.certificationProgram',
+            'bundleEnrollments.bundle',
+        ]);
+        $item = $this->getProductFromInvoice($productInvoice);
+
+        $uniqueExternalId = $nextTerm->invoice_code . '_' . time();
+
         DB::beginTransaction();
         try {
-            $userId = Auth::id();
-
-            $parentInvoice = Invoice::with(['installmentTerms'])
-                ->where('id', $parentInvoiceId)
-                ->where('user_id', $userId)
-                ->where('is_installment', true)
-                ->whereNull('parent_invoice_id')
-                ->firstOrFail();
-
-            if ($parentInvoice->status === 'paid') {
-                throw new \Exception('Semua cicilan sudah lunas.');
-            }
-
-            if ($parentInvoice->isAccessSuspended()) {
-                // Bisa bayar meski dibekukan
-            }
-
-            $nextTerm = $parentInvoice->nextUnpaidTerm();
-            if (!$nextTerm) {
-                throw new \Exception('Tidak ada termin yang perlu dibayar.');
-            }
-
-            // Validasi overdue: tidak bisa bayar mandiri jika jatuh tempo sudah terlewat
-            if ($nextTerm->installment_due_date) {
-                $dueDate = Carbon::parse($nextTerm->installment_due_date)->endOfDay();
-                if (Carbon::now('Asia/Jakarta')->gt($dueDate)) {
-                    throw new \Exception('Batas waktu pembayaran untuk termin ini telah melewati jatuh tempo. Pembayaran online ditutup, silakan hubungi admin untuk penyelesaian cicilan.');
-                }
-            }
-
-            // Pastikan termin ke-1 (DP) sudah dibayar jika sedang membayar termin berikutnya (jangan loncat)
-            if ($nextTerm->installment_number > 1) {
-                $dp = $parentInvoice->installmentTerms()->where('installment_number', 1)->first();
-                if ($dp && $dp->status !== 'paid') {
-                    throw new \Exception('Termin ke-1 (DP) belum dibayar.');
-                }
-            }
-
-            // Buat Xendit Transaction baru yang selalu valid & fresh (mencegah link expired & duplicate external_id)
-            $productInvoice = $parentInvoice->load([
-                'courseItems.course',
-                'bootcampItems.bootcamp',
-                'webinarItems.webinar',
-                'privateItems.privateClass',
-                'certificationProgramItems.certificationProgram',
-                'bundleEnrollments.bundle',
-            ]);
-            $item = $this->getProductFromInvoice($productInvoice);
-
-            $uniqueExternalId = $nextTerm->invoice_code . '_' . time();
-
-            // ===== XENDIT (dicomment) =====
-            // $xenditInvoice = $this->createXenditInvoice($nextTerm, $item, Auth::user(), $uniqueExternalId);
-            // $nextTerm->update([
-            //     'status' => 'pending',
-            //     'invoice_url' => $xenditInvoice['invoice_url'],
-            //     'expires_at' => Carbon::now()->addHours(24),
-            // ]);
-            // ===== END XENDIT =====
-
             // Pastikan nominal termin memiliki biaya admin Rp 5.000 jika sebelumnya belum ditambahkan
             if ($nextTerm->amount == $nextTerm->nett_amount) {
                 $nextTerm->amount = (float) $nextTerm->nett_amount + 5000;

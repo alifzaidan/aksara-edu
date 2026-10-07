@@ -47,7 +47,16 @@ class PrivateClassController extends Controller
         $draft = (clone $baseStats)->where('status', 'draft')->count();
         $archived = (clone $baseStats)->where('status', 'archived')->count();
 
-        $totalParticipants = Invoice::where('status', 'paid')
+        $totalParticipants = Invoice::where(function ($q) {
+                $q->whereIn('status', ['paid', 'completed'])
+                    ->orWhere(function ($sq) {
+                        $sq->where('status', 'installment_pending')
+                            ->whereHas('installmentTerms', function ($tq) {
+                                $tq->where('installment_number', 1)->where('status', 'paid');
+                            });
+                    });
+            })
+            ->whereNull('parent_invoice_id')
             ->whereHas('privateItems')
             ->count();
 
@@ -56,7 +65,16 @@ class PrivateClassController extends Controller
 
         $totalRevenue = $isStaff
             ? 0
-            : Invoice::where('status', 'paid')
+            : Invoice::where(function ($q) {
+                    $q->whereIn('status', ['paid', 'completed'])
+                        ->orWhere(function ($sq) {
+                            $sq->where('status', 'installment_pending')
+                                ->whereHas('installmentTerms', function ($tq) {
+                                    $tq->where('installment_number', 1)->where('status', 'paid');
+                                });
+                        });
+                })
+                ->whereNull('parent_invoice_id')
                 ->whereHas('privateItems')
                 ->sum('nett_amount');
 

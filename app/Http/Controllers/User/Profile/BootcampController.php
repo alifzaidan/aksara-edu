@@ -82,10 +82,17 @@ class BootcampController extends Controller
 
         $bootcamp->append(['has_active_access', 'is_fully_paid']);
 
+        $bootcampId = $bootcamp->bootcampItems->first()?->bootcamp_id;
+        $activeInstallment = null;
+        if ($bootcampId && $bootcamp->is_installment) {
+            $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'bootcamp', $bootcampId);
+        }
+
         return Inertia::render('user/profile/bootcamp/detail', [
             'bootcamp' => $bootcamp,
             'certificate' => $certificate,
-            'certificateParticipant' => $certificateParticipant
+            'certificateParticipant' => $certificateParticipant,
+            'active_installment' => $activeInstallment,
         ]);
     }
 

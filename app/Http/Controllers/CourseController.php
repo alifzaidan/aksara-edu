@@ -70,7 +70,16 @@ class CourseController extends Controller
         $intermediateCourses = (clone $baseStats)->where('level', 'intermediate')->count();
         $advancedCourses = (clone $baseStats)->where('level', 'advanced')->count();
 
-        $totalEnrollments = Invoice::where('status', 'paid')
+        $totalEnrollments = Invoice::where(function ($q) {
+                $q->whereIn('status', ['paid', 'completed'])
+                    ->orWhere(function ($sq) {
+                        $sq->where('status', 'installment_pending')
+                            ->whereHas('installmentTerms', function ($tq) {
+                                $tq->where('installment_number', 1)->where('status', 'paid');
+                            });
+                    });
+            })
+            ->whereNull('parent_invoice_id')
             ->whereHas('courseItems')
             ->count();
 
@@ -79,7 +88,16 @@ class CourseController extends Controller
 
         $totalRevenue = $isStaff
             ? 0
-            : Invoice::where('status', 'paid')
+            : Invoice::where(function ($q) {
+                    $q->whereIn('status', ['paid', 'completed'])
+                        ->orWhere(function ($sq) {
+                            $sq->where('status', 'installment_pending')
+                                ->whereHas('installmentTerms', function ($tq) {
+                                    $tq->where('installment_number', 1)->where('status', 'paid');
+                                });
+                        });
+                })
+                ->whereNull('parent_invoice_id')
                 ->whereHas('courseItems')
                 ->sum('nett_amount');
 

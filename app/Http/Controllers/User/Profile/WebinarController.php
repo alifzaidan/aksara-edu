@@ -79,10 +79,17 @@ class WebinarController extends Controller
 
         $webinar->append(['has_active_access', 'is_fully_paid']);
 
+        $webinarId = $webinar->webinarItems->first()?->webinar_id;
+        $activeInstallment = null;
+        if ($webinarId && $webinar->is_installment) {
+            $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'webinar', $webinarId);
+        }
+
         return Inertia::render('user/profile/webinar/detail', [
             'webinar' => $webinar,
             'certificate' => $certificate,
-            'certificateParticipant' => $certificateParticipant
+            'certificateParticipant' => $certificateParticipant,
+            'active_installment' => $activeInstallment,
         ]);
     }
 

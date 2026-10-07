@@ -3,8 +3,11 @@ import { Button } from '@/components/ui/button';
 import UserLayout from '@/layouts/user-layout';
 import { formatExternalUrl } from '@/lib/utils';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Award, BadgeCheck, CheckCircle, Download, Eye, MessageCircle, Star } from 'lucide-react';
+import { ArrowLeft, Award, BadgeCheck, CheckCircle, Clock, CreditCard, Download, Eye, MessageCircle, Star } from 'lucide-react';
 import { useState } from 'react';
+import axios from 'axios';
+import { toast } from 'sonner';
+import ProfileInstallmentAction from '@/components/profile-installment-action';
 
 interface Category {
     id: string;
@@ -96,13 +99,34 @@ export default function DetailMyCourse({
     courseRating,
     certificate,
     certificateParticipant,
+    active_installment,
 }: {
     course: CourseProps | null;
     courseRating: CourseRating | null;
     certificate?: Certificate | null;
     certificateParticipant?: CertificateParticipant | null;
+    active_installment?: any | null;
 }) {
     const [isRatingDialogOpen, setIsRatingDialogOpen] = useState(false);
+    const [isPayingCert, setIsPayingCert] = useState(false);
+
+    const handlePayCertInstallment = async () => {
+        if (!course) return;
+        setIsPayingCert(true);
+        try {
+            const res = await axios.post(`/installment/${course.id}/pay`);
+            if (res.data?.success && res.data?.payment_url) {
+                toast.success('Mengarahkan ke pembayaran...');
+                window.location.href = res.data.payment_url;
+            } else {
+                toast.error(res.data?.message || 'Gagal memproses pembayaran cicilan');
+                setIsPayingCert(false);
+            }
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Terjadi kesalahan saat memproses pembayaran');
+            setIsPayingCert(false);
+        }
+    };
 
     if (!course) {
         return (
@@ -208,14 +232,27 @@ export default function DetailMyCourse({
                                 </div>
                             </div>
                         </div>
-                        <Button size="sm" disabled>
-                            <Download className="mr-2 h-4 w-4" />
-                            {!certificate
-                                ? 'Sertifikat Belum Tersedia'
-                                : !isFullyPaid
-                                  ? (isInstallment ? 'Lunasi Cicilan' : 'Menunggu Pembayaran')
-                                  : 'Menunggu Sertifikat'}
-                        </Button>
+                        {isInstallment && !isFullyPaid ? (
+                            <Button
+                                size="sm"
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-semibold"
+                                onClick={handlePayCertInstallment}
+                                disabled={isPayingCert || isSuspended}
+                                id="btn-lunasi-sertifikat-course"
+                            >
+                                <CreditCard className="h-4 w-4" />
+                                {isPayingCert ? 'Mengarahkan...' : 'Lunasi Cicilan Sekarang'}
+                            </Button>
+                        ) : (
+                            <Button size="sm" disabled>
+                                <Download className="mr-2 h-4 w-4" />
+                                {!certificate
+                                    ? 'Sertifikat Belum Tersedia'
+                                    : !isFullyPaid
+                                      ? 'Menunggu Pembayaran'
+                                      : 'Menunggu Sertifikat'}
+                            </Button>
+                        )}
                     </div>
                 </div>
             );
@@ -351,13 +388,18 @@ export default function DetailMyCourse({
                                             </span>
                                         </div>
                                     ) : isInstallment && !isFullyPaid ? (
-                                        <div className="text-center">
-                                            <span className="block font-semibold text-amber-600 dark:text-amber-400">
-                                                ℹ️ Pembayaran Cicilan Aktif
-                                            </span>
-                                            <span className="block text-sm text-amber-700/90 dark:text-amber-300/90">
-                                                Anda memiliki akses penuh ke materi kelas.
-                                            </span>
+                                        <div className="w-full">
+                                            <ProfileInstallmentAction
+                                                variant="banner"
+                                                activeInstallment={active_installment}
+                                                invoiceId={course.id}
+                                                isInstallment={isInstallment}
+                                                isFullyPaid={isFullyPaid}
+                                                isSuspended={isSuspended}
+                                                paidTerms={terms.filter((t: any) => t.status === 'paid').length}
+                                                totalTerms={terms.length}
+                                                installmentTerms={terms}
+                                            />
                                         </div>
                                     ) : null}
                                 </div>
@@ -435,6 +477,19 @@ export default function DetailMyCourse({
                             </div>
 
                             <div className="col-span-1 space-y-4">
+                                {isInstallment && (
+                                    <ProfileInstallmentAction
+                                        variant="card"
+                                        activeInstallment={active_installment}
+                                        invoiceId={course.id}
+                                        isInstallment={isInstallment}
+                                        isFullyPaid={isFullyPaid}
+                                        isSuspended={isSuspended}
+                                        paidTerms={terms.filter((t: any) => t.status === 'paid').length}
+                                        totalTerms={terms.length}
+                                        installmentTerms={terms}
+                                    />
+                                )}
                                 <div className="flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
                                     <h2 className="mb-4 text-center font-semibold">{courseData.title}</h2>
                                     <img
