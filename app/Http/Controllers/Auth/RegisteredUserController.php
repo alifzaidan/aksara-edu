@@ -74,6 +74,7 @@ class RegisteredUserController extends Controller
             'city' => $request->city,
             'password' => Hash::make($request->password),
             'referred_by_user_id' => $referred_by_user_id,
+            'email_verified_at' => now(),
         ]);
 
         $user->assignRole('user');
@@ -99,7 +100,6 @@ class RegisteredUserController extends Controller
             ]);
         }
 
-        // return to_route('home');
-        return to_route('verification.notice')->with('status', 'Pendaftaran berhasil! Silakan periksa email Anda untuk tautan verifikasi.');
+        return redirect()->intended(route('home', absolute: false));
     }
 }
