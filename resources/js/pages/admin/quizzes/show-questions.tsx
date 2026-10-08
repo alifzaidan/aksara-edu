@@ -12,7 +12,8 @@ import {
     PaginationPrevious,
 } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Link, router } from '@inertiajs/react';
+import { SharedData } from '@/types';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Check, ChevronDown, ChevronRight, Edit, FileText, Search, Trash, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -45,8 +46,10 @@ interface QuizQuestionProps {
 import { usePermission } from '@/hooks/use-permission';
 
 export default function QuizQuestion({ questions, course, quiz }: QuizQuestionProps) {
+    const { auth } = usePage<SharedData>().props;
     const { canManage } = usePermission();
-    const canManageCourse = canManage('courses');
+    const isMentor = auth.role.includes('mentor');
+    const canManageCourse = canManage('courses') || isMentor;
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [pageSize, setPageSize] = useState<number>(10);

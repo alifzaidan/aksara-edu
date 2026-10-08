@@ -107,8 +107,9 @@ import { usePermission } from '@/hooks/use-permission';
 export default function CourseActions({ course }: { course: Course }) {
     const { auth } = usePage<SharedData>().props;
     const { canManage } = usePermission();
+    const isMentor = auth.role.includes('mentor');
     const isAffiliate = auth.role.includes('affiliate');
-    const canManageCourse = canManage('courses') && !isAffiliate;
+    const canManageCourse = (canManage('courses') || isMentor) && !isAffiliate;
 
     const handleDelete = () => {
         router.delete(route('courses.destroy', course.id));

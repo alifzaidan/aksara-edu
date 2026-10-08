@@ -58,8 +58,9 @@ import { usePermission } from '@/hooks/use-permission';
 export default function Courses({ courses, statistics, flash, filters }: CourseProps) {
     const { auth } = usePage<SharedData>().props;
     const { canManage } = usePermission();
+    const isMentor = auth.role.includes('mentor');
     const isAffiliate = auth.role.includes('affiliate');
-    const canManageCourse = canManage('courses') && !isAffiliate;
+    const canManageCourse = (canManage('courses') || isMentor) && !isAffiliate;
     const isStaff = auth.role.includes('staff') && !auth.role.includes('admin');
     const [showMoreStats, setShowMoreStats] = useState(false);
 

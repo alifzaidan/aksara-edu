@@ -18,6 +18,11 @@ class QuestionController extends Controller
 {
     public function create(Course $course, Quiz $quiz)
     {
+        $user = auth()->user();
+        if ($user && $user->hasRole('mentor') && $course->user_id !== $user->id) {
+            abort(403, 'Anda hanya dapat mengakses kuis pada kelas milik Anda sendiri.');
+        }
+
         return Inertia::render('admin/quizzes/create', [
             'course' => $course->only(['id', 'title']),
             'quiz' => $quiz->only(['id', 'title']),
@@ -269,6 +274,11 @@ class QuestionController extends Controller
 
     public function export(Course $course, Quiz $quiz)
     {
+        $user = auth()->user();
+        if ($user && $user->hasRole('mentor') && $course->user_id !== $user->id) {
+            abort(403, 'Anda hanya dapat mengakses kuis pada kelas milik Anda sendiri.');
+        }
+
         $filename = 'Export_Soal_' . Str::slug($quiz->title, '_') . '.xlsx';
         return Excel::download(new QuestionExport($quiz->id), $filename);
     }

@@ -12,6 +12,10 @@ class QuizController extends Controller
     public function show(string $courseId, string $quizId)
     {
         $course = Course::with(['modules.lessons.quizzes'])->findOrFail($courseId);
+        $user = auth()->user();
+        if ($user && $user->hasRole('mentor') && $course->user_id !== $user->id) {
+            abort(403, 'Anda hanya dapat mengakses kuis pada kelas milik Anda sendiri.');
+        }
         $quiz = Quiz::with(['questions.options'])->findOrFail($quizId);
         $submissions = $quiz->attempts()->with('user')->orderByDesc('score')->orderByDesc('submitted_at')->get()
             ->unique('user_id')

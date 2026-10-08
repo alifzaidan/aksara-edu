@@ -80,7 +80,13 @@ class CourseController extends Controller
                     });
             })
             ->whereNull('parent_invoice_id')
-            ->whereHas('courseItems')
+            ->whereHas('courseItems', function ($q) use ($user) {
+                if ($user->hasRole('mentor')) {
+                    $q->whereHas('course', function ($cq) use ($user) {
+                        $cq->where('user_id', $user->id);
+                    });
+                }
+            })
             ->count();
 
         $user = Auth::user();
@@ -98,7 +104,13 @@ class CourseController extends Controller
                         });
                 })
                 ->whereNull('parent_invoice_id')
-                ->whereHas('courseItems')
+                ->whereHas('courseItems', function ($q) use ($user) {
+                    if ($user->hasRole('mentor')) {
+                        $q->whereHas('course', function ($cq) use ($user) {
+                            $cq->where('user_id', $user->id);
+                        });
+                    }
+                })
                 ->sum('nett_amount');
 
         $statistics = [
@@ -251,6 +263,11 @@ class CourseController extends Controller
     {
         $course = Course::with(['category', 'user', 'tools', 'images', 'modules.lessons.quizzes.questions', 'modules.lessons.assignmentSubmissions.user', 'installmentTerms'])->findOrFail($id);
 
+        $user = Auth::user();
+        if ($user && $user->hasRole('mentor') && $course->user_id !== $user->id) {
+            abort(403, 'Anda hanya dapat mengakses kelas milik Anda sendiri.');
+        }
+
         $transactions = Invoice::with(['user.referrer', 'installmentTerms'])
             ->whereHas('courseItems', function ($query) use ($id) {
                 $query->where('course_id', $id);
@@ -259,7 +276,6 @@ class CourseController extends Controller
             ->latest()
             ->get();
 
-        $user = Auth::user();
         if ($user && $user->hasRole('staff') && !$user->hasRole('admin')) {
             $transactions->each(function ($tx) {
                 $tx->amount = 0;
@@ -288,6 +304,11 @@ class CourseController extends Controller
     {
         $course = Course::with(['tools', 'images', 'modules.lessons.quizzes'])->findOrFail($id);
 
+        $user = Auth::user();
+        if ($user && $user->hasRole('mentor') && $course->user_id !== $user->id) {
+            abort(403, 'Anda hanya dapat mengedit kelas milik Anda sendiri.');
+        }
+
         $categories = Category::all();
         $tools = Tool::all();
         return Inertia::render('admin/courses/edit', ['course' => $course, 'categories' => $categories, 'tools' => $tools]);
@@ -313,7 +334,14 @@ class CourseController extends Controller
         ]);
 
         $course = Course::with(['images', 'modules.lessons'])->findOrFail($id);
+
+        $user = $request->user();
+        if ($user && $user->hasRole('mentor') && $course->user_id !== $user->id) {
+            abort(403, 'Anda hanya dapat mengedit kelas milik Anda sendiri.');
+        }
+
         $data = $request->all();
+        unset($data['user_id']);
 
         $slug = Str::slug($data['title']);
         $originalSlug = $slug;
@@ -514,6 +542,12 @@ class CourseController extends Controller
     public function destroy(string $id)
     {
         $course = Course::findOrFail($id);
+
+        $user = Auth::user();
+        if ($user && $user->hasRole('mentor') && $course->user_id !== $user->id) {
+            abort(403, 'Anda hanya dapat menghapus kelas milik Anda sendiri.');
+        }
+
         $course->delete();
         return redirect()->route('courses.index')->with('success', 'Kursus berhasil dihapus.');
     }
@@ -522,7 +556,15 @@ class CourseController extends Controller
     {
         $course = Course::with(['tools', 'modules.lessons'])->findOrFail($id);
 
+        $user = Auth::user();
+        if ($user && $user->hasRole('mentor') && $course->user_id !== $user->id) {
+            abort(403, 'Anda hanya dapat menduplikasi kelas milik Anda sendiri.');
+        }
+
         $newCourse = $course->replicate();
+        if ($user && $user->hasRole('mentor')) {
+            $newCourse->user_id = $user->id;
+        }
         // Duplicate thumbnail if exists
         if ($course->thumbnail && Storage::disk('public')->exists($course->thumbnail)) {
             $originalPath = $course->thumbnail;
@@ -622,6 +664,11 @@ class CourseController extends Controller
 
     public function publish(string $id)
     {
+        $user = Auth::user();
+        if ($user && $user->hasRole('mentor')) {
+            abort(403, 'Mentor tidak memiliki izin untuk mempublikasikan kelas.');
+        }
+
         $course = Course::findOrFail($id);
         $course->status = 'published';
         $course->save();
@@ -631,6 +678,11 @@ class CourseController extends Controller
 
     public function archive(string $id)
     {
+        $user = Auth::user();
+        if ($user && $user->hasRole('mentor')) {
+            abort(403, 'Mentor tidak memiliki izin untuk mengarsipkan kelas.');
+        }
+
         $course = Course::findOrFail($id);
         $course->status = 'archived';
         $course->save();
