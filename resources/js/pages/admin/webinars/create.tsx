@@ -86,6 +86,8 @@ interface ProgramItem {
     id: string;
     title: string;
     batch?: string | number | null;
+    price?: number;
+    strikethrough_price?: number;
 }
 
 interface AvailablePrograms {
@@ -108,6 +110,7 @@ export default function CreateWebinar({
     const getInitials = useInitials();
     const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
     const [isMentorPopoverOpen, setIsMentorPopoverOpen] = useState(false);
+    const [isNextStepPopoverOpen, setIsNextStepPopoverOpen] = useState(false);
     const [openStartCalendar, setOpenStartCalendar] = useState(false);
     const [openEndCalendar, setOpenEndCalendar] = useState(false);
     const [openRegistrationCalendar, setOpenRegistrationCalendar] = useState(false);
@@ -735,26 +738,109 @@ export default function CreateWebinar({
                                                             ? availablePrograms?.certification_programs || []
                                                             : [];
 
+                                                const selectedProgram = items.find((item) => item.id === field.value);
+
                                                 return (
-                                                    <FormItem>
+                                                    <FormItem className="flex flex-col">
                                                         <FormLabel>Pilih Program</FormLabel>
-                                                        <Select
-                                                            value={field.value || ''}
-                                                            onValueChange={field.onChange}
-                                                        >
-                                                            <FormControl>
-                                                                <SelectTrigger>
-                                                                    <SelectValue placeholder="Pilih program lanjutan" />
-                                                                </SelectTrigger>
-                                                            </FormControl>
-                                                            <SelectContent>
-                                                                {items.map((item) => (
-                                                                    <SelectItem key={item.id} value={item.id}>
-                                                                        {item.title} {item.batch ? `(Batch ${item.batch})` : ''}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
+                                                        <Popover open={isNextStepPopoverOpen} onOpenChange={setIsNextStepPopoverOpen}>
+                                                            <PopoverTrigger asChild>
+                                                                <FormControl>
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        role="combobox"
+                                                                        className={cn(
+                                                                            'h-auto min-h-9 w-full justify-between py-1.5 px-3 font-normal text-left',
+                                                                            !field.value && 'text-muted-foreground',
+                                                                        )}
+                                                                    >
+                                                                        {selectedProgram ? (
+                                                                            <div className="flex flex-1 items-center justify-between gap-2 overflow-hidden mr-2">
+                                                                                <span className="truncate">
+                                                                                    {selectedProgram.title}{' '}
+                                                                                    {selectedProgram.batch ? `(Batch ${selectedProgram.batch})` : ''}
+                                                                                </span>
+                                                                                <div className="flex shrink-0 flex-col items-end leading-tight text-right">
+                                                                                    {selectedProgram.strikethrough_price &&
+                                                                                    selectedProgram.strikethrough_price > (selectedProgram.price || 0) ? (
+                                                                                        <span className="text-[10px] text-muted-foreground line-through">
+                                                                                            {rupiahFormatter.format(selectedProgram.strikethrough_price)}
+                                                                                        </span>
+                                                                                    ) : null}
+                                                                                    <span className="text-xs font-semibold text-primary">
+                                                                                        {selectedProgram.price && selectedProgram.price > 0
+                                                                                            ? rupiahFormatter.format(selectedProgram.price)
+                                                                                            : 'Gratis'}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <span>Pilih program lanjutan</span>
+                                                                        )}
+                                                                        <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                                                                    </Button>
+                                                                </FormControl>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[320px] max-w-[90vw] p-0" align="start">
+                                                                <Command>
+                                                                    <CommandInput placeholder="Cari program..." className="h-9" />
+                                                                    <CommandList>
+                                                                        <CommandEmpty>Tidak ada program ditemukan.</CommandEmpty>
+                                                                        <CommandGroup>
+                                                                            {items.map((item) => {
+                                                                                const hasStrikethrough =
+                                                                                    item.strikethrough_price &&
+                                                                                    item.strikethrough_price > (item.price || 0);
+
+                                                                                return (
+                                                                                    <CommandItem
+                                                                                        key={item.id}
+                                                                                        value={`${item.title} ${item.batch ? `Batch ${item.batch}` : ''} ${item.price && item.price > 0 ? rupiahFormatter.format(item.price) : 'Gratis'} ${item.id}`}
+                                                                                        onSelect={() => {
+                                                                                            form.setValue(
+                                                                                                'next_step_id',
+                                                                                                item.id === field.value ? '' : item.id,
+                                                                                            );
+                                                                                            setIsNextStepPopoverOpen(false);
+                                                                                        }}
+                                                                                        className="flex items-center justify-between gap-3 px-3 py-2 cursor-pointer"
+                                                                                    >
+                                                                                        <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+                                                                                            <span className="truncate font-medium text-foreground">
+                                                                                                {item.title}
+                                                                                            </span>
+                                                                                            {item.batch && (
+                                                                                                <span className="text-xs text-muted-foreground">
+                                                                                                    Batch {item.batch}
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                        <div className="flex shrink-0 flex-col items-end leading-tight text-right ml-2">
+                                                                                            {hasStrikethrough ? (
+                                                                                                <span className="text-[10px] text-muted-foreground line-through">
+                                                                                                    {rupiahFormatter.format(item.strikethrough_price!)}
+                                                                                                </span>
+                                                                                            ) : null}
+                                                                                            <span className="text-xs font-semibold text-primary">
+                                                                                                {item.price && item.price > 0
+                                                                                                    ? rupiahFormatter.format(item.price)
+                                                                                                    : 'Gratis'}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <Check
+                                                                                            className={cn(
+                                                                                                'ml-1 h-4 w-4 shrink-0',
+                                                                                                item.id === field.value ? 'opacity-100' : 'opacity-0',
+                                                                                            )}
+                                                                                        />
+                                                                                    </CommandItem>
+                                                                                );
+                                                                            })}
+                                                                        </CommandGroup>
+                                                                    </CommandList>
+                                                                </Command>
+                                                            </PopoverContent>
+                                                        </Popover>
                                                         <FormMessage />
                                                     </FormItem>
                                                 );

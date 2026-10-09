@@ -178,9 +178,9 @@ class BootcampController extends Controller
         $mentors = User::role('mentor')->get(['id', 'name', 'bio', 'avatar']);
 
         $availablePrograms = [
-            'webinars' => Webinar::select('id', 'title', 'batch')->orderBy('title')->get(),
-            'bootcamps' => Bootcamp::select('id', 'title', 'batch')->orderBy('title')->get(),
-            'certification_programs' => CertificationProgram::select('id', 'title', 'batch')->orderBy('title')->get(),
+            'webinars' => Webinar::select('id', 'title', 'batch', 'price', 'strikethrough_price')->orderBy('title')->get(),
+            'bootcamps' => Bootcamp::select('id', 'title', 'batch', 'price', 'strikethrough_price')->orderBy('title')->get(),
+            'certification_programs' => CertificationProgram::select('id', 'title', 'batch', 'price', 'strikethrough_price')->orderBy('title')->get(),
         ];
 
         return Inertia::render('admin/bootcamps/create', [
@@ -439,9 +439,9 @@ class BootcampController extends Controller
         $mentors = User::role('mentor')->get(['id', 'name', 'bio', 'avatar']);
 
         $availablePrograms = [
-            'webinars' => Webinar::select('id', 'title', 'batch')->orderBy('title')->get(),
-            'bootcamps' => Bootcamp::where('id', '!=', $id)->select('id', 'title', 'batch')->orderBy('title')->get(),
-            'certification_programs' => CertificationProgram::select('id', 'title', 'batch')->orderBy('title')->get(),
+            'webinars' => Webinar::select('id', 'title', 'batch', 'price', 'strikethrough_price')->orderBy('title')->get(),
+            'bootcamps' => Bootcamp::where('id', '!=', $id)->select('id', 'title', 'batch', 'price', 'strikethrough_price')->orderBy('title')->get(),
+            'certification_programs' => CertificationProgram::select('id', 'title', 'batch', 'price', 'strikethrough_price')->orderBy('title')->get(),
         ];
 
         return Inertia::render('admin/bootcamps/edit', [

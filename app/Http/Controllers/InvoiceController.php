@@ -2962,7 +2962,7 @@ class InvoiceController extends Controller
             'title',
             'user_name'
         ]);
-        $filename = 'Laporan_Transaksi';
+        $filename = 'Laporan_Transaksi_Aksademy';
 
         if ($request->start_date && $request->end_date) {
             $filename .= '_' . Carbon::parse($request->start_date)->format('dmY')

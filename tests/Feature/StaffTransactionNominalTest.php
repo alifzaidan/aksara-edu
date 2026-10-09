@@ -130,6 +130,8 @@ class StaffTransactionNominalTest extends TestCase
         $this->assertNotContains('Diskon', $headings);
         $this->assertNotContains('Biaya Admin', $headings);
         $this->assertNotContains('Total Bayar', $headings);
+        $this->assertNotContains('Komisi Afiliasi', $headings);
+        $this->assertContains('Kode Batch', $headings);
         $this->assertContains('Kode Invoice', $headings);
         $this->assertContains('Nama Pembeli', $headings);
 
@@ -169,6 +171,8 @@ class StaffTransactionNominalTest extends TestCase
         $this->assertContains('Diskon', $headings);
         $this->assertContains('Biaya Admin', $headings);
         $this->assertContains('Total Bayar', $headings);
+        $this->assertContains('Kode Batch', $headings);
+        $this->assertContains('Komisi Afiliasi', $headings);
 
         $mapped = $export->map($invoice);
         $this->assertContains('Rp 500.000', $mapped);

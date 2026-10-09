@@ -277,6 +277,7 @@ class TransactionsExport implements
                 'Instansi',
                 'Kota Domisili',
                 'Nama Produk',
+                'Kode Batch',
                 'Jenis Produk',
                 'Status',
                 'Jenis Pembayaran',
@@ -297,6 +298,7 @@ class TransactionsExport implements
             'Instansi',
             'Kota Domisili',
             'Nama Produk',
+            'Kode Batch',
             'Jenis Produk',
             'Harga Asli',
             'Diskon',
@@ -307,6 +309,7 @@ class TransactionsExport implements
             'Metode Pembayaran',
             'Channel Pembayaran',
             'Afiliasi',
+            'Komisi Afiliasi',
             'Tanggal Pembelian',
             'Tanggal Pembayaran',
         ];
@@ -335,6 +338,7 @@ class TransactionsExport implements
                 $user->instance ?? '-',
                 $user->city ?? '-',
                 $this->getProductNames($invoice),
+                $this->getProductBatch($invoice),
                 $this->getProductType($invoice),
                 $statusLabel,
                 $invoice->nett_amount === 0 ? 'Gratis' : 'Berbayar',
@@ -355,6 +359,7 @@ class TransactionsExport implements
             $user->instance ?? '-',
             $user->city ?? '-',
             $this->getProductNames($invoice),
+                $this->getProductBatch($invoice),
             $this->getProductType($invoice),
             'Rp ' . number_format($invoice->amount, 0, ',', '.'),
             'Rp ' . number_format($invoice->discount_amount ?? 0, 0, ',', '.'),
@@ -365,6 +370,7 @@ class TransactionsExport implements
             $invoice->payment_method ?? '-',
             $invoice->payment_channel ?? '-',
             $referrer->name ?? '-',
+                $this->getAffiliateCommission($invoice),
             $invoice->created_at ? $invoice->created_at->format('d M Y, H:i') : '-',
             $invoice->paid_at ? Carbon::parse($invoice->paid_at)->format('d M Y, H:i') : '-',
         ];
@@ -382,14 +388,15 @@ class TransactionsExport implements
                 'F' => 20, // Instansi
                 'G' => 20, // Kota Domisili
                 'H' => 40, // Nama Produk
-                'I' => 15, // Jenis Produk
-                'J' => 10, // Status
-                'K' => 15, // Jenis Pembayaran
-                'L' => 18, // Metode Pembayaran
-                'M' => 18, // Channel Pembayaran
-                'N' => 25, // Afiliasi
-                'O' => 20, // Tanggal Pembelian
-                'P' => 20, // Tanggal Pembayaran
+                'I' => 15, // Kode Batch
+                'J' => 15, // Jenis Produk
+                'K' => 10, // Status
+                'L' => 15, // Jenis Pembayaran
+                'M' => 18, // Metode Pembayaran
+                'N' => 18, // Channel Pembayaran
+                'O' => 25, // Afiliasi
+                'P' => 20, // Tanggal Pembelian
+                'Q' => 20, // Tanggal Pembayaran
             ];
         }
 
@@ -402,18 +409,20 @@ class TransactionsExport implements
             'F' => 20, // Instansi
             'G' => 20, // Kota Domisili
             'H' => 40, // Nama Produk
-            'I' => 15, // Jenis Produk
-            'J' => 15, // Harga Asli
-            'K' => 15, // Diskon
-            'L' => 12, // Biaya Admin
-            'M' => 15, // Total Bayar
-            'N' => 10, // Status
-            'O' => 15, // Jenis Pembayaran
-            'P' => 18, // Metode Pembayaran
-            'Q' => 18, // Channel Pembayaran
-            'R' => 25, // Afiliasi
-            'S' => 20, // Tanggal Pembelian
-            'T' => 20, // Tanggal Pembayaran
+            'I' => 15, // Kode Batch
+            'J' => 15, // Jenis Produk
+            'K' => 15, // Harga Asli
+            'L' => 15, // Diskon
+            'M' => 12, // Biaya Admin
+            'N' => 15, // Total Bayar
+            'O' => 10, // Status
+            'P' => 15, // Jenis Pembayaran
+            'Q' => 18, // Metode Pembayaran
+            'R' => 18, // Channel Pembayaran
+            'S' => 25, // Afiliasi
+            'T' => 18, // Komisi Afiliasi
+            'U' => 20, // Tanggal Pembelian
+            'V' => 20, // Tanggal Pembayaran
         ];
     }
 
@@ -511,4 +520,68 @@ class TransactionsExport implements
         if ($target->certificationProgramItems && $target->certificationProgramItems->count() > 0) return 'Sertifikasi';
         return '-';
     }
+
+    private function getProductBatch($invoice): string
+    {
+        $target = $invoice->parentInvoice ?? $invoice;
+        $batches = [];
+
+        if (empty($this->productType) || $this->productType === 'bootcamp') {
+            if ($target->bootcampItems) {
+                foreach ($target->bootcampItems as $item) {
+                    if (!empty($item->bootcamp?->batch)) {
+                        $batches[] = $item->bootcamp->batch;
+                    }
+                }
+            }
+        }
+
+        if (empty($this->productType) || $this->productType === 'webinar') {
+            if ($target->webinarItems) {
+                foreach ($target->webinarItems as $item) {
+                    if (!empty($item->webinar?->batch)) {
+                        $batches[] = $item->webinar->batch;
+                    }
+                }
+            }
+        }
+
+        if (empty($this->productType) || $this->productType === 'certification_program') {
+            if ($target->certificationProgramItems) {
+                foreach ($target->certificationProgramItems as $item) {
+                    if (!empty($item->certificationProgram?->batch)) {
+                        $batches[] = $item->certificationProgram->batch;
+                    }
+                }
+            }
+        }
+
+        return !empty($batches) ? implode(', ', array_unique($batches)) : '-';
+    }
+
+    private function getAffiliateCommission($invoice): string
+    {
+        $target = $invoice->parentInvoice ?? $invoice;
+        $user = $invoice->user ?? $invoice->parentInvoice?->user;
+        $referrer = $invoice->referrer ?? $invoice->parentInvoice?->referrer ?? $invoice->referredByUser ?? $invoice->parentInvoice?->referredByUser ?? $invoice->referralUser ?? $invoice->parentInvoice?->referralUser ?? $user?->referrer ?? $invoice->parentInvoice?->user?->referrer;
+
+        if (!$referrer) {
+            return '-';
+        }
+
+        if (class_exists(\App\Models\AffiliateEarning::class)) {
+            $earning = \App\Models\AffiliateEarning::where('invoice_id', $target->id)->sum('amount');
+            if ($earning > 0) {
+                return 'Rp ' . number_format($earning, 0, ',', '.');
+            }
+        }
+
+        if (!empty($referrer->commission) && (float) $referrer->commission > 0) {
+            $calc = $invoice->nett_amount * ((float) $referrer->commission / 100);
+            return 'Rp ' . number_format($calc, 0, ',', '.');
+        }
+
+        return 'Rp 0';
+    }
+
 }

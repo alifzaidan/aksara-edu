@@ -43,10 +43,12 @@ interface Course {
 interface Bootcamp {
     id: string;
     title: string;
+    batch?: string | null;
 }
 interface Webinar {
     id: string;
     title: string;
+    batch?: string | null;
 }
 interface Bundle {
     id: string;
@@ -55,6 +57,7 @@ interface Bundle {
 interface CertificationProgram {
     id: string;
     title: string;
+    batch?: string | null;
 }
 interface PrivateClass {
     id: string;
@@ -92,6 +95,8 @@ export interface Invoice {
     invoice_url: string | null;
     nett_amount: number;
     amount?: number;
+    payment_method?: string | null;
+    payment_channel?: string | null;
     status: 'paid' | 'pending' | 'failed' | 'installment_pending';
     is_installment?: boolean;
     installment_number?: number | null;
@@ -183,6 +188,32 @@ function getProductLinks(invoice: Invoice): ProductLinkInfo[] {
     });
 
     return links;
+}
+
+function getProductBatch(invoice: Invoice): string {
+    const target = (invoice.parentInvoice || (invoice as any).parent_invoice || invoice) as any;
+    const batches: string[] = [];
+
+    (target.bootcampItems || target.bootcamp_items || []).forEach((item: any) => {
+        if (item.bootcamp?.batch) {
+            batches.push(String(item.bootcamp.batch));
+        }
+    });
+
+    (target.webinarItems || target.webinar_items || []).forEach((item: any) => {
+        if (item.webinar?.batch) {
+            batches.push(String(item.webinar.batch));
+        }
+    });
+
+    (target.certificationProgramItems || target.certification_program_items || []).forEach((item: any) => {
+        const program = item.certificationProgram || item.certification_program;
+        if (program?.batch) {
+            batches.push(String(program.batch));
+        }
+    });
+
+    return batches.length > 0 ? Array.from(new Set(batches)).join(', ') : '-';
 }
 
 function getMonitorInvoice(invoice: Invoice): InstallmentInvoiceData | null {
@@ -514,17 +545,36 @@ export const columns: ColumnDef<Invoice>[] = [
         },
     },
     {
+        id: 'batch',
+        accessorFn: (row) => getProductBatch(row),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Kode Batch" />,
+        cell: ({ row }) => {
+            const batch = getProductBatch(row.original);
+            return <div className="font-medium">{batch}</div>;
+        },
+    },
+    {
         accessorKey: 'nett_amount',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
         cell: ({ row }) => <PriceCell row={row} />,
     },
     {
-        id: 'referral_user',
-        accessorFn: (row) => (row.user?.referrer ?? (row.parentInvoice || row.parent_invoice)?.user?.referrer ?? row.referral_user ?? row.referralUser)?.name ?? null,
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Afiliasi" />,
+        id: 'payment_channel',
+        accessorFn: (row) => {
+            const target = (row.parentInvoice || (row as any).parent_invoice || row) as any;
+            if (row.nett_amount === 0) return 'Gratis';
+            return row.payment_channel || row.payment_method || target.payment_channel || target.payment_method || '-';
+        },
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Metode" />,
         cell: ({ row }) => {
-            const referrer = row.original.user?.referrer ?? (row.original.parentInvoice || row.original.parent_invoice)?.user?.referrer ?? row.original.referral_user ?? row.original.referralUser;
-            return <p>{referrer?.name || '-'}</p>;
+            const invoice = row.original;
+            const target = (invoice.parentInvoice || (invoice as any).parent_invoice || invoice) as any;
+            if (invoice.nett_amount === 0) {
+                return <span className="font-medium text-emerald-600 dark:text-emerald-400">Gratis</span>;
+            }
+            const channel = invoice.payment_channel || invoice.payment_method || target.payment_channel || target.payment_method;
+            if (!channel) return <span className="text-muted-foreground">-</span>;
+            return <div className="font-medium uppercase">{channel.replace(/_/g, ' ')}</div>;
         },
     },
     {
@@ -608,6 +658,15 @@ export const columns: ColumnDef<Invoice>[] = [
                 installment_pending: 'bg-amber-100 text-amber-800',
             };
             return <Badge className={`${statusClasses[status] || statusClasses.expired}`}>{statusText}</Badge>;
+        },
+    },
+    {
+        id: 'referral_user',
+        accessorFn: (row) => (row.user?.referrer ?? (row.parentInvoice || row.parent_invoice)?.user?.referrer ?? row.referral_user ?? row.referralUser)?.name ?? null,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Afiliasi" />,
+        cell: ({ row }) => {
+            const referrer = row.original.user?.referrer ?? (row.original.parentInvoice || row.original.parent_invoice)?.user?.referrer ?? row.original.referral_user ?? row.original.referralUser;
+            return <p>{referrer?.name || '-'}</p>;
         },
     },
     {
