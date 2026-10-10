@@ -41,7 +41,36 @@ class DokuService
         return trim(substr($value, 0, 255));
     }
 
-    /**
+        private function formatPhoneForDoku(?string $phone): ?string
+    {
+        if (empty($phone)) {
+            return null;
+        }
+
+        // Hanya ambil digit angka (menghapus +, spasi, dash, kurung)
+        $cleaned = preg_replace('/[^0-9]/', '', $phone);
+
+        if (empty($cleaned)) {
+            return null;
+        }
+
+        // Konversi format lokal Indonesia (08... atau 8...) menjadi format kode negara 62...
+        if (str_starts_with($cleaned, '0')) {
+            $cleaned = '62' . substr($cleaned, 1);
+        } elseif (str_starts_with($cleaned, '8')) {
+            $cleaned = '62' . $cleaned;
+        }
+
+        // DOKU mewajibkan format calling_code + nomor tanpa '+', panjang antara 9 - 16 digit.
+        // Jika tidak valid, jangan kirimkan phone agar tidak ditolak DOKU (email sudah mencukupi).
+        if (strlen($cleaned) < 9 || strlen($cleaned) > 16) {
+            return null;
+        }
+
+        return $cleaned;
+    }
+
+/**
      * Create DOKU Checkout for standard and bundle purchases
      */
     public function createCheckout($orderId, $amount, $customerData = []): array
@@ -56,9 +85,9 @@ class DokuService
             $requestTimestamp = gmdate("Y-m-d\TH:i:s\Z");
 
             $customerId = $customerData['customer_id'] ?? 'CUST-' . time();
-            $customerName = $customerData['customer_name'] ?? 'Customer';
+            $customerName = $this->sanitizeForDoku($customerData['customer_name'] ?? 'Customer');
             $customerEmail = $customerData['customer_email'] ?? 'customer@example.com';
-            $customerPhone = $customerData['customer_phone'] ?? null;
+            $customerPhone = $this->formatPhoneForDoku($customerData['customer_phone'] ?? null);
             $itemName = $this->sanitizeForDoku($customerData['item_name'] ?? 'Product');
             $itemDescription = $this->sanitizeForDoku($customerData['item_description'] ?? 'Product Purchase');
 
