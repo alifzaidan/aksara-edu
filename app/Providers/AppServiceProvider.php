@@ -32,10 +32,6 @@ class AppServiceProvider extends ServiceProvider
         // if (config('app.url')) {
         //     URL::forceRootUrl(config('app.url'));
         // }
-
-        \Illuminate\Support\Facades\Event::listen(
-            \App\Events\TransactionPaid::class,
-            \App\Listeners\RewardReferralListener::class
-        );
     }
 }
+
