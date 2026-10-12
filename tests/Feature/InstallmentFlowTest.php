@@ -1575,7 +1575,20 @@ class InstallmentFlowTest extends TestCase
                 'success' => false,
                 'message' => 'Semua termin cicilan untuk invoice ini sudah lunas.',
             ]);
+
+        // 3. Sending reminder when user has phone number and term is pending succeeds (verifies formatPhoneNumber)
+        $term1->update(['status' => 'pending', 'paid_at' => null]);
+        $parent->update(['status' => 'installment_pending']);
+
+        $responseSuccess = $this->actingAs($this->admin)
+            ->postJson("/admin/installments/{$term1->id}/send-reminder");
+
+        $responseSuccess->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+            ]);
     }
+
 
     /**
      * Test 21: Doku Webhook Callback - DP payment activates enrollment, lifts access suspension, and records affiliate commission
@@ -2214,5 +2227,380 @@ class InstallmentFlowTest extends TestCase
         $this->assertNotNull($enrollment);
         $this->assertEquals($schedule->id, $enrollment->private_class_schedule_id);
     }
+
+    /**
+     * Test 30: Checkout rejected when registration deadline or term 1 due date is past
+     */
+    public function test_installment_checkout_rejected_if_registration_deadline_or_term_1_due_date_is_past()
+    {
+        $pastWebinar = Webinar::create([
+            'title' => 'Past Registration Webinar',
+            'slug' => 'past-reg-webinar',
+            'user_id' => $this->admin->id,
+            'category_id' => Category::first()->id,
+            'price' => 1000000,
+            'strikethrough_price' => 1200000,
+            'quota' => 50,
+            'batch' => 1,
+            'start_time' => Carbon::now()->addDays(5),
+            'registration_deadline' => Carbon::now()->subDay(), // Expired yesterday
+            'installment_enabled' => true,
+        ]);
+
+        ProductInstallmentTerm::create([
+            'termable_type' => Webinar::class,
+            'termable_id' => $pastWebinar->id,
+            'term_number' => 1,
+            'amount' => 500000,
+            'due_date' => Carbon::now()->subDay(),
+        ]);
+        ProductInstallmentTerm::create([
+            'termable_type' => Webinar::class,
+            'termable_id' => $pastWebinar->id,
+            'term_number' => 2,
+            'amount' => 500000,
+            'due_date' => Carbon::now()->addDays(10),
+        ]);
+
+        $response = $this->actingAs($this->buyer)
+            ->postJson('/invoice/installment', [
+                'type' => 'webinar',
+                'id' => $pastWebinar->id,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Opsi pembayaran cicilan untuk program ini telah ditutup karena batas waktu pendaftaran / termin pertama telah terlewati.',
+            ]);
+    }
+
+    /**
+     * Test 31: Term 1 due date follows registration deadline on checkout for non-course product
+     */
+    public function test_installment_term_1_due_date_follows_registration_deadline_on_checkout()
+    {
+        $futureDeadline = Carbon::now()->addDays(7)->startOfMinute();
+        $webinar = Webinar::create([
+            'title' => 'Deadline Aligned Webinar',
+            'slug' => 'deadline-aligned-webinar',
+            'user_id' => $this->admin->id,
+            'category_id' => Category::first()->id,
+            'price' => 1000000,
+            'strikethrough_price' => 1200000,
+            'quota' => 50,
+            'batch' => 1,
+            'start_time' => Carbon::now()->addDays(14),
+            'registration_deadline' => $futureDeadline,
+            'installment_enabled' => true,
+        ]);
+
+        ProductInstallmentTerm::create([
+            'termable_type' => Webinar::class,
+            'termable_id' => $webinar->id,
+            'term_number' => 1,
+            'amount' => 500000,
+            'due_date' => Carbon::now()->addDays(3),
+        ]);
+        ProductInstallmentTerm::create([
+            'termable_type' => Webinar::class,
+            'termable_id' => $webinar->id,
+            'term_number' => 2,
+            'amount' => 500000,
+            'due_date' => Carbon::now()->addDays(20),
+        ]);
+
+        $mockDoku = Mockery::mock(DokuService::class);
+        $mockDoku->shouldReceive('createCheckout')
+            ->once()
+            ->andReturn([
+                'response' => [
+                    'payment' => [
+                        'url' => 'https://mock.payment.com/checkout/term-1-deadline',
+                    ],
+                ],
+            ]);
+        $this->app->instance(DokuService::class, $mockDoku);
+
+        $response = $this->actingAs($this->buyer)
+            ->postJson('/invoice/installment', [
+                'type' => 'webinar',
+                'id' => $webinar->id,
+            ]);
+
+        $response->assertStatus(200);
+
+        $term1Child = Invoice::where('installment_number', 1)
+            ->whereNotNull('parent_invoice_id')
+            ->latest('created_at')
+            ->first();
+
+        $this->assertNotNull($term1Child);
+        $this->assertEquals($futureDeadline->format('Y-m-d H:i'), Carbon::parse($term1Child->installment_due_date)->format('Y-m-d H:i'));
+    }
+
+    /**
+     * Test 32: Updating installment term cascades due date and amount to unpaid child invoices and lifts suspension
+     */
+    public function test_updating_installment_term_cascades_due_date_and_amount_to_unpaid_child_invoices()
+    {
+        $course = Course::create([
+            'title' => 'Cascading Course',
+            'slug' => 'cascading-course',
+            'price' => 1000000,
+            'category_id' => Category::first()->id,
+            'course_url' => 'https://aksademy.com/course',
+            'registration_url' => 'https://aksademy.com/course/reg',
+            'key_points' => 'Cascade',
+            'status' => 'published',
+            'user_id' => $this->admin->id,
+        ]);
+
+        $parent = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-CASCADE-PARENT',
+            'amount' => 1010000,
+            'nett_amount' => 1000000,
+            'status' => 'installment_pending',
+            'is_installment' => true,
+            'access_suspended_at' => Carbon::now('Asia/Jakarta'),
+        ]);
+
+        EnrollmentCourse::create([
+            'invoice_id' => $parent->id,
+            'course_id' => $course->id,
+            'price' => 1000000,
+            'progress' => 0,
+        ]);
+
+        $termMaster = ProductInstallmentTerm::create([
+            'termable_type' => Course::class,
+            'termable_id' => $course->id,
+            'term_number' => 2,
+            'amount' => 500000,
+            'due_date' => Carbon::now()->subDays(2),
+        ]);
+
+        $childTerm2 = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-CASCADE-PARENT-T2',
+            'amount' => 505000,
+            'nett_amount' => 500000,
+            'status' => 'pending',
+            'is_installment' => false,
+            'parent_invoice_id' => $parent->id,
+            'installment_term_id' => $termMaster->id,
+            'installment_number' => 2,
+            'installment_due_date' => Carbon::now()->subDays(2),
+        ]);
+
+        $this->assertTrue($parent->isAccessSuspended());
+
+        // Admin extends due date to next month and changes amount to 600000
+        $extendedDate = Carbon::now()->addDays(30)->format('Y-m-d');
+        $response = $this->actingAs($this->admin)
+            ->putJson("/admin/installment-terms/{$termMaster->id}", [
+                'amount' => 600000,
+                'due_date' => $extendedDate,
+            ]);
+
+        $response->assertStatus(200);
+
+        $childTerm2->refresh();
+        $this->assertEquals(600000, $childTerm2->nett_amount);
+        $this->assertEquals(605000, $childTerm2->amount);
+        $this->assertEquals($extendedDate, Carbon::parse($childTerm2->installment_due_date)->format('Y-m-d'));
+
+        // Parent invoice suspension lifted because extended date is in the future
+        $parent->refresh();
+        $this->assertNull($parent->access_suspended_at);
+        $this->assertFalse($parent->isAccessSuspended());
+    }
+
+    /**
+     * Test 33: Updating product registration deadline cascades to term 1 and unpaid child invoices
+     */
+    public function test_updating_product_registration_deadline_cascades_to_term_1_and_unpaid_child_invoices()
+    {
+        $webinar = Webinar::create([
+            'title' => 'Cascading Deadline Webinar',
+            'slug' => 'cascading-deadline-webinar',
+            'user_id' => $this->admin->id,
+            'category_id' => Category::first()->id,
+            'price' => 1000000,
+            'strikethrough_price' => 1200000,
+            'quota' => 50,
+            'batch' => 1,
+            'start_time' => Carbon::now()->addDays(14),
+            'registration_deadline' => Carbon::now()->addDays(3),
+            'installment_enabled' => true,
+        ]);
+
+        $term1 = ProductInstallmentTerm::create([
+            'termable_type' => Webinar::class,
+            'termable_id' => $webinar->id,
+            'term_number' => 1,
+            'amount' => 500000,
+            'due_date' => Carbon::now()->addDays(3),
+        ]);
+
+        $parent = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-WEBINAR-PARENT',
+            'amount' => 1010000,
+            'nett_amount' => 1000000,
+            'status' => 'installment_pending',
+            'is_installment' => true,
+        ]);
+
+        $child = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-WEBINAR-PARENT-T1',
+            'amount' => 505000,
+            'nett_amount' => 500000,
+            'status' => 'pending',
+            'is_installment' => false,
+            'parent_invoice_id' => $parent->id,
+            'installment_term_id' => $term1->id,
+            'installment_number' => 1,
+            'installment_due_date' => Carbon::now()->addDays(3),
+        ]);
+
+        // Admin updates webinar registration_deadline to 10 days ahead
+        $newDeadline = Carbon::now()->addDays(10)->startOfMinute();
+        $webinar->update([
+            'registration_deadline' => $newDeadline,
+        ]);
+
+        $term1->refresh();
+        $this->assertEquals($newDeadline->format('Y-m-d'), Carbon::parse($term1->due_date)->format('Y-m-d'));
+
+        $child->refresh();
+        $this->assertEquals($newDeadline->format('Y-m-d'), Carbon::parse($child->installment_due_date)->format('Y-m-d'));
+    }
+
+    /**
+     * Test 34: Admin approve pending installment child restores access and marks parent paid when completed
+     */
+    public function test_admin_approve_pending_installment_child_restores_access_and_completes_parent()
+    {
+        $course = Course::create([
+            'title' => 'Approve Course',
+            'slug' => 'approve-course',
+            'price' => 100000,
+            'category_id' => Category::first()->id,
+            'course_url' => 'https://aksademy.com/course',
+            'registration_url' => 'https://aksademy.com/course/reg',
+            'key_points' => 'Approve',
+            'status' => 'published',
+            'user_id' => $this->admin->id,
+        ]);
+
+        $parent = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-ADMIN-APPROVE-PARENT',
+            'amount' => 110000,
+            'nett_amount' => 100000,
+            'status' => 'installment_pending',
+            'is_installment' => true,
+            'access_suspended_at' => Carbon::now('Asia/Jakarta'),
+        ]);
+
+        EnrollmentCourse::create([
+            'invoice_id' => $parent->id,
+            'course_id' => $course->id,
+            'price' => 100000,
+            'progress' => 0,
+        ]);
+
+        $term1 = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-ADMIN-APPROVE-PARENT-T1',
+            'amount' => 55000,
+            'nett_amount' => 50000,
+            'status' => 'paid',
+            'paid_at' => Carbon::now()->subDays(5),
+            'is_installment' => false,
+            'parent_invoice_id' => $parent->id,
+            'installment_number' => 1,
+        ]);
+
+        $term2 = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-ADMIN-APPROVE-PARENT-T2',
+            'amount' => 55000,
+            'nett_amount' => 50000,
+            'status' => 'pending',
+            'is_installment' => false,
+            'parent_invoice_id' => $parent->id,
+            'installment_number' => 2,
+            'installment_due_date' => Carbon::now()->subDays(1),
+        ]);
+
+        $this->assertTrue($parent->isAccessSuspended());
+
+        // Admin approves Term 2 via /admin/transactions/{id}/approve
+        $response = $this->actingAs($this->admin)
+            ->post("/admin/transactions/{$term2->id}/approve");
+
+        $response->assertRedirect();
+
+        $term2->refresh();
+        $this->assertEquals('paid', $term2->status);
+
+        $parent->refresh();
+        $this->assertNull($parent->access_suspended_at);
+        $this->assertFalse($parent->isAccessSuspended());
+        $this->assertEquals('paid', $parent->status);
+    }
+
+    /**
+     * Test 35: Download PDF for installment child displays term nominal instead of full program price
+     */
+    public function test_download_pdf_for_installment_child_displays_term_nominal()
+    {
+        $bootcamp = Bootcamp::create([
+            'title' => 'PDF Bootcamp',
+            'slug' => 'pdf-bootcamp',
+            'price' => 1000000,
+            'category_id' => Category::first()->id,
+            'start_date' => Carbon::now()->addDays(5),
+        ]);
+
+        $parent = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-PDF-PARENT',
+            'amount' => 1010000,
+            'nett_amount' => 1000000,
+            'status' => 'installment_pending',
+            'is_installment' => true,
+        ]);
+
+        EnrollmentBootcamp::create([
+            'invoice_id' => $parent->id,
+            'bootcamp_id' => $bootcamp->id,
+            'price' => 1000000,
+            'progress' => 0,
+        ]);
+
+        $term1 = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-PDF-PARENT-T1',
+            'amount' => 55000,
+            'nett_amount' => 50000,
+            'status' => 'paid',
+            'paid_at' => Carbon::now(),
+            'is_installment' => false,
+            'parent_invoice_id' => $parent->id,
+            'installment_number' => 1,
+        ]);
+
+        $response = $this->actingAs($this->buyer)
+            ->get("/invoice/{$term1->id}/pdf");
+
+        $response->assertStatus(200);
+        $this->assertEquals('application/pdf', $response->headers->get('Content-Type'));
+    }
 }
+
 

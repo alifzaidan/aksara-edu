@@ -38,6 +38,15 @@ class CertificationProgram extends Model
         'scholarship_price' => 'integer',
     ];
 
+    protected static function booted()
+    {
+        static::updated(function ($program) {
+            if ($program->wasChanged('registration_deadline') && !empty($program->registration_deadline)) {
+                ProductInstallmentTerm::syncFirstTermRegistrationDeadline($program, $program->registration_deadline);
+            }
+        });
+    }
+
     public function category()
     {
         return $this->belongsTo(Category::class, 'category_id');

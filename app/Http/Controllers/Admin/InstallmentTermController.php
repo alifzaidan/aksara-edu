@@ -135,6 +135,9 @@ class InstallmentTermController extends Controller
             'due_date' => $request->due_date,
         ]);
 
+        // Cascade sinkronisasi ke invoice anak yang masih pending/unpaid
+        $term->syncWithPendingInvoices();
+
         return response()->json(['success' => true, 'term' => $term]);
     }
 

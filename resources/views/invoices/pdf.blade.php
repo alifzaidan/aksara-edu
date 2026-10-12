@@ -242,74 +242,131 @@
                 $subtotal = 0;
             @endphp
 
-            @foreach ($invoice->courseItems as $item)
-                <tr>
-                    <td class="text-center">{{ $itemNumber++ }}</td>
-                    <td>
-                        <span class="badge badge-success">Kelas Online</span>
-                    </td>
-                    <td>
-                        <strong>{{ $item->course->title }}</strong>
-                        @if ($item->course->description)
-                            <br><small style="color: #666;">{{ Str::limit($item->course->description, 100) }}</small>
-                        @endif
-                    </td>
-                    <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
-                </tr>
-                @php $subtotal += $item->price; @endphp
-            @endforeach
+            @if ($invoice->isInstallmentChild())
+                @php
+                    $productTitle = 'Program Pelatihan';
+                    $categoryBadge = 'Cicilan';
+                    $badgeStyle = 'background-color: #0284c7; color: white;';
+                    $productDesc = null;
 
-            @foreach ($invoice->bootcampItems as $item)
-                <tr>
-                    <td class="text-center">{{ $itemNumber++ }}</td>
-                    <td>
-                        <span class="badge" style="background-color: #fd7e14; color: white;">Bootcamp</span>
-                    </td>
-                    <td>
-                        <strong>{{ $item->bootcamp->title }}</strong>
-                        @if ($item->bootcamp->description)
-                            <br><small style="color: #666;">{{ Str::limit($item->bootcamp->description, 100) }}</small>
-                        @endif
-                    </td>
-                    <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
-                </tr>
-                @php $subtotal += $item->price; @endphp
-            @endforeach
+                    if ($invoice->courseItems && $invoice->courseItems->count() > 0) {
+                        $productTitle = $invoice->courseItems->first()->course->title ?? 'Kelas Online';
+                        $categoryBadge = 'Kelas Online';
+                        $badgeStyle = 'background-color: #198754; color: white;';
+                        $productDesc = $invoice->courseItems->first()->course->description ?? null;
+                    } elseif ($invoice->bootcampItems && $invoice->bootcampItems->count() > 0) {
+                        $productTitle = $invoice->bootcampItems->first()->bootcamp->title ?? 'Bootcamp';
+                        $categoryBadge = 'Bootcamp';
+                        $badgeStyle = 'background-color: #fd7e14; color: white;';
+                        $productDesc = $invoice->bootcampItems->first()->bootcamp->description ?? null;
+                    } elseif ($invoice->webinarItems && $invoice->webinarItems->count() > 0) {
+                        $productTitle = $invoice->webinarItems->first()->webinar->title ?? 'Webinar';
+                        $categoryBadge = 'Webinar';
+                        $badgeStyle = 'background-color: #6f42c1; color: white;';
+                        $productDesc = $invoice->webinarItems->first()->webinar->description ?? null;
+                    } elseif ($invoice->certificationProgramItems && $invoice->certificationProgramItems->count() > 0) {
+                        $productTitle = $invoice->certificationProgramItems->first()->certificationProgram->title ?? 'Sertifikasi Program';
+                        $categoryBadge = 'Sertifikasi Program';
+                        $badgeStyle = 'background-color: #198754; color: white;';
+                        $productDesc = $invoice->certificationProgramItems->first()->certificationProgram->description ?? null;
+                    } elseif ($invoice->privateItems && $invoice->privateItems->count() > 0) {
+                        $productTitle = $invoice->privateItems->first()->privateClass->title ?? 'Private Class';
+                        $categoryBadge = 'Private Class';
+                        $badgeStyle = 'background-color: #0d6efd; color: white;';
+                        $productDesc = $invoice->privateItems->first()->privateClass->description ?? null;
+                    } elseif ($invoice->bundleEnrollments && $invoice->bundleEnrollments->count() > 0) {
+                        $productTitle = $invoice->bundleEnrollments->first()->bundle->title ?? 'Paket Bundling';
+                        $categoryBadge = 'Paket Bundling';
+                        $badgeStyle = 'background-color: #0d6efd; color: white;';
+                        $productDesc = $invoice->bundleEnrollments->first()->bundle->description ?? null;
+                    }
 
-            @foreach ($invoice->webinarItems as $item)
+                    $subtotal = $invoice->nett_amount;
+                @endphp
                 <tr>
-                    <td class="text-center">{{ $itemNumber++ }}</td>
+                    <td class="text-center">1</td>
                     <td>
-                        <span class="badge" style="background-color: #6f42c1; color: white;">Webinar</span>
+                        <span class="badge" style="{{ $badgeStyle }}">{{ $categoryBadge }}</span>
                     </td>
                     <td>
-                        <strong>{{ $item->webinar->title }}</strong>
-                        @if ($item->webinar->description)
-                            <br><small style="color: #666;">{{ Str::limit($item->webinar->description, 100) }}</small>
+                        <strong>{{ $productTitle }}</strong>
+                        <br><span style="color: #0284c7; font-weight: 600;">Pembayaran Cicilan Termin ke-{{ $invoice->installment_number }}{{ $invoice->installment_number == 1 ? ' (DP)' : '' }}</span>
+                        @if ($productDesc)
+                            <br><small style="color: #666;">{{ Str::limit($productDesc, 100) }}</small>
                         @endif
                     </td>
-                    <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($invoice->nett_amount, 0, ',', '.') }}</td>
                 </tr>
-                @php $subtotal += $item->price; @endphp
-            @endforeach
+            @else
+                @foreach ($invoice->courseItems as $item)
+                    <tr>
+                        <td class="text-center">{{ $itemNumber++ }}</td>
+                        <td>
+                            <span class="badge badge-success">Kelas Online</span>
+                        </td>
+                        <td>
+                            <strong>{{ $item->course->title }}</strong>
+                            @if ($item->course->description)
+                                <br><small style="color: #666;">{{ Str::limit($item->course->description, 100) }}</small>
+                            @endif
+                        </td>
+                        <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
+                    </tr>
+                    @php $subtotal += $item->price; @endphp
+                @endforeach
 
-            @foreach ($invoice->certificationProgramItems as $item)
-                <tr>
-                    <td class="text-center">{{ $itemNumber++ }}</td>
-                    <td>
-                        <span class="badge" style="background-color: #198754; color: white;">Sertifikasi Program</span>
-                    </td>
-                    <td>
-                        <strong>{{ $item->certificationProgram->title }}</strong>
-                        @if ($item->certificationProgram->description)
-                            <br><small
-                                style="color: #666;">{{ Str::limit($item->certificationProgram->description, 100) }}</small>
-                        @endif
-                    </td>
-                    <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
-                </tr>
-                @php $subtotal += $item->price; @endphp
-            @endforeach
+                @foreach ($invoice->bootcampItems as $item)
+                    <tr>
+                        <td class="text-center">{{ $itemNumber++ }}</td>
+                        <td>
+                            <span class="badge" style="background-color: #fd7e14; color: white;">Bootcamp</span>
+                        </td>
+                        <td>
+                            <strong>{{ $item->bootcamp->title }}</strong>
+                            @if ($item->bootcamp->description)
+                                <br><small style="color: #666;">{{ Str::limit($item->bootcamp->description, 100) }}</small>
+                            @endif
+                        </td>
+                        <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
+                    </tr>
+                    @php $subtotal += $item->price; @endphp
+                @endforeach
+
+                @foreach ($invoice->webinarItems as $item)
+                    <tr>
+                        <td class="text-center">{{ $itemNumber++ }}</td>
+                        <td>
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Webinar</span>
+                        </td>
+                        <td>
+                            <strong>{{ $item->webinar->title }}</strong>
+                            @if ($item->webinar->description)
+                                <br><small style="color: #666;">{{ Str::limit($item->webinar->description, 100) }}</small>
+                            @endif
+                        </td>
+                        <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
+                    </tr>
+                    @php $subtotal += $item->price; @endphp
+                @endforeach
+
+                @foreach ($invoice->certificationProgramItems as $item)
+                    <tr>
+                        <td class="text-center">{{ $itemNumber++ }}</td>
+                        <td>
+                            <span class="badge" style="background-color: #198754; color: white;">Sertifikasi Program</span>
+                        </td>
+                        <td>
+                            <strong>{{ $item->certificationProgram->title }}</strong>
+                            @if ($item->certificationProgram->description)
+                                <br><small
+                                    style="color: #666;">{{ Str::limit($item->certificationProgram->description, 100) }}</small>
+                            @endif
+                        </td>
+                        <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
+                    </tr>
+                    @php $subtotal += $item->price; @endphp
+                @endforeach
+            @endif
         </tbody>
     </table>
 

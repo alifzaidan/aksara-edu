@@ -1249,6 +1249,7 @@ class InvoiceController extends Controller
         try {
             $invoice = Invoice::with([
                 'user',
+                'parentInvoice.user',
                 'courseItems.course',
                 'bootcampItems.bootcamp',
                 'webinarItems.webinar',
@@ -1256,7 +1257,10 @@ class InvoiceController extends Controller
                 'bundleEnrollments.bundle.bundleItems.bundleable',
             ])
                 ->where('id', $id)
-                ->where('status', 'pending')
+                ->where(function ($q) {
+                    $q->where('status', 'pending')
+                      ->orWhere('status', 'installment_pending');
+                })
                 ->firstOrFail();
 
             // Update invoice to paid with DOKU payment method
@@ -1267,27 +1271,62 @@ class InvoiceController extends Controller
                 'payment_channel'  => 'DOKU',
             ]);
 
-            // Process bundle individual enrollments if any
-            if ($invoice->bundleEnrollments && $invoice->bundleEnrollments->count() > 0) {
-                foreach ($invoice->bundleEnrollments as $bundleEnrollment) {
-                    $bundleEnrollment->createIndividualEnrollments();
-                    $bundle = $bundleEnrollment->bundle;
-                    if ($bundle && $bundle->bundleItems) {
-                        foreach ($bundle->bundleItems as $item) {
-                            $this->addToCertificateParticipantsHelper($item->getTypeSlug(), $item->bundleable_id, $invoice->user_id);
+            // ====== INSTALLMENT CHILD HANDLER ======
+            if ($invoice->isInstallmentChild()) {
+                $parentInvoice = $invoice->parentInvoice ?? Invoice::with([
+                    'user',
+                    'courseItems.course',
+                    'bootcampItems.bootcamp',
+                    'webinarItems.webinar',
+                    'privateItems.privateClass',
+                    'certificationProgramItems.certificationProgram',
+                    'bundleEnrollments.bundle',
+                ])->find($invoice->parent_invoice_id);
+
+                if ($parentInvoice) {
+                    // Jika termin ke-1 (DP): aktifkan akses
+                    if ($invoice->installment_number === 1) {
+                        $this->activateInstallmentEnrollments($parentInvoice);
+                    }
+
+                    // Pulihkan akses jika sebelumnya dibekukan
+                    $parentInvoice->update(['access_suspended_at' => null]);
+
+                    // Catat komisi affiliate untuk termin ini
+                    $this->recordAffiliateCommissionForTerm($invoice, $parentInvoice);
+
+                    // Cek apakah semua termin lunas
+                    if ($parentInvoice->isFullyPaid()) {
+                        $parentInvoice->update([
+                            'status' => 'paid',
+                            'paid_at' => Carbon::now('Asia/Jakarta'),
+                        ]);
+                        event(new \App\Events\TransactionPaid($parentInvoice));
+                    }
+                }
+            } else {
+                // Process bundle individual enrollments if any
+                if ($invoice->bundleEnrollments && $invoice->bundleEnrollments->count() > 0) {
+                    foreach ($invoice->bundleEnrollments as $bundleEnrollment) {
+                        $bundleEnrollment->createIndividualEnrollments();
+                        $bundle = $bundleEnrollment->bundle;
+                        if ($bundle && $bundle->bundleItems) {
+                            foreach ($bundle->bundleItems as $item) {
+                                $this->addToCertificateParticipantsHelper($item->getTypeSlug(), $item->bundleable_id, $invoice->user_id);
+                            }
                         }
                     }
                 }
+
+                // Add to certificate participants for course/bootcamp/webinar items
+                $this->addEnrollmentToCertificateParticipantsHelper($invoice);
+
+                // Record affiliate commission
+                $this->recordAffiliateCommissionHelper($invoice);
+
+                // Fire event for referral rewards & other side effects
+                event(new \App\Events\TransactionPaid($invoice));
             }
-
-            // Add to certificate participants for course/bootcamp/webinar items
-            $this->addEnrollmentToCertificateParticipantsHelper($invoice);
-
-            // Record affiliate commission
-            $this->recordAffiliateCommissionHelper($invoice);
-
-            // Fire event for referral rewards & other side effects
-            event(new \App\Events\TransactionPaid($invoice));
 
             DB::commit();
 
@@ -2254,6 +2293,8 @@ class InvoiceController extends Controller
                 $message .= "👥 {$course->group_url}\n\n";
                 $message .= "⚠️ *Penting:*\n";
                 $message .= "• Bergabung dengan group untuk mendapatkan info materi dan diskusi\n\n";
+            } else {
+                $message .= "⚠️ *Penting:* Akses materi dan modul pembelajaran dapat langsung dipelajari melalui menu Kelas Saya di dashboard Anda.\n\n";
             }
         } elseif ($itemType === 'webinar') {
             $webinar = $typeInfo['item'];
@@ -2264,30 +2305,32 @@ class InvoiceController extends Controller
                 $message .= "🕐 {$startTime->format('H:i')} WIB\n\n";
             }
 
-            if (!empty($webinar->group_url)) {
+            if (!empty($webinar?->group_url)) {
                 $message .= "*Join Group Webinar:*\n";
                 $message .= "👥 {$webinar->group_url}\n\n";
                 $message .= "⚠️ *Penting:* \n";
                 $message .= "• Bergabung dengan group untuk update terbaru\n";
                 $message .= "• Jangan lupa attend sesuai jadwal!\n\n";
             } else {
-                $message .= "⚠️ *Penting:* Jangan lupa bergabung sesuai jadwal!\n\n";
+                $message .= "⚠️ *Penting:* Link streaming webinar dan informasi kegiatan dapat diakses melalui menu Webinar Saya di dashboard profil Anda.\n\n";
             }
         } elseif ($itemType === 'bootcamp') {
             $bootcamp = $typeInfo['item'];
-            if ($bootcamp && !empty($bootcamp->start_date) && !empty($bootcamp->end_date)) {
+            if ($bootcamp && !empty($bootcamp->start_date)) {
                 $startDate = Carbon::parse($bootcamp->start_date);
-                $endDate = Carbon::parse($bootcamp->end_date);
+                $endDateText = !empty($bootcamp->end_date) ? ' - ' . Carbon::parse($bootcamp->end_date)->format('d M Y') : '';
                 $message .= "*Periode Bootcamp:*\n";
-                $message .= "📅 {$startDate->format('d M Y')} - {$endDate->format('d M Y')}\n\n";
+                $message .= "📅 {$startDate->format('d M Y')}{$endDateText}\n\n";
             }
 
-            if (!empty($bootcamp->group_url)) {
+            if (!empty($bootcamp?->group_url)) {
                 $message .= "*Join Group Bootcamp:*\n";
                 $message .= "👥 {$bootcamp->group_url}\n\n";
                 $message .= "⚠️ *Penting:* \n";
                 $message .= "• Bergabung dengan group untuk mendapatkan info penting dan diskusi\n";
                 $message .= "• Aktif mengikuti seluruh kegiatan bootcamp\n\n";
+            } else {
+                $message .= "⚠️ *Penting:* Jadwal sesi mentoring dan materi bootcamp dapat diakses melalui menu Bootcamp Saya di dashboard profil Anda.\n\n";
             }
         } elseif ($itemType === 'private') {
             $privateClass = $typeInfo['item'];
@@ -2299,14 +2342,14 @@ class InvoiceController extends Controller
                 $message .= "*Jadwal Private Class:*\n";
                 $message .= "📅 {$startTime->format('d M Y')}\n";
                 $message .= "🕐 {$startTime->format('H:i')} - {$endTime->format('H:i')} WIB\n\n";
-            } elseif (!empty($privateClass->start_time)) {
+            } elseif (!empty($privateClass?->start_time)) {
                 $startTime = Carbon::parse($privateClass->start_time);
                 $message .= "*Jadwal Private Class:*\n";
                 $message .= "📅 {$startTime->format('d M Y')}\n";
                 $message .= "🕐 {$startTime->format('H:i')} WIB\n\n";
             }
 
-            if (!empty($privateClass->mode)) {
+            if (!empty($privateClass?->mode)) {
                 $modeText = $privateClass->mode === 'offline' ? 'Offline' : 'Online';
                 $message .= "📍 Mode: *{$modeText}*\n";
                 if ($privateClass->mode === 'offline' && !empty($privateClass->location)) {
@@ -2315,14 +2358,14 @@ class InvoiceController extends Controller
                 $message .= "\n";
             }
 
-            if (!empty($privateClass->group_url)) {
+            if (!empty($privateClass?->group_url)) {
                 $message .= "*Join Group Private Class:*\n";
                 $message .= "👥 {$privateClass->group_url}\n\n";
             }
         } elseif ($itemType === 'certification_program') {
             $program = $typeInfo['item'];
 
-            if (!empty($program->group_url)) {
+            if (!empty($program?->group_url)) {
                 $message .= "*Join Group Sertifikasi:*\n";
                 $message .= "👥 {$program->group_url}\n\n";
                 $message .= "⚠️ *Penting:*\n";
@@ -2330,9 +2373,13 @@ class InvoiceController extends Controller
                 $message .= "• Ikuti jadwal program yang tersedia\n\n";
             }
 
-            if (!empty($program->socialization_group_url)) {
+            if (!empty($program?->socialization_group_url)) {
                 $message .= "*Join Group Sosialisasi:*\n";
                 $message .= "👥 {$program->socialization_group_url}\n\n";
+            }
+
+            if (empty($program?->group_url) && empty($program?->socialization_group_url)) {
+                $message .= "⚠️ *Penting:* Informasi dan jadwal program sertifikasi dapat dipantau langsung dari menu Sertifikasi Saya di dashboard profil Anda.\n\n";
             }
         }
 
@@ -2926,6 +2973,7 @@ class InvoiceController extends Controller
             $invoice->setRelation('webinarItems', $parent->webinarItems);
             $invoice->setRelation('privateItems', $parent->privateItems);
             $invoice->setRelation('certificationProgramItems', $parent->certificationProgramItems);
+            $invoice->setRelation('bundleEnrollments', $parent->bundleEnrollments);
             $invoiceForView = $invoice;
         }
 

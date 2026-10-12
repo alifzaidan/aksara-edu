@@ -28,6 +28,15 @@ class Webinar extends Model
         'installment_enabled' => 'boolean',
     ];
 
+    protected static function booted()
+    {
+        static::updated(function ($webinar) {
+            if ($webinar->wasChanged('registration_deadline') && !empty($webinar->registration_deadline)) {
+                ProductInstallmentTerm::syncFirstTermRegistrationDeadline($webinar, $webinar->registration_deadline);
+            }
+        });
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');

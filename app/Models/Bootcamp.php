@@ -32,6 +32,15 @@ class Bootcamp extends Model
         'has_submission_link' => 'boolean',
     ];
 
+    protected static function booted()
+    {
+        static::updated(function ($bootcamp) {
+            if ($bootcamp->wasChanged('registration_deadline') && !empty($bootcamp->registration_deadline)) {
+                ProductInstallmentTerm::syncFirstTermRegistrationDeadline($bootcamp, $bootcamp->registration_deadline);
+            }
+        });
+    }
+
     public function mentors()
     {
         return $this->belongsToMany(User::class, 'bootcamp_mentors')->withTimestamps();
