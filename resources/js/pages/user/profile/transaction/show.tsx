@@ -562,9 +562,21 @@ export default function TransactionShow({ invoice }: Props) {
                                                             )}
                                                         </div>
                                                     </div>
-                                                    <p className="text-sm font-semibold flex-shrink-0 mt-0.5 text-gray-900 dark:text-white">
-                                                        Rp {term.amount.toLocaleString('id-ID')}
-                                                    </p>
+                                                    <div className="text-right flex-shrink-0 mt-0.5">
+                                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                                                            Rp {term.amount.toLocaleString('id-ID')}
+                                                        </p>
+                                                        {term.status === 'paid' && (
+                                                            <div className="mt-1">
+                                                                <Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs gap-1">
+                                                                    <a href={route('invoice.pdf', { id: term.id })} target="_blank" rel="noopener noreferrer">
+                                                                        <FileText className="size-3.5" />
+                                                                        Invoice
+                                                                    </a>
+                                                                </Button>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             );
                                         })}

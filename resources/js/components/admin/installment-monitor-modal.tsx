@@ -35,6 +35,7 @@ import {
     Clock,
     Copy,
     ExternalLink,
+    FileText,
     Loader2,
     MessageCircle,
     Send,
@@ -400,7 +401,28 @@ export default function InstallmentMonitorModal({
                                                 </div>
                                             </div>
 
-                                            {/* Action Buttons for Pending Terms */}
+                                            {/* Action Buttons */}
+                                            {isPaid && (
+                                                <div className="flex items-center gap-1.5 self-end sm:self-center">
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="h-8 px-2.5 text-xs gap-1.5"
+                                                                asChild
+                                                            >
+                                                                <a href={route('invoice.pdf', { id: term.id })} target="_blank" rel="noopener noreferrer">
+                                                                    <FileText className="size-3.5" />
+                                                                    <span>Invoice</span>
+                                                                </a>
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>Lihat Invoice Termin {term.installment_number}</TooltipContent>
+                                                    </Tooltip>
+                                                </div>
+                                            )}
+
                                             {!isPaid && (
                                                 <div className="flex items-center gap-1.5 self-end sm:self-center">
                                                     <Tooltip>

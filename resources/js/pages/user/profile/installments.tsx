@@ -8,7 +8,7 @@ import { Head } from '@inertiajs/react';
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
-import { AlertTriangle, BanknoteIcon, CalendarClock, CheckCircle2, Clock, CreditCard, Lock, Package, XCircle } from 'lucide-react';
+import { AlertTriangle, BanknoteIcon, CalendarClock, CheckCircle2, Clock, CreditCard, FileText, Lock, Package, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -249,6 +249,16 @@ function InstallmentCard({ item }: { item: Installment }) {
                                     </p>
                                     {term.status !== 'paid' && (
                                         <p className="text-[10px] text-muted-foreground">Termasuk admin Rp 5.000</p>
+                                    )}
+                                    {term.status === 'paid' && (
+                                        <div className="mt-1">
+                                            <Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs gap-1">
+                                                <a href={route('invoice.pdf', { id: term.id })} target="_blank" rel="noopener noreferrer">
+                                                    <FileText className="h-3.5 w-3.5" />
+                                                    Invoice
+                                                </a>
+                                            </Button>
+                                        </div>
                                     )}
                                 </div>
                             </div>
