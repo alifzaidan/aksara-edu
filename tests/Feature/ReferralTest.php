@@ -203,3 +203,50 @@ test('admin can update settings and adjust user points', function () {
         ->and($tx->type)->toBe('adjustment')
         ->and($tx->description)->toBe('Admin manual correction bonus');
 });
+
+test('referral reward cannot be duplicated if event is fired multiple times or processed twice', function () {
+    Setting::set('referral_reward', 20000);
+    Setting::set('buyer_reward', 15000);
+    Setting::set('referral_only_first_purchase', true);
+
+    $referrer = User::factory()->create(['name' => 'NURBAYA. STP', 'referral_code' => 'AKSA-NURBAY', 'point_balance' => 0]);
+    $buyer = User::factory()->create(['name' => 'Anita Tanzil', 'point_balance' => 0]);
+
+    $invoice = Invoice::create([
+        'invoice_code' => 'INV-TEST-DUP-01',
+        'user_id' => $buyer->id,
+        'amount' => 100000,
+        'nett_amount' => 100000,
+        'status' => 'pending',
+        'referral_code' => 'AKSA-NURBAY',
+        'referral_user_id' => $referrer->id,
+    ]);
+
+    $invoice->update(['status' => 'paid']);
+
+    // Fire the event TWICE (simulating duplicate webhooks, duplicate listeners, or retries)
+    event(new TransactionPaid($invoice));
+    event(new TransactionPaid($invoice));
+
+    // Also call service directly again
+    app(\App\Services\RewardService::class)->processReferralReward($invoice);
+
+    $referrer->refresh();
+    $buyer->refresh();
+
+    // Verify balances are only rewarded once (20,000 and 15,000, not 40,000 and 30,000)
+    expect($referrer->point_balance)->toBe(20000)
+        ->and($buyer->point_balance)->toBe(15000);
+
+    // Verify exactly 1 transaction for referrer and 1 for buyer
+    $refTxCount = PointTransaction::where('user_id', $referrer->id)
+        ->where('reference_id', $invoice->id)
+        ->count();
+    $buyerTxCount = PointTransaction::where('user_id', $buyer->id)
+        ->where('reference_id', $invoice->id)
+        ->count();
+
+    expect($refTxCount)->toBe(1)
+        ->and($buyerTxCount)->toBe(1);
+});
+
