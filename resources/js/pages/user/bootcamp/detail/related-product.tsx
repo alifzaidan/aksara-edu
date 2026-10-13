@@ -1,6 +1,7 @@
 import { Spotlight } from '@/components/ui/spotlight';
 import { Link } from '@inertiajs/react';
 import { Calendar } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Bootcamp {
     id: string;
@@ -22,14 +23,21 @@ interface RelatedProductProps {
 }
 
 export default function RelatedProduct({ relatedBootcamps, myBootcampIds }: RelatedProductProps) {
+    const { t, i18n } = useTranslation('user');
+    const dateLocale = i18n.language === 'en' ? 'en-US' : 'id-ID';
+
     if (!relatedBootcamps || relatedBootcamps.length === 0) {
         return null;
     }
 
     return (
         <section className="mx-auto mt-16 w-full max-w-7xl px-4" id="related">
-            <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">Bootcamp Serupa</h2>
-            <p className="mb-8 text-center text-gray-600 dark:text-gray-400">Bootcamp lain yang mungkin menarik untuk Anda</p>
+            <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
+                {t('bootcamp.detail.similarTitle')}
+            </h2>
+            <p className="mb-8 text-center text-gray-600 dark:text-gray-400">
+                {t('bootcamp.detail.similarSubtitle')}
+            </p>
 
             <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {relatedBootcamps.map((bootcamp) => {
@@ -57,18 +65,18 @@ export default function RelatedProduct({ relatedBootcamps, myBootcampIds }: Rela
                                 </div>
                                 <div className="w-full p-4 text-left">
                                     {hasAccess ? (
-                                        <p className="text-primary text-sm font-medium">Anda sudah memiliki akses</p>
+                                        <p className="text-primary text-sm font-medium">{t('bootcamp.catalog.owned')}</p>
                                     ) : bootcamp.price === 0 ? (
-                                        <p className="text-lg font-semibold text-green-600 dark:text-green-400">Gratis</p>
+                                        <p className="text-lg font-semibold text-green-600 dark:text-green-400">{t('bootcamp.catalog.free')}</p>
                                     ) : (
                                         <div className="">
                                             {bootcamp.strikethrough_price > 0 && (
                                                 <p className="text-sm text-red-500 line-through">
-                                                    Rp {bootcamp.strikethrough_price.toLocaleString('id-ID')}
+                                                    Rp {bootcamp.strikethrough_price.toLocaleString(dateLocale)}
                                                 </p>
                                             )}
                                             <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                                                Rp {bootcamp.price.toLocaleString('id-ID')}
+                                                Rp {bootcamp.price.toLocaleString(dateLocale)}
                                             </p>
                                         </div>
                                     )}
@@ -76,13 +84,13 @@ export default function RelatedProduct({ relatedBootcamps, myBootcampIds }: Rela
                                         <div className="flex items-center gap-2">
                                             <Calendar size="18" />
                                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                                                {new Date(bootcamp.start_date).toLocaleDateString('id-ID', {
+                                                {new Date(bootcamp.start_date).toLocaleDateString(dateLocale, {
                                                     day: 'numeric',
                                                     month: 'long',
                                                     year: 'numeric',
                                                 })}{' '}
                                                 -{' '}
-                                                {new Date(bootcamp.end_date).toLocaleDateString('id-ID', {
+                                                {new Date(bootcamp.end_date).toLocaleDateString(dateLocale, {
                                                     day: 'numeric',
                                                     month: 'long',
                                                     year: 'numeric',

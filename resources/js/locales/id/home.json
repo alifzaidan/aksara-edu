@@ -1,0 +1,113 @@
+{
+  "about": {
+    "badge": "Kenapa Harus Belajar di Aksademy?",
+    "title1": "Solusi",
+    "title2": "yang dirancang dengan cermat untuk",
+    "titleHighlight": "pembelajaran",
+    "title3": "yang mudah",
+    "webDev": {
+      "title": "Web & App Development",
+      "desc": "Membangun aplikasi web dan mobile yang responsif dan efisien"
+    },
+    "dataScience": {
+      "title": "Data Science",
+      "desc": "Menganalisis data untuk mendapatkan wawasan yang berharga"
+    },
+    "graphicDesign": {
+      "title": "Graphic Design",
+      "desc": "Mendesain antarmuka yang menarik dan fungsional"
+    },
+    "accounting": {
+      "title": "Accounting, Finance, & Tax",
+      "desc": "Membantu mengelola keuangan dan laporan keuangan"
+    }
+  },
+  "program": {
+    "badge": "Program Kami",
+    "learnNow": "Pelajari Sekarang",
+    "course": {
+      "title": "Kelas Online",
+      "subtitle": "Pelajari berbagai skill sekali bayar, praktik, dan bersertifikat.",
+      "point1": "Belajar fleksibel via Video Materi, Project dan Studi Kasus",
+      "point2": "Praktikal & Actionable. Bertahap dari level Dasar hingga Lanjut",
+      "point3": "Grup Komunitas Diskusi Lifetime. Kelas Gratis Tiap Bulannya"
+    },
+    "bootcamp": {
+      "title": "Bootcamp",
+      "subtitle": "Intensive Live Class bersama Experts. Praktikal & Mendalam.",
+      "point1": "Kombinasi Case Study, Praktik di Tiap Sesi. Basic to Advanced",
+      "point2": "Group Mentoring Semi-Privat untuk Bangun Portfolio",
+      "point3": "Tutor Terkurasi. Memiliki Lebih dari 30.000 Alumni"
+    },
+    "webinar": {
+      "title": "Webinar",
+      "subtitle": "Pelajari berbagai topik terkini dari para ahli di bidangnya.",
+      "point1": "Belajar insightfull dengan pembicara yang expert dibidangnya",
+      "point2": "Praktikal & Actionable. Bertahap dari level Dasar hingga Lanjut",
+      "point3": "Grup Komunitas Diskusi Lifetime. Kelas Gratis Tiap Bulannya"
+    }
+  },
+  "tools": {
+    "badge": "Tools & Framework",
+    "title": "Tools up-to-date yang digunakan"
+  },
+  "latest": {
+    "badge": "Produk Terbaru",
+    "title": "Kelas, Bootcamp, Webinar, Private & Bundling Terbaru dari Aksademy",
+    "empty": "Belum ada produk yang tersedia saat ini.",
+    "allOwned": "Anda sudah memiliki akses semua produk terbaru kami. 😁🙏",
+    "thankYou": "Terima kasih telah menjadi bagian dari Aksademy!",
+    "save": "Hemat {{discount}}%",
+    "free": "Gratis",
+    "registerBefore": "Daftar sebelum {{days}} hari lagi",
+    "registrationClosed": "Pendaftaran ditutup",
+    "registerUntil": "Daftar s/d {{date}}",
+    "badges": {
+      "course": "Kelas",
+      "bootcamp": "Bootcamp",
+      "webinar": "Webinar",
+      "bundle": "Bundle",
+      "private": "Private",
+      "scholarship": "Beasiswa",
+      "regular": "Reguler"
+    },
+    "levels": {
+      "beginner": "Level Beginner",
+      "intermediate": "Level Intermediate",
+      "advanced": "Level Advanced"
+    }
+  },
+  "testimony": {
+    "badge": "Terpercaya lebih dari 1000+ alumni",
+    "title": "Bergabung bersama komunitas supportif kami 💪",
+    "subtitle": "Aksademy menyediakan komunitas belajar berbagai disiplin ilmu untuk pemula ke mahir. Dapatkan dukungan, berbagi pengalaman, dan tumbuh bersama dalam perjalanan belajar Anda.",
+    "joinNow": "Gabung Sekarang"
+  },
+  "faq": {
+    "badge": "Pertanyaan yang sering ditanyakan",
+    "title": "FAQ",
+    "q1": "Apa itu Aksademy?",
+    "a1": "Aksademy adalah platform edukasi digital yang dikembangkan oleh CV. Aksara Teknologi Mandiri dan dirancang untuk mendukung pengembangan skill di era modern mulai dari teknologi, desain, hingga bisnis.",
+    "q2": "Apa saja fitur yang tersedia di Aksademy?",
+    "a2": "Aksademy menawarkan berbagai fitur seperti Kelas Online, Bootcamp, dan pelatihan dalam bentuk Webinar yang mencakup berbagai disiplin ilmu. Setiap fitur dirancang untuk memberikan pengalaman belajar yang interaktif dan mendalam, memungkinkan pengguna untuk mengembangkan keterampilan mereka secara efektif.",
+    "q3": "Bagaimana alur belajar di Aksademy?",
+    "a3": "Alur belajar di Aksademy dimulai dengan memilih kelas atau bootcamp yang sesuai dengan minat dan kebutuhan Anda. Setelah mendaftar, Anda akan mendapatkan akses ke materi pembelajaran yang dapat diakses kapan saja. Setiap kelas dilengkapi dengan modul, quiz, dan forum diskusi untuk mendukung proses belajar Anda.",
+    "q4": "Kemana saya bisa mendapatkan informasi lebih lanjut tentang Aksademy?",
+    "a4_part1": "Untuk informasi lebih lanjut tentang Aksademy, Anda dapat menghubungi admin kami di ",
+    "a4_part2": ". Kami juga aktif di media sosial, jadi pastikan untuk mengikuti kami di platform seperti Instagram, Tiktok, dan Linkedin untuk update terbaru dan tips belajar."
+  },
+  "cta": {
+    "badge": "Bergabung dengan 1000+ alumni",
+    "title": "Daftar Kelas Sekarang",
+    "subtitle": "Bergabunglah dengan ribuan peserta lainnya yang telah merasakan manfaat dari kelas-kelas kami. Dapatkan akses ke materi berkualitas, mentor berpengalaman, dan komunitas yang mendukung.",
+    "button": "Eksplorasi Kelas"
+  },
+  "notification": {
+    "justPurchased": "Baru saja membeli {{type}}: "
+  },
+  "promotion": {
+    "alt": "Promosi Aksademy",
+    "clickForDetail": "Klik untuk detail",
+    "clickToClose": "Klik untuk tutup"
+  }
+}

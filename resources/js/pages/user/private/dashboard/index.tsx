@@ -1,5 +1,6 @@
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 import FeatureSection from './feature-section';
 import HeroSection from './hero-section';
 import PrivateSection from './private-section';
@@ -31,9 +32,11 @@ interface Props {
 }
 
 export default function PrivateDashboard({ categories, privateClasses, myPrivateClassIds }: Props) {
+    const { t } = useTranslation('user');
+
     return (
         <UserLayout>
-            <Head title="Private Class" />
+            <Head title={t('privateClass.dashboard.headTitle')} />
 
             <HeroSection />
             <FeatureSection />

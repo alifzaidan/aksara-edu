@@ -1,5 +1,6 @@
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 import BundlingSection from './bundling-section';
 import HeroSection from './hero-section';
 
@@ -34,9 +35,11 @@ interface BundlingDashboardProps {
 }
 
 export default function BundlingDashboard({ bundles }: BundlingDashboardProps) {
+    const { t } = useTranslation('user');
+
     return (
         <UserLayout>
-            <Head title="Paket Bundling - Hemat Lebih Banyak" />
+            <Head title={t('bundling.dashboard.headTitle')} />
 
             <HeroSection />
             <BundlingSection bundles={bundles} />

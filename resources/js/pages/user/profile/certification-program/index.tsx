@@ -7,6 +7,7 @@ import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
 import { CheckCircle, Clock, Lock } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface CertificationProgram {
     id: string;
@@ -44,6 +45,7 @@ interface Props {
 }
 
 export default function CertificationProgramIndex({ myCertificationPrograms }: Props) {
+    const { t, i18n } = useTranslation('profile');
     const [search, setSearch] = useState('');
     const [visibleCount, setVisibleCount] = useState(6);
 
@@ -81,17 +83,17 @@ export default function CertificationProgramIndex({ myCertificationPrograms }: P
 
     return (
         <UserLayout>
-            <Head title="Sertifikasi Saya" />
+            <Head title={t('certifications.title')} />
             <ProfileLayout>
-                <Heading title="Sertifikasi Saya" description="Lihat semua program sertifikasi yang sudah Anda beli." />
+                <Heading title={t('certifications.title')} description={t('certifications.description')} />
                 <div className="mb-4 flex justify-between gap-2">
-                    <Input type="search" placeholder="Cari program sertifikasi..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                    <Input type="search" placeholder={t('certifications.searchPlaceholder')} value={search} onChange={(e) => setSearch(e.target.value)} />
                 </div>
                 <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {visibleItems.length === 0 ? (
                         <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
-                            <img src="/assets/images/not-found.webp" alt="Sertifikasi Belum Tersedia" className="w-48" />
-                            <div className="text-center text-gray-500">Belum ada program sertifikasi yang tersedia saat ini.</div>
+                            <img src="/assets/images/not-found.webp" alt={t('certifications.empty')} className="w-48" />
+                            <div className="text-center text-gray-500">{t('certifications.empty')}</div>
                         </div>
                     ) : (
                         visibleItems.map((item, idx) => (
@@ -104,7 +106,7 @@ export default function CertificationProgramIndex({ myCertificationPrograms }: P
                                 <div className="bg-sidebar relative flex h-full w-full flex-col items-center justify-center rounded-lg dark:bg-zinc-800">
                                     <div className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-lg">
                                         <CheckCircle className="h-3 w-3" />
-                                        {item.is_scholarship ? 'Beasiswa' : 'Reguler'}
+                                        {item.is_scholarship ? t('certifications.scholarship') : t('certifications.regular')}
                                     </div>
 
                                     <img
@@ -119,33 +121,41 @@ export default function CertificationProgramIndex({ myCertificationPrograms }: P
                                         {item.is_access_suspended ? (
                                             <div className="mb-3 flex items-center gap-2 rounded-lg bg-red-50 p-2 dark:bg-red-900/20">
                                                 <Lock className="h-4 w-4 text-red-600 dark:text-red-400" />
-                                                <span className="text-xs font-medium text-red-700 dark:text-red-300">Akses Dibekukan</span>
+                                                <span className="text-xs font-medium text-red-700 dark:text-red-300">
+                                                    {t('transactions.installmentSuspended')}
+                                                </span>
                                             </div>
                                         ) : item.is_installment && item.invoice_status === 'installment_pending' ? (
                                             <div className="mb-3 flex items-center gap-2 rounded-lg bg-amber-50 p-2 dark:bg-amber-900/20">
                                                 <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                                                 <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                                                    Cicilan Aktif ({item.paid_terms}/{item.total_terms})
+                                                    {t('transactions.installmentTerm', { paid: item.paid_terms, total: item.total_terms })}
                                                 </span>
                                             </div>
                                         ) : (
                                             <div className="mb-3 flex items-center gap-2 rounded-lg bg-green-50 p-2 dark:bg-green-900/20">
                                                 <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                                <span className="text-xs font-medium text-green-700 dark:text-green-300">Sudah Dibayar</span>
+                                                <span className="text-xs font-medium text-green-700 dark:text-green-300">
+                                                    {t('transactions.statusPaid')}
+                                                </span>
                                             </div>
                                         )}
 
                                         <div className="mt-2 flex justify-between text-sm">
                                             <span className="text-gray-600 dark:text-gray-400">
                                                 {item.paid_at
-                                                    ? new Date(item.paid_at).toLocaleDateString('id-ID', {
+                                                    ? new Date(item.paid_at).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                                           day: 'numeric',
                                                           month: 'short',
                                                           year: 'numeric',
                                                       })
                                                     : '-'}
                                             </span>
-                                            <span className="font-semibold">Rp {item.price.toLocaleString('id-ID')}</span>
+                                            <span className="font-semibold">
+                                                {item.price === 0
+                                                    ? t('transactions.free')
+                                                    : `Rp ${item.price.toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')}`}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -156,7 +166,7 @@ export default function CertificationProgramIndex({ myCertificationPrograms }: P
                 {visibleCount < filteredItems.length && (
                     <div className="mb-8 flex justify-center">
                         <Button type="button" className="mt-8 hover:cursor-pointer" onClick={() => setVisibleCount((prev) => prev + 6)}>
-                            Lihat Lebih Banyak
+                            {t('certifications.loadMore')}
                         </Button>
                     </div>
                 )}

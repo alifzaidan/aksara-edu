@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 interface PrivateClass {
     title: string;
@@ -10,6 +11,8 @@ interface PrivateClass {
 }
 
 export default function HeroSection({ privateClass }: { privateClass: PrivateClass }) {
+    const { t, i18n } = useTranslation('user');
+    const dateLocale = i18n.language === 'en' ? 'en-US' : 'id-ID';
     const firstSchedule = privateClass.schedules?.[0];
 
     return (
@@ -22,29 +25,28 @@ export default function HeroSection({ privateClass }: { privateClass: PrivateCla
                 <div className="col-span-2">
                     <div className="mb-4 flex flex-wrap gap-2">
                         <span className="text-secondary border-secondary bg-background inline-block rounded-full border bg-gradient-to-t from-[#FED6AD] to-white px-3 py-1 text-sm font-medium shadow-xs">
-                            {privateClass.mode === 'offline' ? '📍 Offline' : '🖥️ Online'}
+                            {privateClass.mode === 'offline' ? t('privateClass.detail.hero.badgeOffline') : t('privateClass.detail.hero.badgeOnline')}
                             {privateClass.mode === 'offline' && privateClass.location && ` — ${privateClass.location}`}
                         </span>
                         {firstSchedule && (
                             <span className="text-secondary border-secondary bg-background inline-block rounded-full border bg-gradient-to-t from-[#FED6AD] to-white px-3 py-1 text-sm font-medium shadow-xs">
-                                🕛{' '}
-                                {new Date(firstSchedule.start_time).toLocaleDateString('id-ID', {
-                                    day: 'numeric',
-                                    month: 'long',
-                                    year: 'numeric',
-                                })}{' '}
-                                {new Date(firstSchedule.start_time).toLocaleTimeString('id-ID', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    timeZone: 'Asia/Jakarta',
-                                })}{' '}
-                                -{' '}
-                                {new Date(firstSchedule.end_time).toLocaleTimeString('id-ID', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    timeZone: 'Asia/Jakarta',
-                                })}{' '}
-                                WIB
+                                {t('privateClass.detail.hero.timeRange', {
+                                    date: new Date(firstSchedule.start_time).toLocaleDateString(dateLocale, {
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric',
+                                    }),
+                                    startTime: new Date(firstSchedule.start_time).toLocaleTimeString(dateLocale, {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        timeZone: 'Asia/Jakarta',
+                                    }),
+                                    endTime: new Date(firstSchedule.end_time).toLocaleTimeString(dateLocale, {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        timeZone: 'Asia/Jakarta',
+                                    }),
+                                })}
                             </span>
                         )}
                     </div>
@@ -52,16 +54,15 @@ export default function HeroSection({ privateClass }: { privateClass: PrivateCla
                     <h1 className="mb-6 text-4xl leading-tight font-bold italic sm:text-5xl">{privateClass.title}</h1>
 
                     <p className="mb-6 max-w-xl text-lg text-gray-600 dark:text-gray-400">
-                        {privateClass.description ||
-                            'Ikuti private class kami untuk mendapatkan bimbingan langsung secara personal dari mentor berpengalaman.'}
+                        {privateClass.description || t('privateClass.detail.hero.defaultDescription')}
                     </p>
 
                     <div className="flex flex-wrap gap-4">
                         <a href="#register">
-                            <Button>Daftar Sekarang</Button>
+                            <Button>{t('privateClass.detail.hero.btnRegisterNow')}</Button>
                         </a>
                         <a href="https://wa.me/+6285142505794" target="_blank" rel="noopener noreferrer">
-                            <Button variant="outline">Hubungi Kami</Button>
+                            <Button variant="outline">{t('privateClass.detail.hero.btnContactUs')}</Button>
                         </a>
                     </div>
                 </div>

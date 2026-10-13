@@ -1,6 +1,7 @@
 import { Spotlight } from '@/components/ui/spotlight';
 import { Link } from '@inertiajs/react';
 import { Calendar } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Webinar {
     id: string;
@@ -21,14 +22,21 @@ interface RelatedProductProps {
 }
 
 export default function RelatedProduct({ relatedWebinars, myWebinarIds }: RelatedProductProps) {
+    const { t, i18n } = useTranslation('user');
+    const dateLocale = i18n.language === 'en' ? 'en-US' : 'id-ID';
+
     if (!relatedWebinars || relatedWebinars.length === 0) {
         return null;
     }
 
     return (
         <section className="mx-auto mt-16 w-full max-w-7xl px-4" id="related">
-            <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">Webinar Serupa</h2>
-            <p className="mb-8 text-center text-gray-600 dark:text-gray-400">Webinar lain yang mungkin menarik untuk Anda</p>
+            <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
+                {t('webinar.detail.similarTitle')}
+            </h2>
+            <p className="mb-8 text-center text-gray-600 dark:text-gray-400">
+                {t('webinar.detail.similarSubtitle')}
+            </p>
 
             <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {relatedWebinars.map((webinar) => {
@@ -56,18 +64,18 @@ export default function RelatedProduct({ relatedWebinars, myWebinarIds }: Relate
                                 </div>
                                 <div className="w-full p-4 text-left">
                                     {hasAccess ? (
-                                        <p className="text-primary text-sm font-medium">Anda sudah memiliki akses</p>
+                                        <p className="text-primary text-sm font-medium">{t('webinar.catalog.owned')}</p>
                                     ) : webinar.price === 0 ? (
-                                        <p className="text-lg font-semibold text-green-600 dark:text-green-400">Gratis</p>
+                                        <p className="text-lg font-semibold text-green-600 dark:text-green-400">{t('webinar.catalog.free')}</p>
                                     ) : (
                                         <div className="">
                                             {webinar.strikethrough_price > 0 && (
                                                 <p className="text-sm text-red-500 line-through">
-                                                    Rp {webinar.strikethrough_price.toLocaleString('id-ID')}
+                                                    Rp {webinar.strikethrough_price.toLocaleString(dateLocale)}
                                                 </p>
                                             )}
                                             <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                                                Rp {webinar.price.toLocaleString('id-ID')}
+                                                Rp {webinar.price.toLocaleString(dateLocale)}
                                             </p>
                                         </div>
                                     )}
@@ -75,7 +83,7 @@ export default function RelatedProduct({ relatedWebinars, myWebinarIds }: Relate
                                         <div className="flex items-center gap-2">
                                             <Calendar size="18" />
                                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                                                {new Date(webinar.start_time).toLocaleDateString('id-ID', {
+                                                {new Date(webinar.start_time).toLocaleDateString(dateLocale, {
                                                     day: 'numeric',
                                                     month: 'long',
                                                     year: 'numeric',

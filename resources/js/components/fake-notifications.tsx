@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 interface Product {
@@ -41,6 +42,8 @@ const FAKE_NAMES = [
 ];
 
 export default function FakeNotifications({ products }: FakeNotificationsProps) {
+    const { t } = useTranslation('home');
+    const { t: tCommon } = useTranslation('common');
     const [isVisible, setIsVisible] = useState(true);
 
     useEffect(() => {
@@ -49,7 +52,16 @@ export default function FakeNotifications({ products }: FakeNotificationsProps) 
         const showFakeNotification = () => {
             const randomProduct = products[Math.floor(Math.random() * products.length)];
             const randomName = FAKE_NAMES[Math.floor(Math.random() * FAKE_NAMES.length)];
-            const productType = randomProduct.type === 'course' ? 'Kelas Online' : randomProduct.type === 'bootcamp' ? 'Bootcamp' : randomProduct.type === 'webinar' ? 'Webinar' : randomProduct.type === 'certification-program' ? 'Program Sertifikasi' : 'Private Class';
+            const productType =
+                randomProduct.type === 'course'
+                    ? tCommon('nav.course')
+                    : randomProduct.type === 'bootcamp'
+                      ? tCommon('nav.bootcamp')
+                      : randomProduct.type === 'webinar'
+                        ? tCommon('nav.webinar')
+                        : randomProduct.type === 'certification-program'
+                          ? tCommon('nav.certification')
+                          : tCommon('nav.private');
 
             toast.success(
                 <div className="flex w-full min-w-0 items-start space-x-3">
@@ -57,7 +69,9 @@ export default function FakeNotifications({ products }: FakeNotificationsProps) 
                         <p className="mb-1 text-sm font-medium text-gray-900">
                             <span className="font-semibold">{randomName}</span>
                         </p>
-                        <span className="text-xs leading-relaxed break-words text-gray-500">Baru saja membeli {productType}: </span>
+                        <span className="text-xs leading-relaxed break-words text-gray-500">
+                            {t('notification.justPurchased', { type: productType })}
+                        </span>
                         <span className="text-xs leading-relaxed font-medium break-words text-gray-700">{randomProduct.title}</span>
                     </div>
                 </div>,

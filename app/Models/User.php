@@ -40,6 +40,7 @@ class User extends Authenticatable
         'email_verified_at',
         'referral_code',
         'point_balance',
+        'preferred_locale',
     ];
 
     /**

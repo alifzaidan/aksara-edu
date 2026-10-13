@@ -2,20 +2,22 @@ import { Button } from '@/components/ui/button';
 import { InfiniteSlider } from '@/components/ui/infinite-slider';
 import { Link } from '@inertiajs/react';
 import { User } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function TestimonySection() {
+    const { t } = useTranslation('home');
+
     return (
         <section className="to-primary my-8 hidden w-full bg-gradient-to-tl from-black lg:block">
             <div className="mx-auto flex w-full max-w-7xl items-center gap-8 md:gap-12">
                 <div className="mx-4">
-                    <p className="text-secondary mx-auto mb-2 font-medium md:text-lg">Terpercaya lebih dari 1000+ alumni</p>
-                    <h2 className="mx-auto mb-4 text-3xl font-bold text-white italic md:text-4xl">Bergabung bersama komunitas supportif kami 💪</h2>
+                    <p className="text-secondary mx-auto mb-2 font-medium md:text-lg">{t('testimony.badge')}</p>
+                    <h2 className="mx-auto mb-4 text-3xl font-bold text-white italic md:text-4xl">{t('testimony.title')}</h2>
                     <p className="mx-auto text-zinc-200">
-                        Aksademy menyediakan komunitas belajar berbagai disiplin ilmu untuk pemula ke mahir. Dapatkan dukungan, berbagi pengalaman,
-                        dan tumbuh bersama dalam perjalanan belajar Anda.
+                        {t('testimony.subtitle')}
                     </p>
                     <Button variant="secondary" className="mt-4" asChild>
-                        <Link href="/course">Gabung Sekarang</Link>
+                        <Link href="/course">{t('testimony.joinNow')}</Link>
                     </Button>
                 </div>
                 <div className="flex h-[500px]">

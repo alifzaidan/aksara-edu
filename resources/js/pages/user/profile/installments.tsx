@@ -7,9 +7,10 @@ import { rupiahFormatter } from '@/lib/utils';
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+import { enUS, id as idLocale } from 'date-fns/locale';
 import { AlertTriangle, BanknoteIcon, CalendarClock, CheckCircle2, Clock, CreditCard, FileText, Lock, Package, XCircle } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 interface InstallmentTermDetail {
@@ -55,27 +56,31 @@ interface InstallmentsProps {
 }
 
 function TermStatusBadge({ status, isOverdue }: { status: string; isOverdue?: boolean }) {
+    const { t } = useTranslation('profile');
+
     if (status === 'paid') return (
         <Badge className="bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400">
-            <CheckCircle2 className="h-3 w-3 mr-1" /> Lunas
+            <CheckCircle2 className="h-3 w-3 mr-1" /> {t('transaction.termPaid', 'Lunas')}
         </Badge>
     );
     if (isOverdue) return (
         <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400">
-            <XCircle className="h-3 w-3 mr-1" /> Jatuh Tempo Terlewat
+            <XCircle className="h-3 w-3 mr-1" /> {t('transaction.termOverdue', 'Jatuh Tempo Terlewat')}
         </Badge>
     );
     if (status === 'failed') return (
-        <Badge variant="destructive">Gagal</Badge>
+        <Badge variant="destructive">{t('common.status.failed', 'Gagal')}</Badge>
     );
     return (
         <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400">
-            <Clock className="h-3 w-3 mr-1" /> Menunggu
+            <Clock className="h-3 w-3 mr-1" /> {t('transaction.termWaiting', 'Menunggu')}
         </Badge>
     );
 }
 
 function InstallmentCard({ item }: { item: Installment }) {
+    const { t, i18n } = useTranslation(['profile', 'common']);
+    const dateLocale = i18n.language?.startsWith('en') ? enUS : idLocale;
     const [isPayingTerm, setIsPayingTerm] = useState(false);
 
     async function handlePayTerm() {
@@ -123,7 +128,7 @@ function InstallmentCard({ item }: { item: Installment }) {
                     </div>
                     <div className="text-right flex-shrink-0">
                         <p className="font-bold text-foreground">{rupiahFormatter.format(item.amount)}</p>
-                        <p className="text-xs text-muted-foreground">{item.paid_terms}/{item.total_terms} termin lunas</p>
+                        <p className="text-xs text-muted-foreground">{item.paid_terms}/{item.total_terms} {t('profile:installments.completedInstallments', 'termin lunas')}</p>
                     </div>
                 </div>
 
@@ -194,7 +199,7 @@ function InstallmentCard({ item }: { item: Installment }) {
                     )}
                     {isFullyPaid && (
                         <Badge className="bg-green-100 text-green-700 border-green-200">
-                            <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Semua Cicilan Lunas
+                            <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> {t('profile:installments.allPaid', 'Semua Cicilan Lunas')}
                         </Badge>
                     )}
                 </div>
@@ -203,7 +208,7 @@ function InstallmentCard({ item }: { item: Installment }) {
             {/* Term details — always visible */}
             <div className="border-t border-border bg-muted/20">
                 <div className="px-4 sm:px-5 py-3">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Rincian Termin Pembayaran</p>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t('profile:transaction.installmentTerms', 'Rincian Termin Pembayaran')}</p>
                     <div className="space-y-2">
                         {item.terms.map((term) => (
                             <div
@@ -215,7 +220,11 @@ function InstallmentCard({ item }: { item: Installment }) {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                                        <p className="text-sm font-medium">Termin ke-{term.installment_number}</p>
+                                        <p className="text-sm font-medium">
+                                            {term.installment_number === 1
+                                                ? t('profile:transaction.termDP', { number: 1, defaultValue: 'Termin ke-1 (DP)' })
+                                                : t('profile:transaction.termNumber', { number: term.installment_number, defaultValue: `Termin ke-${term.installment_number}` })}
+                                        </p>
                                         <TermStatusBadge status={term.status} isOverdue={term.is_overdue} />
                                         {term.installment_number === 1 && (
                                             <Badge variant="outline" className="text-xs text-muted-foreground">DP</Badge>
@@ -225,20 +234,26 @@ function InstallmentCard({ item }: { item: Installment }) {
                                         {term.installment_due_date && (
                                             <p className={`text-xs ${term.is_overdue ? 'text-orange-600 dark:text-orange-400 font-medium' : 'text-muted-foreground'}`}>
                                                 <CalendarClock className="h-3 w-3 inline-block mr-1 -mt-0.5" />
-                                                Jatuh tempo: {format(parseISO(term.installment_due_date), 'dd MMMM yyyy', { locale: idLocale })}
+                                                {t('profile:transaction.dueDate', {
+                                                    date: format(parseISO(term.installment_due_date), 'dd MMMM yyyy', { locale: dateLocale }),
+                                                    defaultValue: `Jatuh tempo: ${format(parseISO(term.installment_due_date), 'dd MMMM yyyy', { locale: dateLocale })}`
+                                                })}
                                                 {term.is_overdue && ' ⚠️ Terlewat'}
                                             </p>
                                         )}
                                         {term.paid_at ? (
                                             <p className="text-xs text-green-600 dark:text-green-400">
                                                 <CheckCircle2 className="h-3 w-3 inline-block mr-1 -mt-0.5" />
-                                                Dibayar: {format(parseISO(term.paid_at), 'dd MMMM yyyy, HH:mm', { locale: idLocale })}
+                                                {t('profile:transaction.paidAtDate', {
+                                                    date: format(parseISO(term.paid_at), 'dd MMMM yyyy, HH:mm', { locale: dateLocale }),
+                                                    defaultValue: `Dibayar: ${format(parseISO(term.paid_at), 'dd MMMM yyyy, HH:mm', { locale: dateLocale })}`
+                                                })}
                                                 {term.payment_channel && ` · via ${term.payment_channel}`}
                                             </p>
                                         ) : term.status === 'pending' && !term.is_overdue && (
                                             <p className="text-xs text-muted-foreground">
                                                 <Clock className="h-3 w-3 inline-block mr-1 -mt-0.5" />
-                                                Belum dibayar
+                                                {t('profile:transaction.termWaiting', 'Belum dibayar')}
                                             </p>
                                         )}
                                     </div>
@@ -248,14 +263,14 @@ function InstallmentCard({ item }: { item: Installment }) {
                                         {rupiahFormatter.format(term.amount)}
                                     </p>
                                     {term.status !== 'paid' && (
-                                        <p className="text-[10px] text-muted-foreground">Termasuk admin Rp 5.000</p>
+                                        <p className="text-[10px] text-muted-foreground">{t('profile:installments.includesAdminFee', 'Termasuk admin Rp 5.000')}</p>
                                     )}
                                     {term.status === 'paid' && (
                                         <div className="mt-1">
                                             <Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs gap-1">
                                                 <a href={route('invoice.pdf', { id: term.id })} target="_blank" rel="noopener noreferrer">
                                                     <FileText className="h-3.5 w-3.5" />
-                                                    Invoice
+                                                    {t('profile:installments.invoice', 'Invoice')}
                                                 </a>
                                             </Button>
                                         </div>
@@ -271,14 +286,16 @@ function InstallmentCard({ item }: { item: Installment }) {
 }
 
 export default function Installments({ installments }: InstallmentsProps) {
+    const { t } = useTranslation(['profile', 'common']);
+
     return (
         <UserLayout>
-            <Head title="Cicilan Saya - Aksademy" />
+            <Head title={`${t('profile:installments.title', 'Cicilan Saya')} - Aksademy`} />
             <ProfileLayout>
                 <div className="space-y-6">
                     <Heading
-                        title="Cicilan Saya"
-                        description="Kelola semua pembayaran cicilan produk yang aktif"
+                        title={t('profile:installments.title', 'Cicilan Saya')}
+                        description={t('profile:installments.subtitle', 'Kelola semua pembayaran cicilan produk yang aktif')}
                     />
 
                     {installments.length === 0 ? (
@@ -286,9 +303,9 @@ export default function Installments({ installments }: InstallmentsProps) {
                             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted mb-4">
                                 <Package className="h-7 w-7 text-muted-foreground" />
                             </div>
-                            <h3 className="font-semibold text-foreground mb-1">Belum Ada Cicilan</h3>
+                            <h3 className="font-semibold text-foreground mb-1">{t('profile:installments.title', 'Cicilan Saya')}</h3>
                             <p className="text-sm text-muted-foreground max-w-xs">
-                                Anda belum memiliki pembayaran cicilan aktif. Pilih produk yang mendukung cicilan untuk mulai.
+                                {t('profile:installments.allPaid', 'Anda belum memiliki pembayaran cicilan aktif.')}
                             </p>
                         </div>
                     ) : (

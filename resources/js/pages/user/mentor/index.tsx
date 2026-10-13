@@ -5,6 +5,7 @@ import { useInitials } from '@/hooks/use-initials';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
 import { BookOpen, BookText, FileText, Video } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Mentor {
     id: string;
@@ -22,17 +23,18 @@ interface MentorIndexProps {
 }
 
 export default function MentorIndex({ mentors }: MentorIndexProps) {
+    const { t } = useTranslation('user');
     const getInitials = useInitials();
 
     return (
         <UserLayout>
-            <Head title="Mentor Kami" />
+            <Head title={t('mentor.headTitle')} />
 
             <div className="mx-auto min-h-screen w-full max-w-7xl px-4 py-8 md:px-6">
                 {/* Header */}
                 <div className="mb-8">
-                    <h1 className="mb-2 text-3xl font-bold italic md:text-4xl">Mentor Kami</h1>
-                    <p className="text-muted-foreground">Belajar bersama mentor profesional dan berpengalaman</p>
+                    <h1 className="mb-2 text-3xl font-bold italic md:text-4xl">{t('mentor.title')}</h1>
+                    <p className="text-muted-foreground">{t('mentor.subtitle')}</p>
                 </div>
 
                 {mentors.length > 0 ? (
@@ -54,7 +56,7 @@ export default function MentorIndex({ mentors }: MentorIndexProps) {
                                                     {mentor.name}
                                                 </h3>
                                                 <Badge variant="secondary" className="text-xs">
-                                                    {mentor.bio || 'Mentor profesional di Aksademy'}
+                                                    {mentor.bio || t('mentor.defaultBio')}
                                                 </Badge>
                                             </div>
                                         </div>
@@ -65,33 +67,33 @@ export default function MentorIndex({ mentors }: MentorIndexProps) {
                                                     <BookText className="h-3.5 w-3.5" />
                                                 </div>
                                                 <p className="text-lg font-bold text-blue-700">{mentor.total_courses}</p>
-                                                <p className="text-[10px] text-blue-600">Kelas</p>
+                                                <p className="text-[10px] text-blue-600">{t('mentor.stats.courses')}</p>
                                             </div>
                                             <div className="rounded-lg bg-purple-50 p-2.5 text-center">
                                                 <div className="mb-1 flex items-center justify-center gap-1 text-purple-600">
                                                     <FileText className="h-3.5 w-3.5" />
                                                 </div>
                                                 <p className="text-lg font-bold text-purple-700">{mentor.total_articles}</p>
-                                                <p className="text-[10px] text-purple-600">Artikel</p>
+                                                <p className="text-[10px] text-purple-600">{t('mentor.stats.articles')}</p>
                                             </div>
                                             <div className="rounded-lg bg-green-50 p-2.5 text-center">
                                                 <div className="mb-1 flex items-center justify-center gap-1 text-green-600">
                                                     <Video className="h-3.5 w-3.5" />
                                                 </div>
                                                 <p className="text-lg font-bold text-green-700">{mentor.total_webinars}</p>
-                                                <p className="text-[10px] text-green-600">Webinar</p>
+                                                <p className="text-[10px] text-green-600">{t('mentor.stats.webinars')}</p>
                                             </div>
                                             <div className="rounded-lg bg-orange-50 p-2.5 text-center">
                                                 <div className="mb-1 flex items-center justify-center gap-1 text-orange-600">
                                                     <BookOpen className="h-3.5 w-3.5" />
                                                 </div>
                                                 <p className="text-lg font-bold text-orange-700">{mentor.total_bootcamps}</p>
-                                                <p className="text-[10px] text-orange-600">Bootcamp</p>
+                                                <p className="text-[10px] text-orange-600">{t('mentor.stats.bootcamps')}</p>
                                             </div>
                                         </div>
 
                                         <Button className="mt-4 w-full" variant="outline">
-                                            Lihat Profile
+                                            {t('mentor.viewProfile')}
                                         </Button>
                                     </div>
                                 </div>
@@ -101,8 +103,8 @@ export default function MentorIndex({ mentors }: MentorIndexProps) {
                 ) : (
                     <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border-2 border-dashed">
                         <div className="mb-4 text-6xl">👨‍🏫</div>
-                        <p className="text-muted-foreground mb-2 text-lg font-medium">Belum Ada Mentor</p>
-                        <p className="text-muted-foreground text-sm">Mentor akan segera hadir untuk membantu pembelajaran Anda</p>
+                        <p className="text-muted-foreground mb-2 text-lg font-medium">{t('mentor.noMentors')}</p>
+                        <p className="text-muted-foreground text-sm">{t('mentor.noMentorsDesc')}</p>
                     </div>
                 )}
             </div>

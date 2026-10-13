@@ -15,9 +15,10 @@ import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+import { enUS, id as idLocale } from 'date-fns/locale';
 import { AlertTriangle, CalendarClock, CheckCircle, CheckCircle2, Clock, ExternalLink, FileText, Home, XCircle } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 interface CourseItem {
@@ -130,6 +131,9 @@ interface Props {
 }
 
 export default function TransactionShow({ invoice }: Props) {
+    const { t, i18n } = useTranslation('profile');
+    const dateLocale = i18n.language?.startsWith('en') ? enUS : idLocale;
+
     const [cancelLoading, setCancelLoading] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -268,23 +272,27 @@ export default function TransactionShow({ invoice }: Props) {
     const getStatusText = () => {
         if (isInstallment) {
             if (isFullyPaid || invoice.status === 'paid' || invoice.status === 'completed') {
-                return 'Cicilan Lunas';
+                return t('transaction.installmentFullyPaid', 'Cicilan Lunas');
             }
             if (isSuspended) {
-                return 'Akses Program Dibekukan';
+                return t('transaction.installmentSuspended', 'Akses Program Dibekukan');
             }
-            return `Cicilan Berjalan (${paidTermsCount}/${totalTermsCount || '?'} Termin Terbayar)`;
+            return t('transaction.installmentOngoing', {
+                paid: paidTermsCount,
+                total: totalTermsCount || '?',
+                defaultValue: `Cicilan Berjalan (${paidTermsCount}/${totalTermsCount || '?'} Termin Terbayar)`,
+            });
         }
         switch (invoice.status) {
             case 'paid':
             case 'completed':
-                return 'Pembayaran Berhasil';
+                return t('transaction.statusPaid', 'Pembayaran Berhasil');
             case 'pending':
-                return isExpired ? 'Pembayaran Kedaluwarsa' : 'Menunggu Pembayaran';
+                return isExpired ? t('transaction.statusExpired', 'Pembayaran Kedaluwarsa') : t('transaction.statusPending', 'Menunggu Pembayaran');
             case 'failed':
-                return 'Pembayaran Dibatalkan';
+                return t('transaction.statusCancelled', 'Pembayaran Dibatalkan');
             default:
-                return 'Status Tidak Diketahui';
+                return t('transaction.statusUnknown', 'Status Tidak Diketahui');
         }
     };
 
@@ -464,34 +472,34 @@ export default function TransactionShow({ invoice }: Props) {
                                 </div>
 
                                 <div>
-                                    <h3 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Informasi Pembayaran</h3>
+                                    <h3 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">{t('transaction.paymentInfo', 'Informasi Pembayaran')}</h3>
                                     <div className="space-y-2 text-sm">
                                         <div className="flex justify-between">
-                                            <span className="text-gray-600 dark:text-gray-400">Status:</span>
+                                            <span className="text-gray-600 dark:text-gray-400">{t('transaction.status', 'Status')}:</span>
                                             <span className={`font-medium ${getStatusColor()}`}>{getStatusText()}</span>
                                         </div>
                                         {invoice.payment_method && (
                                             <div className="flex justify-between">
-                                                <span className="text-gray-600 dark:text-gray-400">Metode:</span>
+                                                <span className="text-gray-600 dark:text-gray-400">{t('transaction.paymentMethod', 'Metode:')}</span>
                                                 <span className="font-medium">{invoice.payment_method}</span>
                                             </div>
                                         )}
                                         {invoice.payment_channel && (
                                             <div className="flex justify-between">
-                                                <span className="text-gray-600 dark:text-gray-400">Channel:</span>
+                                                <span className="text-gray-600 dark:text-gray-400">{t('transaction.paymentChannel', 'Channel:')}</span>
                                                 <span className="font-medium">{invoice.payment_channel}</span>
                                             </div>
                                         )}
                                         {invoice.paid_at && (
                                             <div className="flex justify-between">
-                                                <span className="text-gray-600 dark:text-gray-400">Dibayar pada:</span>
-                                                <span className="font-medium">{new Date(invoice.paid_at).toLocaleString('id-ID')}</span>
+                                                <span className="text-gray-600 dark:text-gray-400">{t('transaction.paidOn', 'Dibayar pada:')}</span>
+                                                <span className="font-medium">{format(parseISO(invoice.paid_at), 'dd MMMM yyyy, HH:mm', { locale: dateLocale })}</span>
                                             </div>
                                         )}
                                         {invoice.expires_at && invoice.status === 'pending' && (
                                             <div className="flex justify-between">
-                                                <span className="text-gray-600 dark:text-gray-400">Kedaluwarsa:</span>
-                                                <span className="font-medium">{new Date(invoice.expires_at).toLocaleString('id-ID')}</span>
+                                                <span className="text-gray-600 dark:text-gray-400">{t('transaction.expiresOn', 'Kedaluwarsa:')}</span>
+                                                <span className="font-medium">{format(parseISO(invoice.expires_at), 'dd MMMM yyyy, HH:mm', { locale: dateLocale })}</span>
                                             </div>
                                         )}
                                     </div>
@@ -501,7 +509,7 @@ export default function TransactionShow({ invoice }: Props) {
                             {/* Installment terms breakdown */}
                             {isInstallment && terms.length > 0 && (
                                 <div className="mb-6 rounded-lg border border-border bg-gray-50 dark:bg-gray-700/30 p-4">
-                                    <h3 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Rincian Termin Cicilan</h3>
+                                    <h3 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">{t('transaction.installmentTerms', 'Rincian Termin Cicilan')}</h3>
                                     <div className="space-y-2">
                                         {terms.map((term: InstallmentTermItem) => {
                                             const isTermOverdue = term.is_overdue ?? false;
@@ -530,19 +538,21 @@ export default function TransactionShow({ invoice }: Props) {
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex flex-wrap items-center gap-2 mb-1">
                                                             <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                                                Termin ke-{term.installment_number}{term.installment_number === 1 ? ' (DP)' : ''}
+                                                                {term.installment_number === 1
+                                                                    ? t('transaction.termDP', { number: 1, defaultValue: 'Termin ke-1 (DP)' })
+                                                                    : t('transaction.termNumber', { number: term.installment_number, defaultValue: `Termin ke-${term.installment_number}` })}
                                                             </p>
                                                             {term.status === 'paid' ? (
                                                                 <span className="inline-flex items-center gap-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs px-2 py-0.5">
-                                                                    <CheckCircle2 className="h-3 w-3" /> Lunas
+                                                                    <CheckCircle2 className="h-3 w-3" /> {t('transaction.termPaid', 'Lunas')}
                                                                 </span>
                                                             ) : isTermOverdue ? (
                                                                 <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs px-2 py-0.5">
-                                                                    <XCircle className="h-3 w-3" /> Jatuh Tempo Terlewat
+                                                                    <XCircle className="h-3 w-3" /> {t('transaction.termOverdue', 'Jatuh Tempo Terlewat')}
                                                                 </span>
                                                             ) : (
                                                                 <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs px-2 py-0.5">
-                                                                    <Clock className="h-3 w-3" /> Menunggu
+                                                                    <Clock className="h-3 w-3" /> {t('transaction.termWaiting', 'Menunggu')}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -550,13 +560,19 @@ export default function TransactionShow({ invoice }: Props) {
                                                             {term.installment_due_date && (
                                                                 <p className={isTermOverdue ? 'text-orange-600 dark:text-orange-400 font-medium' : 'text-gray-500 dark:text-gray-400'}>
                                                                     <CalendarClock className="h-3 w-3 inline-block mr-1 -mt-0.5" />
-                                                                    Jatuh tempo: {format(parseISO(term.installment_due_date), 'dd MMMM yyyy', { locale: idLocale })}
+                                                                    {t('transaction.dueDate', {
+                                                                        date: format(parseISO(term.installment_due_date), 'dd MMMM yyyy', { locale: dateLocale }),
+                                                                        defaultValue: `Jatuh tempo: ${format(parseISO(term.installment_due_date), 'dd MMMM yyyy', { locale: dateLocale })}`
+                                                                    })}
                                                                 </p>
                                                             )}
                                                             {term.paid_at && (
                                                                 <p className="text-green-600 dark:text-green-400">
                                                                     <CheckCircle className="h-3 w-3 inline-block mr-1 -mt-0.5" />
-                                                                    Dibayar: {format(parseISO(term.paid_at), 'dd MMMM yyyy, HH:mm', { locale: idLocale })}
+                                                                    {t('transaction.paidAtDate', {
+                                                                        date: format(parseISO(term.paid_at), 'dd MMMM yyyy, HH:mm', { locale: dateLocale }),
+                                                                        defaultValue: `Dibayar: ${format(parseISO(term.paid_at), 'dd MMMM yyyy, HH:mm', { locale: dateLocale })}`
+                                                                    })}
                                                                     {term.payment_channel && ` · via ${term.payment_channel}`}
                                                                 </p>
                                                             )}
@@ -571,7 +587,7 @@ export default function TransactionShow({ invoice }: Props) {
                                                                 <Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs gap-1">
                                                                     <a href={route('invoice.pdf', { id: term.id })} target="_blank" rel="noopener noreferrer">
                                                                         <FileText className="size-3.5" />
-                                                                        Invoice
+                                                                        {t('transaction.invoice', 'Invoice')}
                                                                     </a>
                                                                 </Button>
                                                             </div>

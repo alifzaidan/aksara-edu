@@ -8,6 +8,7 @@ import RegisterSection from './register-section';
 import RelatedProduct from './related-product';
 import ToolsSection from './tools-section';
 import VideoSection from './video-section';
+import { useTranslation } from 'react-i18next';
 
 interface Course {
     id: string;
@@ -72,6 +73,7 @@ export default function DetailCourse({
     myCourseIds: string[];
     referralInfo: ReferralInfo;
 }) {
+    const { t } = useTranslation('user');
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const refFromUrl = urlParams.get('ref');
@@ -87,7 +89,7 @@ export default function DetailCourse({
 
     return (
         <UserLayout>
-            <Head title={`${course.title} - Kelas Online`} />
+            <Head title={`${course.title} - ${t('course.title')}`} />
 
             <HeroSection course={course} />
             <VideoSection course={course} />
@@ -97,25 +99,25 @@ export default function DetailCourse({
                     href="#about"
                     className="bg-background hover:bg-accent dark:hover:bg-primary/10 rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-800 transition hover:cursor-pointer dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100"
                 >
-                    Informasi Kelas
+                    {t('course.detail.navAbout')}
                 </a>
                 <a
                     href="#modules"
                     className="bg-background hover:bg-accent dark:hover:bg-primary/10 rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-800 transition hover:cursor-pointer dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100"
                 >
-                    Modul
+                    {t('course.detail.navModules')}
                 </a>
                 <a
                     href="#tools"
                     className="bg-background hover:bg-accent dark:hover:bg-primary/10 rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-800 transition hover:cursor-pointer dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100"
                 >
-                    Tools
+                    {t('course.detail.navTools')}
                 </a>
                 <a
                     href="#related"
                     className="bg-background hover:bg-accent dark:hover:bg-primary/10 rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-800 transition hover:cursor-pointer dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100"
                 >
-                    Kelas Serupa
+                    {t('course.detail.navRelated')}
                 </a>
             </div>
 

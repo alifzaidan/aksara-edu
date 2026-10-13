@@ -14,6 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { Head, router } from '@inertiajs/react';
 import { ArrowLeft, Clock, MoveLeft, MoveRight } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast, Toaster } from 'sonner';
 
 interface QuizOption {
@@ -60,6 +61,7 @@ interface QuizExamProps {
 }
 
 export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
+    const { t } = useTranslation('user');
     const storageKey = `quiz_${quiz.id}_${attempt.id}_${user.id}`;
     const timerKey = `${storageKey}_timer`;
 
@@ -161,12 +163,12 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
                 },
                 {
                     onSuccess: () => {
-                        toast.success('Quiz berhasil dikumpulkan!');
+                        toast.success(t('quiz.successSubmitted'));
                         clearStorageData();
                     },
                     onError: (errors) => {
                         console.error('Failed to submit quiz:', errors);
-                        toast.error('Gagal mengumpulkan quiz');
+                        toast.error(t('quiz.failedSubmitted'));
                         isSubmittingRef.current = false;
                     },
                     onFinish: () => {
@@ -176,10 +178,10 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
             );
         } catch (error) {
             console.error('Failed to prepare submission:', error);
-            toast.error('Gagal memproses jawaban');
+            toast.error(t('quiz.failedProcess'));
             isSubmittingRef.current = false;
         }
-    }, [selectedAnswers, quiz.id, attempt.id, clearStorageData, timerRef]);
+    }, [selectedAnswers, quiz.id, attempt.id, clearStorageData, timerRef, t]);
 
     const handleAutoSubmit = useCallback(() => {
         if (isSubmittingRef.current) return;
@@ -189,8 +191,8 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
     const handleSubmit = () => {
         const answeredCount = getAnsweredCount();
         if (answeredCount < quiz.questions.length) {
-            toast.error('Belum Lengkap!', {
-                description: `Anda baru mengerjakan ${answeredCount} dari ${quiz.questions.length} soal. Harap lengkapi semua soal terlebih dahulu.`,
+            toast.error(t('quiz.incompleteAlert'), {
+                description: t('quiz.incompleteDesc', { count: answeredCount, total: quiz.questions.length }),
             });
             return;
         }
@@ -212,7 +214,7 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
                     const { answers, currentQuestionIndex } = JSON.parse(savedData);
                     setSelectedAnswers(answers || {});
                     setCurrentQuestion(currentQuestionIndex || 0);
-                    toast.success('Data quiz sebelumnya berhasil dipulihkan');
+                    toast.success(t('quiz.restoredSuccess'));
                 }
 
                 if (quiz.time_limit === 0) {
@@ -244,13 +246,13 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
                 setIsLoading(false);
             } catch (error) {
                 console.error('Failed to initialize quiz:', error);
-                toast.error('Gagal memuat data quiz');
+                toast.error(t('quiz.failedLoad'));
                 setIsLoading(false);
             }
         };
 
         initializeQuiz();
-    }, [quiz.id, quiz.time_limit, saveTimerToStorage, storageKey, timerKey]);
+    }, [quiz.id, quiz.time_limit, saveTimerToStorage, storageKey, timerKey, t]);
 
     // Save progress to localStorage
     useEffect(() => {
@@ -294,10 +296,10 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
     // Auto submit when time is up
     useEffect(() => {
         if (hasTimer && isTimeUp && !isSubmittingRef.current) {
-            toast.error('Waktu habis! Quiz akan dikumpulkan otomatis.');
+            toast.error(t('quiz.timeUpAutoSubmit'));
             handleAutoSubmit();
         }
-    }, [hasTimer, isTimeUp, handleAutoSubmit]);
+    }, [hasTimer, isTimeUp, handleAutoSubmit, t]);
 
     const progressPercentage = (getAnsweredCount() / quiz.questions.length) * 100;
     const currentQuestionData = quiz.questions[currentQuestion];
@@ -307,7 +309,7 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
             <div className="flex min-h-screen items-center justify-center">
                 <div className="text-center">
                     <div className="mx-auto h-32 w-32 animate-spin rounded-full border-b-2 border-gray-900"></div>
-                    <p className="mt-4 text-gray-600">Memuat data quiz...</p>
+                    <p className="mt-4 text-gray-600">{t('quiz.loading')}</p>
                 </div>
             </div>
         );
@@ -323,7 +325,7 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
                         <div className="flex items-center gap-4">
                             <Button variant="secondary" size="sm" className="flex items-center gap-2" onClick={handleBack}>
                                 <ArrowLeft className="h-4 w-4" />
-                                Kembali
+                                {t('quiz.back')}
                             </Button>
 
                             <h1 className="text-lg font-semibold text-gray-900">{quiz.title}</h1>
@@ -343,13 +345,13 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
                         ) : (
                             <div className="flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm">
                                 <Clock className="h-5 w-5 text-blue-500" />
-                                <span className="text-sm font-medium text-blue-700">Tanpa Batas Waktu</span>
+                                <span className="text-sm font-medium text-blue-700">{t('quiz.noTimeLimit')}</span>
                             </div>
                         )}
 
                         <div className="hidden items-center gap-4 md:flex">
                             <div className="text-sm text-gray-600">
-                                {getAnsweredCount()}/{quiz.questions.length} dikerjakan
+                                {t('quiz.answeredCount', { count: getAnsweredCount(), total: quiz.questions.length })}
                             </div>
                             <Progress value={progressPercentage} className="h-2 w-32 rounded-md" />
                         </div>
@@ -357,7 +359,7 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
 
                     <div className="mt-3 flex items-center justify-between md:hidden">
                         <div className="text-sm text-gray-600">
-                            {getAnsweredCount()}/{quiz.questions.length} soal dikerjakan
+                            {t('quiz.answeredCountMobile', { count: getAnsweredCount(), total: quiz.questions.length })}
                         </div>
                         <div className="flex items-center gap-2">
                             <Progress value={progressPercentage} className="h-2 w-20" />
@@ -375,9 +377,11 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
                                 <div className="p-6">
                                     {/* Header Soal */}
                                     <div className="mb-4 flex items-center justify-between border-b pb-3">
-                                        <h2 className="text-base font-semibold text-gray-900 md:text-lg">Soal No. {currentQuestion + 1}</h2>
+                                        <h2 className="text-base font-semibold text-gray-900 md:text-lg">
+                                            {t('quiz.questionNumber', { number: currentQuestion + 1 })}
+                                        </h2>
                                         <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
-                                            {currentQuestionData?.type === 'multiple_choice' ? 'Pilihan Ganda' : 'Benar/Salah'}
+                                            {currentQuestionData?.type === 'multiple_choice' ? t('quiz.multipleChoice') : t('quiz.trueFalse')}
                                         </span>
                                     </div>
 
@@ -402,7 +406,7 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
 
                                     {/* Pilihan Jawaban */}
                                     <div className="mt-6">
-                                        <h3 className="mb-3 text-sm font-medium text-gray-700">Pilih Jawaban:</h3>
+                                        <h3 className="mb-3 text-sm font-medium text-gray-700">{t('quiz.chooseAnswer')}</h3>
                                         <div className="space-y-3">
                                             {currentQuestionData?.options.map((option, optionIndex) => {
                                                 const isSelected = selectedAnswers[currentQuestionData.id] === option.id;
@@ -495,12 +499,12 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
                                     variant="outline"
                                     className="gap-2"
                                 >
-                                    <MoveLeft className="h-4 w-4" /> Sebelumnya
+                                    <MoveLeft className="h-4 w-4" /> {t('quiz.previous')}
                                 </Button>
 
                                 {currentQuestion === quiz.questions.length - 1 && getAnsweredCount() === quiz.questions.length ? (
                                     <Button onClick={handleSubmit} disabled={hasTimer && isTimeUp} className="gap-2">
-                                        Kumpulkan 🚀
+                                        {t('quiz.submit')}
                                     </Button>
                                 ) : (
                                     <Button
@@ -508,7 +512,7 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
                                         disabled={currentQuestion === quiz.questions.length - 1 || (hasTimer && isTimeUp)}
                                         className="gap-2"
                                     >
-                                        Selanjutnya <MoveRight className="h-4 w-4" />
+                                        {t('quiz.next')} <MoveRight className="h-4 w-4" />
                                     </Button>
                                 )}
                             </div>
@@ -518,7 +522,7 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
                         <div className="lg:col-span-1">
                             <div className="border-primary-foreground bg-accent/80 sticky top-24 rounded-lg border shadow-sm">
                                 <div className="p-6">
-                                    <h3 className="mb-4 text-base font-semibold md:text-lg">Nomor Soal</h3>
+                                    <h3 className="mb-4 text-base font-semibold md:text-lg">{t('quiz.questionNav')}</h3>
 
                                     <div className="mb-6 flex flex-wrap gap-2">
                                         {Array.from({ length: quiz.questions.length }, (_, i) => (
@@ -542,20 +546,20 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
                                     <div className="space-y-2 text-sm">
                                         <div className="flex items-center gap-2">
                                             <div className="h-4 w-4 rounded bg-gray-200"></div>
-                                            <span>Belum Dikerjakan</span>
+                                            <span>{t('quiz.unanswered')}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <div className="bg-primary h-4 w-4 rounded"></div>
-                                            <span>Sudah Dikerjakan</span>
+                                            <span>{t('quiz.answered')}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <div className="h-4 w-4 rounded bg-blue-300"></div>
-                                            <span>Nomor Soal Saat Ini</span>
+                                            <span>{t('quiz.currentQuestion')}</span>
                                         </div>
                                     </div>
 
                                     <Button className="mt-6 w-full" onClick={handleSubmit} disabled={hasTimer && isTimeUp}>
-                                        {hasTimer && isTimeUp ? 'Waktu Habis' : 'Kumpulkan'}
+                                        {hasTimer && isTimeUp ? t('quiz.timeUp') : t('quiz.submitButton')}
                                     </Button>
                                 </div>
                             </div>
@@ -568,16 +572,16 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
             <AlertDialog open={showBackDialog} onOpenChange={setShowBackDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Konfirmasi Keluar</AlertDialogTitle>
+                        <AlertDialogTitle>{t('quiz.confirmExitTitle')}</AlertDialogTitle>
                         <AlertDialogDescription>
                             {getAnsweredCount() > 0
-                                ? 'Yakin ingin keluar? Semua progress dan jawaban akan hilang dan tidak dapat dipulihkan.'
-                                : 'Yakin ingin keluar dari quiz?'}
+                                ? t('quiz.confirmExitDescWithAnswers')
+                                : t('quiz.confirmExitDesc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Batal</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmBack}>Ya, Keluar</AlertDialogAction>
+                        <AlertDialogCancel>{t('quiz.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmBack}>{t('quiz.yesExit')}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -585,18 +589,18 @@ export default function QuizExam({ quiz, attempt, user }: QuizExamProps) {
             <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Siap Dikumpulkan!</DialogTitle>
+                        <DialogTitle>{t('quiz.readyToSubmit')}</DialogTitle>
                         <DialogDescription>
                             {getAnsweredCount() === quiz.questions.length
-                                ? 'Semua soal sudah dijawab. Yakin ingin mengumpulkan quiz?'
-                                : `Anda baru mengerjakan ${getAnsweredCount()} dari ${quiz.questions.length} soal. Yakin ingin mengumpulkan quiz sekarang?`}
+                                ? t('quiz.confirmSubmitAll')
+                                : t('quiz.confirmSubmitIncomplete', { count: getAnsweredCount(), total: quiz.questions.length })}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setShowSubmitDialog(false)}>
-                            Batal
+                            {t('quiz.cancel')}
                         </Button>
-                        <Button onClick={confirmSubmit}>Ya, Kumpulkan</Button>
+                        <Button onClick={confirmSubmit}>{t('quiz.yesSubmit')}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

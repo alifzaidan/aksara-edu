@@ -20,32 +20,42 @@ import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { Album, Award, BookText, BriefcaseBusiness, FileText, Home, MonitorPlay, Presentation, Search, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from './language-switcher';
 import { SearchCommand } from './search-command';
 
 const serviceItems = [
     {
-        title: 'Kelas Online',
+        titleKey: 'nav.course',
+        descKey: 'nav.courseDesc',
+        defaultTitle: 'Kelas Online',
+        defaultDesc: 'Belajar dengan video pembelajaran terstruktur',
         href: '/course',
         icon: BookText,
-        description: 'Belajar dengan video pembelajaran terstruktur',
     },
     {
-        title: 'Bootcamp',
+        titleKey: 'nav.bootcamp',
+        descKey: 'nav.bootcampDesc',
+        defaultTitle: 'Bootcamp',
+        defaultDesc: 'Program intensif dengan mentor profesional',
         href: '/bootcamp',
         icon: Presentation,
-        description: 'Program intensif dengan mentor profesional',
     },
     {
-        title: 'Webinar',
+        titleKey: 'nav.webinar',
+        descKey: 'nav.webinarDesc',
+        defaultTitle: 'Webinar',
+        defaultDesc: 'Seminar online dengan berbagai topik up to date',
         href: '/webinar',
         icon: MonitorPlay,
-        description: 'Seminar online dengan berbagai topik up to date',
     },
     {
-        title: 'Private Class',
+        titleKey: 'nav.private',
+        descKey: 'nav.privateDesc',
+        defaultTitle: 'Private Class',
+        defaultDesc: 'Pendampingan intensif 1-on-1 secara online atau offline',
         href: '/private',
         icon: BookText,
-        description: 'Pendampingan intensif 1-on-1 secara online atau offline',
     },
 ];
 
@@ -91,6 +101,7 @@ function ListItem({
 }
 
 export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
+    const { t } = useTranslation('common');
     const page = usePage<SharedData>();
     const { auth } = page.props;
     const getInitials = useInitials();
@@ -135,7 +146,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             )}
                                         >
                                             <Home className="mr-2 h-4 w-4" />
-                                            Beranda
+                                            {t('nav.home', 'Beranda')}
                                         </Link>
                                     </NavigationMenuLink>
                                     {isHomepage && (
@@ -148,7 +159,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                     <NavigationMenuTrigger
                                         className={cn('hover:bg-primary/5 dark:hover:bg-primary/40 h-9 px-3', isServicesActive && activeItemStyles)}
                                     >
-                                        Program & Layanan
+                                        {t('nav.programsAndServices', 'Program & Layanan')}
                                     </NavigationMenuTrigger>
                                     <NavigationMenuContent>
                                         <ul className="grid w-[600px] gap-3 p-4 md:grid-cols-[.75fr_1fr]">
@@ -163,26 +174,26 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                                         )}
                                                     >
                                                         <Icon iconNode={Album} className="text-primary mb-2 h-8 w-8" />
-                                                        <div className="mb-2 text-lg font-medium">Paket Bundling</div>
+                                                        <div className="mb-2 text-lg font-medium">{t('nav.bundling', 'Paket Bundling')}</div>
                                                         <p className="text-muted-foreground text-sm leading-tight">
-                                                            Hemat lebih banyak dengan paket bundling berbagai produk edukasi kami
+                                                            {t('nav.bundlingDesc', 'Hemat lebih banyak dengan paket bundling berbagai produk edukasi kami')}
                                                         </p>
                                                     </Link>
                                                 </NavigationMenuLink>
                                             </li>
 
                                             {/* 3 Produk Utama */}
-                                            <ListItem href="/course" title="Kelas Online" icon={BookText}>
-                                                Belajar dengan video pembelajaran terstruktur dan materi lengkap
+                                            <ListItem href="/course" title={t('nav.course', 'Kelas Online')} icon={BookText}>
+                                                {t('nav.courseDesc', 'Belajar dengan video pembelajaran terstruktur dan materi lengkap')}
                                             </ListItem>
-                                            <ListItem href="/bootcamp" title="Bootcamp" icon={Presentation}>
-                                                Program intensif dengan mentor profesional dan project-based learning
+                                            <ListItem href="/bootcamp" title={t('nav.bootcamp', 'Bootcamp')} icon={Presentation}>
+                                                {t('nav.bootcampDesc', 'Program intensif dengan mentor profesional dan project-based learning')}
                                             </ListItem>
-                                            <ListItem href="/webinar" title="Webinar" icon={MonitorPlay}>
-                                                Seminar online dengan topik terkini dan expert speaker
+                                            <ListItem href="/webinar" title={t('nav.webinar', 'Webinar')} icon={MonitorPlay}>
+                                                {t('nav.webinarDesc', 'Seminar online dengan topik terkini dan expert speaker')}
                                             </ListItem>
-                                            <ListItem href="/private" title="Private Class" icon={BookText}>
-                                                Pendampingan 1-on-1 dengan mentor untuk kebutuhan belajar yang lebih personal
+                                            <ListItem href="/private" title={t('nav.private', 'Private Class')} icon={BookText}>
+                                                {t('nav.privateDesc', 'Pendampingan 1-on-1 dengan mentor untuk kebutuhan belajar yang lebih personal')}
                                             </ListItem>
                                         </ul>
                                     </NavigationMenuContent>
@@ -202,7 +213,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             )}
                                         >
                                             <BriefcaseBusiness className="mr-2 h-4 w-4" />
-                                            Sertifikasi
+                                            {t('nav.certification', 'Sertifikasi')}
                                         </Link>
                                     </NavigationMenuLink>
                                     {page.url.startsWith('/certification-programs') && (
@@ -221,7 +232,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             )}
                                         >
                                             <FileText className="mr-2 h-4 w-4" />
-                                            Artikel
+                                            {t('nav.articles', 'Artikel')}
                                         </Link>
                                     </NavigationMenuLink>
                                     {page.url.startsWith('/article') && (
@@ -240,7 +251,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             )}
                                         >
                                             <Award className="mr-2 h-4 w-4" />
-                                            Cek Sertifikat
+                                            {t('nav.checkCertificate', 'Cek Sertifikat')}
                                         </Link>
                                     </NavigationMenuLink>
                                     {page.url.startsWith('/check-certificate') && (
@@ -259,7 +270,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                                     page.url.startsWith('/profile') && activeItemStyles,
                                                 )}
                                             >
-                                                Profil Saya
+                                                {t('nav.myProfile', 'Profil Saya')}
                                             </Link>
                                         </NavigationMenuLink>
                                         {page.url.startsWith('/profile') && (
@@ -271,27 +282,31 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                         </NavigationMenu>
                     </div>
 
-                    <div className="ml-auto flex items-center space-x-2">
-                        <div className="relative flex items-center space-x-1">
-                            <Button variant="outline" onClick={() => setSearchOpen(true)}>
-                                <Search className="!size-5 opacity-80 group-hover:opacity-100" />
-                                <p className="mr-4 hidden lg:block">Cari Produk...</p>
-                                <div className="hidden lg:block">
-                                    <kbd className="bg-muted text-muted-foreground pointer-events-none inline-flex h-5 items-center gap-1 rounded border px-1.5 font-mono text-[10px] font-medium opacity-100 select-none">
-                                        <span className="text-xs">⌘</span>K
-                                    </kbd>{' '}
-                                    /{' '}
-                                    <kbd className="bg-muted text-muted-foreground pointer-events-none inline-flex h-5 items-center gap-1 rounded border px-1.5 font-mono text-[10px] font-medium opacity-100 select-none">
-                                        <span className="text-xs">Ctrl</span>K
-                                    </kbd>
-                                </div>
-                            </Button>
-                        </div>
+                    <div className="ml-auto flex items-center gap-2">
+                        {/* Search Button (Responsive width) */}
+                        <Button
+                            variant="outline"
+                            onClick={() => setSearchOpen(true)}
+                            className="h-9 px-2.5 sm:px-3 text-xs gap-2 text-muted-foreground hover:text-foreground border-border/80"
+                        >
+                            <Search className="h-4 w-4 opacity-80" />
+                            <span className="hidden xl:inline">{t('actions.searchProducts', 'Cari Produk...')}</span>
+                            <span className="hidden lg:inline xl:hidden">{t('actions.search', 'Cari...')}</span>
+                            <div className="hidden xl:flex items-center gap-1">
+                                <kbd className="bg-muted text-muted-foreground pointer-events-none inline-flex h-4 items-center gap-0.5 rounded border px-1 font-mono text-[9px] font-medium opacity-100 select-none">
+                                    <span className="text-[10px]">⌘</span>K
+                                </kbd>
+                            </div>
+                        </Button>
+
+                        {/* Language Switcher */}
+                        <LanguageSwitcher variant="segmented" />
+
                         {auth.user ? (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="size-10 rounded-full p-1">
-                                        <Avatar className="size-8 overflow-hidden rounded-full">
+                                    <Button variant="ghost" className="size-9 rounded-full p-0.5">
+                                        <Avatar className="size-8 overflow-hidden rounded-full ring-1 ring-border/80">
                                             <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
                                             <AvatarFallback className="bg-primary text-primary-foreground rounded-lg dark:bg-neutral-700 dark:text-white">
                                                 {getInitials(auth.user.name)}
@@ -304,14 +319,14 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         ) : (
-                            <>
-                                <Button variant="outline" asChild>
-                                    <Link href={route('login')}>Masuk</Link>
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                                <Button variant="outline" size="sm" asChild className="h-9 px-3 text-xs font-medium">
+                                    <Link href={route('login')}>{t('nav.login', 'Masuk')}</Link>
                                 </Button>
-                                <Button variant="default" asChild className="hidden lg:inline-flex">
-                                    <Link href={route('register')}>Daftar</Link>
+                                <Button variant="default" size="sm" asChild className="hidden sm:inline-flex h-9 px-3.5 text-xs font-medium">
+                                    <Link href={route('register')}>{t('nav.register', 'Daftar')}</Link>
                                 </Button>
-                            </>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -329,7 +344,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                             )}
                         >
                             <Home className="mb-1 h-5 w-6" />
-                            <span className="text-center text-xs leading-none font-medium">Beranda</span>
+                            <span className="text-center text-xs leading-none font-medium">{t('nav.home', 'Beranda')}</span>
                         </Link>
 
                         <Popover open={servicesOpen} onOpenChange={setServicesOpen}>
@@ -343,12 +358,12 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                     )}
                                 >
                                     <Album className="mb-1 h-5 w-6" />
-                                    <span className="text-center text-xs leading-none font-medium">Layanan</span>
+                                    <span className="text-center text-xs leading-none font-medium">{t('nav.services', 'Layanan')}</span>
                                 </button>
                             </PopoverTrigger>
                             <PopoverContent side="top" align="center" className="mb-2 w-80 p-3" sideOffset={8}>
                                 <div className="space-y-1">
-                                    <h4 className="mb-3 px-2 text-sm font-semibold">Layanan Kami</h4>
+                                    <h4 className="mb-3 px-2 text-sm font-semibold">{t('nav.ourServices', 'Layanan Kami')}</h4>
                                     {serviceItems.map((service) => {
                                         const isActive = page.url.startsWith(service.href);
                                         return (
@@ -369,8 +384,8 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                                     )}
                                                 />
                                                 <div className="min-w-0 flex-1">
-                                                    <p className="mb-1 text-sm leading-none font-medium">{service.title}</p>
-                                                    <p className="text-muted-foreground line-clamp-2 text-xs">{service.description}</p>
+                                                    <p className="mb-1 text-sm leading-none font-medium">{t(service.titleKey, service.defaultTitle)}</p>
+                                                    <p className="text-muted-foreground line-clamp-2 text-xs">{t(service.descKey, service.defaultDesc)}</p>
                                                 </div>
                                             </Link>
                                         );
@@ -392,9 +407,9 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             )}
                                         />
                                         <div className="min-w-0 flex-1">
-                                            <p className="mb-1 text-sm leading-none font-medium">Paket Bundling</p>
+                                            <p className="mb-1 text-sm leading-none font-medium">{t('nav.bundling', 'Paket Bundling')}</p>
                                             <p className="text-muted-foreground line-clamp-2 text-xs">
-                                                Paket bundling dengan berbagai produk edukasi
+                                                {t('nav.bundlingDesc', 'Paket bundling dengan berbagai produk edukasi')}
                                             </p>
                                         </div>
                                     </Link>
@@ -417,9 +432,9 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             )}
                                         />
                                         <div className="min-w-0 flex-1">
-                                            <p className="mb-1 text-sm leading-none font-medium">Sertifikasi</p>
+                                            <p className="mb-1 text-sm leading-none font-medium">{t('nav.certification', 'Sertifikasi')}</p>
                                             <p className="text-muted-foreground line-clamp-2 text-xs">
-                                                Tingkatkan kredibilitas dengan sertifikasi profesional
+                                                {t('nav.certificationDesc', 'Tingkatkan kredibilitas dengan sertifikasi profesional')}
                                             </p>
                                         </div>
                                     </Link>
@@ -443,9 +458,9 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             )}
                                         />
                                         <div className="min-w-0 flex-1">
-                                            <p className="mb-1 text-sm leading-none font-medium">Cek Sertifikat</p>
+                                            <p className="mb-1 text-sm leading-none font-medium">{t('nav.checkCertificate', 'Cek Sertifikat')}</p>
                                             <p className="text-muted-foreground line-clamp-2 text-xs">
-                                                Lihat sertifikat Anda dengan email dan nomor WA
+                                                {t('nav.checkCertificateDesc', 'Lihat sertifikat Anda dengan email dan nomor WA')}
                                             </p>
                                         </div>
                                     </Link>
@@ -463,7 +478,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                             )}
                         >
                             <FileText className="mb-1 h-5 w-6" />
-                            <span className="text-center text-xs leading-none font-medium">Artikel</span>
+                            <span className="text-center text-xs leading-none font-medium">{t('nav.articles', 'Artikel')}</span>
                         </Link>
 
                         {auth.user && (
@@ -477,7 +492,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 )}
                             >
                                 <User className="mb-1 h-5 w-6" />
-                                <span className="text-center text-xs leading-none font-medium">Profil</span>
+                                <span className="text-center text-xs leading-none font-medium">{t('nav.profile', 'Profil')}</span>
                             </Link>
                         )}
                     </div>

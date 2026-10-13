@@ -3,6 +3,7 @@ import { Spotlight } from '@/components/ui/spotlight';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Link } from '@inertiajs/react';
 import { Calendar, Clock, Percent } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Category {
     id: string;
@@ -45,6 +46,9 @@ interface LatestProductsProps {
 }
 
 export default function LatestProductsSection({ latestProducts, myProductIds }: LatestProductsProps) {
+    const { t, i18n } = useTranslation('home');
+    const dateLocale = i18n.language === 'en' ? 'en-US' : 'id-ID';
+
     const safeMyProductIds = {
         courses: myProductIds?.courses || [],
         bootcamps: myProductIds?.bootcamps || [],
@@ -59,44 +63,44 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
             case 'course':
                 return (
                     <span className="absolute top-2 left-2 rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                        Kelas
+                        {t('latest.badges.course')}
                     </span>
                 );
             case 'bootcamp':
                 return (
                     <span className="absolute top-2 left-2 rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900 dark:text-purple-300">
-                        Bootcamp
+                        {t('latest.badges.bootcamp')}
                     </span>
                 );
             case 'webinar':
                 return (
                     <span className="absolute top-2 left-2 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900 dark:text-green-300">
-                        Webinar
+                        {t('latest.badges.webinar')}
                     </span>
                 );
             case 'bundle':
                 return (
                     <span className="absolute top-2 left-2 rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-700 dark:bg-orange-900 dark:text-orange-300">
-                        Bundle
+                        {t('latest.badges.bundle')}
                     </span>
                 );
             case 'private':
                 return (
                     <span className="absolute top-2 left-2 rounded-full bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
-                        Private
+                        {t('latest.badges.private')}
                     </span>
                 );
             case 'certification-program':
                 if (product.program_type === 'scholarship') {
                     return (
                         <span className="absolute top-2 left-2 rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900 dark:text-purple-300">
-                            Beasiswa
+                            {t('latest.badges.scholarship')}
                         </span>
                     );
                 }
                 return (
                     <span className="absolute top-2 left-2 rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                        Reguler
+                        {t('latest.badges.regular')}
                     </span>
                 );
             default:
@@ -155,13 +159,13 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                 <div className="mt-2 flex items-center gap-2">
                     <Calendar size="18" />
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {new Date(product.start_date!).toLocaleDateString('id-ID', {
+                        {new Date(product.start_date!).toLocaleDateString(dateLocale, {
                             day: 'numeric',
                             month: 'long',
                             year: 'numeric',
                         })}{' '}
                         -{' '}
-                        {new Date(product.end_date!).toLocaleDateString('id-ID', {
+                        {new Date(product.end_date!).toLocaleDateString(dateLocale, {
                             day: 'numeric',
                             month: 'long',
                             year: 'numeric',
@@ -176,7 +180,7 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                 <div className="mt-2 flex items-center gap-2">
                     <Calendar size="18" />
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {new Date(product.start_time!).toLocaleDateString('id-ID', {
+                        {new Date(product.start_time!).toLocaleDateString(dateLocale, {
                             day: 'numeric',
                             month: 'long',
                             year: 'numeric',
@@ -195,7 +199,7 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                 <div className="mt-2 flex items-center gap-2">
                     <Clock size="18" className={daysLeft <= 3 ? 'text-red-500' : 'text-gray-600 dark:text-gray-400'} />
                     <p className={`text-sm ${daysLeft <= 3 ? 'font-semibold text-red-500' : 'text-gray-600 dark:text-gray-400'}`}>
-                        {daysLeft > 0 ? `Daftar sebelum ${daysLeft} hari lagi` : 'Pendaftaran ditutup'}
+                        {daysLeft > 0 ? t('latest.registerBefore', { days: daysLeft }) : t('latest.registrationClosed')}
                     </p>
                 </div>
             );
@@ -206,7 +210,7 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                 <div className="mt-2 flex items-center gap-2">
                     <Calendar size="18" />
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {new Date(product.start_time).toLocaleDateString('id-ID', {
+                        {new Date(product.start_time).toLocaleDateString(dateLocale, {
                             day: 'numeric',
                             month: 'long',
                             year: 'numeric',
@@ -244,18 +248,18 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
         <section className="mx-auto w-full max-w-7xl px-4 py-8">
             <div className="mx-auto text-center">
                 <p className="border-primary bg-background text-primary mx-auto mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                    Produk Terbaru
+                    {t('latest.badge')}
                 </p>
                 <h2 className="dark:text-primary-foreground mx-auto mb-8 max-w-2xl text-3xl font-bold italic md:text-4xl">
-                    Kelas, Bootcamp, Webinar, Private & Bundling Terbaru dari Aksademy
+                    {t('latest.title')}
                 </h2>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {(() => {
                         if (safeLatestProducts.length === 0) {
                             return (
                                 <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
-                                    <img src="/assets/images/not-found.webp" alt="Produk Belum Tersedia" className="w-48" />
-                                    <div className="text-center text-gray-500">Belum ada produk yang tersedia saat ini.</div>
+                                    <img src="/assets/images/not-found.webp" alt="Not Found" className="w-48" />
+                                    <div className="text-center text-gray-500">{t('latest.empty')}</div>
                                 </div>
                             );
                         }
@@ -263,8 +267,8 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                         if (availableProducts.length === 0) {
                             return (
                                 <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
-                                    <div className="text-center text-lg font-semibold">Anda sudah memiliki akses semua produk terbaru kami. 😁🙏</div>
-                                    <p className="text-center text-gray-500">Terima kasih telah menjadi bagian dari Aksademy!</p>
+                                    <div className="text-center text-lg font-semibold">{t('latest.allOwned')}</div>
+                                    <p className="text-center text-gray-500">{t('latest.thankYou')}</p>
                                 </div>
                             );
                         }
@@ -276,7 +280,7 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                             const discount = isScholarship ? 0 : calculateDiscount(product.strikethrough_price, displayPrice);
                             const certDeadline =
                                 product.type === 'certification-program'
-                                    ? product.program_type === 'scholarship'
+                                     ? product.program_type === 'scholarship'
                                         ? product.socialization_registration_deadline
                                         : product.registration_deadline
                                     : undefined;
@@ -299,7 +303,7 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                                                         <div className="absolute top-2 right-2">
                                                             <Badge className="bg-red-500 text-white shadow-lg">
                                                                 <Percent size={12} className="mr-1" />
-                                                                Hemat {discount}%
+                                                                {t('latest.save', { discount })}
                                                             </Badge>
                                                         </div>
                                                     )}
@@ -308,7 +312,7 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                                             </div>
                                             <div className="mt-auto w-full p-4 text-left">
                                                 {displayPrice === 0 ? (
-                                                    <p className="text-lg font-semibold text-green-600 dark:text-green-400">Gratis</p>
+                                                    <p className="text-lg font-semibold text-green-600 dark:text-green-400">{t('latest.free')}</p>
                                                 ) : (
                                                     <div className="">
                                                         {product.strikethrough_price > 0 && product.strikethrough_price > displayPrice && (
@@ -334,7 +338,7 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                                                     {product.type === 'certification-program' && certDeadline && (
                                                         <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
                                                             <Calendar className="h-3 w-3" />
-                                                            <span>Daftar s/d {new Date(certDeadline).toLocaleDateString('id-ID')}</span>
+                                                            <span>{t('latest.registerUntil', { date: new Date(certDeadline).toLocaleDateString(dateLocale) })}</span>
                                                         </div>
                                                     )}
                                                 </div>
@@ -362,9 +366,9 @@ export default function LatestProductsSection({ latestProducts, myProductIds }: 
                                                                 </div>
                                                             </TooltipTrigger>
                                                             <TooltipContent>
-                                                                {product.level === 'beginner' && <p>Level Beginner</p>}
-                                                                {product.level === 'intermediate' && <p>Level Intermediate</p>}
-                                                                {product.level === 'advanced' && <p>Level Advanced</p>}
+                                                                {product.level === 'beginner' && <p>{t('latest.levels.beginner')}</p>}
+                                                                {product.level === 'intermediate' && <p>{t('latest.levels.intermediate')}</p>}
+                                                                {product.level === 'advanced' && <p>{t('latest.levels.advanced')}</p>}
                                                             </TooltipContent>
                                                         </Tooltip>
                                                     )}

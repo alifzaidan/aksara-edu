@@ -72,7 +72,32 @@ class CheckInstallmentOverdue extends Command
             }
         }
 
-        $this->info("Done. Reminded: {$reminded}, Suspended: {$suspended}");
+        // Auto-unsuspend check for suspended parent invoices whose overdue status is now cleared
+        $unsuspended = 0;
+        $suspendedParents = Invoice::whereNull('parent_invoice_id')
+            ->where('is_installment', true)
+            ->whereNotNull('access_suspended_at')
+            ->with('installmentTerms')
+            ->get();
+
+        foreach ($suspendedParents as $parent) {
+            $hasAnyOverdue = $parent->installmentTerms
+                ->where('status', '!=', 'paid')
+                ->whereNotNull('installment_due_date')
+                ->contains(function ($term) use ($today) {
+                    return Carbon::parse($term->installment_due_date)->endOfDay()->lt($today);
+                });
+
+            if (!$hasAnyOverdue) {
+                $parent->update(['access_suspended_at' => null]);
+                $unsuspended++;
+                Log::info('Installment access auto-unsuspended because no terms are overdue', [
+                    'parent_invoice_code' => $parent->invoice_code,
+                ]);
+            }
+        }
+
+        $this->info("Done. Reminded: {$reminded}, Suspended: {$suspended}, Unsuspended: {$unsuspended}");
         return self::SUCCESS;
     }
 

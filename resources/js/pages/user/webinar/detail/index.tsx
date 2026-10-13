@@ -1,6 +1,7 @@
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import AboutSection from './about-section';
 import BenefitsSection from './benefits-section';
 import HeroSection from './hero-section';
@@ -67,6 +68,8 @@ export default function Webinar({
     myWebinarIds: string[];
     referralInfo: ReferralInfo;
 }) {
+    const { t } = useTranslation('user');
+
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const refFromUrl = urlParams.get('ref');
@@ -82,7 +85,7 @@ export default function Webinar({
 
     return (
         <UserLayout>
-            <Head title={`${webinar.title} - Webinar`} />
+            <Head title={`${webinar.title} - ${t('webinar.title')}`} />
 
             <HeroSection webinar={webinar} />
             <AboutSection />

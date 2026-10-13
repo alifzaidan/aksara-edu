@@ -1,0 +1,47 @@
+{
+  "title": "Settings",
+  "description": "Manage your profile and account settings",
+  "saved": "Saved",
+  "nav": {
+    "profile": "Profile",
+    "password": "Password",
+    "appearance": "Appearance"
+  },
+  "appearance": {
+    "title": "Appearance Settings",
+    "description": "Update your account appearance settings",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "password": {
+    "title": "Update Password",
+    "description": "Ensure your account is using a long, random password to stay secure",
+    "current": "Current password",
+    "currentPlaceholder": "Current password",
+    "new": "New password",
+    "newPlaceholder": "New password",
+    "confirm": "Confirm password",
+    "confirmPlaceholder": "Confirm password",
+    "save": "Save password"
+  },
+  "profile": {
+    "title": "Profile Information",
+    "description": "Update your name and email address",
+    "name": "Name",
+    "namePlaceholder": "Enter your full name",
+    "email": "Email",
+    "emailPlaceholder": "Enter your email address",
+    "phone": "Phone Number",
+    "phonePlaceholder": "Enter your phone number",
+    "instance": "Institution",
+    "instancePlaceholder": "Enter your institution or company",
+    "city": "City of Domicile",
+    "cityPlaceholder": "Enter your city of domicile",
+    "save": "Save",
+    "unverified": "Your email address is unverified.",
+    "resendVerification": "Click here to resend the verification email.",
+    "verificationSent": "A new verification link has been sent to your email address.",
+    "incompletePhone": "Your profile is incomplete. Please enter your phone number."
+  }
+}

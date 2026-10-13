@@ -14,7 +14,9 @@ import { SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { BadgeCheck, Check, Hourglass, User, X } from 'lucide-react';
+import { parseISO } from 'date-fns';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 interface Bootcamp {
@@ -100,12 +102,29 @@ export default function RegisterBootcamp({
     referralInfo: ReferralInfo;
     installmentTerms?: InstallmentTermOption[];
 }) {
+    const { t, i18n } = useTranslation('user');
+    const numberLocale = i18n.language === 'en' ? 'en-US' : 'id-ID';
     const { auth } = usePage<SharedData>().props;
     const isLoggedIn = !!auth.user;
     const isProfileComplete = isLoggedIn && auth.user?.phone_number && auth.user?.instance && auth.user?.city;
 
+    const isAnyTermOverdue = !initialActiveInstallment && installmentTerms.some((t) => {
+        if (!t.due_date) return false;
+        try {
+            const d = typeof t.due_date === 'string' ? parseISO(t.due_date) : new Date(t.due_date);
+            if (isNaN(d.getTime())) return false;
+            const endOfDay = new Date(d);
+            endOfDay.setHours(23, 59, 59, 999);
+            return new Date() > endOfDay;
+        } catch {
+            return false;
+        }
+    });
+
     const [activeInstallment, setActiveInstallment] = useState<ActiveInstallmentData | null>(initialActiveInstallment);
-    const [paymentTab, setPaymentTab] = useState<'full' | 'installment'>(initialActiveInstallment ? 'installment' : 'full');
+    const [paymentTab, setPaymentTab] = useState<'full' | 'installment'>(
+        initialActiveInstallment ? 'installment' : 'full'
+    );
 
     const [cancellingInvoice, setCancellingInvoice] = useState(false);
     const [termsAccepted, setTermsAccepted] = useState(false);
@@ -217,19 +236,19 @@ export default function RegisterBootcamp({
                 setPromoError('');
             } else {
                 setDiscountData(null);
-                setPromoError(data.message || 'Kode promo tidak valid');
+                setPromoError(data.message || t('bootcamp.register.errors.invalidPromo'));
             }
         } catch (error: unknown) {
             setDiscountData(null);
             if (axios.isAxiosError(error)) {
-                setPromoError(error.response?.data?.message || 'Terjadi kesalahan saat memvalidasi kode promo');
+                setPromoError(error.response?.data?.message || t('bootcamp.register.errors.promoValidateError'));
             } else {
-                setPromoError('Terjadi kesalahan saat memvalidasi kode promo');
+                setPromoError(t('bootcamp.register.errors.promoValidateError'));
             }
         } finally {
             setPromoLoading(false);
         }
-    }, [bootcamp.id, bootcamp.price, emailExists, guestFormData.email, isFree, isLoggedIn, promoCode]);
+    }, [bootcamp.id, bootcamp.price, emailExists, guestFormData.email, isFree, isLoggedIn, promoCode, t]);
 
     const validateReferralCode = useCallback(async () => {
         if (!promoCode.trim() || isFree) return;
@@ -249,19 +268,19 @@ export default function RegisterBootcamp({
                 setReferralError('');
             } else {
                 setReferralData(null);
-                setReferralError(data.message || 'Kode referral tidak valid');
+                setReferralError(data.message || t('bootcamp.register.errors.invalidReferral'));
             }
         } catch (error: unknown) {
             setReferralData(null);
             if (axios.isAxiosError(error)) {
-                setReferralError(error.response?.data?.message || 'Terjadi kesalahan saat memvalidasi kode referral');
+                setReferralError(error.response?.data?.message || t('bootcamp.register.errors.referralValidateError'));
             } else {
-                setReferralError('Terjadi kesalahan saat memvalidasi kode referral');
+                setReferralError(t('bootcamp.register.errors.referralValidateError'));
             }
         } finally {
             setReferralLoading(false);
         }
-    }, [promoCode, isFree, isLoggedIn, guestFormData.email]);
+    }, [promoCode, isFree, isLoggedIn, guestFormData.email, t]);
 
     useEffect(() => {
         if (!promoCode.trim() || isFree) {
@@ -346,17 +365,17 @@ export default function RegisterBootcamp({
         if (isLoggedIn) return true;
 
         if (!guestFormData.email || !guestFormData.phone_number) {
-            toast.error('Email dan nomor telepon wajib diisi.');
+            toast.error(t('bootcamp.register.errors.emailPhoneRequired'));
             return false;
         }
 
         if (!guestFormData.instance) {
-            toast.error('Instansi wajib diisi.');
+            toast.error(t('bootcamp.register.errors.instanceRequired'));
             return false;
         }
 
         if (!guestFormData.city) {
-            toast.error('Kota domisili wajib diisi.');
+            toast.error(t('bootcamp.register.errors.cityRequired'));
             return false;
         }
 
@@ -374,11 +393,11 @@ export default function RegisterBootcamp({
                 const loginData = loginResponse.data;
 
                 if (!loginData.success) {
-                    throw new Error(loginData.message || 'Gagal login otomatis. Pastikan nomor telepon sesuai dengan yang terdaftar.');
+                    throw new Error(loginData.message || t('bootcamp.register.errors.autoLoginFailed'));
                 }
             } else {
                 if (!guestFormData.name) {
-                    toast.error('Nama lengkap wajib diisi.');
+                    toast.error(t('bootcamp.register.errors.nameRequired'));
                     setLoading(false);
                     return false;
                 }
@@ -395,7 +414,7 @@ export default function RegisterBootcamp({
                 });
 
                 if (regResponse.data && regResponse.data.success === false) {
-                    throw new Error(regResponse.data.message || 'Gagal registrasi.');
+                    throw new Error(regResponse.data.message || t('bootcamp.register.errors.registerFailed'));
                 }
             }
 
@@ -403,9 +422,9 @@ export default function RegisterBootcamp({
         } catch (error: unknown) {
             setLoading(false);
             if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || getErrorMessage(error, 'Gagal memproses login/registrasi otomatis.'));
+                toast.error(error.response?.data?.message || getErrorMessage(error, t('bootcamp.register.errors.processLoginFailed')));
             } else {
-                toast.error(getErrorMessage(error, 'Gagal memproses login/registrasi otomatis.'));
+                toast.error(getErrorMessage(error, t('bootcamp.register.errors.processLoginFailed')));
             }
             return false;
         }
@@ -451,21 +470,21 @@ export default function RegisterBootcamp({
                     sessionStorage.removeItem('pendingCheckout');
                     window.location.href = data.payment_url;
                 } else {
-                    throw new Error(data.message || 'Gagal membuat invoice.');
+                    throw new Error(data.message || t('bootcamp.register.errors.createInvoiceFailed'));
                 }
             } catch (error) {
                 console.error('Payment error:', error);
                 throw error;
             }
         },
-        [basePrice, bootcamp.id, bootcamp.price, bootcamp.strikethrough_price, isFree, transactionFee, pointsChecked, pointsToUse, codeType, referralData, promoCode, referralInfo],
+        [basePrice, bootcamp.id, bootcamp.price, bootcamp.strikethrough_price, isFree, transactionFee, pointsChecked, pointsToUse, codeType, referralData, promoCode, referralInfo, t],
     );
 
     const handleFreeCheckout = (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!freeFormData.requirement_1_proof || !freeFormData.requirement_2_proof || !freeFormData.requirement_3_proof) {
-            toast.error('Harap upload semua bukti yang diperlukan!');
+            toast.error(t('bootcamp.register.errors.uploadAllProof'));
             return;
         }
 
@@ -481,7 +500,7 @@ export default function RegisterBootcamp({
         router.post(route('enroll.free'), formData, {
             onError: (errors) => {
                 console.log('Free enrollment errors:', errors);
-                toast.error(errors.message || 'Gagal mendaftar bootcamp gratis.');
+                toast.error(errors.message || t('bootcamp.register.errors.enrollFreeFailed'));
             },
             onFinish: () => {
                 setLoading(false);
@@ -493,13 +512,13 @@ export default function RegisterBootcamp({
         e.preventDefault();
 
         if (activeInstallment && !activeInstallment.is_fully_paid) {
-            toast.error('Anda sedang memiliki program cicilan berjalan. Silakan selesaikan pembayaran melalui tab Cicilan.');
+            toast.error(t('bootcamp.register.activeInstallmentAlert'));
             setPaymentTab('installment');
             return;
         }
 
         if (!termsAccepted && !isFree) {
-            toast.error('Anda harus menyetujui syarat dan ketentuan!');
+            toast.error(t('bootcamp.register.errors.termsRequired'));
             return;
         }
 
@@ -521,10 +540,10 @@ export default function RegisterBootcamp({
             await submitPayment(discountData);
         } catch (error: unknown) {
             const message = axios.isAxiosError(error)
-                ? error.response?.data?.message || 'Terjadi kesalahan saat proses pembayaran.'
+                ? error.response?.data?.message || t('bootcamp.register.errors.paymentFailed')
                 : error instanceof Error
                   ? error.message
-                  : 'Terjadi kesalahan saat proses pembayaran.';
+                  : t('bootcamp.register.errors.paymentFailed');
             toast.error(message);
             setLoading(false);
         }
@@ -553,7 +572,7 @@ export default function RegisterBootcamp({
                 input.value = '';
             }
 
-            toast.error('Ukuran file terlalu besar. Maksimal 2MB.');
+            toast.error(t('bootcamp.register.errors.fileTooLarge'));
             return;
         }
 
@@ -566,7 +585,7 @@ export default function RegisterBootcamp({
                 input.value = '';
             }
 
-            toast.error('Hanya file gambar (JPG, PNG, GIF, dll) yang diperbolehkan.');
+            toast.error(t('bootcamp.register.errors.fileMustBeImage'));
             return;
         }
 
@@ -574,30 +593,30 @@ export default function RegisterBootcamp({
         setFreeFormData((prev) => ({ ...prev, [fieldName]: file }));
         setFileErrors((prev) => ({ ...prev, [fieldName]: false }));
 
-        toast.success('File berhasil diunggah.');
+        toast.success(t('bootcamp.register.errors.fileUploaded'));
     };
 
     if (isLoggedIn && !isProfileComplete) {
         return (
             <UserLayout>
-                <Head title="Daftar Bootcamp" />
+                <Head title={t('bootcamp.register.headTitle')} />
                 <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
                     <div className="mx-auto my-12 w-full max-w-7xl px-4">
                         <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
-                            Daftar Bootcamp "{bootcamp.title}"
+                            {t('bootcamp.register.pageTitle', { title: bootcamp.title })}
                         </h2>
-                        <p className="text-center text-gray-400">Silakan lengkapi profil Anda terlebih dahulu.</p>
+                        <p className="text-center text-gray-400">{t('bootcamp.register.incompleteProfileTitle')}</p>
                     </div>
                 </section>
                 <section className="mx-auto my-4 w-full max-w-7xl px-4">
                     <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
                         <User size={64} className="text-orange-500" />
-                        <h2 className="text-xl font-bold">Profil Belum Lengkap</h2>
+                        <h2 className="text-xl font-bold">{t('bootcamp.register.incompleteProfileTitle')}</h2>
                         <p className="text-sm text-gray-500">
-                            Profil Anda belum lengkap! Harap lengkapi nomor telepon, instansi, dan kota domisili terlebih dahulu untuk mendaftar bootcamp.
+                            {t('bootcamp.register.incompleteProfileDesc')}
                         </p>
                         <Button asChild className="w-full max-w-md">
-                            <Link href={route('profile.edit', { redirect: window.location.href })}>Lengkapi Profil</Link>
+                            <Link href={route('profile.edit', { redirect: window.location.href })}>{t('bootcamp.register.btnCompleteProfile')}</Link>
                         </Button>
                     </div>
                 </section>
@@ -609,7 +628,7 @@ export default function RegisterBootcamp({
         <>
             {/* Pilihan Jenis Kode */}
             <div className="space-y-2">
-                <Label>Jenis Kode</Label>
+                <Label>{t('bootcamp.register.codeType')}</Label>
                 <RadioGroup
                     value={codeType}
                     onValueChange={(val: 'voucher' | 'referral') => {
@@ -628,11 +647,11 @@ export default function RegisterBootcamp({
                 >
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem value="voucher" id="code-voucher" />
-                        <Label htmlFor="code-voucher" className="cursor-pointer">Voucher</Label>
+                        <Label htmlFor="code-voucher" className="cursor-pointer">{t('bootcamp.register.voucher')}</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem value="referral" id="code-referral" />
-                        <Label htmlFor="code-referral" className="cursor-pointer">Referral</Label>
+                        <Label htmlFor="code-referral" className="cursor-pointer">{t('bootcamp.register.referral')}</Label>
                     </div>
                 </RadioGroup>
             </div>
@@ -640,13 +659,13 @@ export default function RegisterBootcamp({
             {/* Input Kode Tunggal */}
             <div className="space-y-2">
                 <Label htmlFor="promo-code">
-                    {codeType === 'voucher' ? 'Kode Voucher' : 'Kode Referral'}
+                    {codeType === 'voucher' ? t('bootcamp.register.voucherCode') : t('bootcamp.register.referralCode')}
                 </Label>
                 <div className="relative">
                     <Input
                         id="promo-code"
                         type="text"
-                        placeholder={codeType === 'voucher' ? 'Masukkan kode voucher' : 'Masukkan kode referral'}
+                        placeholder={codeType === 'voucher' ? t('bootcamp.register.enterVoucherCode') : t('bootcamp.register.enterReferralCode')}
                         value={promoCode}
                         onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                         className="pr-10"
@@ -682,11 +701,11 @@ export default function RegisterBootcamp({
                         <div className="flex items-center gap-2">
                             <Check className="h-4 w-4 text-green-600" />
                             <p className="text-sm font-medium text-green-800">
-                                Voucher "{discountData.discount_code.code}" berhasil diterapkan!
+                                {t('bootcamp.register.voucherSuccess', { code: discountData.discount_code.code })}
                             </p>
                         </div>
                         <p className="mt-1 text-xs text-green-600">
-                            {discountData.discount_code.name} - Diskon {discountData.discount_code.formatted_value}
+                            {t('bootcamp.register.voucherDiscount', { name: discountData.discount_code.name, value: discountData.discount_code.formatted_value })}
                         </p>
                     </div>
                 )}
@@ -698,11 +717,11 @@ export default function RegisterBootcamp({
                         <div className="flex items-center gap-2">
                             <Check className="h-4 w-4 text-green-600" />
                             <p className="text-sm font-medium text-green-800">
-                                Kode referral valid!
+                                {t('bootcamp.register.referralSuccess')}
                             </p>
                         </div>
                         <p className="mt-1 text-xs text-green-600">
-                            Pembelian pertama Anda dirujuk oleh {referralData.referrer?.name}. Reward poin akan masuk setelah pembayaran sukses.
+                            {t('bootcamp.register.referralReferredBy', { name: referralData.referrer?.name })}
                         </p>
                     </div>
                 )}
@@ -713,9 +732,12 @@ export default function RegisterBootcamp({
                 <div className="space-y-4 rounded-lg border p-4">
                     <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                            <Label className="text-base">Gunakan Reward Point</Label>
+                            <Label className="text-base">{t('bootcamp.register.useRewardPoints')}</Label>
                             <p className="text-muted-foreground text-xs">
-                                Anda memiliki {userPoints.toLocaleString('id-ID')} poin (Rp {userPoints.toLocaleString('id-ID')})
+                                {t('bootcamp.register.pointsBalance', {
+                                    points: userPoints.toLocaleString(numberLocale),
+                                    rupiah: userPoints.toLocaleString(numberLocale),
+                                })}
                             </p>
                         </div>
                         <Switch
@@ -737,7 +759,7 @@ export default function RegisterBootcamp({
 
                     {pointsChecked && (
                         <div className="space-y-2">
-                            <Label htmlFor="points-input">Jumlah poin yang digunakan</Label>
+                            <Label htmlFor="points-input">{t('bootcamp.register.pointsToUse')}</Label>
                             <div className="flex items-center gap-2">
                                 <Input
                                     id="points-input"
@@ -748,9 +770,9 @@ export default function RegisterBootcamp({
                                     onChange={(e) => {
                                         const val = parseInt(e.target.value) || 0;
                                         if (val > userPoints) {
-                                            setPointsError('Poin melebihi saldo Anda.');
+                                            setPointsError(t('bootcamp.register.pointsExceedBalance'));
                                         } else if (val > maxPointsAllowed) {
-                                            setPointsError(`Maksimal poin yang dapat digunakan adalah ${maxPointsAllowed}.`);
+                                            setPointsError(t('bootcamp.register.pointsExceedMax', { max: maxPointsAllowed }));
                                         } else {
                                             setPointsError('');
                                         }
@@ -766,12 +788,12 @@ export default function RegisterBootcamp({
                                         setPointsError('');
                                     }}
                                 >
-                                    Maksimal
+                                    {t('bootcamp.register.maxPoints')}
                                 </Button>
                             </div>
                             {pointsError && <p className="text-xs text-red-600">{pointsError}</p>}
                             {codeType === 'voucher' && !!discountData?.valid && (
-                                <p className="text-xs text-amber-600">Poin tidak dapat digunakan bersamaan dengan kode voucher.</p>
+                                <p className="text-xs text-amber-600">{t('bootcamp.register.pointsConflictVoucher')}</p>
                             )}
                         </div>
                     )}
@@ -782,31 +804,31 @@ export default function RegisterBootcamp({
                 {bootcamp.strikethrough_price > 0 && (
                     <>
                         <div className="flex items-center justify-between">
-                            <span className="text-gray-600">Harga Asli</span>
+                            <span className="text-gray-600">{t('bootcamp.register.originalPrice')}</span>
                             <span className="font-semibold text-gray-500 line-through">
-                                Rp {bootcamp.strikethrough_price.toLocaleString('id-ID')}
+                                Rp {bootcamp.strikethrough_price.toLocaleString(numberLocale)}
                             </span>
                         </div>
                         <div className="flex items-center justify-between">
-                            <span className="text-gray-600">Diskon</span>
+                            <span className="text-gray-600">{t('bootcamp.register.discount')}</span>
                             <span className="font-semibold text-red-500">
-                                -Rp {(bootcamp.strikethrough_price - bootcamp.price).toLocaleString('id-ID')}
+                                -Rp {(bootcamp.strikethrough_price - bootcamp.price).toLocaleString(numberLocale)}
                             </span>
                         </div>
                         <Separator className="my-2" />
                     </>
                 )}
                 <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Harga Bootcamp</span>
-                    <span className="font-semibold text-gray-500">Rp {bootcamp.price.toLocaleString('id-ID')}</span>
+                    <span className="text-gray-600">{t('bootcamp.register.bootcampPrice')}</span>
+                    <span className="font-semibold text-gray-500">Rp {bootcamp.price.toLocaleString(numberLocale)}</span>
                 </div>
 
                 {/* Promo Discount */}
                 {codeType === 'voucher' && discountData?.valid && (
                     <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Diskon Promo ({discountData.discount_code.code})</span>
+                        <span className="text-gray-600">{t('bootcamp.register.promoDiscount', { code: discountData.discount_code.code })}</span>
                         <span className="font-semibold text-green-600">
-                            -Rp {discountData.discount_amount.toLocaleString('id-ID')}
+                            -Rp {discountData.discount_amount.toLocaleString(numberLocale)}
                         </span>
                     </div>
                 )}
@@ -814,21 +836,21 @@ export default function RegisterBootcamp({
                 {/* Points Discount */}
                 {pointsChecked && pointsToUse > 0 && !pointsError && (
                     <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Potongan Poin</span>
+                        <span className="text-gray-600">{t('bootcamp.register.pointsDiscount')}</span>
                         <span className="font-semibold text-green-600">
-                            -Rp {pointsToUse.toLocaleString('id-ID')}
+                            -Rp {pointsToUse.toLocaleString(numberLocale)}
                         </span>
                     </div>
                 )}
 
                 <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Biaya Transaksi</span>
-                    <span className="font-semibold text-gray-500">Rp {transactionFee.toLocaleString('id-ID')}</span>
+                    <span className="text-gray-600">{t('bootcamp.register.transactionFee')}</span>
+                    <span className="font-semibold text-gray-500">Rp {transactionFee.toLocaleString(numberLocale)}</span>
                 </div>
                 <Separator className="my-2" />
                 <div className="flex items-center justify-between">
-                    <span className="font-semibold text-gray-900">Total Pembayaran</span>
-                    <span className="text-primary text-xl font-bold">Rp {totalPrice.toLocaleString('id-ID')}</span>
+                    <span className="font-semibold text-gray-900">{t('bootcamp.register.totalPayment')}</span>
+                    <span className="text-primary text-xl font-bold">Rp {totalPrice.toLocaleString(numberLocale)}</span>
                 </div>
             </div>
 
@@ -839,36 +861,36 @@ export default function RegisterBootcamp({
                     onCheckedChange={(checked) => setTermsAccepted(checked === true)}
                 />
                 <Label htmlFor="terms">
-                    Saya menyetujui{' '}
+                    {t('bootcamp.register.agreeTerms')}{' '}
                     <a
                         href="/terms-and-conditions"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-700 hover:underline"
                     >
-                        syarat dan ketentuan
+                        {t('bootcamp.register.termsAndConditions')}
                     </a>
                 </Label>
             </div>
 
             <Button className="w-full" type="submit" disabled={!termsAccepted || loading}>
-                {loading ? 'Memproses...' : 'Lanjutkan Pembayaran'}
+                {loading ? t('bootcamp.register.processing') : t('bootcamp.register.btnPayNow')}
             </Button>
         </>
     );
 
     return (
         <UserLayout>
-            <Head title="Daftar Bootcamp" />
+            <Head title={t('bootcamp.register.headTitle')} />
             <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
                 <div className="mx-auto my-12 w-full max-w-7xl px-4">
                     <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
-                        Daftar Bootcamp "{bootcamp.title}"
+                        {t('bootcamp.register.pageTitle', { title: bootcamp.title })}
                     </h2>
                     <p className="text-center text-gray-400">
                         {isFree
-                            ? 'Silahkan lengkapi persyaratan berikut untuk mendaftar bootcamp.'
-                            : 'Silakan selesaikan pembayaran untuk mendaftar bootcamp.'}
+                            ? t('bootcamp.register.freeSubtitle')
+                            : t('bootcamp.register.subtitle')}
                     </p>
                 </div>
             </section>
@@ -876,13 +898,13 @@ export default function RegisterBootcamp({
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
                     <Tabs defaultValue="detail" className="lg:col-span-2">
                         <TabsList>
-                            <TabsTrigger value="detail">Detail Bootcamp</TabsTrigger>
-                            <TabsTrigger value="curriculum">Kurikulum Bootcamp</TabsTrigger>
+                            <TabsTrigger value="detail">{t('bootcamp.register.tabDetail')}</TabsTrigger>
+                            <TabsTrigger value="curriculum">{t('bootcamp.register.tabCurriculum')}</TabsTrigger>
                         </TabsList>
                         <TabsContent value="detail">
                             <div className="h-full rounded-lg border p-4">
-                                <h2 className="text-3xl font-bold italic">Yang akan kamu dapatkan</h2>
-                                <p className="mt-2 mb-4 text-sm text-gray-600">Manfaat yang akan kamu peroleh setelah mengikuti bootcamp ini.</p>
+                                <h2 className="text-3xl font-bold italic">{t('bootcamp.register.whatYouWillGet')}</h2>
+                                <p className="mt-2 mb-4 text-sm text-gray-600">{t('bootcamp.register.whatYouWillGetDesc')}</p>
                                 <ul className="space-y-2">
                                     {benefitList.map((benefit, idx) => (
                                         <li key={idx} className="flex items-center gap-2">
@@ -891,9 +913,9 @@ export default function RegisterBootcamp({
                                         </li>
                                     ))}
                                 </ul>
-                                <h2 className="mt-6 text-3xl font-bold italic">Persyaratan Peserta</h2>
+                                <h2 className="mt-6 text-3xl font-bold italic">{t('bootcamp.register.participantRequirements')}</h2>
                                 <p className="mt-2 mb-4 text-sm text-gray-600">
-                                    Pastikan kamu memenuhi persyaratan berikut sebelum mendaftar bootcamp ini.
+                                    {t('bootcamp.register.participantRequirementsDesc')}
                                 </p>
                                 <ul className="space-y-2">
                                     {requirementList.map((requirement, idx) => (
@@ -907,9 +929,9 @@ export default function RegisterBootcamp({
                         </TabsContent>
                         <TabsContent value="curriculum">
                             <div className="h-full rounded-lg border p-4">
-                                <h2 className="text-3xl font-bold italic">Kurikulum</h2>
+                                <h2 className="text-3xl font-bold italic">{t('bootcamp.register.curriculumTitle')}</h2>
                                 <p className="mt-2 mb-4 text-sm text-gray-600">
-                                    Berikut adalah daftar materi yang akan dipelajari selama bootcamp ini.
+                                    {t('bootcamp.register.curriculumDesc')}
                                 </p>
                                 <ul className="space-y-2">
                                     {curriculumList.map((curriculum, idx) => (
@@ -926,11 +948,11 @@ export default function RegisterBootcamp({
                     {hasAccess && (!activeInstallment || activeInstallment.is_fully_paid) ? (
                         <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
                             <BadgeCheck size={64} className="text-green-500" />
-                            <h2 className="text-xl font-bold">Anda Sudah Memiliki Akses</h2>
-                            <p className="text-sm text-gray-500">Anda sudah terdaftar di bootcamp ini. Silakan masuk ke dalam grup.</p>
+                            <h2 className="text-xl font-bold">{t('bootcamp.register.alreadyHaveAccessTitle')}</h2>
+                            <p className="text-sm text-gray-500">{t('bootcamp.register.alreadyHaveAccessDesc')}</p>
                             <Button asChild className="w-full">
                                 <a href={formatExternalUrl(bootcamp.group_url)} target="_blank" rel="noopener noreferrer">
-                                    Masuk Group Bootcamp
+                                    {t('bootcamp.register.btnEnterGroup')}
                                 </a>
                             </Button>
                         </div>
@@ -939,32 +961,32 @@ export default function RegisterBootcamp({
                             <div className="flex items-center gap-2 mb-2 text-yellow-600 dark:text-yellow-400">
                                 <Hourglass className="h-5 w-5" />
                                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                                    Transaksi Menunggu Pembayaran
+                                    {t('bootcamp.register.pendingInvoiceTitle')}
                                 </h3>
                             </div>
                             <p className="text-sm text-gray-500">
                                 {pendingInvoice?.invoice_code ? (
-                                    <>Kode Invoice: <span className="font-semibold text-gray-800 dark:text-gray-200">{pendingInvoice.invoice_code}</span></>
+                                    <>{t('bootcamp.register.pendingInvoiceCode', { code: pendingInvoice.invoice_code })}</>
                                 ) : (
-                                    'Anda memiliki transaksi yang belum selesai untuk bootcamp ini.'
+                                    t('bootcamp.register.pendingInvoiceGeneric')
                                 )}
                             </p>
                             {pendingInvoice?.amount !== undefined && (
                                 <p className="text-2xl font-bold text-orange-600 my-3">
-                                    Rp {pendingInvoice.amount.toLocaleString('id-ID')}
+                                    Rp {pendingInvoice.amount.toLocaleString(numberLocale)}
                                 </p>
                             )}
                             <div className="space-y-2 pt-2">
                                 {(pendingInvoice?.invoice_url || pendingInvoiceUrl) && (
                                     <Button asChild className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold" size="lg">
                                         <a href={pendingInvoice?.invoice_url || pendingInvoiceUrl!}>
-                                            Lanjutkan Pembayaran
+                                            {t('bootcamp.register.btnContinuePayment')}
                                         </a>
                                     </Button>
                                 )}
                                 <div className="flex gap-2">
                                     <Button onClick={() => window.location.reload()} variant="outline" className="flex-1" size="lg">
-                                        Cek Status
+                                        {t('bootcamp.register.btnCheckStatus')}
                                     </Button>
                                     {pendingInvoice?.id && (
                                         <Button
@@ -974,29 +996,29 @@ export default function RegisterBootcamp({
                                             size="lg"
                                             disabled={cancellingInvoice}
                                             onClick={async () => {
-                                                if (confirm('Apakah Anda yakin ingin membatalkan transaksi ini dan membuat pesanan baru?')) {
+                                                if (confirm(t('bootcamp.register.confirmCancel'))) {
                                                     setCancellingInvoice(true);
                                                     try {
                                                         const res = await axios.post(route('invoice.cancel', pendingInvoice.id));
                                                         if (res.data?.success) {
-                                                            toast.success('Pesanan berhasil dibatalkan.');
+                                                            toast.success(t('bootcamp.register.cancelSuccess'));
                                                             window.location.reload();
                                                         } else {
-                                                            toast.error(res.data?.message || 'Gagal membatalkan pesanan.');
+                                                            toast.error(res.data?.message || t('bootcamp.register.cancelFailed'));
                                                             setCancellingInvoice(false);
                                                         }
                                                     } catch (err: unknown) {
                                                         if (axios.isAxiosError(err)) {
-                                                            toast.error(err.response?.data?.message || 'Gagal membatalkan pesanan.');
+                                                            toast.error(err.response?.data?.message || t('bootcamp.register.cancelFailed'));
                                                         } else {
-                                                            toast.error('Gagal membatalkan pesanan.');
+                                                            toast.error(t('bootcamp.register.cancelFailed'));
                                                         }
                                                         setCancellingInvoice(false);
                                                     }
                                                 }
                                             }}
                                         >
-                                            {cancellingInvoice ? 'Membatalkan...' : 'Batalkan Pesanan'}
+                                            {cancellingInvoice ? t('bootcamp.register.cancelling') : t('bootcamp.register.btnCancelOrder')}
                                         </Button>
                                     )}
                                 </div>
@@ -1004,13 +1026,15 @@ export default function RegisterBootcamp({
                         </div>
                     ) : !showFreeForm ? (
                         <form onSubmit={handleCheckout}>
-                            <h2 className="my-2 text-xl font-bold italic">Detail {isFree ? 'Pendaftaran' : 'Pembayaran'}</h2>
+                            <h2 className="my-2 text-xl font-bold italic">
+                                {isFree ? t('bootcamp.register.registrationDetailTitle') : t('bootcamp.register.paymentDetailTitle')}
+                            </h2>
                             <div className="space-y-4 rounded-lg border p-4">
                                 {!isLoggedIn && (
                                     <div className="space-y-3 rounded-lg border p-4">
-                                        <h3 className="text-lg font-semibold">Data Diri</h3>
+                                        <h3 className="text-lg font-semibold">{t('bootcamp.register.personalDataTitle')}</h3>
                                         <div className="space-y-2">
-                                            <Label htmlFor="guest-email">Email</Label>
+                                            <Label htmlFor="guest-email">{t('bootcamp.register.emailLabel')}</Label>
                                             <Input
                                                 id="guest-email"
                                                 type="email"
@@ -1019,16 +1043,16 @@ export default function RegisterBootcamp({
                                                 onChange={(e) => updateGuestForm('email', e.target.value)}
                                                 required
                                             />
-                                            {checkingEmail && <p className="text-xs text-gray-500">Mengecek email...</p>}
-                                            {emailExists && <p className="text-xs text-green-600">Email ditemukan. Login otomatis akan digunakan.</p>}
+                                            {checkingEmail && <p className="text-xs text-gray-500">{t('bootcamp.register.checkingEmail')}</p>}
+                                            {emailExists && <p className="text-xs text-green-600">{t('bootcamp.register.emailFound')}</p>}
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="guest-name">Nama</Label>
+                                            <Label htmlFor="guest-name">{t('bootcamp.register.nameLabel')}</Label>
                                             <Input
                                                 id="guest-name"
                                                 type="text"
-                                                placeholder="Nama lengkap"
+                                                placeholder={t('bootcamp.register.namePlaceholder')}
                                                 value={guestFormData.name}
                                                 onChange={(e) => updateGuestForm('name', e.target.value)}
                                                 disabled={emailExists}
@@ -1037,32 +1061,32 @@ export default function RegisterBootcamp({
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="guest-phone">No. Telepon</Label>
+                                            <Label htmlFor="guest-phone">{t('bootcamp.register.phoneLabel')}</Label>
                                             <Input
                                                 id="guest-phone"
                                                 type="tel"
-                                                placeholder="08xxxxxxxxxx"
+                                                placeholder={t('bootcamp.register.phonePlaceholder')}
                                                 value={guestFormData.phone_number}
                                                 onChange={(e) => updateGuestForm('phone_number', e.target.value)}
                                                 disabled={emailExists}
                                                 required
                                             />
                                             {!emailExists && (
-                                                <p className="text-xs text-gray-500">Nomor telepon akan digunakan sebagai password akun Anda.</p>
+                                                <p className="text-xs text-gray-500">{t('bootcamp.register.phoneNotice')}</p>
                                             )}
                                             {emailExists && (
                                                 <p className="text-xs text-blue-600">
-                                                    Data akun ditemukan dan dikunci agar sesuai dengan akun terdaftar.
+                                                    {t('bootcamp.register.accountLockedNotice')}
                                                 </p>
                                             )}
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="guest-instance">Instansi</Label>
+                                            <Label htmlFor="guest-instance">{t('bootcamp.register.instanceLabel')}</Label>
                                             <Input
                                                 id="guest-instance"
                                                 type="text"
-                                                placeholder="Instansi / perusahaan"
+                                                placeholder={t('bootcamp.register.instancePlaceholder')}
                                                 value={guestFormData.instance}
                                                 onChange={(e) => updateGuestForm('instance', e.target.value)}
                                                 disabled={loading}
@@ -1071,11 +1095,11 @@ export default function RegisterBootcamp({
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="guest-city">Kota Domisili</Label>
+                                            <Label htmlFor="guest-city">{t('bootcamp.register.cityLabel')}</Label>
                                             <Input
                                                 id="guest-city"
                                                 type="text"
-                                                placeholder="Kota domisili Anda"
+                                                placeholder={t('bootcamp.register.cityPlaceholder')}
                                                 value={guestFormData.city}
                                                 onChange={(e) => updateGuestForm('city', e.target.value)}
                                                 disabled={loading}
@@ -1089,19 +1113,19 @@ export default function RegisterBootcamp({
                                     <div className="space-y-4">
                                         <div className="space-y-2 text-center">
                                             <div className="flex items-center justify-between p-4">
-                                                <span className="w-full text-2xl font-bold text-green-600">BOOTCAMP GRATIS</span>
+                                                <span className="w-full text-2xl font-bold text-green-600">{t('bootcamp.register.freeBadge')}</span>
                                             </div>
-                                            <p className="text-sm text-gray-600">Untuk mendapatkan akses gratis, Anda perlu:</p>
+                                            <p className="text-sm text-gray-600">{t('bootcamp.register.freeInstruction')}</p>
                                             <ul className="space-y-1 text-left text-sm">
                                                 {bootcamp.requirement_1 && <li>• {bootcamp.requirement_1}</li>}
                                                 {bootcamp.requirement_2 && <li>• {bootcamp.requirement_2}</li>}
                                                 {bootcamp.requirement_3 && <li>• {bootcamp.requirement_3}</li>}
                                             </ul>
-                                            <p className="text-xs text-gray-500">Upload bukti follow dan tag untuk mendapatkan akses</p>
+                                            <p className="text-xs text-gray-500">{t('bootcamp.register.uploadProofNotice')}</p>
                                         </div>
 
                                         <Button className="w-full" type="submit" disabled={loading}>
-                                            {loading ? 'Memproses...' : 'Upload Bukti Follow'}
+                                            {loading ? t('bootcamp.register.processing') : t('bootcamp.register.btnUploadProof')}
                                         </Button>
                                     </div>
                                 ) : ((installmentTerms && installmentTerms.length > 0) || (activeInstallment && !activeInstallment.is_fully_paid)) ? (
@@ -1109,7 +1133,11 @@ export default function RegisterBootcamp({
                                         value={paymentTab}
                                         onValueChange={(val) => {
                                             if (val === 'full' && activeInstallment && !activeInstallment.is_fully_paid) {
-                                                toast.error('Anda sedang memiliki program cicilan berjalan. Silakan selesaikan pembayaran melalui tab Cicilan.');
+                                                toast.error(t('bootcamp.register.activeInstallmentAlert'));
+                                                return;
+                                            }
+                                            if (val === 'installment' && isAnyTermOverdue && !activeInstallment) {
+                                                toast.error(t('installmentOptions.errors.installmentExpired'));
                                                 return;
                                             }
                                             setPaymentTab(val as 'full' | 'installment');
@@ -1121,12 +1149,29 @@ export default function RegisterBootcamp({
                                                 value="full"
                                                 disabled={!!activeInstallment && !activeInstallment.is_fully_paid}
                                             >
-                                                Bayar Penuh
+                                                {t('bootcamp.register.tabFullPayment')}
                                             </TabsTrigger>
-                                            <TabsTrigger value="installment" className="flex items-center gap-1.5">
-                                                <span>Cicilan</span>
-                                                <Badge variant="secondary" className="px-1.5 py-0 text-[10px] bg-primary/10 text-primary">
-                                                    {activeInstallment && !activeInstallment.is_fully_paid ? (activeInstallment.total_terms || activeInstallment.terms?.length) : installmentTerms.length}x
+                                            <TabsTrigger
+                                                value="installment"
+                                                disabled={isAnyTermOverdue && !activeInstallment}
+                                                className="flex items-center gap-1.5"
+                                            >
+                                                <span>{t('bootcamp.register.tabInstallment')}</span>
+                                                <Badge
+                                                    variant={isAnyTermOverdue && !activeInstallment ? 'destructive' : 'secondary'}
+                                                    className={`px-1.5 py-0 text-[10px] ${
+                                                        isAnyTermOverdue && !activeInstallment
+                                                            ? 'bg-destructive/10 text-destructive border-destructive/20'
+                                                            : 'bg-primary/10 text-primary'
+                                                    }`}
+                                                >
+                                                    {isAnyTermOverdue && !activeInstallment
+                                                        ? t('installmentOptions.closedBadge')
+                                                        : t('bootcamp.register.installmentBadge', {
+                                                              count: activeInstallment && !activeInstallment.is_fully_paid
+                                                                  ? (activeInstallment.total_terms || activeInstallment.terms?.length)
+                                                                  : installmentTerms.length,
+                                                          })}
                                                 </Badge>
                                             </TabsTrigger>
                                         </TabsList>
@@ -1148,11 +1193,11 @@ export default function RegisterBootcamp({
                                                 onTermsAcceptedChange={setTermsAccepted}
                                                 onBeforePay={async () => {
                                                     if (!activeInstallment && !termsAccepted) {
-                                                        toast.error('Anda harus menyetujui syarat dan ketentuan!');
+                                                        toast.error(t('bootcamp.register.errors.termsRequired'));
                                                         return false;
                                                     }
                                                     if (!isLoggedIn && (!guestFormData.email || !guestFormData.phone_number || !guestFormData.instance || !guestFormData.city || (!emailExists && !guestFormData.name))) {
-                                                        toast.error('Lengkapi semua data diri terlebih dahulu.');
+                                                        toast.error(t('bootcamp.register.errors.completePersonalData'));
                                                         return false;
                                                     }
                                                     return await ensureAuthenticated();
@@ -1167,7 +1212,7 @@ export default function RegisterBootcamp({
                         </form>
                     ) : (
                         <form onSubmit={handleFreeCheckout}>
-                            <h2 className="my-2 text-xl font-bold italic">Upload Bukti Follow & Tag</h2>
+                            <h2 className="my-2 text-xl font-bold italic">{t('bootcamp.register.uploadProofTitle')}</h2>
                             <div className="space-y-4 rounded-lg border p-4">
                                 {[1, 2, 3].map((index) => {
                                     const requirementKey = `requirement_${index}` as keyof Bootcamp;
@@ -1176,7 +1221,7 @@ export default function RegisterBootcamp({
 
                                     return (
                                         <div key={index}>
-                                            <Label htmlFor={proofKey}>Bukti: {requirementText}</Label>
+                                            <Label htmlFor={proofKey}>{t('bootcamp.register.proofFor', { requirement: requirementText })}</Label>
                                             <Input
                                                 id={proofKey}
                                                 data-field={proofKey}
@@ -1186,7 +1231,9 @@ export default function RegisterBootcamp({
                                                 className={fileErrors[proofKey] ? 'border-red-500' : ''}
                                                 required
                                             />
-                                            <p className="mt-1 text-xs text-gray-500">Screenshot atau bukti untuk: {requirementText} (Maks. 2MB)</p>
+                                            <p className="mt-1 text-xs text-gray-500">
+                                                {t('bootcamp.register.proofScreenshotNotice', { requirement: requirementText })}
+                                            </p>
                                         </div>
                                     );
                                 })}
@@ -1210,20 +1257,20 @@ export default function RegisterBootcamp({
                                         }}
                                         className="flex-1"
                                     >
-                                        Kembali
+                                        {t('bootcamp.register.btnBack')}
                                     </Button>
                                     <Button
                                         type="submit"
                                         disabled={
                                             loading ||
-                                            !freeFormData.requirement_1_proof ||
+                                             !freeFormData.requirement_1_proof ||
                                             !freeFormData.requirement_2_proof ||
                                             !freeFormData.requirement_3_proof ||
                                             Object.values(fileErrors).some((e) => e)
                                         }
                                         className="flex-1"
                                     >
-                                        {loading ? 'Memproses...' : 'Dapatkan Akses Gratis'}
+                                        {loading ? t('bootcamp.register.processing') : t('bootcamp.register.btnGetFreeAccess')}
                                     </Button>
                                 </div>
                             </div>

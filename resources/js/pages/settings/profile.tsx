@@ -2,6 +2,7 @@ import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Transition } from '@headlessui/react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
@@ -11,13 +12,6 @@ import { Label } from '@/components/ui/label';
 import AdminLayout from '@/layouts/admin-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import UserLayout from '@/layouts/user-layout';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Profile settings',
-        href: '/settings/profile',
-    },
-];
 
 type ProfileForm = {
     name: string;
@@ -29,8 +23,16 @@ type ProfileForm = {
 };
 
 export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
+    const { t } = useTranslation('settings');
     const { auth } = usePage<SharedData>().props;
     const redirectUrl = new URLSearchParams(window.location.search).get('redirect');
+
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: t('profile.title'),
+            href: '/settings/profile',
+        },
+    ];
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm<Required<ProfileForm>>({
         name: auth.user.name,
@@ -54,16 +56,16 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
 
     return (
         <Layout breadcrumbs={breadcrumbs}>
-            <Head title="Pengaturan Profil" />
+            <Head title={t('profile.title')} />
 
             <SettingsLayout>
                 <div className="space-y-6">
-                    <HeadingSmall title="Informasi Profil" description="Perbarui nama dan alamat email Anda" />
+                    <HeadingSmall title={t('profile.title')} description={t('profile.description')} />
 
                     <form onSubmit={submit} className="space-y-6">
                         <input type="hidden" name="redirect" value={data.redirect} />
                         <div className="grid gap-2">
-                            <Label htmlFor="name">Nama</Label>
+                            <Label htmlFor="name">{t('profile.name')}</Label>
 
                             <Input
                                 id="name"
@@ -72,14 +74,14 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 onChange={(e) => setData('name', e.target.value)}
                                 required
                                 autoComplete="name"
-                                placeholder="Masukkan nama lengkap Anda"
+                                placeholder={t('profile.namePlaceholder')}
                             />
 
                             <InputError className="mt-2" message={errors.name} />
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email">{t('profile.email')}</Label>
 
                             <Input
                                 id="email"
@@ -89,7 +91,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 onChange={(e) => setData('email', e.target.value)}
                                 required
                                 autoComplete="username"
-                                placeholder="Masukkan alamat email Anda"
+                                placeholder={t('profile.emailPlaceholder')}
                             />
 
                             <InputError className="mt-2" message={errors.email} />
@@ -98,27 +100,27 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                         {mustVerifyEmail && auth.user.email_verified_at === null && (
                             <div>
                                 <p className="text-muted-foreground -mt-4 text-sm">
-                                    Email anda belum diverifikasi.{' '}
+                                    {t('profile.unverified')}{' '}
                                     <Link
                                         href={route('verification.send')}
                                         method="post"
                                         as="button"
                                         className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
                                     >
-                                        Klik di sini untuk mengirim ulang email verifikasi.
+                                        {t('profile.resendVerification')}
                                     </Link>
                                 </p>
 
                                 {status === 'verification-link-sent' && (
                                     <div className="mt-2 text-sm font-medium text-green-600">
-                                        Tautan verifikasi baru telah dikirim ke alamat email Anda.
+                                        {t('profile.verificationSent')}
                                     </div>
                                 )}
                             </div>
                         )}
 
                         <div className="grid gap-2">
-                            <Label htmlFor="phone_number">Nomor Telepon</Label>
+                            <Label htmlFor="phone_number">{t('profile.phone')}</Label>
 
                             <Input
                                 id="phone_number"
@@ -128,7 +130,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 onChange={(e) => setData('phone_number', e.target.value)}
                                 required
                                 autoComplete="phone_number"
-                                placeholder="Masukkan nomor telepon Anda"
+                                placeholder={t('profile.phonePlaceholder')}
                             />
 
                             <InputError className="mt-2" message={errors.phone_number} />
@@ -136,12 +138,12 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
 
                         {!auth.user.phone_number && (
                             <div>
-                                <p className="text-muted-foreground -mt-4 text-sm">Profil Anda belum lengkap. Silakan lengkapi nomor telepon Anda.</p>
+                                <p className="text-muted-foreground -mt-4 text-sm">{t('profile.incompletePhone')}</p>
                             </div>
                         )}
 
                         <div className="grid gap-2">
-                            <Label htmlFor="instance">Instansi</Label>
+                            <Label htmlFor="instance">{t('profile.instance')}</Label>
                             <Input
                                 id="instance"
                                 type="text"
@@ -150,14 +152,14 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 onChange={(e) => setData('instance', e.target.value)}
                                 required
                                 autoComplete="organization"
-                                placeholder="Masukkan nama instansi Anda"
+                                placeholder={t('profile.instancePlaceholder')}
                             />
 
                             <InputError className="mt-2" message={errors.instance} />
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="city">Kota Domisili</Label>
+                            <Label htmlFor="city">{t('profile.city')}</Label>
                             <Input
                                 id="city"
                                 type="text"
@@ -166,13 +168,13 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 onChange={(e) => setData('city', e.target.value)}
                                 required
                                 autoComplete="address-level2"
-                                placeholder="Masukkan kota domisili Anda"
+                                placeholder={t('profile.cityPlaceholder')}
                             />
 
                             <InputError className="mt-2" message={errors.city} />
                         </div>
                         <div className="flex items-center gap-4">
-                            <Button disabled={processing}>Simpan</Button>
+                            <Button disabled={processing}>{t('profile.save')}</Button>
 
                             <Transition
                                 show={recentlySuccessful}
@@ -181,13 +183,11 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 leave="transition ease-in-out"
                                 leaveTo="opacity-0"
                             >
-                                <p className="text-sm text-neutral-600">Tersimpan</p>
+                                <p className="text-sm text-neutral-600">{t('saved')}</p>
                             </Transition>
                         </div>
                     </form>
                 </div>
-
-                {/* <DeleteUser /> */}
             </SettingsLayout>
         </Layout>
     );

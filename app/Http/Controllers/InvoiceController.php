@@ -3015,8 +3015,15 @@ class InvoiceController extends Controller
             $invoiceForView->paid_at = $invoiceForView->updated_at;
         }
 
+        $requestedLocale = request()->query('lang') ?? request()->query('locale') ?? app()->getLocale();
+        if (in_array($requestedLocale, ['id', 'en'])) {
+            \Illuminate\Support\Facades\App::setLocale($requestedLocale);
+            \Carbon\Carbon::setLocale($requestedLocale);
+        }
+
         $data = [
             'invoice' => $invoiceForView,
+            'locale' => $requestedLocale,
             'company' => [
                 'name' => 'Aksademy',
                 'address' => 'Perumahan Permata Permadani, Blok B1. Kel. Pendem Kec. Junrejo Kota Batu Prov. Jawa Timur, 65324',

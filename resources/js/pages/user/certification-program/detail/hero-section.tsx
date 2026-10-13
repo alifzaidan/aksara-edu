@@ -1,8 +1,9 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { enUS, id } from 'date-fns/locale';
 import { GraduationCap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface CertificationProgram {
     title: string;
@@ -16,6 +17,8 @@ interface CertificationProgram {
 }
 
 export default function HeroSection({ program }: { program: CertificationProgram }) {
+    const { t, i18n } = useTranslation('user');
+    const dateLocale = i18n.language === 'en' ? enUS : id;
     const deadline = program.type === 'scholarship' ? program.socialization_registration_deadline : program.registration_deadline;
     const deadlineDate = deadline ? new Date(deadline) : null;
 
@@ -37,11 +40,11 @@ export default function HeroSection({ program }: { program: CertificationProgram
                             className={`border-0 ${program.type === 'scholarship' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}
                         >
                             <GraduationCap size={14} className="mr-1" />
-                            {program.type === 'scholarship' ? 'Beasiswa' : 'Reguler'}
+                            {program.type === 'scholarship' ? t('certificationProgram.detail.hero.badgeScholarship') : t('certificationProgram.detail.hero.badgeRegular')}
                         </Badge>
                         {program.batch && (
                             <Badge variant="outline" className="border-gray-300">
-                                Batch {program.batch}
+                                {t('certificationProgram.detail.hero.batch', { batch: program.batch })}
                             </Badge>
                         )}
                     </div>
@@ -52,16 +55,16 @@ export default function HeroSection({ program }: { program: CertificationProgram
 
                     {deadlineDate && (
                         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
-                            ⏰ Daftar sebelum: {format(deadlineDate, 'dd MMMM yyyy, HH:mm', { locale: id })} WIB
+                            {t('certificationProgram.detail.hero.registerBefore', { deadline: format(deadlineDate, 'dd MMMM yyyy, HH:mm', { locale: dateLocale }) })}
                         </div>
                     )}
 
                     <div className="flex flex-wrap gap-4">
                         <a href="#register">
-                            <Button>Daftar Sekarang</Button>
+                            <Button>{t('certificationProgram.detail.hero.btnRegisterNow')}</Button>
                         </a>
                         <a href="https://wa.me/+6285142505794" target="_blank" rel="noopener noreferrer">
-                            <Button variant="outline">Hubungi Kami</Button>
+                            <Button variant="outline">{t('certificationProgram.detail.hero.btnContactUs')}</Button>
                         </a>
                     </div>
                 </div>

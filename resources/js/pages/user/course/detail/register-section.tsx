@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Link } from '@inertiajs/react';
 import { BadgeCheck, InfinityIcon, Presentation, Smartphone, TvMinimalPlay } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Course {
     title: string;
@@ -22,18 +23,19 @@ interface Course {
 }
 
 export default function RegisterSection({ course }: { course: Course }) {
+    const { t, i18n } = useTranslation('user');
     const totalLessons = course.modules?.reduce((total, module) => total + (module.lessons?.length || 0), 0) || 0;
 
     const registrationUrl = course.registration_url;
-    const buttonText = 'Gabung Sekarang';
+    const buttonText = t('course.detail.joinNow');
     const warningMessage = null;
 
     return (
         <section className="mx-auto mt-8 w-full max-w-5xl px-4" id="register">
             <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
-                Daftar & Dapatkan Promo Diskon Special Launching!
+                {t('course.detail.registerTitle')}
             </h2>
-            <p className="text-center text-gray-600 dark:text-gray-400">Jangan sampai kelewatan ya!</p>
+            <p className="text-center text-gray-600 dark:text-gray-400">{t('course.detail.registerSubtitle')}</p>
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-md dark:border-zinc-700 dark:bg-zinc-800">
                     <img
@@ -44,49 +46,51 @@ export default function RegisterSection({ course }: { course: Course }) {
                     <ul className="space-y-2">
                         <li className="flex items-center gap-2 text-sm">
                             <BadgeCheck size="16" className="text-green-600" />
-                            <p>Akses Selamanya</p>
+                            <p>{t('course.detail.lifetimeAccess')}</p>
                         </li>
                         <li className="flex items-center gap-2 text-sm">
                             <BadgeCheck size="16" className="text-green-600" />
-                            <p>Materi Update</p>
+                            <p>{t('course.detail.updatedMaterial')}</p>
                         </li>
                         <li className="flex items-center gap-2 text-sm">
                             <BadgeCheck size="16" className="text-green-600" />
-                            <p>Waktu Belajar Fleksibel</p>
+                            <p>{t('course.detail.flexibleTime')}</p>
                         </li>
                     </ul>
                 </div>
                 <div className="flex flex-col rounded-lg border border-gray-200 bg-white p-4 shadow-md dark:border-zinc-700 dark:bg-zinc-800">
-                    <h5 className="mb-4 text-sm">Miliki kelas Premium secara permanen dan bangun sebuah projek nyata</h5>
+                    <h5 className="mb-4 text-sm">{t('course.detail.premiumPitch')}</h5>
 
                     {course.strikethrough_price > 0 && (
-                        <span className="text-right text-sm text-red-500 line-through">Rp {course.strikethrough_price.toLocaleString('id-ID')}</span>
+                        <span className="text-right text-sm text-red-500 line-through">
+                            Rp {course.strikethrough_price.toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')}
+                        </span>
                     )}
                     {course.price > 0 ? (
                         <span className="text-right text-3xl font-bold text-gray-900 italic dark:text-gray-100">
-                            Rp {course.price.toLocaleString('id-ID')}
+                            Rp {course.price.toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')}
                         </span>
                     ) : (
-                        <span className="text-left text-3xl font-bold text-gray-900 italic dark:text-gray-100">GRATIS</span>
+                        <span className="text-left text-3xl font-bold text-gray-900 italic dark:text-gray-100">{t('course.detail.freeBadge')}</span>
                     )}
 
                     <Separator className="my-4" />
                     <ul className="space-y-2">
                         <li className="flex items-center gap-2 text-sm">
                             <TvMinimalPlay size="16" className="text-primary dark:text-secondary" />
-                            <p>{totalLessons} Materi</p>
+                            <p>{t('course.detail.lessonsCount', { count: totalLessons })}</p>
                         </li>
                         <li className="flex items-center gap-2 text-sm">
                             <Presentation size="16" className="text-primary dark:text-secondary" />
-                            <p>Free Konsultasi</p>
+                            <p>{t('course.detail.freeConsultation')}</p>
                         </li>
                         <li className="flex items-center gap-2 text-sm">
                             <InfinityIcon size="16" className="text-primary dark:text-secondary" />
-                            <p>Akses Selamanya</p>
+                            <p>{t('course.detail.lifetimeAccess')}</p>
                         </li>
                         <li className="flex items-center gap-2 text-sm">
                             <Smartphone size="16" className="text-primary dark:text-secondary" />
-                            <p>Materi On Demand</p>
+                            <p>{t('course.detail.onDemandMaterial')}</p>
                         </li>
                     </ul>
                     <div className="mt-auto">

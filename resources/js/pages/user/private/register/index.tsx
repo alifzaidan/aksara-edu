@@ -11,7 +11,9 @@ import { SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { BadgeCheck, Hourglass, User } from 'lucide-react';
+import { parseISO } from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 interface PrivateClass {
@@ -86,14 +88,40 @@ export default function PrivateRegister({
     installmentTerms = [],
     activeInstallment: initialActiveInstallment = null,
 }: Props) {
+    const { t, i18n } = useTranslation('user');
+    const dateLocale = i18n.language === 'en' ? 'en-US' : 'id-ID';
+
+    const formatCurrency = (val: number) =>
+        new Intl.NumberFormat(dateLocale, {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        }).format(val);
+
     const { auth } = usePage<SharedData>().props;
     const isLoggedIn = !!auth.user;
     const isProfileComplete = isLoggedIn && auth.user?.phone_number && auth.user?.instance && auth.user?.city;
     const isFree = privateClass.price === 0;
     const benefitList = parseList(privateClass.benefits);
 
+    const isAnyTermOverdue = !initialActiveInstallment && installmentTerms.some((t) => {
+        if (!t.due_date) return false;
+        try {
+            const d = typeof t.due_date === 'string' ? parseISO(t.due_date) : new Date(t.due_date);
+            if (isNaN(d.getTime())) return false;
+            const endOfDay = new Date(d);
+            endOfDay.setHours(23, 59, 59, 999);
+            return new Date() > endOfDay;
+        } catch {
+            return false;
+        }
+    });
+
     const [activeInstallment, setActiveInstallment] = useState<ActiveInstallmentData | null>(initialActiveInstallment);
-    const [paymentTab, setPaymentTab] = useState<'full' | 'installment'>(initialActiveInstallment ? 'installment' : 'full');
+    const [paymentTab, setPaymentTab] = useState<'full' | 'installment'>(
+        initialActiveInstallment ? 'installment' : 'full'
+    );
 
     const [cancellingInvoice, setCancellingInvoice] = useState(false);
     const [termsAccepted, setTermsAccepted] = useState(false);
@@ -147,7 +175,7 @@ export default function PrivateRegister({
                     email,
                     type: 'private',
                     id: privateClass.id,
-                    private_class_id: privateClass.id,
+                    private_class_schedule_id: privateClass.id,
                 });
                 const data = response.data;
 
@@ -198,7 +226,7 @@ export default function PrivateRegister({
         if (isLoggedIn) return true;
 
         if (!guestFormData.email || !guestFormData.phone_number || !guestFormData.instance || !guestFormData.city) {
-            toast.error('Mohon lengkapi seluruh data diri.');
+            toast.error(t('privateClass.register.errors.completePersonalData'));
             return false;
         }
 
@@ -212,11 +240,11 @@ export default function PrivateRegister({
                 });
 
                 if (!loginResponse.data?.success) {
-                    throw new Error(loginResponse.data?.message || 'Gagal login otomatis. Pastikan nomor telepon sesuai dengan yang terdaftar.');
+                    throw new Error(loginResponse.data?.message || t('privateClass.register.errors.autoLoginFailed'));
                 }
             } else {
                 if (!guestFormData.name) {
-                    toast.error('Nama lengkap wajib diisi.');
+                    toast.error(t('privateClass.register.errors.nameRequired'));
                     return false;
                 }
 
@@ -232,13 +260,13 @@ export default function PrivateRegister({
                 });
 
                 if (!(regResponse.data?.success || regResponse.status === 200 || regResponse.status === 201)) {
-                    throw new Error('Registrasi gagal.');
+                    throw new Error(t('privateClass.register.errors.registerFailed'));
                 }
             }
             return true;
         } catch (error: any) {
             console.error('Login/Register error:', error);
-            toast.error(error.response?.data?.message || error.message || 'Gagal memproses pendaftaran.');
+            toast.error(error.response?.data?.message || error.message || t('privateClass.register.errors.checkoutError'));
             return false;
         }
     };
@@ -297,12 +325,12 @@ export default function PrivateRegister({
                 return;
             }
 
-            toast.error(response.data?.message || 'Gagal membuat invoice pembayaran.');
+            toast.error(response.data?.message || t('privateClass.register.errors.createInvoiceFailed'));
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || 'Terjadi kesalahan saat checkout.');
+                toast.error(error.response?.data?.message || t('privateClass.register.errors.checkoutError'));
             } else {
-                toast.error('Terjadi kesalahan saat checkout.');
+                toast.error(t('privateClass.register.errors.checkoutError'));
             }
         } finally {
             setLoading(false);
@@ -311,25 +339,25 @@ export default function PrivateRegister({
 
     const handleCheckout = async () => {
         if (activeInstallment && !activeInstallment.is_fully_paid) {
-            toast.error('Anda sedang memiliki program cicilan berjalan. Silakan selesaikan pembayaran melalui tab Cicilan.');
+            toast.error(t('privateClass.register.errors.activeInstallmentAlert'));
             setPaymentTab('installment');
             return;
         }
 
         if (!selectedSchedule) {
-            toast.error('Pilih jadwal private class terlebih dahulu.');
+            toast.error(t('privateClass.register.errors.selectScheduleRequired'));
             return;
         }
 
         if (!termsAccepted && !isFree) {
-            toast.error('Anda harus menyetujui syarat dan ketentuan.');
+            toast.error(t('privateClass.register.errors.termsRequired'));
             return;
         }
 
         // 1. Jika pengguna sudah login
         if (isLoggedIn) {
             if (!isProfileComplete) {
-                toast.error('Profil Anda belum lengkap! Harap lengkapi nomor telepon, instansi, dan kota domisili terlebih dahulu.');
+                toast.error(t('privateClass.register.errors.incompleteProfileToast'));
                 setTimeout(() => {
                     window.location.href = route('profile.edit', { redirect: window.location.href });
                 }, 1500);
@@ -343,7 +371,7 @@ export default function PrivateRegister({
 
         // 2. Jika pengguna belum login (Guest)
         if (!guestFormData.email || !guestFormData.phone_number || !guestFormData.instance || !guestFormData.city) {
-            toast.error('Mohon lengkapi seluruh data diri.');
+            toast.error(t('privateClass.register.errors.completePersonalData'));
             return;
         }
 
@@ -359,11 +387,11 @@ export default function PrivateRegister({
                 });
 
                 if (!loginResponse.data?.success) {
-                    throw new Error(loginResponse.data?.message || 'Gagal login otomatis. Pastikan nomor telepon sesuai dengan yang terdaftar.');
+                    throw new Error(loginResponse.data?.message || t('privateClass.register.errors.autoLoginFailed'));
                 }
             } else {
                 if (!guestFormData.name) {
-                    toast.error('Nama lengkap wajib diisi.');
+                    toast.error(t('privateClass.register.errors.nameRequired'));
                     setLoading(false);
                     return;
                 }
@@ -380,7 +408,7 @@ export default function PrivateRegister({
                 });
 
                 if (!(regResponse.data?.success || regResponse.status === 200 || regResponse.status === 201)) {
-                    throw new Error('Registrasi gagal.');
+                    throw new Error(t('privateClass.register.errors.registerFailed'));
                 }
             }
 
@@ -389,9 +417,9 @@ export default function PrivateRegister({
         } catch (error: unknown) {
             setLoading(false);
             if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || 'Gagal memproses pendaftaran.');
+                toast.error(error.response?.data?.message || t('privateClass.register.errors.checkoutError'));
             } else {
-                toast.error('Gagal memproses pendaftaran.');
+                toast.error(t('privateClass.register.errors.checkoutError'));
             }
         }
     };
@@ -399,7 +427,7 @@ export default function PrivateRegister({
     const formatDateTime = (value?: string | null) => {
         if (!value) return '-';
         const date = new Date(value);
-        return new Intl.DateTimeFormat('id-ID', {
+        return new Intl.DateTimeFormat(dateLocale, {
             day: '2-digit',
             month: 'short',
             year: 'numeric',
@@ -410,7 +438,7 @@ export default function PrivateRegister({
 
     const formatTimeOnly = (value?: string | null) => {
         if (!value) return '-';
-        return new Date(value).toLocaleTimeString('id-ID', {
+        return new Date(value).toLocaleTimeString(dateLocale, {
             hour: '2-digit',
             minute: '2-digit',
         });
@@ -434,24 +462,24 @@ export default function PrivateRegister({
     if (isLoggedIn && !isProfileComplete) {
         return (
             <UserLayout>
-                <Head title="Daftar Private Class" />
+                <Head title={t('privateClass.register.headTitleGeneric')} />
                 <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
                     <div className="mx-auto my-12 w-full max-w-7xl px-4">
                         <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
-                            Daftar Private Class "{privateClass.title}"
+                            {t('privateClass.register.headerTitle', { title: privateClass.title })}
                         </h2>
-                        <p className="text-center text-gray-400">Silakan lengkapi profil Anda terlebih dahulu.</p>
+                        <p className="text-center text-gray-400">{t('privateClass.register.incompleteProfileDesc')}</p>
                     </div>
                 </section>
                 <section className="mx-auto my-4 w-full max-w-7xl px-4">
                     <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
                         <User size={64} className="text-orange-500" />
-                        <h2 className="text-xl font-bold">Profil Belum Lengkap</h2>
+                        <h2 className="text-xl font-bold">{t('privateClass.register.incompleteProfileTitle')}</h2>
                         <p className="text-sm text-gray-500">
-                            Profil Anda belum lengkap! Harap lengkapi nomor telepon, instansi, dan kota domisili terlebih dahulu untuk mendaftar private class.
+                            {t('privateClass.register.incompleteProfileNotice')}
                         </p>
                         <Button asChild className="w-full max-w-md">
-                            <Link href={route('profile.edit', { redirect: window.location.href })}>Lengkapi Profil</Link>
+                            <Link href={route('profile.edit', { redirect: window.location.href })}>{t('privateClass.register.btnCompleteProfile')}</Link>
                         </Button>
                     </div>
                 </section>
@@ -461,18 +489,18 @@ export default function PrivateRegister({
 
     return (
         <UserLayout>
-            <Head title={`Daftar ${privateClass.title}`} />
+            <Head title={t('privateClass.register.headTitle', { title: privateClass.title })} />
 
             {/* Gradient Header */}
             <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
                 <div className="mx-auto my-12 w-full max-w-7xl px-4">
                     <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
-                        Daftar Private Class "{privateClass.title}"
+                        {t('privateClass.register.headerTitle', { title: privateClass.title })}
                     </h2>
                     <p className="text-center text-gray-400">
                         {isFree
-                            ? 'Lanjutkan untuk mendapatkan akses gratis ke private class ini.'
-                            : 'Pilih jadwal dan selesaikan pembayaran untuk mendaftar private class.'}
+                            ? t('privateClass.register.headerSubtitleFree')
+                            : t('privateClass.register.headerSubtitlePaid')}
                     </p>
                 </div>
             </section>
@@ -483,13 +511,13 @@ export default function PrivateRegister({
                     {/* Left: Tabs with schedule + benefits */}
                     <Tabs defaultValue="schedule" className="lg:col-span-2">
                         <TabsList>
-                            <TabsTrigger value="schedule">Pilih Jadwal</TabsTrigger>
-                            <TabsTrigger value="detail">Detail Private Class</TabsTrigger>
+                            <TabsTrigger value="schedule">{t('privateClass.register.tabSchedule')}</TabsTrigger>
+                            <TabsTrigger value="detail">{t('privateClass.register.tabDetail')}</TabsTrigger>
                         </TabsList>
                         <TabsContent value="schedule">
                             <div className="h-full rounded-lg border p-4">
-                                <h2 className="text-3xl font-bold italic">Jadwal Tersedia</h2>
-                                <p className="mt-2 mb-4 text-sm text-gray-600">Pilih jadwal private class yang sesuai dengan waktu Anda.</p>
+                                <h2 className="text-3xl font-bold italic">{t('privateClass.register.scheduleTitle')}</h2>
+                                <p className="mt-2 mb-4 text-sm text-gray-600">{t('privateClass.register.scheduleSubtitle')}</p>
                                 <div className="space-y-2">
                                     {scheduleOptions.map((schedule) => (
                                         <label
@@ -514,23 +542,23 @@ export default function PrivateRegister({
                                                         {formatDateTime(schedule.start_time)} - {formatTimeOnly(schedule.end_time)}
                                                     </p>
                                                     <p className="text-muted-foreground mt-1">
-                                                        Kuota: {schedule.occupied_participants}/{schedule.max_participants} peserta
+                                                        {t('privateClass.register.quotaCount', { occupied: schedule.occupied_participants, max: schedule.max_participants })}
                                                     </p>
                                                     {schedule.registration_deadline && (
                                                         <p className="text-muted-foreground">
-                                                            Batas daftar: {formatDateTime(schedule.registration_deadline)}
+                                                            {t('privateClass.register.deadlineLabel', { date: formatDateTime(schedule.registration_deadline) })}
                                                         </p>
                                                     )}
                                                 </div>
                                             </div>
                                             <div className="text-right text-xs font-medium">
-                                                {schedule.has_access && <span className="text-emerald-600">Sudah terdaftar</span>}
-                                                {!schedule.has_access && schedule.is_full && <span className="text-amber-600">Penuh</span>}
+                                                {schedule.has_access && <span className="text-emerald-600">{t('privateClass.register.statusEnrolled')}</span>}
+                                                {!schedule.has_access && schedule.is_full && <span className="text-amber-600">{t('privateClass.register.statusFull')}</span>}
                                                 {!schedule.has_access && !schedule.is_full && schedule.is_registration_closed && (
-                                                    <span className="text-rose-600">Ditutup</span>
+                                                    <span className="text-rose-600">{t('privateClass.register.statusClosed')}</span>
                                                 )}
                                                 {!schedule.has_access && !schedule.is_full && !schedule.is_registration_closed && (
-                                                    <span className="text-sky-600">Tersedia</span>
+                                                    <span className="text-sky-600">{t('privateClass.register.statusAvailable')}</span>
                                                 )}
                                             </div>
                                         </label>
@@ -540,8 +568,8 @@ export default function PrivateRegister({
                         </TabsContent>
                         <TabsContent value="detail">
                             <div className="h-full rounded-lg border p-4">
-                                <h2 className="text-3xl font-bold italic">Yang akan kamu dapatkan</h2>
-                                <p className="mt-2 mb-4 text-sm text-gray-600">Manfaat yang akan kamu peroleh setelah mengikuti private class ini.</p>
+                                <h2 className="text-3xl font-bold italic">{t('privateClass.register.whatYouWillGet')}</h2>
+                                <p className="mt-2 mb-4 text-sm text-gray-600">{t('privateClass.register.whatYouWillGetDesc')}</p>
                                 <ul className="space-y-2">
                                     {benefitList.length > 0 ? (
                                         benefitList.map((benefit, idx) => (
@@ -554,19 +582,19 @@ export default function PrivateRegister({
                                         <>
                                             <li className="flex items-center gap-2">
                                                 <BadgeCheck size={18} className="min-w-6 text-green-600" />
-                                                <p className="text-sm md:text-base">Bimbingan langsung 1-on-1 dari mentor ahli</p>
+                                                <p className="text-sm md:text-base">{t('privateClass.register.defaultBenefit1')}</p>
                                             </li>
                                             <li className="flex items-center gap-2">
                                                 <BadgeCheck size={18} className="min-w-6 text-green-600" />
-                                                <p className="text-sm md:text-base">Materi disesuaikan kebutuhan belajar Anda</p>
+                                                <p className="text-sm md:text-base">{t('privateClass.register.defaultBenefit2')}</p>
                                             </li>
                                             <li className="flex items-center gap-2">
                                                 <BadgeCheck size={18} className="min-w-6 text-green-600" />
-                                                <p className="text-sm md:text-base">Sesi interaktif dan tanya jawab langsung</p>
+                                                <p className="text-sm md:text-base">{t('privateClass.register.defaultBenefit3')}</p>
                                             </li>
                                             <li className="flex items-center gap-2">
                                                 <BadgeCheck size={18} className="min-w-6 text-green-600" />
-                                                <p className="text-sm md:text-base">Jadwal fleksibel sesuai ketersediaan waktu</p>
+                                                <p className="text-sm md:text-base">{t('privateClass.register.defaultBenefit4')}</p>
                                             </li>
                                         </>
                                     )}
@@ -579,10 +607,10 @@ export default function PrivateRegister({
                     {hasAccess && (!activeInstallment || activeInstallment.is_fully_paid) ? (
                         <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
                             <BadgeCheck size={64} className="text-green-500" />
-                            <h2 className="text-xl font-bold">Anda Sudah Memiliki Akses</h2>
-                            <p className="text-sm text-gray-500">Anda sudah terdaftar di private class ini.</p>
+                            <h2 className="text-xl font-bold">{t('privateClass.register.alreadyHaveAccessTitle')}</h2>
+                            <p className="text-sm text-gray-500">{t('privateClass.register.alreadyHaveAccessDesc')}</p>
                             <Button asChild className="w-full">
-                                <Link href={route('private.detail', { privateClass: privateClass.slug })}>Kembali ke Detail</Link>
+                                <Link href={route('private.detail', { privateClass: privateClass.slug })}>{t('privateClass.register.btnBackToDetail')}</Link>
                             </Button>
                         </div>
                     ) : (pendingSchedule?.pending_invoice || pendingSchedule?.pending_invoice_url) && !activeInstallment ? (
@@ -590,32 +618,34 @@ export default function PrivateRegister({
                             <div className="flex items-center gap-2 mb-2 text-yellow-600 dark:text-yellow-400">
                                 <Hourglass className="h-5 w-5" />
                                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                                    Transaksi Menunggu Pembayaran
+                                    {t('privateClass.register.pendingInvoiceTitle')}
                                 </h3>
                             </div>
                             <p className="text-sm text-gray-500">
                                 {pendingSchedule?.pending_invoice?.invoice_code ? (
-                                    <>Kode Invoice: <span className="font-semibold text-gray-800 dark:text-gray-200">{pendingSchedule.pending_invoice.invoice_code}</span></>
+                                    <>
+                                        {t('privateClass.register.pendingInvoiceCode', { code: pendingSchedule.pending_invoice.invoice_code })}
+                                    </>
                                 ) : (
-                                    'Anda memiliki transaksi yang belum selesai untuk private class ini.'
+                                    t('privateClass.register.pendingInvoiceGeneric')
                                 )}
                             </p>
                             {pendingSchedule?.pending_invoice?.amount !== undefined && (
                                 <p className="text-2xl font-bold text-orange-600 my-3">
-                                    Rp {pendingSchedule.pending_invoice.amount.toLocaleString('id-ID')}
+                                    {formatCurrency(pendingSchedule.pending_invoice.amount)}
                                 </p>
                             )}
                             <div className="space-y-2 pt-2">
                                 {(pendingSchedule?.pending_invoice?.invoice_url || pendingSchedule?.pending_invoice_url) && (
                                     <Button asChild className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold" size="lg">
                                         <a href={pendingSchedule?.pending_invoice?.invoice_url || pendingSchedule?.pending_invoice_url!}>
-                                            Lanjutkan Pembayaran
+                                            {t('privateClass.register.btnContinuePayment')}
                                         </a>
                                     </Button>
                                 )}
                                 <div className="flex gap-2">
                                     <Button onClick={() => window.location.reload()} variant="outline" className="flex-1" size="lg">
-                                        Cek Status
+                                        {t('privateClass.register.btnCheckStatus')}
                                     </Button>
                                     {pendingSchedule?.pending_invoice?.id && (
                                         <Button
@@ -625,20 +655,20 @@ export default function PrivateRegister({
                                             size="lg"
                                             disabled={cancellingInvoice}
                                             onClick={async () => {
-                                                if (confirm('Apakah Anda yakin ingin membatalkan transaksi ini dan membuat pesanan baru?')) {
+                                                if (confirm(t('privateClass.register.confirmCancel'))) {
                                                     setCancellingInvoice(true);
                                                     try {
                                                         await axios.post(route('invoice.cancel', pendingSchedule.pending_invoice!.id));
-                                                        toast.success('Pesanan berhasil dibatalkan.');
+                                                        toast.success(t('privateClass.register.cancelSuccess'));
                                                         window.location.reload();
                                                     } catch (err: any) {
-                                                        toast.error(err.response?.data?.message || 'Gagal membatalkan pesanan.');
+                                                        toast.error(err.response?.data?.message || t('privateClass.register.cancelFailed'));
                                                         setCancellingInvoice(false);
                                                     }
                                                 }
                                             }}
                                         >
-                                            {cancellingInvoice ? 'Membatalkan...' : 'Batalkan Pesanan'}
+                                            {cancellingInvoice ? t('privateClass.register.cancelling') : t('privateClass.register.btnCancelOrder')}
                                         </Button>
                                     )}
                                 </div>
@@ -651,14 +681,16 @@ export default function PrivateRegister({
                                 handleCheckout();
                             }}
                         >
-                            <h2 className="my-2 text-xl font-bold italic">Detail {isFree ? 'Pendaftaran' : 'Pembayaran'}</h2>
+                            <h2 className="my-2 text-xl font-bold italic">
+                                {isFree ? t('privateClass.register.registrationDetailTitle') : t('privateClass.register.paymentDetailTitle')}
+                            </h2>
                             <div className="space-y-4 rounded-lg border p-4">
                                 {/* Guest form */}
                                 {!isLoggedIn && (
                                     <div className="space-y-3 rounded-lg border p-4">
-                                        <h3 className="text-lg font-semibold">Data Diri</h3>
+                                        <h3 className="text-lg font-semibold">{t('privateClass.register.personalDataTitle')}</h3>
                                         <div className="space-y-2">
-                                            <Label htmlFor="guest-email">Email</Label>
+                                            <Label htmlFor="guest-email">{t('privateClass.register.emailLabel')}</Label>
                                             <Input
                                                 id="guest-email"
                                                 type="email"
@@ -667,15 +699,15 @@ export default function PrivateRegister({
                                                 onChange={(e) => updateGuestForm('email', e.target.value)}
                                                 required
                                             />
-                                            {checkingEmail && <p className="text-xs text-gray-500">Mengecek email...</p>}
-                                            {emailExists && <p className="text-xs text-green-600">Email ditemukan. Login otomatis akan digunakan.</p>}
+                                            {checkingEmail && <p className="text-xs text-gray-500">{t('privateClass.register.checkingEmail')}</p>}
+                                            {emailExists && <p className="text-xs text-green-600">{t('privateClass.register.emailFound')}</p>}
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="guest-name">Nama</Label>
+                                            <Label htmlFor="guest-name">{t('privateClass.register.nameLabel')}</Label>
                                             <Input
                                                 id="guest-name"
                                                 type="text"
-                                                placeholder="Nama lengkap"
+                                                placeholder={t('privateClass.register.namePlaceholder')}
                                                 value={guestFormData.name}
                                                 onChange={(e) => updateGuestForm('name', e.target.value)}
                                                 disabled={emailExists}
@@ -683,29 +715,29 @@ export default function PrivateRegister({
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="guest-phone">No. Telepon</Label>
+                                            <Label htmlFor="guest-phone">{t('privateClass.register.phoneLabel')}</Label>
                                             <Input
                                                 id="guest-phone"
                                                 type="tel"
-                                                placeholder="08xxxxxxxxxx"
+                                                placeholder={t('privateClass.register.phonePlaceholder')}
                                                 value={guestFormData.phone_number}
                                                 onChange={(e) => updateGuestForm('phone_number', e.target.value)}
                                                 disabled={emailExists}
                                                 required
                                             />
                                             {!emailExists && (
-                                                <p className="text-xs text-gray-500">Nomor telepon akan digunakan sebagai password akun Anda.</p>
+                                                <p className="text-xs text-gray-500">{t('privateClass.register.phoneNotice')}</p>
                                             )}
                                             {emailExists && (
-                                                <p className="text-xs text-blue-600">Data akun ditemukan dan dikunci agar sesuai akun terdaftar.</p>
+                                                <p className="text-xs text-blue-600">{t('privateClass.register.accountLockedNotice')}</p>
                                             )}
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="guest-instance">Instansi</Label>
+                                            <Label htmlFor="guest-instance">{t('privateClass.register.instanceLabel')}</Label>
                                             <Input
                                                 id="guest-instance"
                                                 type="text"
-                                                placeholder="Instansi / perusahaan"
+                                                placeholder={t('privateClass.register.instancePlaceholder')}
                                                 value={guestFormData.instance}
                                                 onChange={(e) => updateGuestForm('instance', e.target.value)}
                                                 disabled={loading}
@@ -714,11 +746,11 @@ export default function PrivateRegister({
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="guest-city">Kota Domisili</Label>
+                                            <Label htmlFor="guest-city">{t('privateClass.register.cityLabel')}</Label>
                                             <Input
                                                 id="guest-city"
                                                 type="text"
-                                                placeholder="Kota domisili Anda"
+                                                placeholder={t('privateClass.register.cityPlaceholder')}
                                                 value={guestFormData.city}
                                                 onChange={(e) => updateGuestForm('city', e.target.value)}
                                                 disabled={loading}
@@ -731,17 +763,17 @@ export default function PrivateRegister({
                                 {/* Status alerts */}
                                 {selectedSchedule?.has_access && (
                                     <div className="rounded-md border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-700">
-                                        Anda sudah memiliki akses di jadwal ini.
+                                        {t('privateClass.register.alertEnrolledInSchedule')}
                                     </div>
                                 )}
                                 {!selectedSchedule?.has_access && selectedSchedule?.is_full && (
                                     <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-700">
-                                        Slot pada jadwal yang dipilih sudah penuh.
+                                        {t('privateClass.register.alertScheduleFull')}
                                     </div>
                                 )}
                                 {!selectedSchedule?.has_access && !selectedSchedule?.is_full && selectedSchedule?.is_registration_closed && (
                                     <div className="rounded-md border border-rose-300 bg-rose-50 p-3 text-sm text-rose-700">
-                                        Pendaftaran untuk jadwal ini sudah ditutup.
+                                        {t('privateClass.register.alertScheduleClosed')}
                                     </div>
                                 )}
 
@@ -749,10 +781,10 @@ export default function PrivateRegister({
                                 {isFree ? (
                                     <>
                                         <div className="flex items-center justify-between p-4 text-center">
-                                            <span className="w-full text-2xl font-bold text-green-600">PRIVATE CLASS GRATIS</span>
+                                            <span className="w-full text-2xl font-bold text-green-600">{t('privateClass.register.freeBadge')}</span>
                                         </div>
                                         <Button className="w-full" type="submit" disabled={isDisabled}>
-                                            {loading ? 'Memproses...' : 'Daftar Gratis'}
+                                            {loading ? t('privateClass.register.processing') : t('privateClass.register.btnRegisterFree')}
                                         </Button>
                                     </>
                                 ) : !isFree && ((installmentTerms && installmentTerms.length > 0) || (activeInstallment && !activeInstallment.is_fully_paid)) ? (
@@ -760,7 +792,11 @@ export default function PrivateRegister({
                                         value={paymentTab}
                                         onValueChange={(val) => {
                                             if (val === 'full' && activeInstallment && !activeInstallment.is_fully_paid) {
-                                                toast.error('Anda memiliki program cicilan berjalan. Silakan selesaikan pembayaran cicilan Anda.');
+                                                toast.error(t('privateClass.register.activeInstallmentAlert'));
+                                                return;
+                                            }
+                                            if (val === 'installment' && isAnyTermOverdue && !activeInstallment) {
+                                                toast.error(t('installmentOptions.errors.installmentExpired'));
                                                 return;
                                             }
                                             setPaymentTab(val as 'full' | 'installment');
@@ -769,12 +805,29 @@ export default function PrivateRegister({
                                     >
                                         <TabsList className="grid w-full grid-cols-2 mb-3">
                                             <TabsTrigger value="full" disabled={!!activeInstallment && !activeInstallment.is_fully_paid}>
-                                                Bayar Penuh
+                                                {t('privateClass.register.tabFullPayment')}
                                             </TabsTrigger>
-                                            <TabsTrigger value="installment" className="flex items-center gap-1.5">
-                                                <span>Cicilan</span>
-                                                <Badge variant="secondary" className="px-1.5 py-0 text-[10px] bg-primary/10 text-primary">
-                                                    {activeInstallment && !activeInstallment.is_fully_paid ? (activeInstallment.total_terms || activeInstallment.terms?.length) : installmentTerms.length}x
+                                            <TabsTrigger
+                                                value="installment"
+                                                disabled={isAnyTermOverdue && !activeInstallment}
+                                                className="flex items-center gap-1.5"
+                                            >
+                                                <span>{t('privateClass.register.tabInstallment')}</span>
+                                                <Badge
+                                                    variant={isAnyTermOverdue && !activeInstallment ? 'destructive' : 'secondary'}
+                                                    className={`px-1.5 py-0 text-[10px] ${
+                                                        isAnyTermOverdue && !activeInstallment
+                                                            ? 'bg-destructive/10 text-destructive border-destructive/20'
+                                                            : 'bg-primary/10 text-primary'
+                                                    }`}
+                                                >
+                                                    {isAnyTermOverdue && !activeInstallment
+                                                        ? t('installmentOptions.closedBadge')
+                                                        : t('privateClass.register.installmentBadge', {
+                                                              count: activeInstallment && !activeInstallment.is_fully_paid
+                                                                  ? (activeInstallment.total_terms || activeInstallment.terms?.length)
+                                                                  : installmentTerms.length,
+                                                          })}
                                                 </Badge>
                                             </TabsTrigger>
                                         </TabsList>
@@ -786,33 +839,32 @@ export default function PrivateRegister({
                                                     (privateClass.strikethrough_price ?? 0) > privateClass.price && (
                                                         <>
                                                             <div className="flex items-center justify-between">
-                                                                <span className="text-gray-600">Harga Asli</span>
+                                                                <span className="text-gray-600">{t('privateClass.register.originalPrice')}</span>
                                                                 <span className="font-semibold text-gray-500 line-through">
-                                                                    Rp {(privateClass.strikethrough_price ?? 0).toLocaleString('id-ID')}
+                                                                    {formatCurrency(privateClass.strikethrough_price ?? 0)}
                                                                 </span>
                                                             </div>
                                                             <div className="flex items-center justify-between">
-                                                                <span className="text-gray-600">Diskon</span>
+                                                                <span className="text-gray-600">{t('privateClass.register.discount')}</span>
                                                                 <span className="font-semibold text-red-500">
-                                                                    -Rp{' '}
-                                                                    {((privateClass.strikethrough_price ?? 0) - privateClass.price).toLocaleString('id-ID')}
+                                                                    -{formatCurrency((privateClass.strikethrough_price ?? 0) - privateClass.price)}
                                                                 </span>
                                                             </div>
                                                             <Separator className="my-2" />
                                                         </>
                                                     )}
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-gray-600">Harga Private Class</span>
-                                                    <span className="font-semibold text-gray-500">Rp {privateClass.price.toLocaleString('id-ID')}</span>
+                                                    <span className="text-gray-600">{t('privateClass.register.classPrice')}</span>
+                                                    <span className="font-semibold text-gray-500">{formatCurrency(privateClass.price)}</span>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-gray-600">Biaya Transaksi</span>
-                                                    <span className="font-semibold text-gray-500">Rp {transactionFee.toLocaleString('id-ID')}</span>
+                                                    <span className="text-gray-600">{t('privateClass.register.transactionFee')}</span>
+                                                    <span className="font-semibold text-gray-500">{formatCurrency(transactionFee)}</span>
                                                 </div>
                                                 <Separator className="my-2" />
                                                 <div className="flex items-center justify-between">
-                                                    <span className="font-semibold text-gray-900">Total Pembayaran</span>
-                                                    <span className="text-primary text-xl font-bold">Rp {totalPrice.toLocaleString('id-ID')}</span>
+                                                    <span className="font-semibold text-gray-900">{t('privateClass.register.totalPayment')}</span>
+                                                    <span className="text-primary text-xl font-bold">{formatCurrency(totalPrice)}</span>
                                                 </div>
                                             </div>
 
@@ -823,20 +875,20 @@ export default function PrivateRegister({
                                                     onCheckedChange={(checked) => setTermsAccepted(checked === true)}
                                                 />
                                                 <Label htmlFor="terms">
-                                                    Saya menyetujui{' '}
+                                                    {t('privateClass.register.agreeTerms')}{' '}
                                                     <a
                                                         href="/terms-and-conditions"
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="text-blue-700 hover:underline"
                                                     >
-                                                        syarat dan ketentuan
+                                                        {t('privateClass.register.termsAndConditions')}
                                                     </a>
                                                 </Label>
                                             </div>
 
                                             <Button className="w-full" type="submit" disabled={!termsAccepted || isDisabled}>
-                                                {loading ? 'Memproses...' : 'Lanjutkan Pembayaran'}
+                                                {loading ? t('privateClass.register.processing') : t('privateClass.register.btnPayNow')}
                                             </Button>
                                         </TabsContent>
 
@@ -853,11 +905,11 @@ export default function PrivateRegister({
                                                 activeInstallment={activeInstallment}
                                                 onBeforePay={async () => {
                                                     if (!activeInstallment && !termsAccepted) {
-                                                        toast.error('Anda harus menyetujui syarat dan ketentuan!');
+                                                        toast.error(t('privateClass.register.errors.termsRequired'));
                                                         return false;
                                                     }
                                                     if (!activeInstallment && !selectedScheduleId) {
-                                                        toast.error('Silakan pilih jadwal terlebih dahulu.');
+                                                        toast.error(t('privateClass.register.errors.selectScheduleRequired'));
                                                         return false;
                                                     }
                                                     return await ensureAuth();
@@ -872,33 +924,32 @@ export default function PrivateRegister({
                                                 (privateClass.strikethrough_price ?? 0) > privateClass.price && (
                                                     <>
                                                         <div className="flex items-center justify-between">
-                                                            <span className="text-gray-600">Harga Asli</span>
+                                                            <span className="text-gray-600">{t('privateClass.register.originalPrice')}</span>
                                                             <span className="font-semibold text-gray-500 line-through">
-                                                                Rp {(privateClass.strikethrough_price ?? 0).toLocaleString('id-ID')}
+                                                                {formatCurrency(privateClass.strikethrough_price ?? 0)}
                                                             </span>
                                                         </div>
                                                         <div className="flex items-center justify-between">
-                                                            <span className="text-gray-600">Diskon</span>
+                                                            <span className="text-gray-600">{t('privateClass.register.discount')}</span>
                                                             <span className="font-semibold text-red-500">
-                                                                -Rp{' '}
-                                                                {((privateClass.strikethrough_price ?? 0) - privateClass.price).toLocaleString('id-ID')}
+                                                                -{formatCurrency((privateClass.strikethrough_price ?? 0) - privateClass.price)}
                                                             </span>
                                                         </div>
                                                         <Separator className="my-2" />
                                                     </>
                                                 )}
                                             <div className="flex items-center justify-between">
-                                                <span className="text-gray-600">Harga Private Class</span>
-                                                <span className="font-semibold text-gray-500">Rp {privateClass.price.toLocaleString('id-ID')}</span>
+                                                <span className="text-gray-600">{t('privateClass.register.classPrice')}</span>
+                                                <span className="font-semibold text-gray-500">{formatCurrency(privateClass.price)}</span>
                                             </div>
                                             <div className="flex items-center justify-between">
-                                                <span className="text-gray-600">Biaya Transaksi</span>
-                                                <span className="font-semibold text-gray-500">Rp {transactionFee.toLocaleString('id-ID')}</span>
+                                                <span className="text-gray-600">{t('privateClass.register.transactionFee')}</span>
+                                                <span className="font-semibold text-gray-500">{formatCurrency(transactionFee)}</span>
                                             </div>
                                             <Separator className="my-2" />
                                             <div className="flex items-center justify-between">
-                                                <span className="font-semibold text-gray-900">Total Pembayaran</span>
-                                                <span className="text-primary text-xl font-bold">Rp {totalPrice.toLocaleString('id-ID')}</span>
+                                                <span className="font-semibold text-gray-900">{t('privateClass.register.totalPayment')}</span>
+                                                <span className="text-primary text-xl font-bold">{formatCurrency(totalPrice)}</span>
                                             </div>
                                         </div>
 
@@ -909,20 +960,20 @@ export default function PrivateRegister({
                                                 onCheckedChange={(checked) => setTermsAccepted(checked === true)}
                                             />
                                             <Label htmlFor="terms">
-                                                Saya menyetujui{' '}
+                                                {t('privateClass.register.agreeTerms')}{' '}
                                                 <a
                                                     href="/terms-and-conditions"
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="text-blue-700 hover:underline"
                                                 >
-                                                    syarat dan ketentuan
+                                                    {t('privateClass.register.termsAndConditions')}
                                                 </a>
                                             </Label>
                                         </div>
 
                                         <Button className="w-full" type="submit" disabled={!termsAccepted || isDisabled}>
-                                            {loading ? 'Memproses...' : 'Lanjutkan Pembayaran'}
+                                            {loading ? t('privateClass.register.processing') : t('privateClass.register.btnPayNow')}
                                         </Button>
                                     </>
                                 )}

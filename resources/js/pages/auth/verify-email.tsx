@@ -6,8 +6,10 @@ import { FormEventHandler } from 'react';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import AuthLayout from '@/layouts/auth-layout';
+import { useTranslation } from 'react-i18next';
 
 export default function VerifyEmail({ status }: { status?: string }) {
+    const { t } = useTranslation('auth');
     const { post, processing } = useForm({});
 
     const submit: FormEventHandler = (e) => {
@@ -18,21 +20,21 @@ export default function VerifyEmail({ status }: { status?: string }) {
 
     return (
         <AuthLayout
-            title="Verifikasi email"
-            description="Silakan verifikasi alamat email Anda dengan mengklik tautan yang baru saja kami kirimkan ke Anda."
+            title={t('verifyEmail.title')}
+            description={t('verifyEmail.description')}
         >
-            <Head title="Verifikasi email" />
+            <Head title={t('verifyEmail.headTitle')} />
 
             {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
 
             <form onSubmit={submit} className="space-y-6 text-center">
                 <Button disabled={processing} variant="secondary">
                     {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                    Kirim ulang email verifikasi
+                    {t('verifyEmail.resend')}
                 </Button>
 
                 <TextLink href={route('logout')} method="post" className="mx-auto block text-sm">
-                    Log out
+                    {t('verifyEmail.logout')}
                 </TextLink>
             </form>
         </AuthLayout>

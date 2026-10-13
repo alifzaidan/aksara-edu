@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/react';
 import CoursesSection from './courses-section';
 import FeatureSection from './feature-section';
 import HeroSection from './hero-section';
+import { useTranslation } from 'react-i18next';
 
 type Category = {
     id: string;
@@ -28,9 +29,10 @@ interface CourseProps {
 }
 
 export default function Course({ categories, courses, myCourseIds }: CourseProps) {
+    const { t } = useTranslation('user');
     return (
         <UserLayout>
-            <Head title="Kelas Online" />
+            <Head title={t('course.title')} />
 
             <HeroSection />
             <FeatureSection />

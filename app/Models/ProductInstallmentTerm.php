@@ -27,14 +27,44 @@ class ProductInstallmentTerm extends Model
     public function syncWithPendingInvoices(): void
     {
         $adminFeePerTerm = 5000;
-        $childInvoices = Invoice::where('installment_term_id', $this->id)
-            ->where('status', '!=', 'paid')
-            ->get();
+        $product = $this->termable;
+        $parentInvoiceIds = [];
+
+        if ($product) {
+            $parentQuery = Invoice::whereNull('parent_invoice_id')->where('is_installment', true);
+            $class = get_class($product);
+            if (str_ends_with($class, 'Webinar')) {
+                $parentInvoiceIds = $parentQuery->whereHas('webinarItems', fn($q) => $q->where('webinar_id', $product->id))->pluck('id')->all();
+            } elseif (str_ends_with($class, 'Bootcamp')) {
+                $parentInvoiceIds = $parentQuery->whereHas('bootcampItems', fn($q) => $q->where('bootcamp_id', $product->id))->pluck('id')->all();
+            } elseif (str_ends_with($class, 'Course')) {
+                $parentInvoiceIds = $parentQuery->whereHas('courseItems', fn($q) => $q->where('course_id', $product->id))->pluck('id')->all();
+            } elseif (str_ends_with($class, 'CertificationProgram')) {
+                $parentInvoiceIds = $parentQuery->whereHas('certificationProgramItems', fn($q) => $q->where('certification_program_id', $product->id))->pluck('id')->all();
+            } elseif (str_ends_with($class, 'Bundle')) {
+                $parentInvoiceIds = $parentQuery->whereHas('bundleEnrollments', fn($q) => $q->where('bundle_id', $product->id))->pluck('id')->all();
+            } elseif (str_ends_with($class, 'PrivateClass') && method_exists(Invoice::class, 'privateItems')) {
+                $parentInvoiceIds = $parentQuery->whereHas('privateItems', fn($q) => $q->where('private_class_id', $product->id))->pluck('id')->all();
+            }
+        }
+
+        $childInvoices = Invoice::where(function ($query) use ($parentInvoiceIds) {
+            $query->where('installment_term_id', $this->id);
+            if (!empty($parentInvoiceIds)) {
+                $query->orWhere(function ($q) use ($parentInvoiceIds) {
+                    $q->whereIn('parent_invoice_id', $parentInvoiceIds)
+                      ->where('installment_number', $this->term_number);
+                });
+            }
+        })
+        ->where('status', '!=', 'paid')
+        ->get();
 
         $newDueDate = $this->due_date ? \Carbon\Carbon::parse($this->due_date) : null;
 
         foreach ($childInvoices as $child) {
             $child->update([
+                'installment_term_id' => $this->id,
                 'amount' => $this->amount + $adminFeePerTerm,
                 'nett_amount' => $this->amount,
                 'installment_due_date' => $newDueDate,

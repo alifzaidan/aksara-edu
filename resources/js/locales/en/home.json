@@ -1,0 +1,113 @@
+{
+  "about": {
+    "badge": "Why Learn at Aksademy?",
+    "title1": "Solutions",
+    "title2": "carefully designed for",
+    "titleHighlight": "learning",
+    "title3": "made simple",
+    "webDev": {
+      "title": "Web & App Development",
+      "desc": "Build responsive and high-performance web and mobile applications"
+    },
+    "dataScience": {
+      "title": "Data Science",
+      "desc": "Analyze data to gain valuable and actionable insights"
+    },
+    "graphicDesign": {
+      "title": "Graphic Design",
+      "desc": "Design attractive, engaging, and functional user interfaces"
+    },
+    "accounting": {
+      "title": "Accounting, Finance, & Tax",
+      "desc": "Manage finances and prepare reliable financial statements"
+    }
+  },
+  "program": {
+    "badge": "Our Programs",
+    "learnNow": "Learn Now",
+    "course": {
+      "title": "Online Courses",
+      "subtitle": "Master in-demand skills with one-time payment, hands-on practice, and certificates.",
+      "point1": "Flexible learning via video lessons, projects, and case studies",
+      "point2": "Practical & actionable. Structured from Beginner to Advanced levels",
+      "point3": "Lifetime community discussion groups. Free classes every month"
+    },
+    "bootcamp": {
+      "title": "Bootcamp",
+      "subtitle": "Intensive live classes with experts. Practical & comprehensive.",
+      "point1": "Hands-on case studies and real practice in every session. Basic to advanced",
+      "point2": "Semi-private group mentoring to build your job-ready portfolio",
+      "point3": "Curated expert mentors with over 30,000 satisfied alumni"
+    },
+    "webinar": {
+      "title": "Webinar",
+      "subtitle": "Explore current topics taught by industry experts.",
+      "point1": "Gain insightful learning from seasoned domain experts",
+      "point2": "Practical & Actionable. Step-by-step from Basic to Advanced",
+      "point3": "Lifetime discussion community. Free classes every month"
+    }
+  },
+  "tools": {
+    "badge": "Tools & Frameworks",
+    "title": "Up-to-date tools & frameworks used"
+  },
+  "latest": {
+    "badge": "Latest Products",
+    "title": "Latest Courses, Bootcamps, Webinars, Private & Bundles from Aksademy",
+    "empty": "No products are currently available.",
+    "allOwned": "You already have access to all our latest products! 😁🙏",
+    "thankYou": "Thank you for being part of Aksademy!",
+    "save": "Save {{discount}}%",
+    "free": "Free",
+    "registerBefore": "Register within {{days}} days",
+    "registrationClosed": "Registration closed",
+    "registerUntil": "Register until {{date}}",
+    "badges": {
+      "course": "Course",
+      "bootcamp": "Bootcamp",
+      "webinar": "Webinar",
+      "bundle": "Bundle",
+      "private": "Private",
+      "scholarship": "Scholarship",
+      "regular": "Regular"
+    },
+    "levels": {
+      "beginner": "Beginner Level",
+      "intermediate": "Intermediate Level",
+      "advanced": "Advanced Level"
+    }
+  },
+  "testimony": {
+    "badge": "Trusted by over 1,000+ alumni",
+    "title": "Join our supportive community 💪",
+    "subtitle": "Aksademy provides learning communities across various disciplines from beginner to advanced. Get support, share experiences, and grow together on your learning journey.",
+    "joinNow": "Join Now"
+  },
+  "faq": {
+    "badge": "Frequently Asked Questions",
+    "title": "FAQ",
+    "q1": "What is Aksademy?",
+    "a1": "Aksademy is a digital education platform developed by CV. Aksara Teknologi Mandiri, designed to empower skill development in technology, design, and business for the modern era.",
+    "q2": "What programs and features are available on Aksademy?",
+    "a2": "Aksademy offers various learning programs including Online Courses, Bootcamps, and Webinars across multiple disciplines. Each program is designed to deliver an engaging, interactive, and in-depth learning experience.",
+    "q3": "How does learning work at Aksademy?",
+    "a3": "Getting started is easy: pick a course or bootcamp that suits your goals. After enrollment, you will immediately receive access to learning materials available anytime, complete with modules, quizzes, and discussion forums.",
+    "q4": "Where can I get more information about Aksademy?",
+    "a4_part1": "For more information about Aksademy, you can contact our admin at ",
+    "a4_part2": ". We are also active on social media, so make sure to follow us on platforms like Instagram, TikTok, and LinkedIn for the latest updates and learning tips."
+  },
+  "cta": {
+    "badge": "Join 1,000+ alumni",
+    "title": "Enroll in a Class Today",
+    "subtitle": "Join thousands of learners who have accelerated their careers with our classes. Gain access to premium materials, experienced mentors, and a supportive community.",
+    "button": "Explore Classes"
+  },
+  "notification": {
+    "justPurchased": "Just purchased {{type}}: "
+  },
+  "promotion": {
+    "alt": "Aksademy Promotion",
+    "clickForDetail": "Click for details",
+    "clickToClose": "Click to close"
+  }
+}

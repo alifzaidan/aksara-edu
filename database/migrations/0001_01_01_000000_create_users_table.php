@@ -15,6 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('referral_code')->nullable()->unique();
             $table->bigInteger('point_balance')->default(0);
+            $table->string('preferred_locale', 10)->nullable();
             $table->string('google_id')->nullable()->unique();
             $table->string('github_id')->nullable()->unique();
             $table->foreignUuid('referred_by_user_id')->nullable()->constrained('users')->onDelete('set null');

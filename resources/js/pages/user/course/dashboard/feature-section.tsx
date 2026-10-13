@@ -1,27 +1,28 @@
 import { TransitionPanel } from '@/components/ui/transition-panel';
 import { useEffect, useState } from 'react';
-
-const items = [
-    {
-        title: 'Belajar Fleksibel & Bersertifikat.',
-        subtitle:
-            'Disusun bertahap dari level dasar hingga lanjutan oleh praktisi industri dari berbagai company. Dapatkan e-certificate di tiap materi.',
-        image: '/assets/images/feature-course-1.webp',
-    },
-    {
-        title: 'Kombinasi Strategi Praktek & Portofolio.',
-        subtitle: 'Belajar sambil praktek dengan ragam case study, worksheet, dan framework. Didasarkan pada kebutuhan industri dan profesi.',
-        image: '/assets/images/feature-course-2.webp',
-    },
-    {
-        title: 'Gabung Komunitas Secara Lifetime.',
-        subtitle: 'Bangun network profesional , saling sharing ilmu dalam praktik, sambil berbagai info loker maupun freelance.',
-        image: '/assets/images/feature-course-3.webp',
-    },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function FeatureSection() {
+    const { t } = useTranslation('user');
     const [activeIndex, setActiveIndex] = useState(0);
+
+    const items = [
+        {
+            title: t('course.feature.item1Title'),
+            subtitle: t('course.feature.item1Desc'),
+            image: '/assets/images/feature-course-1.webp',
+        },
+        {
+            title: t('course.feature.item2Title'),
+            subtitle: t('course.feature.item2Desc'),
+            image: '/assets/images/feature-course-2.webp',
+        },
+        {
+            title: t('course.feature.item3Title'),
+            subtitle: t('course.feature.item3Desc'),
+            image: '/assets/images/feature-course-3.webp',
+        },
+    ];
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -29,15 +30,15 @@ export default function FeatureSection() {
         }, 3000);
 
         return () => clearInterval(interval);
-    }, [activeIndex]);
+    }, [activeIndex, items.length]);
 
     return (
         <section className="mx-auto w-full max-w-7xl px-4">
             <p className="text-primary border-primary bg-background mx-auto mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                Kelas Online Aksademy
+                {t('course.feature.badge')}
             </p>
             <h2 className="dark:text-primary-foreground mx-auto mb-4 max-w-2xl text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
-                Solusi #1 Upgrade Skill Profesional
+                {t('course.feature.title')}
             </h2>
             <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-2">
                 <div className="my-12 space-y-2">

@@ -1,26 +1,28 @@
 import { TransitionPanel } from '@/components/ui/transition-panel';
 import { useEffect, useState } from 'react';
-
-const items = [
-    {
-        title: 'Bimbingan Personal 1-on-1',
-        subtitle: 'Dapatkan perhatian penuh dari mentor ahli untuk memastikan setiap pertanyaan dan tantangan belajarmu terselesaikan dengan baik.',
-        image: '/assets/images/feature-course-1.webp',
-    },
-    {
-        title: 'Materi Disesuaikan Kebutuhan',
-        subtitle: 'Tidak perlu mengikuti silabus standar. Fokus pada materi dan skill yang paling ingin kamu kuasai secara spesifik.',
-        image: '/assets/images/feature-course-2.webp',
-    },
-    {
-        title: 'Jadwal Fleksibel',
-        subtitle: 'Tentukan jadwal belajarmu sendiri. Belajar kapan saja dan di mana saja, baik secara online maupun offline.',
-        image: '/assets/images/feature-course-3.webp',
-    },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function FeatureSection() {
+    const { t } = useTranslation('user');
     const [activeIndex, setActiveIndex] = useState(0);
+
+    const items = [
+        {
+            title: t('privateClass.dashboard.features.f1Title'),
+            subtitle: t('privateClass.dashboard.features.f1Subtitle'),
+            image: '/assets/images/feature-course-1.webp',
+        },
+        {
+            title: t('privateClass.dashboard.features.f2Title'),
+            subtitle: t('privateClass.dashboard.features.f2Subtitle'),
+            image: '/assets/images/feature-course-2.webp',
+        },
+        {
+            title: t('privateClass.dashboard.features.f3Title'),
+            subtitle: t('privateClass.dashboard.features.f3Subtitle'),
+            image: '/assets/images/feature-course-3.webp',
+        },
+    ];
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -28,15 +30,15 @@ export default function FeatureSection() {
         }, 3000);
 
         return () => clearInterval(interval);
-    }, [activeIndex]);
+    }, [activeIndex, items.length]);
 
     return (
         <section className="mx-auto w-full max-w-7xl px-4">
             <p className="text-primary border-primary bg-background mx-auto mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                Private Class Aksademy
+                {t('privateClass.dashboard.features.badge')}
             </p>
             <h2 className="dark:text-primary-foreground mx-auto mb-4 max-w-2xl text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
-                Solusi Belajar Eksklusif & Terfokus
+                {t('privateClass.dashboard.features.title')}
             </h2>
             <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-2">
                 <div className="my-12 space-y-2">

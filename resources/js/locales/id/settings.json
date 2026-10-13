@@ -1,0 +1,47 @@
+{
+  "title": "Pengaturan",
+  "description": "Kelola profil dan pengaturan akun Anda",
+  "saved": "Tersimpan",
+  "nav": {
+    "profile": "Profil",
+    "password": "Password",
+    "appearance": "Tampilan"
+  },
+  "appearance": {
+    "title": "Pengaturan Tampilan",
+    "description": "Perbarui pengaturan tampilan akun Anda",
+    "light": "Terang",
+    "dark": "Gelap",
+    "system": "Sistem"
+  },
+  "password": {
+    "title": "Perbarui Password",
+    "description": "Pastikan akun Anda menggunakan password yang panjang dan acak untuk tetap aman",
+    "current": "Password saat ini",
+    "currentPlaceholder": "Password saat ini",
+    "new": "Password baru",
+    "newPlaceholder": "Password baru",
+    "confirm": "Konfirmasi password",
+    "confirmPlaceholder": "Konfirmasi password",
+    "save": "Simpan password"
+  },
+  "profile": {
+    "title": "Informasi Profil",
+    "description": "Perbarui nama dan alamat email Anda",
+    "name": "Nama",
+    "namePlaceholder": "Masukkan nama lengkap Anda",
+    "email": "Email",
+    "emailPlaceholder": "Masukkan alamat email Anda",
+    "phone": "Nomor Telepon",
+    "phonePlaceholder": "Masukkan nomor telepon Anda",
+    "instance": "Instansi",
+    "instancePlaceholder": "Masukkan nama instansi Anda",
+    "city": "Kota Domisili",
+    "cityPlaceholder": "Masukkan kota domisili Anda",
+    "save": "Simpan",
+    "unverified": "Email anda belum diverifikasi.",
+    "resendVerification": "Klik di sini untuk mengirim ulang email verifikasi.",
+    "verificationSent": "Tautan verifikasi baru telah dikirim ke alamat email Anda.",
+    "incompletePhone": "Profil Anda belum lengkap. Silakan lengkapi nomor telepon Anda."
+  }
+}

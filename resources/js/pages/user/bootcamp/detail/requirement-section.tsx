@@ -1,4 +1,5 @@
 import { BadgeCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Bootcamp {
     benefits?: string | null;
@@ -44,6 +45,7 @@ function parseList(items?: string | null): string[] {
 }
 
 export default function RequirementSection({ bootcamp }: { bootcamp: Bootcamp }) {
+    const { t } = useTranslation('user');
     const requirementList = parseList(bootcamp.requirements);
     const benefitList = parseList(bootcamp.benefits);
 
@@ -52,7 +54,7 @@ export default function RequirementSection({ bootcamp }: { bootcamp: Bootcamp })
             <div className="mt-6 grid w-full grid-cols-1 items-center justify-end gap-6 md:grid-cols-2">
                 <div>
                     <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                        Persyaratan Peserta
+                        {t('bootcamp.detail.participantRequirements')}
                     </p>
                     <ul className="space-y-2">
                         {requirementList.map((req, idx) => (
@@ -68,7 +70,7 @@ export default function RequirementSection({ bootcamp }: { bootcamp: Bootcamp })
 
                 <div>
                     <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                        Manfaat yang Didapatkan
+                        {t('bootcamp.detail.benefitsGained')}
                     </p>
                     <ul className="space-y-2">
                         {benefitList.map((benefit, idx) => (

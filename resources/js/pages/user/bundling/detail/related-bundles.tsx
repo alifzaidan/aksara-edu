@@ -1,10 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Spotlight } from '@/components/ui/spotlight';
-import { rupiahFormatter } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
 import { Calendar, Package, Percent } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Bundle {
     id: string;
@@ -23,9 +21,20 @@ interface RelatedBundlesProps {
 }
 
 export default function RelatedBundles({ relatedBundles }: RelatedBundlesProps) {
+    const { t, i18n } = useTranslation('user');
+    const dateLocale = i18n.language === 'en' ? 'en-US' : 'id-ID';
+
     if (!relatedBundles || relatedBundles.length === 0) {
         return null;
     }
+
+    const formatRupiah = (amount: number) => {
+        return new Intl.NumberFormat(dateLocale, {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+        }).format(amount);
+    };
 
     const calculateDiscount = (original: number, discounted: number) => {
         if (original === 0) return 0;
@@ -35,9 +44,9 @@ export default function RelatedBundles({ relatedBundles }: RelatedBundlesProps) 
     return (
         <section className="mx-auto mt-16 w-full max-w-7xl px-4 pb-12" id="related">
             <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
-                Paket Bundling Lainnya
+                {t('bundling.detail.related.title')}
             </h2>
-            <p className="mb-8 text-center text-gray-600 dark:text-gray-400">Paket bundling lain yang mungkin menarik untuk Anda</p>
+            <p className="mb-8 text-center text-gray-600 dark:text-gray-400">{t('bundling.detail.related.subtitle')}</p>
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {relatedBundles.map((bundle) => {
@@ -54,7 +63,7 @@ export default function RelatedBundles({ relatedBundles }: RelatedBundlesProps) 
                             <Spotlight className="bg-primary blur-2xl" size={284} />
                             <div className="bg-background relative flex h-full w-full flex-col rounded-lg transition-all group-hover:shadow-lg dark:bg-zinc-800">
                                 {/* Thumbnail */}
-                                <div className="relative w-full overflow-hidden rounded-t-lg">
+                                <div className="relative w-2/2 overflow-hidden rounded-t-lg">
                                     <img
                                         src={bundle.thumbnail ? `/storage/${bundle.thumbnail}` : '/assets/images/placeholder.png'}
                                         alt={bundle.title}
@@ -66,7 +75,7 @@ export default function RelatedBundles({ relatedBundles }: RelatedBundlesProps) 
                                         <div className="absolute top-3 right-3">
                                             <Badge className="bg-red-500 text-white shadow-lg">
                                                 <Percent size={12} className="mr-1" />
-                                                Hemat {discount}%
+                                                {t('bundling.dashboard.catalog.savePercent', { percent: discount })}
                                             </Badge>
                                         </div>
                                     )}
@@ -78,7 +87,7 @@ export default function RelatedBundles({ relatedBundles }: RelatedBundlesProps) 
                                             className="bg-white/90 text-gray-900 backdrop-blur-sm dark:bg-gray-900/90 dark:text-white"
                                         >
                                             <Package size={12} className="mr-1" />
-                                            {bundle.bundle_items_count} Program
+                                            {t('bundling.dashboard.catalog.programsCount', { count: bundle.bundle_items_count })}
                                         </Badge>
                                     </div>
                                 </div>
@@ -89,7 +98,7 @@ export default function RelatedBundles({ relatedBundles }: RelatedBundlesProps) 
 
                                     {bundle.batch && (
                                         <Badge variant="outline" className="mb-2 w-fit text-xs">
-                                            Batch{bundle.batch}
+                                            {t('bundling.dashboard.catalog.batch', { batch: bundle.batch })}
                                         </Badge>
                                     )}
 
@@ -98,10 +107,12 @@ export default function RelatedBundles({ relatedBundles }: RelatedBundlesProps) 
                                         <div className="mb-3">
                                             {bundle.strikethrough_price > 0 && (
                                                 <p className="text-sm text-gray-500 line-through dark:text-gray-400">
-                                                    {rupiahFormatter.format(bundle.strikethrough_price)}
+                                                    {formatRupiah(bundle.strikethrough_price)}
                                                 </p>
                                             )}
-                                            <p className="text-2xl font-bold text-gray-900 dark:text-white">{rupiahFormatter.format(bundle.price)}</p>
+                                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                                                {bundle.price === 0 ? t('bundling.dashboard.catalog.free') : formatRupiah(bundle.price)}
+                                            </p>
                                         </div>
 
                                         {/* Deadline */}
@@ -110,10 +121,13 @@ export default function RelatedBundles({ relatedBundles }: RelatedBundlesProps) 
                                                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                                                     <Calendar size={14} className="text-red-500" />
                                                     <span>
-                                                        Daftar sebelum:{' '}
-                                                        <span className="font-medium text-gray-900 dark:text-white">
-                                                            {format(deadlineDate, 'dd MMM yyyy', { locale: id })}
-                                                        </span>
+                                                        {t('bundling.dashboard.catalog.registerBefore', {
+                                                            date: deadlineDate.toLocaleDateString(dateLocale, {
+                                                                day: 'numeric',
+                                                                month: 'short',
+                                                                year: 'numeric',
+                                                            }),
+                                                        })}
                                                     </span>
                                                 </div>
                                             </div>

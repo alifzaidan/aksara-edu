@@ -1,5 +1,6 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Check, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Course {
     title: string;
@@ -10,8 +11,11 @@ interface Course {
 }
 
 export default function HeroSection({ course }: { course: Course }) {
+    const { t, i18n } = useTranslation('user');
     const courseCertificate = 'yes' as 'yes' | 'no';
     const courseConsultation = 'yes' as 'yes' | 'no';
+
+    const dateLocale = i18n.language === 'en' ? 'en-US' : 'id-ID';
 
     return (
         <section className="to-background from-background via-tertiary dark:via-background dark:to-background relative bg-gradient-to-b py-12 text-gray-900 dark:text-white">
@@ -23,17 +27,19 @@ export default function HeroSection({ course }: { course: Course }) {
                 <div className="col-span-2">
                     <div className="flex justify-center gap-4">
                         <span className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                            🚀 Released date{' '}
-                            {new Date(course.created_at).toLocaleDateString('id-ID', {
-                                month: 'long',
-                                year: 'numeric',
+                            {t('course.detail.releasedDate', {
+                                date: new Date(course.created_at).toLocaleDateString(dateLocale, {
+                                    month: 'long',
+                                    year: 'numeric',
+                                }),
                             })}
                         </span>
                         <span className="text-secondary border-secondary bg-background mb-4 inline-block rounded-full border bg-gradient-to-t from-[#FED6AD] to-white px-3 py-1 text-sm font-medium shadow-xs hover:text-[#FF925B]">
-                            🕛 Last updated{' '}
-                            {new Date(course.updated_at).toLocaleDateString('id-ID', {
-                                month: 'long',
-                                year: 'numeric',
+                            {t('course.detail.lastUpdated', {
+                                date: new Date(course.updated_at).toLocaleDateString(dateLocale, {
+                                    month: 'long',
+                                    year: 'numeric',
+                                }),
                             })}
                         </span>
                     </div>
@@ -44,7 +50,7 @@ export default function HeroSection({ course }: { course: Course }) {
 
                     <div className="flex flex-wrap justify-center gap-12">
                         <div className="flex flex-col items-center space-y-2">
-                            <h5>Tingkatan</h5>
+                            <h5>{t('course.detail.levelHeading')}</h5>
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <div
@@ -60,14 +66,14 @@ export default function HeroSection({ course }: { course: Course }) {
                                     </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    {course.level === 'beginner' && <p>Level Beginner</p>}
-                                    {course.level === 'intermediate' && <p>Level Intermediate</p>}
-                                    {course.level === 'advanced' && <p>Level Advanced</p>}
+                                    {course.level === 'beginner' && <p>{t('course.catalog.levelBeginner')}</p>}
+                                    {course.level === 'intermediate' && <p>{t('course.catalog.levelIntermediate')}</p>}
+                                    {course.level === 'advanced' && <p>{t('course.catalog.levelAdvanced')}</p>}
                                 </TooltipContent>
                             </Tooltip>
                         </div>
                         <div className="flex flex-col items-center space-y-2">
-                            <h5>Sertifikat</h5>
+                            <h5>{t('course.detail.certificateHeading')}</h5>
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <div
@@ -81,13 +87,13 @@ export default function HeroSection({ course }: { course: Course }) {
                                     </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    {courseCertificate === 'yes' && <p>Sertifikat Tersedia</p>}
-                                    {courseCertificate === 'no' && <p>Sertifikat Tidak Tersedia</p>}
+                                    {courseCertificate === 'yes' && <p>{t('course.detail.certAvailable')}</p>}
+                                    {courseCertificate === 'no' && <p>{t('course.detail.certNotAvailable')}</p>}
                                 </TooltipContent>
                             </Tooltip>
                         </div>
                         <div className="flex flex-col items-center space-y-2">
-                            <h5>Konsultasi</h5>
+                            <h5>{t('course.detail.consultationHeading')}</h5>
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <div
@@ -101,8 +107,8 @@ export default function HeroSection({ course }: { course: Course }) {
                                     </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    {courseConsultation === 'yes' && <p>Konsultasi Tersedia</p>}
-                                    {courseConsultation === 'no' && <p>Konsultasi Tidak Tersedia</p>}
+                                    {courseConsultation === 'yes' && <p>{t('course.detail.consultAvailable')}</p>}
+                                    {courseConsultation === 'no' && <p>{t('course.detail.consultNotAvailable')}</p>}
                                 </TooltipContent>
                             </Tooltip>
                         </div>

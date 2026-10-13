@@ -2,6 +2,7 @@ import { Cursor } from '@/components/ui/cursor';
 import { Tilt } from '@/components/ui/tilt';
 import { Link } from '@inertiajs/react';
 import { SVGProps } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const MouseIcon = (props: SVGProps<SVGSVGElement>) => {
     return (
@@ -27,16 +28,18 @@ const MouseIcon = (props: SVGProps<SVGSVGElement>) => {
 };
 
 export default function AboutSection() {
+    const { t } = useTranslation('home');
+
     return (
         <section className="relative mx-auto w-full max-w-7xl px-4 py-8">
             <div className="bg-primary absolute bottom-50 -left-25 h-[200px] w-[100px] rounded-full blur-3xl xl:bottom-20 xl:-left-42"></div>
             <div className="bg-secondary absolute top-25 -right-25 h-[200px] w-[100px] blur-3xl xl:top-0 xl:-right-42"></div>
             <div className="mx-auto text-center">
                 <p className="text-primary border-primary bg-background mx-auto mb-10 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs sm:text-base">
-                    Kenapa Harus Belajar di Aksademy?
+                    {t('about.badge')}
                 </p>
                 <h2 className="dark:text-primary-foreground mx-auto mb-8 max-w-xl text-3xl leading-snug font-bold italic md:text-4xl">
-                    Solusi{' '}
+                    {t('about.title1')}{' '}
                     <span className="bg-secondary text-background relative inline-flex items-center gap-2 rounded-full px-8 sm:px-10">
                         <img
                             src="/assets/images/icon-pen.webp"
@@ -47,8 +50,9 @@ export default function AboutSection() {
                         />
                         <span className="invisible">_</span>
                     </span>{' '}
-                    yang dirancang dengan cermat untuk{' '}
-                    <span className="bg-primary text-background dark:text-primary-foreground rounded-full px-2">pembelajaran</span> yang mudah
+                    {t('about.title2')}{' '}
+                    <span className="bg-primary text-background dark:text-primary-foreground rounded-full px-2">{t('about.titleHighlight')}</span>{' '}
+                    {t('about.title3')}
                 </h2>
 
                 <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -68,7 +72,7 @@ export default function AboutSection() {
                         >
                             <div>
                                 <MouseIcon className="h-6 w-6" />
-                                <div className="bg-secondary mt-1 ml-4 rounded-[4px] px-2 py-0.5 text-neutral-50">Web & App Development</div>
+                                <div className="bg-secondary mt-1 ml-4 rounded-[4px] px-2 py-0.5 text-neutral-50">{t('about.webDev.title')}</div>
                             </div>
                         </Cursor>
                         <Tilt rotationFactor={10} isRevese>
@@ -77,9 +81,9 @@ export default function AboutSection() {
                                 className="hover:border-secondary relative flex w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
                             >
                                 <img src="/assets/images/web-app-icon.webp" loading="lazy" alt="Web Development" className="mx-auto mb-4" />
-                                <h2 className="mb-1 text-lg font-semibold">Web & App Development</h2>
+                                <h2 className="mb-1 text-lg font-semibold">{t('about.webDev.title')}</h2>
                                 <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
-                                    Membangun aplikasi web dan mobile yang responsif dan efisien
+                                    {t('about.webDev.desc')}
                                 </p>
                             </Link>
                         </Tilt>
@@ -100,7 +104,7 @@ export default function AboutSection() {
                         >
                             <div>
                                 <MouseIcon className="h-6 w-6" />
-                                <div className="bg-secondary mt-1 ml-4 rounded-[4px] px-2 py-0.5 text-neutral-50">Data Science</div>
+                                <div className="bg-secondary mt-1 ml-4 rounded-[4px] px-2 py-0.5 text-neutral-50">{t('about.dataScience.title')}</div>
                             </div>
                         </Cursor>
                         <Tilt rotationFactor={10} isRevese>
@@ -109,9 +113,9 @@ export default function AboutSection() {
                                 className="hover:border-secondary relative flex w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
                             >
                                 <img src="/assets/images/data-science-icon.webp" loading="lazy" alt="Data Science" className="mx-auto mb-4" />
-                                <h2 className="mb-1 text-lg font-semibold">Data Science</h2>
+                                <h2 className="mb-1 text-lg font-semibold">{t('about.dataScience.title')}</h2>
                                 <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
-                                    Menganalisis data untuk mendapatkan wawasan yang berharga
+                                    {t('about.dataScience.desc')}
                                 </p>
                             </Link>
                         </Tilt>
@@ -132,7 +136,7 @@ export default function AboutSection() {
                         >
                             <div>
                                 <MouseIcon className="h-6 w-6" />
-                                <div className="bg-secondary mt-1 ml-4 rounded-[4px] px-2 py-0.5 text-neutral-50">Graphic Design</div>
+                                <div className="bg-secondary mt-1 ml-4 rounded-[4px] px-2 py-0.5 text-neutral-50">{t('about.graphicDesign.title')}</div>
                             </div>
                         </Cursor>
 
@@ -142,8 +146,8 @@ export default function AboutSection() {
                                 className="hover:border-secondary relative flex w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
                             >
                                 <img src="/assets/images/graphic-design-icon.webp" loading="lazy" alt="Graphic Design" className="mx-auto mb-4" />
-                                <h2 className="mb-1 text-lg font-semibold">Graphic Design</h2>
-                                <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">Mendesain antarmuka yang menarik dan fungsional</p>
+                                <h2 className="mb-1 text-lg font-semibold">{t('about.graphicDesign.title')}</h2>
+                                <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">{t('about.graphicDesign.desc')}</p>
                             </Link>
                         </Tilt>
                     </div>
@@ -172,8 +176,8 @@ export default function AboutSection() {
                                 className="hover:border-secondary relative flex w-full cursor-none flex-col items-center justify-center rounded-xl border-2 border-gray-300 p-4 shadow-lg backdrop-blur-md transition duration-200 ease-in dark:border-zinc-100/20 dark:bg-zinc-800/20"
                             >
                                 <img src="/assets/images/accounting-tax-icon.webp" loading="lazy" alt="Accounting" className="mx-auto mb-4" />
-                                <h2 className="mb-1 text-lg font-semibold">Accounting, Finance, & Tax</h2>
-                                <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">Membantu mengelola keuangan dan laporan keuangan</p>
+                                <h2 className="mb-1 text-lg font-semibold">{t('about.accounting.title')}</h2>
+                                <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">{t('about.accounting.desc')}</p>
                             </Link>
                         </Tilt>
                     </div>

@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Head, router } from '@inertiajs/react';
 import { CheckCircle, ChevronLeft, HelpCircle, XCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Quiz {
     id: string;
@@ -32,6 +33,9 @@ interface QuizResultProps {
 }
 
 export default function QuizResult({ quiz, attempt }: QuizResultProps) {
+    const { t, i18n } = useTranslation('user');
+    const localeCode = i18n.language === 'en' ? 'en-US' : 'id-ID';
+
     const handleRetakeQuiz = () => {
         router.get(`/quiz/${quiz.id}/start`);
     };
@@ -39,14 +43,6 @@ export default function QuizResult({ quiz, attempt }: QuizResultProps) {
     const handleViewAnswers = () => {
         router.get(`/quiz/${quiz.id}/answers`);
     };
-
-    // const handleViewHistory = () => {
-    //     router.get(`/quiz/${quiz.id}/history`);
-    // };
-
-    // const handleBackToQuiz = () => {
-    //     router.get(`/quiz/${quiz.id}`);
-    // };
 
     const handleBackToCourse = () => {
         router.get(`/learn/course/${quiz.course.slug}`);
@@ -64,7 +60,7 @@ export default function QuizResult({ quiz, attempt }: QuizResultProps) {
 
     return (
         <div className="bg-background min-h-screen">
-            <Head title={`Hasil Quiz: ${quiz.title}`} />
+            <Head title={t('quiz.result.headTitle', { title: quiz.title })} />
 
             {/* Header */}
             <div className="bg-card/50 border-b backdrop-blur">
@@ -72,9 +68,9 @@ export default function QuizResult({ quiz, attempt }: QuizResultProps) {
                     <div className="flex items-center justify-between gap-4">
                         <Button variant="secondary" size="sm" onClick={handleBackToCourse} className="gap-2">
                             <ChevronLeft className="h-4 w-4" />
-                            Kembali ke Kelas
+                            {t('quiz.backToCourse')}
                         </Button>
-                        <h1 className="text-xl font-semibold">Hasil: {quiz.title}</h1>
+                        <h1 className="text-xl font-semibold">{t('quiz.result.title', { title: quiz.title })}</h1>
                     </div>
                 </div>
             </div>
@@ -92,54 +88,44 @@ export default function QuizResult({ quiz, attempt }: QuizResultProps) {
                             )}
                         </div>
 
-                        <h2 className="mb-2 text-3xl font-bold">{attempt.is_passed ? 'Selamat! Anda Lulus' : 'Belum Lulus'}</h2>
+                        <h2 className="mb-2 text-3xl font-bold">{attempt.is_passed ? t('quiz.result.congrats') : t('quiz.result.notPassed')}</h2>
 
                         <div className={`mb-6 text-5xl font-bold ${scoreColor}`}>{Math.round(attempt.score)}%</div>
 
                         {attempt.is_passed ? (
                             <p className="text-muted-foreground mb-6">
-                                Hebat! Anda telah berhasil menyelesaikan quiz ini dengan nilai di atas passing grade.
+                                {t('quiz.result.congratsDesc')}
                             </p>
                         ) : (
                             <p className="text-muted-foreground mb-6">
-                                Jangan menyerah! Pelajari materi kembali dan coba lagi untuk mendapatkan nilai yang lebih baik.
+                                {t('quiz.result.notPassedDesc')}
                             </p>
                         )}
                     </div>
 
                     {/* Stats Grid */}
                     <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
-                        {/* <div className="bg-card rounded-lg border p-4 text-center">
-                            <div className="text-2xl font-bold text-blue-600">{Math.round(attempt.score)}%</div>
-                            <div className="text-muted-foreground text-sm">Nilai Akhir</div>
-                        </div> */}
-
                         <div className="bg-card rounded-lg border p-4 text-center">
                             <div className="text-2xl font-bold text-green-600">
                                 {attempt.correct_answers}/{attempt.total_questions}
                             </div>
-                            <div className="text-muted-foreground text-sm">Jawaban Benar</div>
+                            <div className="text-muted-foreground text-sm">{t('quiz.result.correctAnswers')}</div>
                         </div>
-
-                        {/* <div className="bg-card rounded-lg border p-4 text-center">
-                            <div className="text-2xl font-bold text-amber-600">{quiz.passing_score}%</div>
-                            <div className="text-muted-foreground text-sm">Nilai Lulus</div>
-                        </div> */}
 
                         <div className="bg-card rounded-lg border p-4 text-center">
                             <div className="text-2xl font-bold text-purple-600">{formatTime(attempt.time_taken)}</div>
-                            <div className="text-muted-foreground text-sm">Waktu Pengerjaan</div>
+                            <div className="text-muted-foreground text-sm">{t('quiz.result.timeTaken')}</div>
                         </div>
                     </div>
 
                     {/* Additional Info */}
                     <div className="bg-card mb-8 rounded-lg border p-6">
-                        <h3 className="mb-4 text-lg font-semibold">Detail Hasil</h3>
+                        <h3 className="mb-4 text-lg font-semibold">{t('quiz.result.resultDetail')}</h3>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
-                                <div className="text-muted-foreground text-sm">Tanggal Pengerjaan</div>
+                                <div className="text-muted-foreground text-sm">{t('quiz.result.submittedDate')}</div>
                                 <div className="font-medium">
-                                    {new Date(attempt.submitted_at).toLocaleDateString('id-ID', {
+                                    {new Date(attempt.submitted_at).toLocaleDateString(localeCode, {
                                         day: 'numeric',
                                         month: 'long',
                                         year: 'numeric',
@@ -149,9 +135,9 @@ export default function QuizResult({ quiz, attempt }: QuizResultProps) {
                                 </div>
                             </div>
                             <div>
-                                <div className="text-muted-foreground text-sm">Status</div>
+                                <div className="text-muted-foreground text-sm">{t('quiz.result.status')}</div>
                                 <div className={`font-medium ${attempt.is_passed ? 'text-green-600' : 'text-red-600'}`}>
-                                    {attempt.is_passed ? '✅ LULUS' : '❌ BELUM LULUS'}
+                                    {attempt.is_passed ? `✅ ${t('quiz.passedBadge')}` : `❌ ${t('quiz.failedBadge')}`}
                                 </div>
                             </div>
                         </div>
@@ -161,17 +147,12 @@ export default function QuizResult({ quiz, attempt }: QuizResultProps) {
                     <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
                         <Button onClick={handleViewAnswers} variant="outline" size="lg" className="gap-2">
                             <HelpCircle className="h-4 w-4" />
-                            Lihat Pembahasan
+                            {t('quiz.viewAnswers')}
                         </Button>
 
                         <Button onClick={handleRetakeQuiz} size="lg" className="gap-2">
-                            🔄 Ulangi Quiz
+                            {t('quiz.retakeQuiz')}
                         </Button>
-
-                        {/* <Button onClick={handleViewHistory} variant="outline" size="lg" className="gap-2">
-                            <TrendingUp className="h-4 w-4" />
-                            Riwayat Nilai
-                        </Button> */}
                     </div>
                 </div>
             </div>
