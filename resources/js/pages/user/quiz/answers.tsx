@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Head, router } from '@inertiajs/react';
 import { Check, ChevronLeft, HelpCircle, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface QuizOption {
     id: string;
@@ -52,6 +53,8 @@ interface QuizAnswersProps {
 }
 
 export default function QuizAnswers({ quiz, attempt, answers }: QuizAnswersProps) {
+    const { t } = useTranslation('user');
+
     const handleBackToCourse = () => {
         router.get(`/learn/course/${quiz.course.slug}`);
     };
@@ -62,7 +65,7 @@ export default function QuizAnswers({ quiz, attempt, answers }: QuizAnswersProps
 
     return (
         <div className="bg-background min-h-screen">
-            <Head title={`Pembahasan Quiz: ${quiz.title}`} />
+            <Head title={t('quiz.answers.headTitle', { title: quiz.title })} />
 
             {/* Header */}
             <div className="bg-card/50 border-b backdrop-blur">
@@ -70,12 +73,16 @@ export default function QuizAnswers({ quiz, attempt, answers }: QuizAnswersProps
                     <div className="flex items-center justify-between gap-4">
                         <Button variant="secondary" size="sm" onClick={handleBackToCourse} className="gap-2">
                             <ChevronLeft className="h-4 w-4" />
-                            Kembali ke Kelas
+                            {t('quiz.backToCourse')}
                         </Button>
                         <div className="text-right">
-                            <h1 className="text-xl font-semibold">Pembahasan: {quiz.title}</h1>
+                            <h1 className="text-xl font-semibold">{t('quiz.answers.title', { title: quiz.title })}</h1>
                             <p className="text-muted-foreground text-sm">
-                                Skor: {Math.round(attempt.score)} • {attempt.correct_answers}/{attempt.total_questions} benar
+                                {t('quiz.answers.scoreSummary', {
+                                    score: Math.round(attempt.score),
+                                    correct: attempt.correct_answers,
+                                    total: attempt.total_questions,
+                                })}
                             </p>
                         </div>
                     </div>
@@ -88,29 +95,29 @@ export default function QuizAnswers({ quiz, attempt, answers }: QuizAnswersProps
                     {/* Summary */}
                     <div className="bg-card mb-8 rounded-lg border p-6">
                         <div className="mb-4 flex items-center justify-between">
-                            <h2 className="text-lg font-semibold">Ringkasan Hasil</h2>
+                            <h2 className="text-lg font-semibold">{t('quiz.answers.summaryTitle')}</h2>
                             <div
                                 className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${
                                     attempt.is_passed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                                 }`}
                             >
                                 {attempt.is_passed ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
-                                {attempt.is_passed ? 'LULUS' : 'BELUM LULUS'}
+                                {attempt.is_passed ? t('quiz.passedBadge') : t('quiz.failedBadge')}
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                             <div className="text-center">
                                 <div className="text-2xl font-bold text-blue-600">{Math.round(attempt.score)}</div>
-                                <div className="text-muted-foreground text-sm">Nilai Akhir</div>
+                                <div className="text-muted-foreground text-sm">{t('quiz.answers.finalScore')}</div>
                             </div>
                             <div className="text-center">
                                 <div className="text-2xl font-bold text-green-600">{attempt.correct_answers}</div>
-                                <div className="text-muted-foreground text-sm">Jawaban Benar</div>
+                                <div className="text-muted-foreground text-sm">{t('quiz.answers.correctAnswers')}</div>
                             </div>
                             <div className="text-center">
                                 <div className="text-2xl font-bold text-red-600">{attempt.total_questions - attempt.correct_answers}</div>
-                                <div className="text-muted-foreground text-sm">Jawaban Salah</div>
+                                <div className="text-muted-foreground text-sm">{t('quiz.answers.wrongAnswers')}</div>
                             </div>
                         </div>
                     </div>
@@ -120,14 +127,14 @@ export default function QuizAnswers({ quiz, attempt, answers }: QuizAnswersProps
                         {answers.map((answer, index) => (
                             <div key={answer.question_id} className="bg-card rounded-lg border p-6">
                                 <div className="mb-4 flex items-center justify-between">
-                                    <h3 className="font-semibold">Soal {index + 1}</h3>
+                                    <h3 className="font-semibold">{t('quiz.answers.questionNum', { number: index + 1 })}</h3>
                                     <div
                                         className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${
                                             answer.is_correct ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                                         }`}
                                     >
                                         {answer.is_correct ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
-                                        {answer.is_correct ? 'Benar' : 'Salah'}
+                                        {answer.is_correct ? t('quiz.answers.correct') : t('quiz.answers.wrong')}
                                     </div>
                                 </div>
 
@@ -224,7 +231,7 @@ export default function QuizAnswers({ quiz, attempt, answers }: QuizAnswersProps
                                         <div className="flex items-start gap-3">
                                             <HelpCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
                                             <div className="flex-1">
-                                                <h4 className="mb-2 font-medium text-blue-900">Pembahasan</h4>
+                                                <h4 className="mb-2 font-medium text-blue-900">{t('quiz.answers.explanation')}</h4>
                                                 <div
                                                     className="prose prose-sm max-w-none text-blue-800"
                                                     dangerouslySetInnerHTML={{ __html: answer.explanation }}
@@ -240,10 +247,10 @@ export default function QuizAnswers({ quiz, attempt, answers }: QuizAnswersProps
                     {/* Action Buttons */}
                     <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
                         <Button onClick={handleRetakeQuiz} size="lg" className="gap-2">
-                            🔄 Ulangi Quiz
+                            {t('quiz.retakeQuiz')}
                         </Button>
                         <Button onClick={handleBackToCourse} variant="outline" size="lg">
-                            Kembali ke Kelas
+                            {t('quiz.backToCourse')}
                         </Button>
                     </div>
                 </div>

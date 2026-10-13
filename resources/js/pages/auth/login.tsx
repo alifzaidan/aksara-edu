@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
+import { useTranslation } from 'react-i18next';
 
 type LoginForm = {
     email: string;
@@ -22,6 +23,7 @@ interface LoginProps {
 }
 
 export default function Login({ status, canResetPassword }: LoginProps) {
+    const { t } = useTranslation('auth');
     const [showPassword, setShowPassword] = useState(false);
     const [referralCode, setReferralCode] = useState<string | null>(null);
 
@@ -78,8 +80,8 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     };
 
     return (
-        <AuthLayout title="Masuk ke Aksademy" description="Silahkan masukkan informasi akun kamu.">
-            <Head title="Masuk" />
+        <AuthLayout title={t('login.title')} description={t('login.description')}>
+            <Head title={t('login.headTitle')} />
 
             <form className="flex flex-col gap-6" onSubmit={submit}>
                 {/* Tampilkan referral info jika ada */}
@@ -88,10 +90,10 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                         <div className="flex items-center gap-2">
                             <div className="h-2 w-2 rounded-full bg-blue-500"></div>
                             <p className="text-sm text-blue-700 dark:text-blue-300">
-                                🎉 Link referral aktif: <span className="font-mono font-medium">{referralCode}</span>
+                                {t('login.referralActive')}<span className="font-mono font-medium">{referralCode}</span>
                             </p>
                         </div>
-                        <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">Referral akan otomatis terpakai setelah login</p>
+                        <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">{t('login.referralHint')}</p>
                     </div>
                 )}
 
@@ -100,7 +102,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
                 <div className="grid gap-6">
                     <div className="grid gap-2">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="email">{t('login.email')}</Label>
                         <Input
                             id="email"
                             type="email"
@@ -117,10 +119,10 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
                     <div className="grid gap-2">
                         <div className="flex items-center">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password">{t('login.password')}</Label>
                             {canResetPassword && (
                                 <TextLink href={route('password.request')} className="ml-auto text-sm" tabIndex={5}>
-                                    Lupa password?
+                                    {t('login.forgotPassword')}
                                 </TextLink>
                             )}
                         </div>
@@ -133,7 +135,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                 autoComplete="current-password"
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
-                                placeholder="Password"
+                                placeholder={t('login.password')}
                                 className="pr-10"
                             />
                             <button
@@ -143,7 +145,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                 tabIndex={3}
                             >
                                 {showPassword ? <Eye className="size-4 text-gray-500" /> : <EyeOff className="size-4 text-gray-500" />}
-                                <span className="sr-only">{showPassword ? 'Sembunyikan' : 'Tampilkan'} password</span>
+                                <span className="sr-only">{showPassword ? t('login.hidePassword') : t('login.showPassword')}</span>
                             </button>
                         </div>
                         <InputError message={errors.password} />
@@ -151,7 +153,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
                     <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
                         {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                        Masuk
+                        {t('login.submit')}
                     </Button>
                 </div>
 
@@ -160,7 +162,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                         <span className="w-full border-t" />
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background text-muted-foreground px-2">Atau lanjutkan dengan</span>
+                        <span className="bg-background text-muted-foreground px-2">{t('login.orContinueWith')}</span>
                     </div>
                 </div>
 
@@ -200,9 +202,9 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                 </div>
 
                 <div className="text-muted-foreground text-center text-sm">
-                    Belum punya akun?{' '}
+                    {t('login.noAccount')}{' '}
                     <TextLink href={getRegisterUrl()} tabIndex={5}>
-                        Daftar
+                        {t('login.register')}
                     </TextLink>
                 </div>
             </form>

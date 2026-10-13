@@ -1,6 +1,7 @@
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import AboutSection from './about-section';
 import HeroSection from './hero-section';
 import MentorSection from './mentor-section';
@@ -78,6 +79,8 @@ export default function Bootcamp({
     myBootcampIds: string[];
     referralInfo: ReferralInfo;
 }) {
+    const { t } = useTranslation('user');
+
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const refFromUrl = urlParams.get('ref');
@@ -93,7 +96,7 @@ export default function Bootcamp({
 
     return (
         <UserLayout>
-            <Head title={`${bootcamp.title} - Bootcamp`} />
+            <Head title={`${bootcamp.title} - ${t('bootcamp.title')}`} />
 
             <HeroSection bootcamp={bootcamp} />
             <AboutSection />

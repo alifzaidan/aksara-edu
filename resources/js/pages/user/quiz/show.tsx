@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Head, router } from '@inertiajs/react';
 import { AlertTriangle, CheckCircle, ChevronLeft, HelpCircle, TrendingUp, XCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface QuizOption {
     id: string;
@@ -44,6 +45,8 @@ interface QuizShowProps {
 }
 
 export default function QuizShow({ quiz }: QuizShowProps) {
+    const { t, i18n } = useTranslation('user');
+    const localeCode = i18n.language === 'en' ? 'en-US' : 'id-ID';
     const attempts = quiz.attempts || [];
     const hasPassedAttempt = attempts.find((attempt) => attempt.is_passed);
 
@@ -73,7 +76,7 @@ export default function QuizShow({ quiz }: QuizShowProps) {
                     <div className="flex items-center gap-4">
                         <Button variant="ghost" size="sm" onClick={handleBackToLesson} className="gap-2">
                             <ChevronLeft className="h-4 w-4" />
-                            Kembali ke Materi
+                            {t('quiz.backToLesson')}
                         </Button>
                         <div className="flex-1">
                             <h1 className="text-xl font-semibold">{quiz.title}</h1>
@@ -96,23 +99,23 @@ export default function QuizShow({ quiz }: QuizShowProps) {
                         <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
                             <div className="bg-card rounded-lg border p-4">
                                 <div className="text-2xl font-bold text-blue-600">{quiz.questions.length}</div>
-                                <div className="text-muted-foreground text-sm">Total Soal</div>
+                                <div className="text-muted-foreground text-sm">{t('quiz.totalQuestions')}</div>
                             </div>
                             <div className="bg-card flex min-h-[72px] flex-col items-center justify-center rounded-lg border p-4">
                                 {quiz.time_limit === 0 ? (
                                     <div className="flex h-full min-h-[48px] items-center justify-center text-sm font-semibold text-red-600">
-                                        Tanpa batas waktu
+                                        {t('quiz.noTimeLimit')}
                                     </div>
                                 ) : (
                                     <>
                                         <div className="text-2xl font-bold text-green-600">{quiz.time_limit}</div>
-                                        <div className="text-muted-foreground text-sm">Menit</div>
+                                        <div className="text-muted-foreground text-sm">{t('quiz.minutes')}</div>
                                     </>
                                 )}
                             </div>
                             <div className="bg-card rounded-lg border p-4">
                                 <div className="text-2xl font-bold text-amber-600">{quiz.passing_score}</div>
-                                <div className="text-muted-foreground text-sm">Nilai Lulus</div>
+                                <div className="text-muted-foreground text-sm">{t('quiz.passingScore')}</div>
                             </div>
                         </div>
                     </div>
@@ -120,7 +123,7 @@ export default function QuizShow({ quiz }: QuizShowProps) {
                     {/* History Nilai */}
                     {attempts.length > 0 && (
                         <div className="mb-8">
-                            <h3 className="mb-4 text-lg font-semibold">Riwayat Nilai</h3>
+                            <h3 className="mb-4 text-lg font-semibold">{t('quiz.scoreHistory')}</h3>
                             <div className="space-y-3">
                                 {attempts.slice(0, 5).map((attempt, index) => (
                                     <div
@@ -136,15 +139,15 @@ export default function QuizShow({ quiz }: QuizShowProps) {
                                                 )}
                                                 <div>
                                                     <div className="font-medium">
-                                                        Percobaan {attempts.length - index}
+                                                        {t('quiz.attemptNumber', { number: attempts.length - index })}
                                                         {attempt.is_passed && (
                                                             <span className="ml-2 rounded-full bg-green-100 px-2 py-1 text-xs text-green-700">
-                                                                LULUS
+                                                                {t('quiz.passedBadge')}
                                                             </span>
                                                         )}
                                                     </div>
                                                     <div className="text-muted-foreground text-sm">
-                                                        {new Date(attempt.submitted_at).toLocaleDateString('id-ID', {
+                                                        {new Date(attempt.submitted_at).toLocaleDateString(localeCode, {
                                                             day: 'numeric',
                                                             month: 'long',
                                                             year: 'numeric',
@@ -159,50 +162,46 @@ export default function QuizShow({ quiz }: QuizShowProps) {
                                                     {Math.round(attempt.score)}%
                                                 </div>
                                                 <div className="text-muted-foreground text-sm">
-                                                    {attempt.correct_answers}/{attempt.total_questions} benar
+                                                    {t('quiz.correctCount', { correct: attempt.correct_answers, total: attempt.total_questions })}
                                                 </div>
                                                 <div className="text-muted-foreground text-sm">
-                                                    Waktu: {Math.floor(attempt.time_taken / 60)}:
-                                                    {(attempt.time_taken % 60).toString().padStart(2, '0')}
+                                                    {t('quiz.time', {
+                                                        time: `${Math.floor(attempt.time_taken / 60)}:${(attempt.time_taken % 60).toString().padStart(2, '0')}`,
+                                                    })}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 ))}
-                                {/* {attempts.length > 5 && (
-                                    <Button variant="outline" onClick={handleViewHistory} className="w-full">
-                                        Lihat Semua Riwayat ({attempts.length} percobaan)
-                                    </Button>
-                                )} */}
                             </div>
                         </div>
                     )}
 
                     {/* Quiz Info */}
                     <div className="bg-card mb-6 rounded-lg border p-6">
-                        <h3 className="mb-4 text-lg font-semibold">Petunjuk Mengerjakan</h3>
+                        <h3 className="mb-4 text-lg font-semibold">{t('quiz.instructionsTitle')}</h3>
                         <ul className="space-y-2 text-sm">
                             <li className="flex items-start gap-2">
                                 <span className="text-blue-600">•</span>
-                                <span>Baca setiap pertanyaan dengan teliti sebelum menjawab</span>
+                                <span>{t('quiz.instruction1')}</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="text-blue-600">•</span>
-                                <span>Pilih jawaban yang paling tepat untuk setiap pertanyaan</span>
+                                <span>{t('quiz.instruction2')}</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="text-blue-600">•</span>
-                                <span>Anda dapat mengubah jawaban sebelum mengirim quiz</span>
+                                <span>{t('quiz.instruction3')}</span>
                             </li>
                             {quiz.time_limit > 0 && (
                                 <li className="flex items-start gap-2">
                                     <span className="text-red-600">•</span>
-                                    <span>Quiz ini memiliki batas waktu {quiz.time_limit} menit</span>
+                                    <span>{t('quiz.instructionTimeLimit', { time: quiz.time_limit })}</span>
                                 </li>
                             )}
                             <li className="flex items-start gap-2">
                                 <span className="text-amber-600">•</span>
-                                <span>Nilai minimal untuk lulus adalah {quiz.passing_score}%</span>
+                                <span>{t('quiz.instructionPassingScore', { score: quiz.passing_score })}</span>
                             </li>
                         </ul>
                     </div>
@@ -213,10 +212,10 @@ export default function QuizShow({ quiz }: QuizShowProps) {
                             <div className="mb-6">
                                 <div className="mb-4 inline-flex items-center gap-2 rounded-lg bg-green-100 px-4 py-2 text-green-600">
                                     <CheckCircle className="h-5 w-5" />
-                                    <span className="font-medium">Anda sudah lulus quiz ini!</span>
+                                    <span className="font-medium">{t('quiz.passedMessage')}</span>
                                 </div>
                                 <p className="text-muted-foreground mb-4">
-                                    Selamat! Anda bisa mengulang quiz ini kapan saja untuk meningkatkan pemahaman.
+                                    {t('quiz.passedSubMessage')}
                                 </p>
                             </div>
                         ) : (
@@ -225,15 +224,15 @@ export default function QuizShow({ quiz }: QuizShowProps) {
                                     <div>
                                         <div className="mb-4 inline-flex items-center gap-2 rounded-lg bg-amber-100 px-4 py-2 text-amber-600">
                                             <AlertTriangle className="h-5 w-5" />
-                                            <span className="font-medium">Belum lulus, jangan menyerah!</span>
+                                            <span className="font-medium">{t('quiz.failedMessage')}</span>
                                         </div>
                                         <p className="text-muted-foreground mb-4">
-                                            Pelajari kembali materi dan coba lagi. Anda bisa mengulang quiz ini tanpa batas.
+                                            {t('quiz.failedSubMessage')}
                                         </p>
                                     </div>
                                 ) : (
                                     <p className="text-muted-foreground mb-4">
-                                        Siap untuk mengerjakan quiz? Anda bisa mengulang quiz ini tanpa batas waktu.
+                                        {t('quiz.readyMessage')}
                                     </p>
                                 )}
                             </div>
@@ -242,18 +241,18 @@ export default function QuizShow({ quiz }: QuizShowProps) {
                         {/* Action Buttons */}
                         <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
                             <Button onClick={handleStartQuiz} size="lg" className="px-8">
-                                {attempts.length > 0 ? '🔄 Ulangi Quiz' : '🚀 Mulai Quiz'}
+                                {attempts.length > 0 ? t('quiz.retakeQuiz') : t('quiz.startQuiz')}
                             </Button>
 
                             {attempts.length > 0 && (
                                 <>
                                     <Button onClick={handleViewAnswers} variant="outline" size="lg" className="gap-2 px-8">
                                         <HelpCircle className="h-4 w-4" />
-                                        Lihat Pembahasan
+                                        {t('quiz.viewAnswers')}
                                     </Button>
                                     <Button onClick={handleViewHistory} variant="outline" size="lg" className="gap-2 px-8">
                                         <TrendingUp className="h-4 w-4" />
-                                        Riwayat Quiz
+                                        {t('quiz.quizHistory')}
                                     </Button>
                                 </>
                             )}

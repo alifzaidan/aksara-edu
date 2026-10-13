@@ -1,4 +1,5 @@
 import { BadgeCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Webinar {
     benefits?: string | null;
@@ -42,6 +43,7 @@ function parseList(items?: string | null): string[] {
 }
 
 export default function BenefitsSection({ webinar }: { webinar: Webinar }) {
+    const { t } = useTranslation('user');
     const benefitList = parseList(webinar.benefits);
 
     return (
@@ -49,7 +51,7 @@ export default function BenefitsSection({ webinar }: { webinar: Webinar }) {
             <div className="mt-6 w-full">
                 <div>
                     <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                        Manfaat yang Didapatkan
+                        {t('webinar.detail.benefitsGained')}
                     </p>
                     <ul className="space-y-2">
                         {benefitList.map((benefit, idx) => (

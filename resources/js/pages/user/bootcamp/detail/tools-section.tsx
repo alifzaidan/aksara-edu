@@ -1,12 +1,16 @@
+import { useTranslation } from 'react-i18next';
+
 interface Bootcamp {
     tools?: { name: string; description?: string | null; icon: string | null }[];
 }
 
 export default function ToolsSection({ bootcamp }: { bootcamp: Bootcamp }) {
+    const { t } = useTranslation('user');
+
     return (
         <section className="mx-auto mt-2 w-full max-w-5xl px-4 sm:mt-8" id="tools">
             <h2 className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                Tools yang Digunakan
+                {t('bootcamp.detail.toolsUsed')}
             </h2>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
                 {bootcamp.tools?.map((tool) => (

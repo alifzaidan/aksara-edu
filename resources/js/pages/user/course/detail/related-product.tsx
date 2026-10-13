@@ -2,6 +2,7 @@ import { Spotlight } from '@/components/ui/spotlight';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Link } from '@inertiajs/react';
 import { Star } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Course {
     id: string;
@@ -22,14 +23,15 @@ interface RelatedProductProps {
 }
 
 export default function RelatedProduct({ relatedCourses, myCourseIds }: RelatedProductProps) {
+    const { t, i18n } = useTranslation('user');
     if (!relatedCourses || relatedCourses.length === 0) {
         return null;
     }
 
     return (
         <section className="mx-auto mt-16 w-full max-w-7xl px-4" id="related">
-            <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">Kelas Serupa</h2>
-            <p className="mb-8 text-center text-gray-600 dark:text-gray-400">Kelas lain yang mungkin menarik untuk Anda</p>
+            <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">{t('course.detail.similarCourses')}</h2>
+            <p className="mb-8 text-center text-gray-600 dark:text-gray-400">{t('course.detail.similarSubtitle')}</p>
 
             <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {relatedCourses.map((course) => {
@@ -59,19 +61,19 @@ export default function RelatedProduct({ relatedCourses, myCourseIds }: RelatedP
                                     {hasAccess ? (
                                         <div className="flex items-center gap-2">
                                             <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                                            <p className="text-primary text-sm font-medium">Anda sudah memiliki akses</p>
+                                            <p className="text-primary text-sm font-medium">{t('course.catalog.owned')}</p>
                                         </div>
                                     ) : course.price === 0 ? (
-                                        <p className="text-lg font-semibold text-green-600 dark:text-green-400">Gratis</p>
+                                        <p className="text-lg font-semibold text-green-600 dark:text-green-400">{t('course.catalog.free')}</p>
                                     ) : (
                                         <div className="">
                                             {course.strikethrough_price > 0 && (
                                                 <p className="text-sm text-red-500 line-through">
-                                                    Rp {course.strikethrough_price.toLocaleString('id-ID')}
+                                                    Rp {course.strikethrough_price.toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')}
                                                 </p>
                                             )}
                                             <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                                                Rp {course.price.toLocaleString('id-ID')}
+                                                Rp {course.price.toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')}
                                             </p>
                                         </div>
                                     )}
@@ -98,9 +100,9 @@ export default function RelatedProduct({ relatedCourses, myCourseIds }: RelatedP
                                                 </div>
                                             </TooltipTrigger>
                                             <TooltipContent>
-                                                {course.level === 'beginner' && <p>Level Beginner</p>}
-                                                {course.level === 'intermediate' && <p>Level Intermediate</p>}
-                                                {course.level === 'advanced' && <p>Level Advanced</p>}
+                                                {course.level === 'beginner' && <p>{t('course.catalog.levelBeginner')}</p>}
+                                                {course.level === 'intermediate' && <p>{t('course.catalog.levelIntermediate')}</p>}
+                                                {course.level === 'advanced' && <p>{t('course.catalog.levelAdvanced')}</p>}
                                             </TooltipContent>
                                         </Tooltip>
                                     </div>

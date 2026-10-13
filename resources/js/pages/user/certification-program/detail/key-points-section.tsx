@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
+import { useTranslation } from 'react-i18next';
 
 interface Mentor {
     id: string;
@@ -18,6 +19,7 @@ interface CertificationProgram {
 }
 
 export default function KeyPointsSection({ program }: { program: CertificationProgram }) {
+    const { t } = useTranslation('user');
     const getInitials = useInitials();
 
     return (
@@ -25,7 +27,7 @@ export default function KeyPointsSection({ program }: { program: CertificationPr
             {program.description && (
                 <div className="mb-8">
                     <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                        Tentang Program
+                        {t('certificationProgram.detail.about.badgeAbout')}
                     </p>
                     <div className="prose prose-lg dark:prose-invert max-w-none">
                         <div className="text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: program.description }} />
@@ -36,7 +38,7 @@ export default function KeyPointsSection({ program }: { program: CertificationPr
             {program.benefits && (
                 <div className="mb-8">
                     <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                        Manfaat Program
+                        {t('certificationProgram.detail.about.badgeBenefits')}
                     </p>
                     <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: program.benefits }} />
                 </div>
@@ -45,7 +47,7 @@ export default function KeyPointsSection({ program }: { program: CertificationPr
             {program.terms_conditions && (
                 <div className="mb-8">
                     <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                        Syarat & Ketentuan
+                        {t('certificationProgram.detail.about.badgeTerms')}
                     </p>
                     <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: program.terms_conditions }} />
                 </div>
@@ -54,7 +56,7 @@ export default function KeyPointsSection({ program }: { program: CertificationPr
             {program.type === 'scholarship' && program.scholarship_flow && (
                 <div className="mb-8">
                     <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                        Alur Beasiswa
+                        {t('certificationProgram.detail.about.badgeScholarshipFlow')}
                     </p>
                     <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: program.scholarship_flow }} />
                 </div>
@@ -64,7 +66,7 @@ export default function KeyPointsSection({ program }: { program: CertificationPr
             {program.mentors && program.mentors.length > 0 && (
                 <div className="mt-8">
                     <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                        Mentor Program
+                        {t('certificationProgram.detail.about.badgeMentors')}
                     </p>
                     <div className="grid gap-4 md:grid-cols-2">
                         {program.mentors.map((mentor) => (

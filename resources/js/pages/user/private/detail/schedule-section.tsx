@@ -1,4 +1,5 @@
 import { CalendarDays, Clock, MapPin, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Schedule {
     id: string;
@@ -15,6 +16,9 @@ interface PrivateClass {
 }
 
 export default function ScheduleSection({ privateClass }: { privateClass: PrivateClass }) {
+    const { t, i18n } = useTranslation('user');
+    const dateLocale = i18n.language === 'en' ? 'en-US' : 'id-ID';
+
     const schedules = privateClass.schedules
         ?.slice()
         .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()) || [];
@@ -22,7 +26,7 @@ export default function ScheduleSection({ privateClass }: { privateClass: Privat
     if (schedules.length === 0) return null;
 
     const formatDate = (value: string) =>
-        new Date(value).toLocaleDateString('id-ID', {
+        new Date(value).toLocaleDateString(dateLocale, {
             weekday: 'short',
             day: 'numeric',
             month: 'short',
@@ -30,7 +34,7 @@ export default function ScheduleSection({ privateClass }: { privateClass: Privat
         });
 
     const formatTime = (value: string) =>
-        new Date(value).toLocaleTimeString('id-ID', {
+        new Date(value).toLocaleTimeString(dateLocale, {
             hour: '2-digit',
             minute: '2-digit',
         });
@@ -43,10 +47,10 @@ export default function ScheduleSection({ privateClass }: { privateClass: Privat
     return (
         <section className="mx-auto mt-8 w-full max-w-5xl px-4">
             <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                Jadwal Tersedia
+                {t('privateClass.detail.schedule.badge')}
             </p>
             <h2 className="dark:text-primary-foreground mb-6 text-2xl font-bold text-gray-900 italic md:text-3xl">
-                Pilih Jadwal yang Sesuai
+                {t('privateClass.detail.schedule.title')}
             </h2>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -71,12 +75,12 @@ export default function ScheduleSection({ privateClass }: { privateClass: Privat
                                             : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300'
                                     }`}
                                 >
-                                    {expired ? 'Ditutup' : 'Tersedia'}
+                                    {expired ? t('privateClass.detail.schedule.statusClosed') : t('privateClass.detail.schedule.statusAvailable')}
                                 </span>
                                 {schedule.max_participants && (
                                     <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                                         <Users size={12} />
-                                        <span>Maks. {schedule.max_participants}</span>
+                                        <span>{t('privateClass.detail.schedule.maxParticipants', { count: schedule.max_participants })}</span>
                                     </div>
                                 )}
                             </div>
@@ -102,19 +106,20 @@ export default function ScheduleSection({ privateClass }: { privateClass: Privat
                                 <MapPin size={16} className="text-primary dark:text-secondary flex-shrink-0" />
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
                                     {privateClass.mode === 'offline'
-                                        ? privateClass.location || 'Lokasi menyusul'
-                                        : 'Online'}
+                                        ? privateClass.location || t('privateClass.detail.schedule.locationTba')
+                                        : t('privateClass.detail.schedule.online')}
                                 </p>
                             </div>
 
                             {/* Deadline info */}
                             {schedule.registration_deadline && !expired && (
                                 <p className="mt-3 border-t border-gray-100 pt-2 text-xs text-gray-500 dark:border-zinc-700 dark:text-gray-400">
-                                    Batas daftar:{' '}
-                                    {new Date(schedule.registration_deadline).toLocaleDateString('id-ID', {
-                                        day: 'numeric',
-                                        month: 'short',
-                                        year: 'numeric',
+                                    {t('privateClass.detail.schedule.registrationDeadline', {
+                                        date: new Date(schedule.registration_deadline).toLocaleDateString(dateLocale, {
+                                            day: 'numeric',
+                                            month: 'short',
+                                            year: 'numeric',
+                                        }),
                                     })}
                                 </p>
                             )}

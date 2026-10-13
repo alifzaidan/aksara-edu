@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
 import { AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface UnavailableItem {
     title?: string;
@@ -24,8 +25,9 @@ export default function UnavailablePage({
     backUrl?: string;
     backLabel?: string;
 }) {
-    const pageTitle = title || 'Tidak Tersedia';
-    const itemTitle = item?.title ? `"${item.title}"` : 'Halaman ini';
+    const { t } = useTranslation('user');
+    const pageTitle = title || t('unavailable.title');
+    const itemTitle = item?.title ? `"${item.title}"` : t('unavailable.thisPage');
 
     return (
         <UserLayout>
@@ -36,23 +38,23 @@ export default function UnavailablePage({
                     <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
                         {pageTitle}
                     </h2>
-                    <p className="text-center text-gray-400">{itemTitle} saat ini belum bisa diakses.</p>
+                    <p className="text-center text-gray-400">{itemTitle} {t('unavailable.currentlyNotAccessible')}</p>
                 </div>
             </section>
 
             <section className="mx-auto my-4 w-full max-w-7xl px-4">
                 <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
                     <AlertTriangle size={64} className="text-yellow-500" />
-                    <h2 className="text-xl font-bold">{message || 'Tidak tersedia. Silahkan hubungi admin.'}</h2>
-                    <p className="text-sm text-gray-500">Jika Anda merasa ini kesalahan, silakan hubungi admin untuk bantuan lebih lanjut.</p>
+                    <h2 className="text-xl font-bold">{message || t('unavailable.defaultMessage')}</h2>
+                    <p className="text-sm text-gray-500">{t('unavailable.errorHint')}</p>
 
                     <div className="flex w-full max-w-md gap-2">
                         <Button asChild variant="outline" className="flex-1">
-                            {backUrl ? <Link href={backUrl}>{backLabel || 'Kembali'}</Link> : <Link href="/">{backLabel || 'Kembali'}</Link>}
+                            {backUrl ? <Link href={backUrl}>{backLabel || t('unavailable.back')}</Link> : <Link href="/">{backLabel || t('unavailable.back')}</Link>}
                         </Button>
                         <Button asChild className="flex-1">
                             <a href={adminWhatsappUrl} target="_blank" rel="noopener noreferrer">
-                                Hubungi Admin
+                                {t('unavailable.contactAdmin')}
                             </a>
                         </Button>
                     </div>

@@ -3,6 +3,7 @@ import { CommandDialog, CommandInput, CommandList } from '@/components/ui/comman
 import { router } from '@inertiajs/react';
 import { CheckCircle, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface SearchResult {
     id: string;
@@ -31,6 +32,9 @@ interface SearchCommandProps {
 }
 
 export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
+    const { t, i18n } = useTranslation('common');
+    const dateLocale = i18n.language === 'en' ? 'en-US' : 'id-ID';
+
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
@@ -69,7 +73,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
                 const data = await response.json();
                 setResults(Array.isArray(data) ? data : []);
             } catch {
-                setError('Terjadi kesalahan saat mencari. Silakan coba lagi.');
+                setError(t('search.error'));
                 setResults([]);
             } finally {
                 setLoading(false);
@@ -77,16 +81,16 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
         }, 300);
 
         return () => clearTimeout(timeoutId);
-    }, [query]);
+    }, [query, t]);
 
     const getTypeLabel = (type: string) => {
         switch (type) {
             case 'course':
-                return 'Kelas Online';
+                return t('nav.course');
             case 'bootcamp':
-                return 'Bootcamp';
+                return t('nav.bootcamp');
             case 'webinar':
-                return 'Webinar';
+                return t('nav.webinar');
             default:
                 return type;
         }
@@ -126,7 +130,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
         try {
             const date = new Date(dateString);
             if (isTime) {
-                return date.toLocaleDateString('id-ID', {
+                return date.toLocaleDateString(dateLocale, {
                     day: 'numeric',
                     month: 'short',
                     year: 'numeric',
@@ -134,7 +138,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
                     minute: '2-digit',
                 });
             }
-            return date.toLocaleDateString('id-ID', {
+            return date.toLocaleDateString(dateLocale, {
                 day: 'numeric',
                 month: 'short',
                 year: 'numeric',
@@ -149,22 +153,22 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
 
     return (
         <CommandDialog open={open} onOpenChange={onOpenChange}>
-            <CommandInput placeholder="Cari kelas, bootcamp, atau webinar..." value={query} onValueChange={setQuery} />
+            <CommandInput placeholder={t('search.placeholder')} value={query} onValueChange={setQuery} />
             <CommandList className="max-h-[400px]">
                 {/* Loading state */}
-                {loading && <div className="text-muted-foreground py-6 text-center text-sm">Mencari...</div>}
+                {loading && <div className="text-muted-foreground py-6 text-center text-sm">{t('search.searching')}</div>}
 
                 {/* Error state */}
                 {error && !loading && <div className="py-6 text-center text-sm text-red-500">{error}</div>}
 
                 {/* Empty state */}
                 {!loading && !hasResults && hasQuery && !error && (
-                    <div className="text-muted-foreground py-6 text-center text-sm">Tidak ada hasil ditemukan.</div>
+                    <div className="text-muted-foreground py-6 text-center text-sm">{t('search.noResults')}</div>
                 )}
 
                 {/* No query state */}
                 {!hasQuery && !loading && (
-                    <div className="text-muted-foreground py-6 text-center text-sm">Ketik untuk mencari kelas, bootcamp, atau webinar...</div>
+                    <div className="text-muted-foreground py-6 text-center text-sm">{t('search.typeToSearch')}</div>
                 )}
 
                 {/* Results */}
@@ -204,7 +208,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
                                             {item.has_access && (
                                                 <div className="flex items-center space-x-1 text-green-600">
                                                     <CheckCircle className="h-3 w-3" />
-                                                    <span className="text-xs">Sudah memiliki</span>
+                                                    <span className="text-xs">{t('search.owned')}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -217,7 +221,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
 
                                         <div className="flex items-center justify-between text-xs">
                                             <div className="text-muted-foreground flex items-center space-x-3">
-                                                {item.instructor && <span>Oleh {item.instructor}</span>}
+                                                {item.instructor && <span>{t('search.by', { name: item.instructor })}</span>}
                                                 {item.duration && (
                                                     <div className="flex items-center space-x-1">
                                                         <Clock className="h-3 w-3" />
@@ -226,15 +230,21 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
                                                 )}
                                                 {item.level && (
                                                     <span className="capitalize">
-                                                        {item.level === 'beginner' ? 'Pemula' : item.level === 'intermediate' ? 'Menengah' : 'Mahir'}
+                                                        {item.level === 'beginner'
+                                                            ? t('search.levels.beginner')
+                                                            : item.level === 'intermediate'
+                                                              ? t('search.levels.intermediate')
+                                                              : t('search.levels.advanced')}
                                                     </span>
                                                 )}
-                                                {item.start_date && <span>Mulai: {formatDateTime(item.start_date)}</span>}
+                                                {item.start_date && (
+                                                    <span>{t('search.starts', { date: formatDateTime(item.start_date) })}</span>
+                                                )}
                                                 {item.start_time && <span>{formatDateTime(item.start_time, true)}</span>}
                                             </div>
                                             <div className="flex items-center space-x-2">
                                                 {item.has_access ? (
-                                                    <span className="text-xs font-medium text-green-600">Akses Tersedia</span>
+                                                    <span className="text-xs font-medium text-green-600">{t('search.accessAvailable')}</span>
                                                 ) : (
                                                     <>
                                                         {item.strikethrough_price && item.strikethrough_price !== 'Gratis' && (

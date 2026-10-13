@@ -5,6 +5,7 @@ import { Spotlight } from '@/components/ui/spotlight';
 import { Link } from '@inertiajs/react';
 import { Calendar, GalleryVerticalEnd } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type Category = {
     id: string;
@@ -32,6 +33,9 @@ interface PrivateSectionProps {
 }
 
 export default function PrivateSection({ categories, privateClasses, myPrivateClassIds }: PrivateSectionProps) {
+    const { t, i18n } = useTranslation('user');
+    const dateLocale = i18n.language === 'en' ? 'en-US' : 'id-ID';
+
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [visibleCount, setVisibleCount] = useState(6);
@@ -73,13 +77,18 @@ export default function PrivateSection({ categories, privateClasses, myPrivateCl
     return (
         <section className="mx-auto w-full max-w-7xl px-4" id="private">
             <h2 className="dark:text-primary-foreground mx-auto mb-4 max-w-3xl text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
-                Temukan Private Class yang Sesuai.
+                {t('privateClass.dashboard.catalog.title')}
             </h2>
             <p className="mx-auto mb-8 text-center text-gray-600 dark:text-gray-400">
-                Pilih topik dan mentor yang tepat untuk meningkatkan skill Anda ke level selanjutnya.
+                {t('privateClass.dashboard.catalog.subtitle')}
             </p>
             <div className="mb-4 flex">
-                <Input type="search" placeholder="Cari private class..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                <Input
+                    type="search"
+                    placeholder={t('privateClass.dashboard.catalog.searchPlaceholder')}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
             </div>
             <div
                 className="mb-4 overflow-x-auto"
@@ -100,7 +109,7 @@ export default function PrivateSection({ categories, privateClasses, myPrivateCl
                                 : 'hover:bg-accent dark:hover:bg-primary/10 bg-background border-gray-300 text-gray-800 dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100'
                         } `}
                     >
-                        Semua Kategori
+                        {t('privateClass.dashboard.catalog.allCategories')}
                     </button>
                     {categories.map((category) => (
                         <button
@@ -122,7 +131,7 @@ export default function PrivateSection({ categories, privateClasses, myPrivateCl
                 {visiblePrivate.length === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
                         <img src="/assets/images/not-found.webp" alt="Private Class Belum Tersedia" className="w-48" />
-                        <div className="text-center text-gray-500">Belum ada private class yang tersedia saat ini.</div>
+                        <div className="text-center text-gray-500">{t('privateClass.dashboard.catalog.empty')}</div>
                     </div>
                 ) : (
                     visiblePrivate.map((pc) => {
@@ -149,25 +158,25 @@ export default function PrivateSection({ categories, privateClasses, myPrivateCl
                                                 className="aspect-video w-full rounded-t-lg object-cover"
                                             />
                                             <span className="absolute top-2 left-2 rounded-full bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
-                                                Private
+                                                {t('privateClass.dashboard.catalog.badgePrivate')}
                                             </span>
                                         </div>
                                         <h2 className="mx-4 mt-2 line-clamp-2 text-lg font-semibold">{pc.title}</h2>
                                     </div>
                                     <div className="mt-auto w-full p-4 text-left">
                                         {hasAccess ? (
-                                            <p className="text-primary text-sm font-medium">Anda sudah memiliki akses</p>
+                                            <p className="text-primary text-sm font-medium">{t('privateClass.dashboard.catalog.alreadyHaveAccess')}</p>
                                         ) : pc.price === 0 ? (
-                                            <p className="text-lg font-semibold text-green-600 dark:text-green-400">Gratis</p>
+                                            <p className="text-lg font-semibold text-green-600 dark:text-green-400">{t('privateClass.dashboard.catalog.free')}</p>
                                         ) : (
                                             <div>
                                                 {pc.strikethrough_price != null && pc.strikethrough_price > pc.price && (
                                                     <p className="text-sm text-red-500 line-through">
-                                                        Rp {pc.strikethrough_price.toLocaleString('id-ID')}
+                                                        {new Intl.NumberFormat(dateLocale, { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(pc.strikethrough_price)}
                                                     </p>
                                                 )}
                                                 <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                                                    Rp {pc.price.toLocaleString('id-ID')}
+                                                    {new Intl.NumberFormat(dateLocale, { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(pc.price)}
                                                 </p>
                                             </div>
                                         )}
@@ -175,7 +184,7 @@ export default function PrivateSection({ categories, privateClasses, myPrivateCl
                                             <div className="mt-2 flex items-center gap-2">
                                                 <Calendar size="18" />
                                                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                                                    {new Date(firstSchedule.start_time).toLocaleDateString('id-ID', {
+                                                    {new Date(firstSchedule.start_time).toLocaleDateString(dateLocale, {
                                                         day: 'numeric',
                                                         month: 'long',
                                                         year: 'numeric',
@@ -194,7 +203,7 @@ export default function PrivateSection({ categories, privateClasses, myPrivateCl
                 <div className="mb-8 flex justify-center">
                     <Magnetic>
                         <Button type="button" className="mt-8 hover:cursor-pointer" onClick={() => setVisibleCount((prev) => prev + 6)}>
-                            Lihat Lebih Banyak <GalleryVerticalEnd />
+                            {t('privateClass.dashboard.catalog.loadMore')} <GalleryVerticalEnd />
                         </Button>
                     </Magnetic>
                 </div>

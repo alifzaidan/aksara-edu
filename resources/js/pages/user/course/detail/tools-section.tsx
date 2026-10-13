@@ -1,11 +1,14 @@
+import { useTranslation } from 'react-i18next';
+
 interface Course {
     tools?: { name: string; description?: string | null; icon: string | null }[];
 }
 
 export default function ToolsSection({ course }: { course: Course }) {
+    const { t } = useTranslation('user');
     return (
         <section className="mx-auto mt-8 w-full max-w-5xl px-4" id="tools">
-            <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">Tools Pendukung</h2>
+            <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">{t('course.detail.supportingTools')}</h2>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {course.tools?.map((tool) => (
                     <div

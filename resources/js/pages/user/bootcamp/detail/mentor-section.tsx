@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
 import { Link } from '@inertiajs/react';
 import { Star } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Bootcamp {
     mentors?: {
@@ -13,6 +14,7 @@ interface Bootcamp {
 }
 
 export default function MentorSection({ bootcamp }: { bootcamp: Bootcamp }) {
+    const { t } = useTranslation('user');
     const getInitials = useInitials();
 
     if (!bootcamp.mentors || bootcamp.mentors.length === 0) {
@@ -24,7 +26,7 @@ export default function MentorSection({ bootcamp }: { bootcamp: Bootcamp }) {
     return (
         <section className="mx-auto mt-8 w-full max-w-5xl px-4">
             <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                Pemateri Bootcamp
+                {t('bootcamp.detail.bootcampInstructors')}
             </p>
             <div className="grid gap-4 md:grid-cols-2">
                 {mentors.map((mentor) => (

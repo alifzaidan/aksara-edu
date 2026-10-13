@@ -2601,6 +2601,101 @@ class InstallmentFlowTest extends TestCase
         $response->assertStatus(200);
         $this->assertEquals('application/pdf', $response->headers->get('Content-Type'));
     }
+
+    /**
+     * Test 36: Accessing parent invoice PDF resolves to term invoice (per termin, not whole amount)
+     * and shows the actual paid_at date rather than open/download time
+     */
+    public function test_download_pdf_for_installment_parent_resolves_to_term_and_uses_actual_paid_at()
+    {
+        $pastDate = Carbon::parse('2026-05-15 10:30:00');
+
+        $bootcamp = Bootcamp::create([
+            'title' => 'Mastering Laravel',
+            'slug' => 'mastering-laravel-pdf',
+            'price' => 3000000,
+            'category_id' => Category::first()->id,
+            'start_date' => Carbon::now()->addDays(10),
+        ]);
+
+        $parent = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-PARENT-036',
+            'amount' => 3015000,
+            'nett_amount' => 3000000,
+            'status' => 'installment_pending',
+            'is_installment' => true,
+            'paid_at' => null,
+        ]);
+
+        EnrollmentBootcamp::create([
+            'invoice_id' => $parent->id,
+            'bootcamp_id' => $bootcamp->id,
+            'price' => 3000000,
+            'progress' => 0,
+        ]);
+
+        $term1 = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-PARENT-036-T1',
+            'amount' => 1005000,
+            'nett_amount' => 1000000,
+            'status' => 'paid',
+            'paid_at' => $pastDate,
+            'payment_method' => 'Midtrans',
+            'payment_channel' => 'BCA Virtual Account',
+            'is_installment' => false,
+            'parent_invoice_id' => $parent->id,
+            'installment_number' => 1,
+        ]);
+
+        $term2 = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-PARENT-036-T2',
+            'amount' => 1005000,
+            'nett_amount' => 1000000,
+            'status' => 'pending',
+            'is_installment' => false,
+            'parent_invoice_id' => $parent->id,
+            'installment_number' => 2,
+        ]);
+
+        // 1. Accessing parent invoice PDF should resolve to paid Term 1 and return 200
+        $response = $this->actingAs($this->buyer)
+            ->get("/invoice/{$parent->id}/pdf");
+
+        $response->assertStatus(200);
+        $this->assertEquals('application/pdf', $response->headers->get('Content-Type'));
+        // Verify streamed content-disposition header matches term invoice code
+        $this->assertStringContainsString('AKS-PARENT-036-T1.pdf', $response->headers->get('Content-Disposition') ?? '');
+
+        // 2. Querying unpaid Term 2 should return 403
+        $responseTerm2 = $this->actingAs($this->buyer)
+            ->get("/invoice/{$parent->id}/pdf?term=2");
+        $responseTerm2->assertStatus(403);
+
+        // 3. Directly rendering view to assert term nominal and paid_at formatting
+        $view = view('invoices.pdf', [
+            'invoice' => $term1,
+            'company' => [
+                'name' => 'Aksademy',
+                'address' => 'Test Address',
+                'phone' => '123456',
+                'email' => 'test@aksademy.id',
+                'website' => 'aksademy.id',
+            ],
+        ])->render();
+
+        // Must display term nominal and term badge, NOT whole 3.000.000
+        $this->assertStringContainsString('Pembayaran Cicilan Termin ke-1 (DP)', $view);
+        $this->assertStringContainsString('1.000.000', $view);
+        $this->assertStringContainsString('1.005.000', $view);
+        $this->assertStringNotContainsString('3.015.000', $view);
+
+        // Must display actual payment date 15 May 2026, NOT today
+        $this->assertStringContainsString('15 May 2026', $view);
+        $this->assertStringContainsString('10:30', $view);
+    }
 }
 
 

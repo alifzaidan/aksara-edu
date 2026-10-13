@@ -1,0 +1,110 @@
+{
+  "nav": {
+    "home": "Home",
+    "programs": "Programs",
+    "programsAndServices": "Programs & Services",
+    "services": "Services",
+    "ourServices": "Our Services",
+    "bundling": "Bundling Packages",
+    "bundlingDesc": "Save more with bundled packages of our various educational products",
+    "course": "Online Courses",
+    "courseDesc": "Learn with structured video lessons and comprehensive learning materials",
+    "bootcamp": "Bootcamp",
+    "bootcampDesc": "Intensive program with professional mentors and project-based learning",
+    "webinar": "Webinar",
+    "webinarDesc": "Online seminars featuring cutting-edge topics and expert speakers",
+    "private": "Private Class",
+    "privateDesc": "1-on-1 personalized mentorship online or offline",
+    "certification": "Certifications",
+    "certificationDesc": "Boost your professional credibility with recognized certifications",
+    "checkCertificate": "Verify Certificate",
+    "checkCertificateDesc": "Verify your certificate easily using your email and WhatsApp number",
+    "articles": "Articles",
+    "login": "Sign In",
+    "register": "Sign Up",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "myProfile": "My Profile",
+    "myInstallments": "My Installments",
+    "transactions": "Transaction History",
+    "settings": "Settings",
+    "logout": "Log Out",
+    "userPage": "User Page"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "back": "Back",
+    "close": "Close",
+    "download": "Download",
+    "continue": "Continue",
+    "payNow": "Pay Now",
+    "viewDetails": "View Details",
+    "searchProducts": "Search Products...",
+    "search": "Search...",
+    "learnMore": "Learn More"
+  },
+  "status": {
+    "paid": "Paid",
+    "pending": "Pending Payment",
+    "overdue": "Overdue",
+    "failed": "Failed",
+    "expired": "Expired",
+    "success": "Success"
+  },
+  "language": {
+    "switch": "Select Language",
+    "id": "Bahasa Indonesia",
+    "en": "English"
+  },
+  "footer": {
+    "tagline": "Empowering Minds, Rising Together 🚀",
+    "company": "CV. Aksara Teknologi Mandiri",
+    "address": "Perumahan Permata Permadani, Blok B1. Kel. Pendem Kec. Junrejo Kota Batu Prov. Jawa Timur, 65324",
+    "products": "Products",
+    "services": "Services",
+    "others": "Others",
+    "social": "Social Media",
+    "socialDesc": "Follow us on social media for the latest updates, tips, and exciting tech content.",
+    "links": {
+      "course": "Online Courses",
+      "bootcamp": "Bootcamp",
+      "webinar": "Webinar",
+      "private": "Private Class",
+      "bundle": "Bundling",
+      "certification": "Certifications",
+      "softwareHouse": "Software House",
+      "helpCenter": "Help Center",
+      "article": "Articles & Blog",
+      "terms": "Terms & Conditions",
+      "privacy": "Privacy Policy"
+    },
+    "copyright": "© 2025 CV. Aksara Teknologi Mandiri. All rights reserved."
+  },
+  "search": {
+    "placeholder": "Search courses, bootcamps, or webinars...",
+    "searching": "Searching...",
+    "noResults": "No results found.",
+    "typeToSearch": "Type to search courses, bootcamps, or webinars...",
+    "error": "An error occurred while searching. Please try again.",
+    "owned": "Owned",
+    "by": "By {{name}}",
+    "starts": "Starts: {{date}}",
+    "accessAvailable": "Access Available",
+    "free": "Free",
+    "levels": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "Page Not Found",
+      "description": "Sorry, the page you are looking for cannot be found.",
+      "backHome": "Back to Home"
+    }
+  }
+}

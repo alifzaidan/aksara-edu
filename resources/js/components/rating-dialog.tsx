@@ -4,6 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm } from '@inertiajs/react';
 import { Star } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Course {
     id: string;
@@ -19,6 +20,7 @@ interface RatingDialogProps {
 }
 
 export default function RatingDialog({ isOpen, onClose, course }: RatingDialogProps) {
+    const { t } = useTranslation('profile');
     const [hoveredStar, setHoveredStar] = useState<number>(0);
     const { data, setData, post, processing, errors, reset } = useForm({
         rating: 0,
@@ -52,6 +54,23 @@ export default function RatingDialog({ isOpen, onClose, course }: RatingDialogPr
         return starNumber <= activeRating ? 'text-yellow-400' : 'text-gray-300';
     };
 
+    const getScoreLabel = (score: number) => {
+        switch (score) {
+            case 1:
+                return t('rating.scoreVeryBad');
+            case 2:
+                return t('rating.scoreBad');
+            case 3:
+                return t('rating.scoreOk');
+            case 4:
+                return t('rating.scoreGood');
+            case 5:
+                return t('rating.scoreVeryGood');
+            default:
+                return '';
+        }
+    };
+
     const handleClose = () => {
         reset();
         onClose();
@@ -61,8 +80,8 @@ export default function RatingDialog({ isOpen, onClose, course }: RatingDialogPr
         <Dialog open={isOpen} onOpenChange={handleClose}>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle className="text-xl font-bold">Berikan Rating & Review</DialogTitle>
-                    <DialogDescription>Bagikan pengalaman Anda mengikuti kelas ini</DialogDescription>
+                    <DialogTitle className="text-xl font-bold">{t('rating.title')}</DialogTitle>
+                    <DialogDescription>{t('rating.description')}</DialogDescription>
                 </DialogHeader>
 
                 <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
@@ -82,7 +101,7 @@ export default function RatingDialog({ isOpen, onClose, course }: RatingDialogPr
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="mb-2 block text-sm font-medium">
-                            Rating <span className="text-red-500">*</span>
+                            {t('rating.ratingLabel')} <span className="text-red-500">*</span>
                         </label>
                         <div className="flex items-center gap-1">
                             {[1, 2, 3, 4, 5].map((star) => (
@@ -100,16 +119,7 @@ export default function RatingDialog({ isOpen, onClose, course }: RatingDialogPr
                             <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
                                 {data.rating > 0 && (
                                     <>
-                                        {data.rating}/5 -{' '}
-                                        {data.rating === 1
-                                            ? 'Sangat Buruk'
-                                            : data.rating === 2
-                                              ? 'Buruk'
-                                              : data.rating === 3
-                                                ? 'Cukup'
-                                                : data.rating === 4
-                                                  ? 'Baik'
-                                                  : 'Sangat Baik'}
+                                        {data.rating}/5 - {getScoreLabel(data.rating)}
                                     </>
                                 )}
                             </span>
@@ -119,12 +129,12 @@ export default function RatingDialog({ isOpen, onClose, course }: RatingDialogPr
 
                     <div>
                         <label className="mb-2 block text-sm font-medium">
-                            Review <span className="text-red-500">*</span>
+                            {t('rating.reviewLabel')} <span className="text-red-500">*</span>
                         </label>
                         <Textarea
                             value={data.review}
                             onChange={(e) => setData('review', e.target.value)}
-                            placeholder="Ceritakan pengalaman Anda mengikuti kelas ini. Apa yang Anda sukai? Apa yang bisa diperbaiki?"
+                            placeholder={t('rating.reviewPlaceholder')}
                             rows={4}
                             className="resize-none"
                         />
@@ -136,17 +146,16 @@ export default function RatingDialog({ isOpen, onClose, course }: RatingDialogPr
 
                     <div className="rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20">
                         <p className="text-sm text-green-800 dark:text-green-200">
-                            <strong>Catatan:</strong> Setelah Anda mengirim rating dan review, sertifikat kelulusan akan langsung tersedia untuk
-                            diunduh.
+                            <strong>{t('rating.note')}</strong> {t('rating.noteDesc')}
                         </p>
                     </div>
 
                     <div className="flex gap-3 pt-4">
                         <Button type="button" variant="outline" className="flex-1" onClick={handleClose} disabled={processing}>
-                            Batal
+                            {t('rating.cancel')}
                         </Button>
                         <Button type="submit" className="flex-1" disabled={processing || data.rating === 0 || data.review.length < 1}>
-                            {processing ? 'Mengirim...' : 'Kirim Rating'}
+                            {processing ? t('rating.submitting') : t('rating.submit')}
                         </Button>
                     </div>
                 </form>

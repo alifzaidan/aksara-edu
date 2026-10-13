@@ -1,27 +1,28 @@
 import { TransitionPanel } from '@/components/ui/transition-panel';
 import { useEffect, useState } from 'react';
-
-const items = [
-    {
-        title: 'Dipandu Praktisi Profesional',
-        subtitle: 'Belajar langsung dari mentor berpengalaman di bidangnya. Dapatkan insight yang aplikatif dan relevan.',
-        image: '/assets/images/feature-webinar-1.webp',
-    },
-    {
-        title: 'Topik yang Selalu Update',
-        subtitle:
-            'Topik disesuaikan dengan kebutuhan industri dan perkembangan teknologi terbaru. Mulai dari tools freelancer, UI/UX, web development, hingga AI.',
-        image: '/assets/images/feature-webinar-2.webp',
-    },
-    {
-        title: 'Cocok untuk Semua Tingkatan',
-        subtitle: 'Baik kamu pemula atau profesional, webinar kami didesain agar mudah dipahami dan bisa langsung dipraktikkan.',
-        image: '/assets/images/feature-webinar-3.webp',
-    },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function FeatureSection() {
+    const { t } = useTranslation('user');
     const [activeIndex, setActiveIndex] = useState(0);
+
+    const items = [
+        {
+            title: t('webinar.feature.item1Title'),
+            subtitle: t('webinar.feature.item1Desc'),
+            image: '/assets/images/feature-webinar-1.webp',
+        },
+        {
+            title: t('webinar.feature.item2Title'),
+            subtitle: t('webinar.feature.item2Desc'),
+            image: '/assets/images/feature-webinar-2.webp',
+        },
+        {
+            title: t('webinar.feature.item3Title'),
+            subtitle: t('webinar.feature.item3Desc'),
+            image: '/assets/images/feature-webinar-3.webp',
+        },
+    ];
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -29,15 +30,15 @@ export default function FeatureSection() {
         }, 3000);
 
         return () => clearInterval(interval);
-    }, [activeIndex]);
+    }, [activeIndex, items.length]);
 
     return (
         <section className="mx-auto w-full max-w-7xl px-4">
             <p className="text-primary border-primary bg-background mx-auto mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                Webinar Aksademy
+                {t('webinar.feature.badge')}
             </p>
             <h2 className="dark:text-primary-foreground mx-auto mb-4 max-w-2xl text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
-                Solusi #1 Kembangkan Diri dan Koneksi
+                {t('webinar.feature.title')}
             </h2>
             <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-2">
                 <div className="my-12 space-y-2">

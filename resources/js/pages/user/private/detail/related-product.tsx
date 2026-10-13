@@ -1,6 +1,7 @@
 import { Spotlight } from '@/components/ui/spotlight';
 import { Link } from '@inertiajs/react';
 import { Calendar } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface PrivateClass {
     id: string;
@@ -20,6 +21,9 @@ interface RelatedProductProps {
 }
 
 export default function RelatedProduct({ relatedPrivateClasses, myPrivateClassIds }: RelatedProductProps) {
+    const { t, i18n } = useTranslation('user');
+    const dateLocale = i18n.language === 'en' ? 'en-US' : 'id-ID';
+
     if (!relatedPrivateClasses || relatedPrivateClasses.length === 0) {
         return null;
     }
@@ -27,10 +31,10 @@ export default function RelatedProduct({ relatedPrivateClasses, myPrivateClassId
     return (
         <section className="mx-auto mt-16 w-full max-w-7xl px-4" id="related">
             <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
-                Private Class Serupa
+                {t('privateClass.detail.related.title')}
             </h2>
             <p className="mb-8 text-center text-gray-600 dark:text-gray-400">
-                Private class lain yang mungkin menarik untuk Anda
+                {t('privateClass.detail.related.subtitle')}
             </p>
 
             <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -58,25 +62,25 @@ export default function RelatedProduct({ relatedPrivateClasses, myPrivateClassId
                                             className="h-48 w-full rounded-t-lg object-cover"
                                         />
                                         <span className="absolute top-2 left-2 rounded-full bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
-                                            Private
+                                            {t('privateClass.detail.related.badgePrivate')}
                                         </span>
                                     </div>
                                     <h2 className="mx-4 mt-2 line-clamp-2 text-lg font-semibold">{pc.title}</h2>
                                 </div>
                                 <div className="w-full p-4 text-left">
                                     {hasAccess ? (
-                                        <p className="text-primary text-sm font-medium">Anda sudah memiliki akses</p>
+                                        <p className="text-primary text-sm font-medium">{t('privateClass.detail.related.alreadyHaveAccess')}</p>
                                     ) : pc.price === 0 ? (
-                                        <p className="text-lg font-semibold text-green-600 dark:text-green-400">Gratis</p>
+                                        <p className="text-lg font-semibold text-green-600 dark:text-green-400">{t('privateClass.detail.related.free')}</p>
                                     ) : (
                                         <div>
                                             {pc.strikethrough_price > 0 && pc.strikethrough_price > pc.price && (
                                                 <p className="text-sm text-red-500 line-through">
-                                                    Rp {pc.strikethrough_price.toLocaleString('id-ID')}
+                                                    {new Intl.NumberFormat(dateLocale, { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(pc.strikethrough_price)}
                                                 </p>
                                             )}
                                             <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                                                Rp {pc.price.toLocaleString('id-ID')}
+                                                {new Intl.NumberFormat(dateLocale, { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(pc.price)}
                                             </p>
                                         </div>
                                     )}
@@ -84,7 +88,7 @@ export default function RelatedProduct({ relatedPrivateClasses, myPrivateClassId
                                         <div className="mt-2 flex items-center gap-2">
                                             <Calendar size="18" />
                                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                                                {new Date(firstSchedule.start_time).toLocaleDateString('id-ID', {
+                                                {new Date(firstSchedule.start_time).toLocaleDateString(dateLocale, {
                                                     day: 'numeric',
                                                     month: 'long',
                                                     year: 'numeric',

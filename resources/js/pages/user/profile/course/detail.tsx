@@ -8,6 +8,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import ProfileInstallmentAction from '@/components/profile-installment-action';
+import { useTranslation } from 'react-i18next';
 
 interface Category {
     id: string;
@@ -107,6 +108,7 @@ export default function DetailMyCourse({
     certificateParticipant?: CertificateParticipant | null;
     active_installment?: any | null;
 }) {
+    const { t, i18n } = useTranslation('profile');
     const [isRatingDialogOpen, setIsRatingDialogOpen] = useState(false);
     const [isPayingCert, setIsPayingCert] = useState(false);
 
@@ -116,14 +118,14 @@ export default function DetailMyCourse({
         try {
             const res = await axios.post(`/installment/${course.id}/pay`);
             if (res.data?.success && res.data?.payment_url) {
-                toast.success('Mengarahkan ke pembayaran...');
+                toast.success(t('courses.detail.redirecting'));
                 window.location.href = res.data.payment_url;
             } else {
-                toast.error(res.data?.message || 'Gagal memproses pembayaran cicilan');
+                toast.error(res.data?.message || t('courses.detail.failPayInstallment'));
                 setIsPayingCert(false);
             }
         } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Terjadi kesalahan saat memproses pembayaran');
+            toast.error(err.response?.data?.message || t('courses.detail.errorPayInstallment'));
             setIsPayingCert(false);
         }
     };
@@ -131,12 +133,12 @@ export default function DetailMyCourse({
     if (!course) {
         return (
             <UserLayout>
-                <Head title="Kelas Tidak Ditemukan" />
+                <Head title={t('courses.detail.notFoundTitle')} />
                 <div className="flex h-screen items-center justify-center">
-                    <p>Detail kelas tidak dapat ditemukan.</p>
+                    <p>{t('courses.detail.notFoundDesc')}</p>
                     <Button className="mt-4 rounded-full" variant="secondary" asChild>
                         <Link href="/profile/my-courses">
-                            <ArrowLeft /> Kembali Ke Kelas Saya
+                            <ArrowLeft /> {t('courses.detail.backToCourses')}
                         </Link>
                     </Button>
                 </div>
@@ -184,9 +186,9 @@ export default function DetailMyCourse({
                                 <Star className="h-5 w-5 text-white" />
                             </div>
                             <div>
-                                <h3 className="font-semibold text-gray-900 dark:text-gray-100">🎉 Selamat! Anda telah menyelesaikan kelas ini</h3>
+                                <h3 className="font-semibold text-gray-900 dark:text-gray-100">{t('courses.detail.ratingCongratsTitle')}</h3>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    Berikan rating dan review untuk mendapatkan sertifikat kelulusan
+                                    {t('courses.detail.ratingCongratsDesc')}
                                 </p>
                             </div>
                         </div>
@@ -196,7 +198,7 @@ export default function DetailMyCourse({
                             onClick={() => setIsRatingDialogOpen(true)}
                         >
                             <Star className="mr-2 h-4 w-4" />
-                            Beri Rating
+                            {t('courses.detail.btnGiveRating')}
                         </Button>
                     </div>
                 </div>
@@ -212,16 +214,16 @@ export default function DetailMyCourse({
                                 <Award className="h-5 w-5 text-white" />
                             </div>
                             <div>
-                                <h3 className="font-semibold text-gray-900 dark:text-gray-100">🎉 Terima kasih atas rating Anda!</h3>
+                                <h3 className="font-semibold text-gray-900 dark:text-gray-100">{t('courses.detail.ratingThankTitle')}</h3>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
                                     {!certificate
-                                        ? 'Sertifikat belum dibuat untuk course ini.'
+                                        ? t('courses.detail.certNotReady')
                                         : !isFullyPaid
-                                          ? (isInstallment ? 'Lunasi seluruh cicilan untuk membuka sertifikat.' : 'Selesaikan pembayaran untuk membuka sertifikat.')
-                                          : 'Sertifikat sedang diproses.'}
+                                          ? (isInstallment ? t('courses.detail.certPayInstallment') : t('courses.detail.certPayFull'))
+                                          : t('courses.detail.certProcessing')}
                                 </p>
                                 <div className="mt-1 flex items-center gap-1">
-                                    <span className="text-xs text-gray-500">Rating Anda:</span>
+                                    <span className="text-xs text-gray-500">{t('courses.detail.yourRating')}</span>
                                     {[1, 2, 3, 4, 5].map((star) => (
                                         <Star
                                             key={star}
@@ -241,16 +243,16 @@ export default function DetailMyCourse({
                                 id="btn-lunasi-sertifikat-course"
                             >
                                 <CreditCard className="h-4 w-4" />
-                                {isPayingCert ? 'Mengarahkan...' : 'Lunasi Cicilan Sekarang'}
+                                {isPayingCert ? t('courses.detail.redirectingButton') : t('courses.detail.payInstallmentNow')}
                             </Button>
                         ) : (
                             <Button size="sm" disabled>
                                 <Download className="mr-2 h-4 w-4" />
                                 {!certificate
-                                    ? 'Sertifikat Belum Tersedia'
+                                    ? t('courses.detail.certNotAvailable')
                                     : !isFullyPaid
-                                      ? 'Menunggu Pembayaran'
-                                      : 'Menunggu Sertifikat'}
+                                      ? t('courses.detail.waitingPayment')
+                                      : t('courses.detail.waitingCert')}
                             </Button>
                         )}
                     </div>
@@ -266,9 +268,9 @@ export default function DetailMyCourse({
                             <Award className="h-5 w-5 text-white" />
                         </div>
                         <div>
-                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">🎉 Sertifikat Kelulusan Tersedia!</h3>
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{t('courses.detail.certReadyTitle')}</h3>
                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                                Anda telah berhasil menyelesaikan kelas ini dan sertifikat sudah siap diunduh
+                                {t('courses.detail.certReadyDesc')}
                             </p>
                         </div>
                     </div>
@@ -277,8 +279,9 @@ export default function DetailMyCourse({
                         {certificateParticipant && (
                             <div className="mt-4">
                                 <p className="text-sm text-gray-700 dark:text-gray-300">
-                                    No. Sertifikat: {String(certificateParticipant.certificate_number).padStart(4, '0')}/
-                                    {certificate?.certificate_number}
+                                    {t('courses.detail.certNumber', {
+                                        number: `${String(certificateParticipant.certificate_number).padStart(4, '0')}/${certificate?.certificate_number}`,
+                                    })}
                                 </p>
                                 <Link
                                     href={route('certificate.participant.detail', {
@@ -286,7 +289,7 @@ export default function DetailMyCourse({
                                     })}
                                     className="text-sm text-green-600 underline hover:text-green-800 dark:text-green-400"
                                 >
-                                    Lihat Detail Sertifikat
+                                    {t('courses.detail.viewCertDetail')}
                                 </Link>
                             </div>
                         )}
@@ -295,14 +298,14 @@ export default function DetailMyCourse({
                             <Button className="w-full" asChild>
                                 <a href={route('profile.course.certificate', { course: courseData.slug })} target="_blank">
                                     <Download size={16} className="mr-2" />
-                                    Unduh Sertifikat
+                                    {t('courses.detail.downloadCert')}
                                 </a>
                             </Button>
 
                             <Button variant="outline" className="w-full" asChild>
                                 <a href={route('profile.course.certificate.preview', { course: courseData.slug })} target="_blank">
                                     <Eye size={16} className="mr-2" />
-                                    Lihat Preview
+                                    {t('courses.detail.previewCert')}
                                 </a>
                             </Button>
                         </div>
@@ -316,14 +319,14 @@ export default function DetailMyCourse({
 
     return (
         <UserLayout>
-            <Head title={courseData?.title || 'Detail Kelas'} />
+            <Head title={courseData?.title || t('courses.detail.notFoundTitle')} />
             {!courseData ? (
                 <div className="flex h-screen items-center justify-center">
                     <div className="text-center">
-                        <p className="mb-4">Detail kelas tidak dapat ditemukan.</p>
+                        <p className="mb-4">{t('courses.detail.notFoundDesc')}</p>
                         <Button className="rounded-full" variant="secondary" asChild>
                             <Link href="/profile/my-courses">
-                                <ArrowLeft className="mr-2 h-4 w-4" /> Kembali Ke Kelas Saya
+                                <ArrowLeft className="mr-2 h-4 w-4" /> {t('courses.detail.backToCourses')}
                             </Link>
                         </Button>
                     </div>
@@ -338,26 +341,27 @@ export default function DetailMyCourse({
                         <div className="relative mx-auto max-w-7xl px-4 text-center">
                             <Button className="top-0 left-4 mb-4 rounded-full md:absolute md:mb-0" variant="secondary" asChild>
                                 <Link href="/profile/my-courses">
-                                    <ArrowLeft /> Kembali Ke Kelas Saya
+                                    <ArrowLeft /> {t('courses.detail.backToCourses')}
                                 </Link>
                             </Button>
                             <div className="col-span-2">
                                 <div className="flex flex-col items-center justify-center md:flex-row md:gap-4">
                                     <span className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                                        📌 Enrolled in{' '}
                                         {courseItem &&
-                                            new Date(courseItem.created_at).toLocaleDateString('id-ID', {
-                                                month: 'long',
-                                                year: 'numeric',
+                                            t('courses.detail.enrolledIn', {
+                                                date: new Date(courseItem.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
+                                                    month: 'long',
+                                                    year: 'numeric',
+                                                }),
                                             })}
                                     </span>
                                     <span className="text-secondary border-secondary bg-background mb-4 inline-block rounded-full border bg-gradient-to-t from-[#FED6AD] to-white px-3 py-1 text-sm font-medium shadow-xs hover:text-[#FF925B]">
-                                        🎮 Level <span className="capitalize">{courseData.level}</span>
+                                        {t('courses.detail.levelBadge')} <span className="capitalize">{courseData.level}</span>
                                     </span>
                                     {hasCertificate ? (
                                         <span className="mb-4 flex w-fit items-center gap-2 rounded-full border border-green-800 bg-green-100 px-4 py-1 text-sm font-medium text-green-800 shadow-xs">
                                             <Award size={16} />
-                                            Sertifikat Tersedia
+                                            {t('courses.detail.certAvailable')}
                                         </span>
                                     ) : null}
                                 </div>
@@ -370,21 +374,21 @@ export default function DetailMyCourse({
                                     {isSuspended ? (
                                         <div className="text-center">
                                             <span className="block font-semibold text-red-600">
-                                                ⚠️ Akses kelas dibekukan karena ada tagihan cicilan yang melewati jatuh tempo.
+                                                {t('courses.detail.suspendedNotice')}
                                             </span>
                                             <span className="block text-sm text-red-600/90">
-                                                Silakan lakukan pelunasan di menu Transaksi.
+                                                {t('courses.detail.suspendedSub')}
                                             </span>
                                         </div>
                                     ) : !hasActiveAccess ? (
                                         <div className="text-center">
                                             <span className="block font-semibold text-red-600">
-                                                ⚠️ Status Pembayaran: {courseInvoiceStatus.toUpperCase()}
+                                                {t('courses.detail.paymentStatus', { status: courseInvoiceStatus.toUpperCase() })}
                                             </span>
                                             <span className="block text-sm text-gray-600 dark:text-gray-400">
                                                 {courseInvoiceStatus === 'failed'
-                                                    ? 'Pembayaran gagal atau dibatalkan. Silakan lakukan pembelian ulang.'
-                                                    : 'Selesaikan pembayaran untuk mengakses kelas.'}
+                                                    ? t('courses.detail.paymentFailedSub')
+                                                    : t('courses.detail.paymentPendingSub')}
                                             </span>
                                         </div>
                                     ) : isInstallment && !isFullyPaid ? (
@@ -411,11 +415,11 @@ export default function DetailMyCourse({
                             <div className="col-span-2 flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
                                 {renderCertificateSection()}
 
-                                <h1 className="text-lg font-semibold">Progres Kamu</h1>
+                                <h1 className="text-lg font-semibold">{t('courses.detail.yourProgress')}</h1>
 
                                 <div className="mt-4 mb-6">
                                     <div className="mb-2 flex items-center justify-between">
-                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Progres Pembelajaran</span>
+                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('courses.detail.learningProgress')}</span>
                                         <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{courseItem?.progress || 0}%</span>
                                     </div>
                                     <div className="h-3 w-full rounded-full bg-gray-200 shadow-inner dark:bg-gray-700">
@@ -436,36 +440,37 @@ export default function DetailMyCourse({
 
                                 <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Status Penyelesaian:</span>
+                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('courses.detail.completionStatus')}</span>
                                         <div className="flex items-center gap-2">
                                             {courseItem?.completed_at ? (
                                                 <>
                                                     <CheckCircle className="h-5 w-5 text-green-500" />
-                                                    <span className="text-sm font-semibold text-green-700 dark:text-green-400">Selesai</span>
+                                                    <span className="text-sm font-semibold text-green-700 dark:text-green-400">{t('courses.detail.completed')}</span>
                                                 </>
                                             ) : (
                                                 <>
                                                     <div className="h-5 w-5 rounded-full border-2 border-gray-300 dark:border-gray-600"></div>
-                                                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Sedang Berlangsung</span>
+                                                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">{t('courses.detail.inProgress')}</span>
                                                 </>
                                             )}
                                         </div>
                                     </div>
                                     {courseItem?.completed_at && (
                                         <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
-                                            Diselesaikan pada:{' '}
-                                            {new Date(courseItem.completed_at).toLocaleDateString('id-ID', {
-                                                day: 'numeric',
-                                                month: 'long',
-                                                year: 'numeric',
-                                                hour: '2-digit',
-                                                minute: '2-digit',
+                                            {t('courses.detail.completedAt', {
+                                                date: new Date(courseItem.completed_at).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
+                                                    day: 'numeric',
+                                                    month: 'long',
+                                                    year: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                }),
                                             })}
                                         </div>
                                     )}
                                 </div>
 
-                                <h1 className="text-lg font-semibold">Poin Utama</h1>
+                                <h1 className="text-lg font-semibold">{t('courses.detail.keyPoints')}</h1>
                                 <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
                                     {keyPointList.map((keyPoint, idx) => (
                                         <li key={idx} className="flex items-center gap-2">
@@ -504,7 +509,7 @@ export default function DetailMyCourse({
                                         onClick={() => router.get(route('learn.course.detail', { course: courseData.slug }))}
                                         disabled={!hasActiveAccess}
                                     >
-                                        {isCompleted ? 'Lihat Kembali Materi' : 'Lanjutkan Belajar'}
+                                        {isCompleted ? t('courses.detail.reviewMaterial') : t('courses.detail.continueLearning')}
                                     </Button>
 
                                     {courseData.group_url && (
@@ -521,12 +526,12 @@ export default function DetailMyCourse({
                                                     rel="noopener noreferrer"
                                                 >
                                                     <MessageCircle className="mr-2 h-4 w-4" />
-                                                    Masuk Grup WA
+                                                    {t('courses.detail.joinWAGroup')}
                                                 </a>
                                             ) : (
                                                 <span>
                                                     <MessageCircle className="mr-2 h-4 w-4" />
-                                                    Masuk Grup WA
+                                                    {t('courses.detail.joinWAGroup')}
                                                 </span>
                                             )}
                                         </Button>

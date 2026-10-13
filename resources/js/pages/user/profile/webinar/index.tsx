@@ -7,6 +7,7 @@ import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
 import { Award, Calendar, CheckCircle, Clock, Play } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Webinar {
     id: string;
@@ -50,6 +51,7 @@ interface WebinarProps {
 }
 
 export default function MyWebinars({ myWebinars }: WebinarProps) {
+    const { t, i18n } = useTranslation('profile');
     const [search, setSearch] = useState('');
     const [visibleCount, setVisibleCount] = useState(6);
 
@@ -88,17 +90,17 @@ export default function MyWebinars({ myWebinars }: WebinarProps) {
 
     return (
         <UserLayout>
-            <Head title="Webinar Saya" />
+            <Head title={t('webinars.title')} />
             <ProfileLayout>
-                <Heading title="Webinar Saya" description="Jalin relasi dan tingkatkan pengetahuan Anda dengan webinar kami" />
+                <Heading title={t('webinars.title')} description={t('webinars.description')} />
                 <div className="mb-4 flex justify-between gap-2">
-                    <Input type="search" placeholder="Cari webinar saya..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                    <Input type="search" placeholder={t('webinars.searchPlaceholder')} value={search} onChange={(e) => setSearch(e.target.value)} />
                 </div>
                 <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {visibleItems.length === 0 ? (
                         <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
                             <img src="/assets/images/not-found.webp" alt="Webinar Belum Tersedia" className="w-48" />
-                            <div className="text-center text-gray-500">Belum ada webinar yang tersedia saat ini.</div>
+                            <div className="text-center text-gray-500">{t('webinars.empty')}</div>
                         </div>
                     ) : (
                         visibleItems.map((item) => (
@@ -112,7 +114,7 @@ export default function MyWebinars({ myWebinars }: WebinarProps) {
                                     {isCompleted(item.webinar) && (
                                         <div className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 px-3 py-1 text-xs font-semibold text-white shadow-lg">
                                             <Award className="h-3 w-3" />
-                                            Selesai
+                                            {t('webinars.statusCompleted')}
                                         </div>
                                     )}
 
@@ -126,7 +128,7 @@ export default function MyWebinars({ myWebinars }: WebinarProps) {
                                     {isUpcoming(item.webinar) && (
                                         <div className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-lg">
                                             <Clock className="h-3 w-3" />
-                                            Akan Datang
+                                            {t('webinars.statusUpcoming')}
                                         </div>
                                     )}
 
@@ -147,7 +149,7 @@ export default function MyWebinars({ myWebinars }: WebinarProps) {
                                         {isCompleted(item.webinar) && (
                                             <div className="mb-3 flex items-center gap-2 rounded-lg bg-green-50 p-2 dark:bg-green-900/20">
                                                 <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                                <span className="text-xs font-medium text-green-700 dark:text-green-300">Webinar telah selesai</span>
+                                                <span className="text-xs font-medium text-green-700 dark:text-green-300">{t('webinars.completedNotice')}</span>
                                             </div>
                                         )}
 
@@ -157,14 +159,14 @@ export default function MyWebinars({ myWebinars }: WebinarProps) {
                                                     <div className="h-2 w-2 animate-pulse rounded-full bg-red-500"></div>
                                                     <Play className="h-4 w-4 text-red-600 dark:text-red-400" />
                                                 </div>
-                                                <span className="text-xs font-medium text-red-700 dark:text-red-300">Sedang berlangsung</span>
+                                                <span className="text-xs font-medium text-red-700 dark:text-red-300">{t('webinars.liveNotice')}</span>
                                             </div>
                                         )}
 
                                         {isUpcoming(item.webinar) && (
                                             <div className="mb-3 flex items-center gap-2 rounded-lg bg-blue-50 p-2 dark:bg-blue-900/20">
                                                 <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Belum dimulai</span>
+                                                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">{t('webinars.upcomingNotice')}</span>
                                             </div>
                                         )}
 
@@ -172,7 +174,7 @@ export default function MyWebinars({ myWebinars }: WebinarProps) {
                                             <div className="flex items-center gap-2">
                                                 <Calendar size="16" className="text-gray-500" />
                                                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                                                    {new Date(item.webinar.start_time).toLocaleDateString('id-ID', {
+                                                    {new Date(item.webinar.start_time).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                                         day: 'numeric',
                                                         month: 'short',
                                                         year: 'numeric',
@@ -182,12 +184,12 @@ export default function MyWebinars({ myWebinars }: WebinarProps) {
                                             <div className="flex items-center gap-2">
                                                 <Clock size="16" className="text-gray-500" />
                                                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                                                    {new Date(item.webinar.start_time).toLocaleTimeString('id-ID', {
+                                                    {new Date(item.webinar.start_time).toLocaleTimeString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                                         hour: '2-digit',
                                                         minute: '2-digit',
                                                     })}{' '}
                                                     -{' '}
-                                                    {new Date(item.webinar.end_time).toLocaleTimeString('id-ID', {
+                                                    {new Date(item.webinar.end_time).toLocaleTimeString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                                         hour: '2-digit',
                                                         minute: '2-digit',
                                                     })}
@@ -203,7 +205,7 @@ export default function MyWebinars({ myWebinars }: WebinarProps) {
                 {visibleCount < filteredItems.length && (
                     <div className="mb-8 flex justify-center">
                         <Button type="button" className="mt-8 hover:cursor-pointer" onClick={() => setVisibleCount((prev) => prev + 6)}>
-                            Lihat Lebih Banyak
+                            {t('webinars.loadMore')}
                         </Button>
                     </div>
                 )}

@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { BadgeCheck, Star, User } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Course {
     title: string;
@@ -17,20 +18,21 @@ function parseList(items?: string | null): string[] {
 }
 
 export default function AboutSection({ course }: { course: Course }) {
+    const { t } = useTranslation('user');
     const keyPoints = parseList(course.key_points);
 
     return (
         <>
             <section className="mx-auto w-full max-w-5xl px-4" id="about">
                 <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-5xl">
-                    Kembangkan Skillmu
+                    {t('course.detail.developSkill')}
                 </h2>
                 <p className="text-center text-gray-600 dark:text-gray-400">{course.description}</p>
             </section>
             {course.images!.length > 0 && (
                 <section className="mx-auto mt-4 w-full max-w-5xl px-4">
                     <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                        Highlight Kelas
+                        {t('course.detail.classHighlight')}
                     </p>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {course.images?.map((image, index) => (
@@ -46,7 +48,7 @@ export default function AboutSection({ course }: { course: Course }) {
             )}
             <section className="mx-auto mt-4 w-full max-w-5xl px-4">
                 <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                    Poin Utama
+                    {t('course.detail.keyPoints')}
                 </p>
                 <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {keyPoints.map((req, idx) => (
@@ -59,7 +61,7 @@ export default function AboutSection({ course }: { course: Course }) {
             </section>
             <section className="mx-auto mt-4 w-full max-w-5xl px-4">
                 <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                    Belajar dengan Ahlinya
+                    {t('course.detail.learnFromExperts')}
                 </p>
                 {course.user?.name === 'Admin' ? (
                     <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-md dark:border-zinc-700 dark:bg-zinc-800">

@@ -193,16 +193,23 @@ class InstallmentController extends Controller
         }
 
         $dpTerm = $terms->first();
-        // Jadwal termin 1 mengikuti batas pendaftaran jika produk bukan kelas online dan memiliki registration_deadline
         $dpDueDate = ($type !== 'course' && !empty($item->registration_deadline))
             ? Carbon::parse($item->registration_deadline)
             : ($dpTerm->due_date ? Carbon::parse($dpTerm->due_date) : null);
 
-        if ($dpDueDate && Carbon::now('Asia/Jakarta')->gt($dpDueDate->copy()->endOfDay())) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Opsi pembayaran cicilan untuk program ini telah ditutup karena batas waktu pendaftaran / termin pertama telah terlewati.',
-            ], 422);
+        $now = Carbon::now('Asia/Jakarta');
+        foreach ($terms as $term) {
+            $termDueDate = ($term->term_number === 1 && $dpDueDate)
+                ? $dpDueDate
+                : ($term->due_date ? Carbon::parse($term->due_date) : null);
+
+            if ($termDueDate && $now->gt($termDueDate->copy()->endOfDay())) {
+                $termLabel = $term->term_number === 1 ? 'pertama (DP)' : 'ke-' . $term->term_number;
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Opsi pembayaran cicilan untuk program ini telah ditutup karena batas waktu termin ' . $termLabel . ' telah terlewati.',
+                ], 422);
+            }
         }
 
         $adminFeePerTerm = 5000;
@@ -557,6 +564,57 @@ class InstallmentController extends Controller
         } catch (\Throwable $e) {
             Log::error('Manual installment reminder failed', ['error' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => 'Gagal mengirim pengingat: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Update/perpanjang jatuh tempo termin cicilan tertentu oleh admin
+     */
+    public function updateDueDate(Request $request, $id)
+    {
+        $request->validate([
+            'due_date' => 'required|date',
+        ]);
+
+        try {
+            $childInvoice = Invoice::findOrFail($id);
+            $newDueDate = Carbon::parse($request->due_date);
+
+            $childInvoice->update([
+                'installment_due_date' => $newDueDate,
+            ]);
+
+            $parentInvoice = $childInvoice->parentInvoice;
+            $unsuspended = false;
+
+            if ($parentInvoice && $parentInvoice->access_suspended_at) {
+                $now = Carbon::now('Asia/Jakarta');
+                $hasOtherOverdue = $parentInvoice->installmentTerms()
+                    ->where('id', '!=', $childInvoice->id)
+                    ->where('status', '!=', 'paid')
+                    ->whereNotNull('installment_due_date')
+                    ->where('installment_due_date', '<', $now->startOfDay())
+                    ->exists();
+
+                if (!$hasOtherOverdue && $newDueDate->endOfDay()->gte($now)) {
+                    $parentInvoice->update(['access_suspended_at' => null]);
+                    $unsuspended = true;
+                    Log::info("Parent invoice {$parentInvoice->invoice_code} un-suspended by admin extending due date on term {$childInvoice->installment_number}");
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tanggal jatuh tempo berhasil diperbarui' . ($unsuspended ? ' dan status pembekuan akses peserta telah dipulihkan.' : '.'),
+                'installment_due_date' => $newDueDate->format('Y-m-d H:i:s'),
+                'is_access_suspended' => $parentInvoice ? $parentInvoice->isAccessSuspended() : false,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Update installment due date failed', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui tanggal jatuh tempo: ' . $e->getMessage(),
+            ], 422);
         }
     }
 

@@ -1,5 +1,6 @@
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 import BenefitsSection from './benefits-section';
 import BundleItemsSection from './bundle-items-section';
 import HeroSection from './hero-section';
@@ -71,9 +72,11 @@ export default function BundleDetail({
     hasOwnedItems,
     ownedItems,
 }: BundleDetailProps) {
+    const { t } = useTranslation('user');
+
     return (
         <UserLayout>
-            <Head title={`${bundle.title} - Paket Bundling`} />
+            <Head title={t('bundling.detail.headTitle', { title: bundle.title })} />
 
             <HeroSection bundle={bundle} discountPercentage={discountPercentage} />
             <BundleItemsSection bundle={bundle} groupedItems={groupedItems} totalOriginalPrice={totalOriginalPrice} />

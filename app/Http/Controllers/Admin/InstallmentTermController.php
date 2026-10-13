@@ -87,18 +87,29 @@ class InstallmentTermController extends Controller
             $product->update(['installment_enabled' => $enabled]);
 
             if ($enabled && !empty($request->terms)) {
-                // Hapus semua termin lama
-                $product->installmentTerms()->delete();
+                $submittedTermNumbers = collect($request->terms)->pluck('term_number')->all();
 
-                // Buat termin baru
+                // Hapus termin yang tidak ada lagi dalam konfigurasi baru
+                $product->installmentTerms()
+                    ->whereNotIn('term_number', $submittedTermNumbers)
+                    ->delete();
+
+                // Buat atau perbarui termin yang ada
                 foreach ($request->terms as $termData) {
-                    ProductInstallmentTerm::create([
-                        'termable_type' => get_class($product),
-                        'termable_id' => $product->id,
-                        'term_number' => $termData['term_number'],
-                        'amount' => $termData['amount'],
-                        'due_date' => $termData['due_date'],
-                    ]);
+                    $term = ProductInstallmentTerm::updateOrCreate(
+                        [
+                            'termable_type' => get_class($product),
+                            'termable_id' => $product->id,
+                            'term_number' => $termData['term_number'],
+                        ],
+                        [
+                            'amount' => $termData['amount'],
+                            'due_date' => $termData['due_date'],
+                        ]
+                    );
+
+                    // Cascade sinkronisasi ke invoice anak yang masih pending/unpaid
+                    $term->syncWithPendingInvoices();
                 }
             }
 

@@ -15,6 +15,7 @@ import axios from 'axios';
 import { BadgeCheck, Check, Hourglass, User, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface Course {
     id: string;
@@ -113,6 +114,8 @@ export default function CheckoutCourse({
     referralInfo: ReferralInfo;
     installmentTerms?: InstallmentTermOption[];
 }) {
+    const { t, i18n } = useTranslation('user');
+    const locale = i18n.language === 'en' ? 'en-US' : 'id-ID';
     const { auth } = usePage<SharedData>().props;
     const isLoggedIn = !!auth.user;
     const isProfileComplete = isLoggedIn && auth.user?.phone_number && auth.user?.instance && auth.user?.city;
@@ -217,19 +220,19 @@ export default function CheckoutCourse({
                 setPromoError('');
             } else {
                 setDiscountData(null);
-                setPromoError(data.message || 'Kode promo tidak valid');
+                setPromoError(data.message || t('course.checkout.errors.invalidPromo'));
             }
         } catch (error: unknown) {
             setDiscountData(null);
             if (axios.isAxiosError(error)) {
-                setPromoError(error.response?.data?.message || 'Terjadi kesalahan saat memvalidasi kode promo');
+                setPromoError(error.response?.data?.message || t('course.checkout.errors.promoValidateError'));
             } else {
-                setPromoError('Terjadi kesalahan saat memvalidasi kode promo');
+                setPromoError(t('course.checkout.errors.promoValidateError'));
             }
         } finally {
             setPromoLoading(false);
         }
-    }, [course.id, course.price, emailExists, guestFormData.email, isFree, isLoggedIn, promoCode]);
+    }, [course.id, course.price, emailExists, guestFormData.email, isFree, isLoggedIn, promoCode, t]);
 
     const validateReferralCode = useCallback(async () => {
         if (!promoCode.trim() || isFree) return;
@@ -249,19 +252,19 @@ export default function CheckoutCourse({
                 setReferralError('');
             } else {
                 setReferralData(null);
-                setReferralError(data.message || 'Kode referral tidak valid');
+                setReferralError(data.message || t('course.checkout.errors.invalidReferral'));
             }
         } catch (error: unknown) {
             setReferralData(null);
             if (axios.isAxiosError(error)) {
-                setReferralError(error.response?.data?.message || 'Terjadi kesalahan saat memvalidasi kode referral');
+                setReferralError(error.response?.data?.message || t('course.checkout.errors.referralValidateError'));
             } else {
-                setReferralError('Terjadi kesalahan saat memvalidasi kode referral');
+                setReferralError(t('course.checkout.errors.referralValidateError'));
             }
         } finally {
             setReferralLoading(false);
         }
-    }, [promoCode, isFree, isLoggedIn, guestFormData.email]);
+    }, [promoCode, isFree, isLoggedIn, guestFormData.email, t]);
 
     useEffect(() => {
         if (!promoCode.trim() || isFree) {
@@ -346,17 +349,17 @@ export default function CheckoutCourse({
         if (isLoggedIn) return true;
 
         if (!guestFormData.email || !guestFormData.phone_number) {
-            toast.error('Email dan nomor telepon wajib diisi.');
+            toast.error(t('course.checkout.errors.emailPhoneRequired'));
             return false;
         }
 
         if (!guestFormData.instance) {
-            toast.error('Instansi wajib diisi.');
+            toast.error(t('course.checkout.errors.instanceRequired'));
             return false;
         }
 
         if (!guestFormData.city) {
-            toast.error('Kota domisili wajib diisi.');
+            toast.error(t('course.checkout.errors.cityRequired'));
             return false;
         }
 
@@ -374,11 +377,11 @@ export default function CheckoutCourse({
                 const loginData = loginResponse.data;
 
                 if (!loginData.success) {
-                    throw new Error(loginData.message || 'Gagal login otomatis. Pastikan nomor telepon sesuai dengan yang terdaftar.');
+                    throw new Error(loginData.message || t('course.checkout.errors.autoLoginFailed'));
                 }
             } else {
                 if (!guestFormData.name) {
-                    toast.error('Nama lengkap wajib diisi.');
+                    toast.error(t('course.checkout.errors.nameRequired'));
                     setLoading(false);
                     return false;
                 }
@@ -395,7 +398,7 @@ export default function CheckoutCourse({
                 });
 
                 if (regResponse.data && regResponse.data.success === false) {
-                    throw new Error(regResponse.data.message || 'Gagal registrasi.');
+                    throw new Error(regResponse.data.message || t('course.checkout.errors.registerFailed'));
                 }
             }
 
@@ -403,9 +406,9 @@ export default function CheckoutCourse({
         } catch (error: unknown) {
             setLoading(false);
             if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || getErrorMessage(error, 'Gagal memproses login/registrasi otomatis.'));
+                toast.error(error.response?.data?.message || getErrorMessage(error, t('course.checkout.errors.processLoginFailed')));
             } else {
-                toast.error(getErrorMessage(error, 'Gagal memproses login/registrasi otomatis.'));
+                toast.error(getErrorMessage(error, t('course.checkout.errors.processLoginFailed')));
             }
             return false;
         }
@@ -423,14 +426,14 @@ export default function CheckoutCourse({
             {
                 onError: (errors) => {
                     console.log('Free enrollment errors:', errors);
-                    toast.error(errors.message || 'Gagal mendaftar kelas gratis.');
+                    toast.error(errors.message || t('course.checkout.errors.enrollFreeFailed'));
                 },
                 onFinish: () => {
                     setLoading(false);
                 },
             },
         );
-    }, [course.id]);
+    }, [course.id, t]);
 
     const submitPayment = useCallback(
         async (
@@ -472,27 +475,27 @@ export default function CheckoutCourse({
                     sessionStorage.removeItem('pendingCheckout');
                     window.location.href = data.payment_url;
                 } else {
-                    throw new Error(data.message || 'Gagal membuat invoice.');
+                    throw new Error(data.message || t('course.checkout.errors.createInvoiceFailed'));
                 }
             } catch (error) {
                 console.error('Payment error:', error);
                 throw error;
             }
         },
-        [basePrice, course.id, course.price, course.strikethrough_price, isFree, transactionFee, pointsChecked, pointsToUse, codeType, referralData, promoCode, referralInfo],
+        [basePrice, course.id, course.price, course.strikethrough_price, isFree, transactionFee, pointsChecked, pointsToUse, codeType, referralData, promoCode, referralInfo, t],
     );
 
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (activeInstallment && !activeInstallment.is_fully_paid) {
-            toast.error('Anda sedang memiliki program cicilan berjalan. Silakan selesaikan pembayaran melalui tab Cicilan.');
+            toast.error(t('course.checkout.activeInstallmentAlert'));
             setPaymentTab('installment');
             return;
         }
 
         if (!termsAccepted && !isFree) {
-            toast.error('Anda harus menyetujui syarat dan ketentuan!');
+            toast.error(t('course.checkout.errors.termsRequired'));
             return;
         }
 
@@ -513,10 +516,10 @@ export default function CheckoutCourse({
             await submitPayment(discountData);
         } catch (error: unknown) {
             const message = axios.isAxiosError(error)
-                ? error.response?.data?.message || 'Terjadi kesalahan saat proses pembayaran.'
+                ? error.response?.data?.message || t('course.checkout.errors.paymentFailed')
                 : error instanceof Error
                   ? error.message
-                  : 'Terjadi kesalahan saat proses pembayaran.';
+                  : t('course.checkout.errors.paymentFailed');
             toast.error(message);
             setLoading(false);
         }
@@ -525,24 +528,24 @@ export default function CheckoutCourse({
     if (isLoggedIn && !isProfileComplete) {
         return (
             <UserLayout>
-                <Head title="Checkout Kelas" />
+                <Head title={t('course.checkout.headTitle')} />
                 <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
                     <div className="mx-auto my-12 w-full max-w-7xl px-4">
                         <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
-                            Checkout Kelas "{course.title}"
+                            {t('course.checkout.pageTitle', { title: course.title })}
                         </h2>
-                        <p className="text-center text-gray-400">Silakan lengkapi profil Anda terlebih dahulu.</p>
+                        <p className="text-center text-gray-400">{t('course.checkout.incompleteProfileDesc')}</p>
                     </div>
                 </section>
                 <section className="mx-auto my-4 w-full max-w-7xl px-4">
                     <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
                         <User size={64} className="text-orange-500" />
-                        <h2 className="text-xl font-bold">Profil Belum Lengkap</h2>
+                        <h2 className="text-xl font-bold">{t('course.checkout.incompleteProfileTitle')}</h2>
                         <p className="text-sm text-gray-500">
-                            Profil Anda belum lengkap! Harap lengkapi nomor telepon, instansi, dan kota domisili terlebih dahulu untuk mendaftar kelas.
+                            {t('course.checkout.incompleteProfileDesc')}
                         </p>
                         <Button asChild className="w-full max-w-md">
-                            <Link href={route('profile.edit', { redirect: window.location.href })}>Lengkapi Profil</Link>
+                            <Link href={route('profile.edit', { redirect: window.location.href })}>{t('course.checkout.btnCompleteProfile')}</Link>
                         </Button>
                     </div>
                 </section>
@@ -554,7 +557,7 @@ export default function CheckoutCourse({
         <>
             {/* Pilihan Jenis Kode */}
             <div className="space-y-2">
-                <Label>Jenis Kode</Label>
+                <Label>{t('course.checkout.codeType')}</Label>
                 <RadioGroup
                     value={codeType}
                     onValueChange={(val: 'voucher' | 'referral') => {
@@ -573,11 +576,11 @@ export default function CheckoutCourse({
                 >
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem value="voucher" id="code-voucher" />
-                        <Label htmlFor="code-voucher" className="cursor-pointer">Voucher</Label>
+                        <Label htmlFor="code-voucher" className="cursor-pointer">{t('course.checkout.voucher')}</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem value="referral" id="code-referral" />
-                        <Label htmlFor="code-referral" className="cursor-pointer">Referral</Label>
+                        <Label htmlFor="code-referral" className="cursor-pointer">{t('course.checkout.referral')}</Label>
                     </div>
                 </RadioGroup>
             </div>
@@ -585,13 +588,13 @@ export default function CheckoutCourse({
             {/* Input Kode Tunggal */}
             <div className="space-y-2">
                 <Label htmlFor="promo-code">
-                    {codeType === 'voucher' ? 'Kode Voucher' : 'Kode Referral'}
+                    {codeType === 'voucher' ? t('course.checkout.voucherCode') : t('course.checkout.referralCode')}
                 </Label>
                 <div className="relative">
                     <Input
                         id="promo-code"
                         type="text"
-                        placeholder={codeType === 'voucher' ? 'Masukkan kode voucher' : 'Masukkan kode referral'}
+                        placeholder={codeType === 'voucher' ? t('course.checkout.enterVoucherCode') : t('course.checkout.enterReferralCode')}
                         value={promoCode}
                         onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                         className="pr-10"
@@ -627,11 +630,11 @@ export default function CheckoutCourse({
                         <div className="flex items-center gap-2">
                             <Check className="h-4 w-4 text-green-600" />
                             <p className="text-sm font-medium text-green-800">
-                                Voucher "{discountData.discount_code.code}" berhasil diterapkan!
+                                {t('course.checkout.voucherSuccess', { code: discountData.discount_code.code })}
                             </p>
                         </div>
                         <p className="mt-1 text-xs text-green-600">
-                            {discountData.discount_code.name} - Diskon {discountData.discount_code.formatted_value}
+                            {t('course.checkout.voucherDiscount', { name: discountData.discount_code.name, value: discountData.discount_code.formatted_value })}
                         </p>
                     </div>
                 )}
@@ -643,11 +646,11 @@ export default function CheckoutCourse({
                         <div className="flex items-center gap-2">
                             <Check className="h-4 w-4 text-green-600" />
                             <p className="text-sm font-medium text-green-800">
-                                Kode referral valid!
+                                {t('course.checkout.referralSuccess')}
                             </p>
                         </div>
                         <p className="mt-1 text-xs text-green-600">
-                            Pembelian pertama Anda dirujuk oleh {referralData.referrer?.name}. Reward poin akan masuk setelah pembayaran sukses.
+                            {t('course.checkout.referralReferredBy', { name: referralData.referrer?.name })}
                         </p>
                     </div>
                 )}
@@ -658,9 +661,12 @@ export default function CheckoutCourse({
                 <div className="space-y-4 rounded-lg border p-4">
                     <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                            <Label className="text-base">Gunakan Reward Point</Label>
+                            <Label className="text-base">{t('course.checkout.useRewardPoints')}</Label>
                             <p className="text-muted-foreground text-xs">
-                                Anda memiliki {userPoints.toLocaleString('id-ID')} poin (Rp {userPoints.toLocaleString('id-ID')})
+                                {t('course.checkout.pointsBalance', {
+                                    points: userPoints.toLocaleString(locale),
+                                    rupiah: userPoints.toLocaleString(locale),
+                                })}
                             </p>
                         </div>
                         <Switch
@@ -682,7 +688,7 @@ export default function CheckoutCourse({
 
                     {pointsChecked && (
                         <div className="space-y-2">
-                            <Label htmlFor="points-input">Jumlah poin yang digunakan</Label>
+                            <Label htmlFor="points-input">{t('course.checkout.pointsToUse')}</Label>
                             <div className="flex items-center gap-2">
                                 <Input
                                     id="points-input"
@@ -693,9 +699,9 @@ export default function CheckoutCourse({
                                     onChange={(e) => {
                                         const val = parseInt(e.target.value) || 0;
                                         if (val > userPoints) {
-                                            setPointsError('Poin melebihi saldo Anda.');
+                                            setPointsError(t('course.checkout.pointsExceedBalance'));
                                         } else if (val > maxPointsAllowed) {
-                                            setPointsError(`Maksimal poin yang dapat digunakan adalah ${maxPointsAllowed}.`);
+                                            setPointsError(t('course.checkout.pointsExceedMax', { max: maxPointsAllowed.toLocaleString(locale) }));
                                         } else {
                                             setPointsError('');
                                         }
@@ -711,12 +717,12 @@ export default function CheckoutCourse({
                                         setPointsError('');
                                     }}
                                 >
-                                    Maksimal
+                                    {t('course.checkout.maxPoints')}
                                 </Button>
                             </div>
                             {pointsError && <p className="text-xs text-red-600">{pointsError}</p>}
                             {codeType === 'voucher' && !!discountData?.valid && (
-                                <p className="text-xs text-amber-600">Poin tidak dapat digunakan bersamaan dengan kode voucher.</p>
+                                <p className="text-xs text-amber-600">{t('course.checkout.pointsConflictVoucher')}</p>
                             )}
                         </div>
                     )}
@@ -727,31 +733,31 @@ export default function CheckoutCourse({
                 {course.strikethrough_price > 0 && (
                     <>
                         <div className="flex items-center justify-between">
-                            <span className="text-gray-600">Harga Asli</span>
+                            <span className="text-gray-600">{t('course.checkout.originalPrice')}</span>
                             <span className="font-semibold text-gray-500 line-through">
-                                Rp {course.strikethrough_price.toLocaleString('id-ID')}
+                                Rp {course.strikethrough_price.toLocaleString(locale)}
                             </span>
                         </div>
                         <div className="flex items-center justify-between">
-                            <span className="text-gray-600">Diskon</span>
+                            <span className="text-gray-600">{t('course.checkout.discount')}</span>
                             <span className="font-semibold text-red-500">
-                                -Rp {(course.strikethrough_price - course.price).toLocaleString('id-ID')}
+                                -Rp {(course.strikethrough_price - course.price).toLocaleString(locale)}
                             </span>
                         </div>
                         <Separator className="my-2" />
                     </>
                 )}
                 <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Harga Kelas</span>
-                    <span className="font-semibold text-gray-500">Rp {course.price.toLocaleString('id-ID')}</span>
+                    <span className="text-gray-600">{t('course.checkout.coursePrice')}</span>
+                    <span className="font-semibold text-gray-500">Rp {course.price.toLocaleString(locale)}</span>
                 </div>
 
                 {/* Promo Discount */}
                 {codeType === 'voucher' && discountData?.valid && (
                     <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Diskon Promo ({discountData.discount_code.code})</span>
+                        <span className="text-gray-600">{t('course.checkout.promoDiscount', { code: discountData.discount_code.code })}</span>
                         <span className="font-semibold text-green-600">
-                            -Rp {discountData.discount_amount.toLocaleString('id-ID')}
+                            -Rp {discountData.discount_amount.toLocaleString(locale)}
                         </span>
                     </div>
                 )}
@@ -759,21 +765,21 @@ export default function CheckoutCourse({
                 {/* Points Discount */}
                 {pointsChecked && pointsToUse > 0 && !pointsError && (
                     <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Potongan Poin</span>
+                        <span className="text-gray-600">{t('course.checkout.pointsDiscount')}</span>
                         <span className="font-semibold text-green-600">
-                            -Rp {pointsToUse.toLocaleString('id-ID')}
+                            -Rp {pointsToUse.toLocaleString(locale)}
                         </span>
                     </div>
                 )}
 
                 <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Biaya Transaksi</span>
-                    <span className="font-semibold text-gray-500">Rp {transactionFee.toLocaleString('id-ID')}</span>
+                    <span className="text-gray-600">{t('course.checkout.transactionFee')}</span>
+                    <span className="font-semibold text-gray-500">Rp {transactionFee.toLocaleString(locale)}</span>
                 </div>
                 <Separator className="my-2" />
                 <div className="flex items-center justify-between">
-                    <span className="font-semibold text-gray-900">Total Pembayaran</span>
-                    <span className="text-primary text-xl font-bold">Rp {totalPrice.toLocaleString('id-ID')}</span>
+                    <span className="font-semibold text-gray-900">{t('course.checkout.totalPayment')}</span>
+                    <span className="text-primary text-xl font-bold">Rp {totalPrice.toLocaleString(locale)}</span>
                 </div>
             </div>
 
@@ -784,34 +790,34 @@ export default function CheckoutCourse({
                     onCheckedChange={(checked) => setTermsAccepted(checked === true)}
                 />
                 <Label htmlFor="terms">
-                    Saya menyetujui{' '}
+                    {t('course.checkout.agreeTerms')}{' '}
                     <a
                         href="/terms-and-conditions"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-700 hover:underline"
                     >
-                        syarat dan ketentuan
+                        {t('course.checkout.termsAndConditions')}
                     </a>
                 </Label>
             </div>
 
             <Button className="w-full" type="submit" disabled={!termsAccepted || loading}>
-                {loading ? 'Memproses...' : 'Lanjutkan Pembayaran'}
+                {loading ? t('course.checkout.processing') : t('course.checkout.btnPayNow')}
             </Button>
         </>
     );
 
     return (
         <UserLayout>
-            <Head title="Checkout Kelas" />
+            <Head title={t('course.checkout.headTitle')} />
             <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
                 <div className="mx-auto my-12 w-full max-w-7xl px-4">
                     <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
-                        Checkout Kelas "{course.title}"
+                        {t('course.checkout.pageTitle', { title: course.title })}
                     </h2>
                     <p className="text-center text-gray-400">
-                        {isFree ? 'Lanjutkan untuk mendapatkan akses gratis ke kelas ini.' : 'Silakan selesaikan pembayaran untuk mendaftar kelas.'}
+                        {isFree ? t('course.checkout.freeSubtitle') : t('course.checkout.subtitle')}
                     </p>
                 </div>
             </section>
@@ -819,14 +825,14 @@ export default function CheckoutCourse({
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
                     <Tabs defaultValue="detail" className="lg:col-span-2">
                         <TabsList>
-                            <TabsTrigger value="detail">Detail Kelas</TabsTrigger>
-                            <TabsTrigger value="preview">Preview Video</TabsTrigger>
+                            <TabsTrigger value="detail">{t('course.checkout.tabDetail')}</TabsTrigger>
+                            <TabsTrigger value="preview">{t('course.checkout.tabPreview')}</TabsTrigger>
                         </TabsList>
                         <TabsContent value="detail">
                             <div className="h-full rounded-lg border p-4">
-                                <h2 className="text-3xl font-bold italic">Yang akan kamu pelajari</h2>
+                                <h2 className="text-3xl font-bold italic">{t('course.checkout.whatYouWillLearn')}</h2>
                                 <p className="mt-2 mb-4 text-sm text-gray-600">
-                                    Berikut adalah beberapa poin penting yang akan kamu pelajari dalam kelas "{course.title}".
+                                    {t('course.checkout.whatYouWillLearnDesc', { title: course.title })}
                                 </p>
                                 <ul className="space-y-2">
                                     {keyPointList.map((keyPoint, idx) => (
@@ -840,10 +846,9 @@ export default function CheckoutCourse({
                         </TabsContent>
                         <TabsContent value="preview">
                             <div className="h-full rounded-lg border p-4">
-                                <h2 className="text-3xl font-bold italic">Preview Video</h2>
+                                <h2 className="text-3xl font-bold italic">{t('course.checkout.videoPreviewTitle')}</h2>
                                 <p className="mt-2 mb-4 text-sm text-gray-600">
-                                    Berikut adalah preview video dari kelas "{course.title}". Silakan tonton untuk mendapatkan gambaran materi yang
-                                    akan dipelajari.
+                                    {t('course.checkout.videoPreviewDesc', { title: course.title })}
                                 </p>
                                 <div className="aspect-video w-full">
                                     <iframe
@@ -868,10 +873,10 @@ export default function CheckoutCourse({
                     {hasAccess && (!activeInstallment || activeInstallment.is_fully_paid) ? (
                         <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
                             <BadgeCheck size={64} className="text-green-500" />
-                            <h2 className="text-xl font-bold">Anda Sudah Memiliki Akses</h2>
-                            <p className="text-sm text-gray-500">Anda sudah terdaftar di kelas ini. Silakan lanjutkan belajar.</p>
+                            <h2 className="text-xl font-bold">{t('course.checkout.alreadyHaveAccessTitle')}</h2>
+                            <p className="text-sm text-gray-500">{t('course.checkout.alreadyHaveAccessDesc')}</p>
                             <Button asChild className="w-full">
-                                <a href={`/profile/my-courses/${course.slug}`}>Masuk ke Kelas</a>
+                                <a href={`/profile/my-courses/${course.slug}`}>{t('course.checkout.btnEnterClass')}</a>
                             </Button>
                         </div>
                     ) : (pendingInvoice || pendingInvoiceUrl) && !activeInstallment ? (
@@ -879,32 +884,34 @@ export default function CheckoutCourse({
                             <div className="flex items-center gap-2 mb-2 text-yellow-600 dark:text-yellow-400">
                                 <Hourglass className="h-5 w-5" />
                                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                                    Transaksi Menunggu Pembayaran
+                                    {t('course.checkout.pendingInvoiceTitle')}
                                 </h3>
                             </div>
                             <p className="text-sm text-gray-500">
                                 {pendingInvoice?.invoice_code ? (
-                                    <>Kode Invoice: <span className="font-semibold text-gray-800 dark:text-gray-200">{pendingInvoice.invoice_code}</span></>
+                                    <>
+                                        {t('course.checkout.pendingInvoiceCode', { code: pendingInvoice.invoice_code })}
+                                    </>
                                 ) : (
-                                    'Anda memiliki transaksi yang belum selesai untuk kelas ini.'
+                                    t('course.checkout.pendingInvoiceGeneric')
                                 )}
                             </p>
                             {pendingInvoice?.amount !== undefined && (
                                 <p className="text-2xl font-bold text-orange-600 my-3">
-                                    Rp {pendingInvoice.amount.toLocaleString('id-ID')}
+                                    Rp {pendingInvoice.amount.toLocaleString(locale)}
                                 </p>
                             )}
                             <div className="space-y-2 pt-2">
                                 {(pendingInvoice?.invoice_url || pendingInvoiceUrl) && (
                                     <Button asChild className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold" size="lg">
                                         <a href={pendingInvoice?.invoice_url || pendingInvoiceUrl!}>
-                                            Lanjutkan Pembayaran
+                                            {t('course.checkout.btnContinuePayment')}
                                         </a>
                                     </Button>
                                 )}
                                 <div className="flex gap-2">
                                     <Button onClick={() => window.location.reload()} variant="outline" className="flex-1" size="lg">
-                                        Cek Status
+                                        {t('course.checkout.btnCheckStatus')}
                                     </Button>
                                     {pendingInvoice?.id && (
                                         <Button
@@ -914,29 +921,29 @@ export default function CheckoutCourse({
                                             size="lg"
                                             disabled={cancellingInvoice}
                                             onClick={async () => {
-                                                if (confirm('Apakah Anda yakin ingin membatalkan transaksi ini dan membuat pesanan baru?')) {
+                                                if (confirm(t('course.checkout.confirmCancel'))) {
                                                     setCancellingInvoice(true);
                                                     try {
                                                         const res = await axios.post(route('invoice.cancel', pendingInvoice.id));
                                                         if (res.data?.success) {
-                                                            toast.success('Pesanan berhasil dibatalkan.');
+                                                            toast.success(t('course.checkout.cancelSuccess'));
                                                             window.location.reload();
                                                         } else {
-                                                            toast.error(res.data?.message || 'Gagal membatalkan pesanan.');
+                                                            toast.error(res.data?.message || t('course.checkout.cancelFailed'));
                                                             setCancellingInvoice(false);
                                                         }
                                                     } catch (err: unknown) {
                                                         if (axios.isAxiosError(err)) {
-                                                            toast.error(err.response?.data?.message || 'Gagal membatalkan pesanan.');
+                                                            toast.error(err.response?.data?.message || t('course.checkout.cancelFailed'));
                                                         } else {
-                                                            toast.error('Gagal membatalkan pesanan.');
+                                                            toast.error(t('course.checkout.cancelFailed'));
                                                         }
                                                         setCancellingInvoice(false);
                                                     }
                                                 }
                                             }}
                                         >
-                                            {cancellingInvoice ? 'Membatalkan...' : 'Batalkan Pesanan'}
+                                            {cancellingInvoice ? t('course.checkout.cancelling') : t('course.checkout.btnCancelOrder')}
                                         </Button>
                                     )}
                                 </div>
@@ -944,13 +951,13 @@ export default function CheckoutCourse({
                         </div>
                     ) : (
                         <form onSubmit={handleCheckout}>
-                            <h2 className="my-2 text-xl font-bold italic">Detail {isFree ? 'Pendaftaran' : 'Pembayaran'}</h2>
+                            <h2 className="my-2 text-xl font-bold italic">{isFree ? t('course.checkout.registrationDetailTitle') : t('course.checkout.paymentDetailTitle')}</h2>
                             <div className="space-y-4 rounded-lg border p-4">
                                 {!isLoggedIn && (
                                     <div className="space-y-3 rounded-lg border p-4">
-                                        <h3 className="text-lg font-semibold">Data Diri</h3>
+                                        <h3 className="text-lg font-semibold">{t('course.checkout.personalDataTitle')}</h3>
                                         <div className="space-y-2">
-                                            <Label htmlFor="guest-email">Email</Label>
+                                            <Label htmlFor="guest-email">{t('course.checkout.emailLabel')}</Label>
                                             <Input
                                                 id="guest-email"
                                                 type="email"
@@ -959,16 +966,16 @@ export default function CheckoutCourse({
                                                 onChange={(e) => updateGuestForm('email', e.target.value)}
                                                 required
                                             />
-                                            {checkingEmail && <p className="text-xs text-gray-500">Mengecek email...</p>}
-                                            {emailExists && <p className="text-xs text-green-600">Email ditemukan. Login otomatis akan digunakan.</p>}
+                                            {checkingEmail && <p className="text-xs text-gray-500">{t('course.checkout.checkingEmail')}</p>}
+                                            {emailExists && <p className="text-xs text-green-600">{t('course.checkout.emailFound')}</p>}
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="guest-name">Nama</Label>
+                                            <Label htmlFor="guest-name">{t('course.checkout.nameLabel')}</Label>
                                             <Input
                                                 id="guest-name"
                                                 type="text"
-                                                placeholder="Nama lengkap"
+                                                placeholder={t('course.checkout.namePlaceholder')}
                                                 value={guestFormData.name}
                                                 onChange={(e) => updateGuestForm('name', e.target.value)}
                                                 disabled={emailExists}
@@ -977,30 +984,30 @@ export default function CheckoutCourse({
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="guest-phone">No. Telepon</Label>
+                                            <Label htmlFor="guest-phone">{t('course.checkout.phoneLabel')}</Label>
                                             <Input
                                                 id="guest-phone"
                                                 type="tel"
-                                                placeholder="08xxxxxxxxxx"
+                                                placeholder={t('course.checkout.phonePlaceholder')}
                                                 value={guestFormData.phone_number}
                                                 onChange={(e) => updateGuestForm('phone_number', e.target.value)}
                                                 disabled={emailExists}
                                                 required
                                             />
                                             {!emailExists && (
-                                                <p className="text-xs text-gray-500">Nomor telepon akan digunakan sebagai password akun Anda.</p>
+                                                <p className="text-xs text-gray-500">{t('course.checkout.phoneNotice')}</p>
                                             )}
                                             {emailExists && (
-                                                <p className="text-xs text-blue-600">Data akun ditemukan dan dikunci agar sesuai akun terdaftar.</p>
+                                                <p className="text-xs text-blue-600">{t('course.checkout.accountLockedNotice')}</p>
                                             )}
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="guest-instance">Instansi</Label>
+                                            <Label htmlFor="guest-instance">{t('course.checkout.instanceLabel')}</Label>
                                             <Input
                                                 id="guest-instance"
                                                 type="text"
-                                                placeholder="Instansi / perusahaan"
+                                                placeholder={t('course.checkout.instancePlaceholder')}
                                                 value={guestFormData.instance}
                                                 onChange={(e) => updateGuestForm('instance', e.target.value)}
                                                 disabled={loading}
@@ -1009,11 +1016,11 @@ export default function CheckoutCourse({
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="guest-city">Kota Domisili</Label>
+                                            <Label htmlFor="guest-city">{t('course.checkout.cityLabel')}</Label>
                                             <Input
                                                 id="guest-city"
                                                 type="text"
-                                                placeholder="Kota domisili Anda"
+                                                placeholder={t('course.checkout.cityPlaceholder')}
                                                 value={guestFormData.city}
                                                 onChange={(e) => updateGuestForm('city', e.target.value)}
                                                 disabled={loading}
@@ -1026,10 +1033,10 @@ export default function CheckoutCourse({
                                 {isFree ? (
                                     <div className="space-y-4">
                                         <div className="flex items-center justify-between p-4 text-center">
-                                            <span className="w-full text-2xl font-bold text-green-600">KELAS GRATIS</span>
+                                            <span className="w-full text-2xl font-bold text-green-600">{t('course.checkout.freeClassBadge')}</span>
                                         </div>
                                         <Button className="w-full" type="submit" disabled={loading}>
-                                            {loading ? 'Memproses...' : 'Dapatkan Akses Gratis'}
+                                            {loading ? t('course.checkout.processing') : t('course.checkout.btnGetFreeAccess')}
                                         </Button>
                                     </div>
                                 ) : ((installmentTerms && installmentTerms.length > 0) || (activeInstallment && !activeInstallment.is_fully_paid)) ? (
@@ -1037,7 +1044,7 @@ export default function CheckoutCourse({
                                         value={paymentTab}
                                         onValueChange={(val) => {
                                             if (val === 'full' && activeInstallment && !activeInstallment.is_fully_paid) {
-                                                toast.error('Anda memiliki program cicilan berjalan. Silakan selesaikan pembayaran cicilan Anda.');
+                                                toast.error(t('course.checkout.activeInstallmentAlert'));
                                                 return;
                                             }
                                             setPaymentTab(val as 'full' | 'installment');
@@ -1046,12 +1053,14 @@ export default function CheckoutCourse({
                                     >
                                         <TabsList className="grid w-full grid-cols-2 mb-3">
                                             <TabsTrigger value="full" disabled={!!activeInstallment && !activeInstallment.is_fully_paid}>
-                                                Bayar Penuh
+                                                {t('course.checkout.tabFullPayment')}
                                             </TabsTrigger>
                                             <TabsTrigger value="installment" className="flex items-center gap-1.5">
-                                                <span>Cicilan</span>
+                                                <span>{t('course.checkout.tabInstallment')}</span>
                                                 <Badge variant="secondary" className="px-1.5 py-0 text-[10px] bg-primary/10 text-primary">
-                                                    {activeInstallment && !activeInstallment.is_fully_paid ? (activeInstallment.total_terms || activeInstallment.terms?.length) : installmentTerms.length}x
+                                                    {t('course.checkout.installmentBadge', {
+                                                        count: activeInstallment && !activeInstallment.is_fully_paid ? (activeInstallment.total_terms || activeInstallment.terms?.length) : installmentTerms.length
+                                                    })}
                                                 </Badge>
                                             </TabsTrigger>
                                         </TabsList>
@@ -1073,11 +1082,11 @@ export default function CheckoutCourse({
                                                 onTermsAcceptedChange={setTermsAccepted}
                                                 onBeforePay={async () => {
                                                     if (!activeInstallment && !termsAccepted) {
-                                                        toast.error('Anda harus menyetujui syarat dan ketentuan!');
+                                                        toast.error(t('course.checkout.errors.termsRequired'));
                                                         return false;
                                                     }
                                                     if (!isLoggedIn && (!guestFormData.email || !guestFormData.phone_number || !guestFormData.instance || !guestFormData.city || (!emailExists && !guestFormData.name))) {
-                                                        toast.error('Lengkapi semua data diri terlebih dahulu.');
+                                                        toast.error(t('course.checkout.errors.completePersonalData'));
                                                         return false;
                                                     }
                                                     return await ensureAuthenticated();

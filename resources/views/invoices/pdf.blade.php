@@ -202,12 +202,15 @@
                     </div>
                 </td>
                 <td class="invoice-info">
-                    <div class="invoice-title">INVOICE</div>
+                    <div class="invoice-title">{{ __('messages.invoice.title') }}</div>
                     <div class="invoice-code">#{{ $invoice->invoice_code }}</div>
+                    @php
+                        $paidDate = $invoice->paid_at ?? (in_array($invoice->status, ['paid', 'completed']) ? $invoice->updated_at : null);
+                    @endphp
                     <div style="font-size: 11px; color: #666;">
-                        Tanggal: {{ \Carbon\Carbon::parse($invoice->created_at)->format('d M Y') }}<br>
-                        @if ($invoice->paid_at)
-                            Dibayar: {{ \Carbon\Carbon::parse($invoice->paid_at)->format('d M Y') }}
+                        {{ __('messages.invoice.date') }}: {{ \Carbon\Carbon::parse($invoice->created_at)->translatedFormat('d M Y') }}<br>
+                        @if ($paidDate)
+                            {{ __('messages.invoice.paid') }}: {{ \Carbon\Carbon::parse($paidDate)->translatedFormat('d M Y') }}
                         @endif
                     </div>
                 </td>
@@ -216,24 +219,24 @@
     </div>
 
     <div class="customer-section">
-        <div class="section-title">Informasi Pelanggan</div>
+        <div class="section-title">{{ __('messages.invoice.customer_info') }}</div>
         <div class="customer-info">
             <strong>{{ $invoice->user->name }}</strong><br>
             Email: {{ $invoice->user->email }}<br>
             @if ($invoice->user->phone_number)
-                Telepon: {{ $invoice->user->phone_number }}<br>
+                {{ __('messages.invoice.phone') }}: {{ $invoice->user->phone_number }}<br>
             @endif
         </div>
     </div>
 
-    <div class="section-title">Detail Pembelian</div>
+    <div class="section-title">{{ __('messages.invoice.purchase_detail') }}</div>
     <table class="items-table">
         <thead>
             <tr>
-                <th style="width: 10%">No</th>
-                <th style="width: 20%">Kategori</th>
-                <th style="width: 50%">Nama Program</th>
-                <th style="width: 20%" class="text-right">Harga</th>
+                <th style="width: 10%">{{ __('messages.invoice.no') }}</th>
+                <th style="width: 20%">{{ __('messages.invoice.category') }}</th>
+                <th style="width: 50%">{{ __('messages.invoice.program_name') }}</th>
+                <th style="width: 20%" class="text-right">{{ __('messages.invoice.price') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -244,41 +247,49 @@
 
             @if ($invoice->isInstallmentChild())
                 @php
+                    $parent = $invoice->parentInvoice;
+                    $courseItems = ($invoice->courseItems && $invoice->courseItems->count() > 0) ? $invoice->courseItems : ($parent ? $parent->courseItems : collect());
+                    $bootcampItems = ($invoice->bootcampItems && $invoice->bootcampItems->count() > 0) ? $invoice->bootcampItems : ($parent ? $parent->bootcampItems : collect());
+                    $webinarItems = ($invoice->webinarItems && $invoice->webinarItems->count() > 0) ? $invoice->webinarItems : ($parent ? $parent->webinarItems : collect());
+                    $certificationProgramItems = ($invoice->certificationProgramItems && $invoice->certificationProgramItems->count() > 0) ? $invoice->certificationProgramItems : ($parent ? $parent->certificationProgramItems : collect());
+                    $privateItems = ($invoice->privateItems && $invoice->privateItems->count() > 0) ? $invoice->privateItems : ($parent ? $parent->privateItems : collect());
+                    $bundleEnrollments = ($invoice->bundleEnrollments && $invoice->bundleEnrollments->count() > 0) ? $invoice->bundleEnrollments : ($parent ? $parent->bundleEnrollments : collect());
+
                     $productTitle = 'Program Pelatihan';
                     $categoryBadge = 'Cicilan';
                     $badgeStyle = 'background-color: #0284c7; color: white;';
                     $productDesc = null;
 
-                    if ($invoice->courseItems && $invoice->courseItems->count() > 0) {
-                        $productTitle = $invoice->courseItems->first()->course->title ?? 'Kelas Online';
+                    if ($courseItems && $courseItems->count() > 0) {
+                        $productTitle = $courseItems->first()->course->title ?? 'Kelas Online';
                         $categoryBadge = 'Kelas Online';
                         $badgeStyle = 'background-color: #198754; color: white;';
-                        $productDesc = $invoice->courseItems->first()->course->description ?? null;
-                    } elseif ($invoice->bootcampItems && $invoice->bootcampItems->count() > 0) {
-                        $productTitle = $invoice->bootcampItems->first()->bootcamp->title ?? 'Bootcamp';
+                        $productDesc = $courseItems->first()->course->description ?? null;
+                    } elseif ($bootcampItems && $bootcampItems->count() > 0) {
+                        $productTitle = $bootcampItems->first()->bootcamp->title ?? 'Bootcamp';
                         $categoryBadge = 'Bootcamp';
                         $badgeStyle = 'background-color: #fd7e14; color: white;';
-                        $productDesc = $invoice->bootcampItems->first()->bootcamp->description ?? null;
-                    } elseif ($invoice->webinarItems && $invoice->webinarItems->count() > 0) {
-                        $productTitle = $invoice->webinarItems->first()->webinar->title ?? 'Webinar';
+                        $productDesc = $bootcampItems->first()->bootcamp->description ?? null;
+                    } elseif ($webinarItems && $webinarItems->count() > 0) {
+                        $productTitle = $webinarItems->first()->webinar->title ?? 'Webinar';
                         $categoryBadge = 'Webinar';
                         $badgeStyle = 'background-color: #6f42c1; color: white;';
-                        $productDesc = $invoice->webinarItems->first()->webinar->description ?? null;
-                    } elseif ($invoice->certificationProgramItems && $invoice->certificationProgramItems->count() > 0) {
-                        $productTitle = $invoice->certificationProgramItems->first()->certificationProgram->title ?? 'Sertifikasi Program';
+                        $productDesc = $webinarItems->first()->webinar->description ?? null;
+                    } elseif ($certificationProgramItems && $certificationProgramItems->count() > 0) {
+                        $productTitle = $certificationProgramItems->first()->certificationProgram->title ?? 'Sertifikasi Program';
                         $categoryBadge = 'Sertifikasi Program';
                         $badgeStyle = 'background-color: #198754; color: white;';
-                        $productDesc = $invoice->certificationProgramItems->first()->certificationProgram->description ?? null;
-                    } elseif ($invoice->privateItems && $invoice->privateItems->count() > 0) {
-                        $productTitle = $invoice->privateItems->first()->privateClass->title ?? 'Private Class';
+                        $productDesc = $certificationProgramItems->first()->certificationProgram->description ?? null;
+                    } elseif ($privateItems && $privateItems->count() > 0) {
+                        $productTitle = $privateItems->first()->privateClass->title ?? 'Private Class';
                         $categoryBadge = 'Private Class';
                         $badgeStyle = 'background-color: #0d6efd; color: white;';
-                        $productDesc = $invoice->privateItems->first()->privateClass->description ?? null;
-                    } elseif ($invoice->bundleEnrollments && $invoice->bundleEnrollments->count() > 0) {
-                        $productTitle = $invoice->bundleEnrollments->first()->bundle->title ?? 'Paket Bundling';
+                        $productDesc = $privateItems->first()->privateClass->description ?? null;
+                    } elseif ($bundleEnrollments && $bundleEnrollments->count() > 0) {
+                        $productTitle = $bundleEnrollments->first()->bundle->title ?? 'Paket Bundling';
                         $categoryBadge = 'Paket Bundling';
                         $badgeStyle = 'background-color: #0d6efd; color: white;';
-                        $productDesc = $invoice->bundleEnrollments->first()->bundle->description ?? null;
+                        $productDesc = $bundleEnrollments->first()->bundle->description ?? null;
                     }
 
                     $subtotal = $invoice->nett_amount;
@@ -377,26 +388,26 @@
                 <td class="text-right">Rp {{ number_format($invoice->discount_amount + $subtotal, 0, ',', '.') }}</td>
             </tr>
             <tr>
-                <td>Diskon:</td>
+                <td>{{ __('messages.invoice.discount') }}:</td>
                 <td class="text-right" style="color: #dc3545;">-Rp
                     {{ number_format($invoice->discount_amount, 0, ',', '.') }}</td>
             </tr>
         @endif
         <tr>
-            <td>Subtotal:</td>
+            <td>{{ __('messages.invoice.subtotal') }}:</td>
             <td class="text-right">Rp {{ number_format($subtotal, 0, ',', '.') }}</td>
         </tr>
         @if ($invoice->amount > $subtotal)
             <tr>
-                <td>Biaya Transaksi:</td>
+                <td>{{ __('messages.invoice.admin_fee') }}:</td>
                 <td class="text-right">Rp {{ number_format($invoice->amount - $subtotal, 0, ',', '.') }}</td>
             </tr>
         @endif
         <tr class="total-row">
-            <td>TOTAL:</td>
+            <td>{{ strtoupper(__('messages.invoice.total')) }}:</td>
             <td class="text-right">
                 @if ($invoice->amount == 0)
-                    GRATIS
+                    {{ __('messages.invoice.free') }}
                 @else
                     Rp {{ number_format($invoice->amount, 0, ',', '.') }}
                 @endif
@@ -405,25 +416,29 @@
     </table>
 
     <div class="payment-info">
-        <div class="payment-status">PEMBAYARAN BERHASIL</div>
+        <div class="payment-status">{{ __('messages.invoice.payment_success') }}</div>
         <div style="margin-top: 10px; font-size: 11px;">
-            <strong>Metode Pembayaran:</strong> {{ $invoice->payment_method ?? 'Tidak diketahui' }}<br>
-            @if ($invoice->payment_channel)
-                <strong>Channel:</strong> {{ $invoice->payment_channel }}<br>
+            <strong>{{ __('messages.invoice.payment_method') }}:</strong> {{ $invoice->payment_method ?? ($invoice->parentInvoice->payment_method ?? 'Tidak diketahui') }}<br>
+            @if ($invoice->payment_channel || ($invoice->parentInvoice && $invoice->parentInvoice->payment_channel))
+                <strong>{{ __('messages.invoice.channel') }}:</strong> {{ $invoice->payment_channel ?? $invoice->parentInvoice->payment_channel }}<br>
             @endif
-            <strong>Tanggal Pembayaran:</strong> {{ \Carbon\Carbon::parse($invoice->paid_at)->format('d M Y H:i') }}
-            WIB<br>
-            <strong>Status:</strong> <span style="color: #28a745; font-weight: bold;">LUNAS</span>
+            <strong>{{ __('messages.invoice.payment_date') }}:</strong>
+            @if ($paidDate)
+                {{ \Carbon\Carbon::parse($paidDate)->translatedFormat('d M Y H:i') }} WIB
+            @else
+                -
+            @endif
+            <br>
+            <strong>{{ __('messages.invoice.status') }}:</strong> <span style="color: #28a745; font-weight: bold;">{{ __('messages.invoice.status_paid') }}</span>
         </div>
     </div>
 
     <div class="footer">
-        <p><strong>Terima kasih atas kepercayaan Anda!</strong></p>
-        <p>Invoice ini adalah bukti pembayaran yang sah dan dihasilkan secara otomatis oleh sistem.</p>
-        <p>Untuk pertanyaan lebih lanjut, hubungi customer service kami di {{ $company['email'] }} atau
-            {{ $company['phone'] }}</p>
+        <p><strong>{{ __('messages.invoice.thank_you') }}</strong></p>
+        <p>{{ __('messages.invoice.valid_proof') }}</p>
+        <p>{{ __('messages.invoice.contact_us', ['email' => $company['email'], 'phone' => $company['phone']]) }}</p>
         <p style="margin-top: 15px; color: #999;">
-            Dicetak pada: {{ \Carbon\Carbon::now()->format('d M Y H:i') }} WIB
+            {{ __('messages.invoice.printed_at') }}: {{ \Carbon\Carbon::now()->translatedFormat('d M Y H:i') }} WIB
         </p>
     </div>
 </body>

@@ -1,6 +1,7 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ChevronUp, Lock, PlayCircle } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Course {
     modules?: {
@@ -16,12 +17,13 @@ interface Course {
 }
 
 export default function ModulesSection({ course }: { course: Course }) {
+    const { t } = useTranslation('user');
     const [expanded, setExpanded] = useState<React.Key | null>('0');
 
     return (
         <section className="mx-auto w-full max-w-5xl px-4 pt-8" id="modules">
             <div className="mx-auto text-center">
-                <h2 className="dark:text-primary-foreground mx-auto mb-8 max-w-2xl text-3xl font-bold italic md:text-4xl">Modul Pembelajaran</h2>
+                <h2 className="dark:text-primary-foreground mx-auto mb-8 max-w-2xl text-3xl font-bold italic md:text-4xl">{t('course.detail.learningModules')}</h2>
             </div>
             <Accordion
                 className="flex w-full flex-col gap-2 divide-y divide-zinc-200 dark:divide-zinc-700"
@@ -54,7 +56,7 @@ export default function ModulesSection({ course }: { course: Course }) {
                                         </li>
                                     ))
                                 ) : (
-                                    <li className="ms-8 text-zinc-400">Belum ada materi</li>
+                                    <li className="ms-8 text-zinc-400">{t('course.detail.noLessonsYet')}</li>
                                 )}
                             </ul>
                         </AccordionContent>

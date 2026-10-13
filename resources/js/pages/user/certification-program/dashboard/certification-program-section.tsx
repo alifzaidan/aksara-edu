@@ -5,9 +5,10 @@ import { Magnetic } from '@/components/ui/magnetic';
 import { Spotlight } from '@/components/ui/spotlight';
 import { Link } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { enUS, id } from 'date-fns/locale';
 import { Calendar, GalleryVerticalEnd, GraduationCap } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type Category = {
     id: string;
@@ -41,6 +42,7 @@ interface CertificationProgramSectionProps {
 }
 
 export default function CertificationProgramSection({ categories, programs, myProgramIds, approvedScholarshipProgramIds = [] }: CertificationProgramSectionProps) {
+    const { t, i18n } = useTranslation('user');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [visibleCount, setVisibleCount] = useState(6);
@@ -48,6 +50,8 @@ export default function CertificationProgramSection({ categories, programs, myPr
     const isDragging = useRef(false);
     const startX = useRef(0);
     const scrollLeft = useRef(0);
+
+    const dateLocale = i18n.language === 'en' ? enUS : id;
 
     const handleMouseDown = (e: React.MouseEvent) => {
         isDragging.current = true;
@@ -83,7 +87,7 @@ export default function CertificationProgramSection({ categories, programs, myPr
     const hasProgramAccess = (programId: string) => safeMyProgramIds.includes(programId);
 
     const formatRupiah = (amount: number) => {
-        return new Intl.NumberFormat('id-ID', {
+        return new Intl.NumberFormat(i18n.language === 'en' ? 'en-US' : 'id-ID', {
             style: 'currency',
             currency: 'IDR',
             minimumFractionDigits: 0,
@@ -93,11 +97,11 @@ export default function CertificationProgramSection({ categories, programs, myPr
     return (
         <section className="mx-auto w-full max-w-7xl px-4 py-12" id="certification-programs">
             <h2 className="dark:text-primary-foreground mx-auto mb-4 max-w-3xl text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
-                Raih Sertifikasi Profesional dan Tingkatkan Karirmu
+                {t('certificationProgram.dashboard.catalog.title')}
             </h2>
-            <p className="mx-auto mb-8 text-center text-gray-600 dark:text-gray-400">Pilih program sertifikasi yang sesuai dengan tujuan karirmu.</p>
+            <p className="mx-auto mb-8 text-center text-gray-600 dark:text-gray-400">{t('certificationProgram.dashboard.catalog.subtitle')}</p>
             <div className="mb-4 flex">
-                <Input type="search" placeholder="Cari program sertifikasi..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                <Input type="search" placeholder={t('certificationProgram.dashboard.catalog.searchPlaceholder')} value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <div
                 className="mb-4 overflow-x-auto"
@@ -118,7 +122,7 @@ export default function CertificationProgramSection({ categories, programs, myPr
                                 : 'hover:bg-accent dark:hover:bg-primary/10 bg-background border-gray-300 text-gray-800 dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100'
                         } `}
                     >
-                        Semua Kategori
+                        {t('certificationProgram.dashboard.catalog.allCategories')}
                     </button>
                     {categories.map((category) => (
                         <button
@@ -140,7 +144,7 @@ export default function CertificationProgramSection({ categories, programs, myPr
                 {visiblePrograms.length === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
                         <img src="/assets/images/not-found.webp" alt="Program Belum Tersedia" className="w-48" />
-                        <div className="text-center text-gray-500">Belum ada program sertifikasi yang tersedia saat ini.</div>
+                        <div className="text-center text-gray-500">{t('certificationProgram.dashboard.catalog.emptyPrograms')}</div>
                     </div>
                 ) : (
                     visiblePrograms.map((program) => {
@@ -178,22 +182,22 @@ export default function CertificationProgramSection({ categories, programs, myPr
                                                     className={`border-0 text-xs ${program.type === 'scholarship' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}
                                                 >
                                                     <GraduationCap size={12} className="mr-1" />
-                                                    {program.type === 'scholarship' ? 'Beasiswa' : 'Reguler'}
+                                                    {program.type === 'scholarship' ? t('certificationProgram.dashboard.catalog.badgeScholarship') : t('certificationProgram.dashboard.catalog.badgeRegular')}
                                                 </Badge>
                                                 {hasAccess && (
-                                                    <Badge className="border-0 bg-emerald-100 text-xs text-emerald-700">Sudah Dibeli</Badge>
+                                                    <Badge className="border-0 bg-emerald-100 text-xs text-emerald-700">{t('certificationProgram.dashboard.catalog.badgeOwned')}</Badge>
                                                 )}
                                             </div>
                                             <h2 className="mb-2 line-clamp-2 text-lg font-semibold">{program.title}</h2>
 
                                             {hasAccess && (
                                                 <div className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
-                                                    Program ini sudah Anda miliki.
+                                                    {t('certificationProgram.dashboard.catalog.ownedNotice')}
                                                 </div>
                                             )}
 
                                             {displayPrice === 0 ? (
-                                                <p className="mb-2 text-lg font-semibold text-green-600 dark:text-green-400">Gratis</p>
+                                                <p className="mb-2 text-lg font-semibold text-green-600 dark:text-green-400">{t('certificationProgram.dashboard.catalog.free')}</p>
                                             ) : (
                                                 <div className="mb-2">
                                                     {!isScholarshipNotApproved && (program.strikethrough_price ?? 0) > 0 && (
@@ -211,8 +215,8 @@ export default function CertificationProgramSection({ categories, programs, myPr
                                                 <div className="flex items-center gap-2 text-sm">
                                                     <Calendar size="16" className="text-red-500" />
                                                     <p className="text-gray-600 dark:text-gray-400">
-                                                        Daftar sebelum:{' '}
-                                                        <span className="font-medium">{format(deadlineDate, 'dd MMM yyyy', { locale: id })}</span>
+                                                        {t('certificationProgram.dashboard.catalog.registerBefore')}{' '}
+                                                        <span className="font-medium">{format(deadlineDate, 'dd MMM yyyy', { locale: dateLocale })}</span>
                                                     </p>
                                                 </div>
                                             )}
@@ -228,7 +232,7 @@ export default function CertificationProgramSection({ categories, programs, myPr
                 <div className="mb-8 flex justify-center">
                     <Magnetic>
                         <Button type="button" className="mt-8 hover:cursor-pointer" onClick={() => setVisibleCount((prev) => prev + 6)}>
-                            Lihat Lebih Banyak <GalleryVerticalEnd />
+                            {t('certificationProgram.dashboard.catalog.loadMore')} <GalleryVerticalEnd />
                         </Button>
                     </Magnetic>
                 </div>

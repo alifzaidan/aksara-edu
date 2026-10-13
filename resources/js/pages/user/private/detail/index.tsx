@@ -1,6 +1,7 @@
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import AboutSection from './about-section';
 import HeroSection from './hero-section';
 import MentorSection from './mentor-section';
@@ -57,6 +58,8 @@ interface Props {
 }
 
 export default function PrivateDetail({ privateClass, relatedPrivateClasses, myPrivateClassIds, referralInfo }: Props) {
+    const { t } = useTranslation('user');
+
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const refFromUrl = urlParams.get('ref');
@@ -72,7 +75,7 @@ export default function PrivateDetail({ privateClass, relatedPrivateClasses, myP
 
     return (
         <UserLayout>
-            <Head title={`${privateClass.title} - Private Class`} />
+            <Head title={t('privateClass.detail.headTitle', { title: privateClass.title })} />
 
             <HeroSection privateClass={privateClass} />
             <AboutSection />

@@ -1,13 +1,16 @@
 import { Button } from '@/components/ui/button';
 import { Check, Package, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
+import { Trans, useTranslation } from 'react-i18next';
 
 export default function HeroSection() {
+    const { t } = useTranslation('user');
+
     const benefits = [
-        'Hemat hingga 70% dari harga normal',
-        'Akses ke beberapa program sekaligus',
-        'Sertifikat untuk semua program',
-        'Pembelajaran fleksibel',
+        t('bundling.dashboard.hero.benefit1'),
+        t('bundling.dashboard.hero.benefit2'),
+        t('bundling.dashboard.hero.benefit3'),
+        t('bundling.dashboard.hero.benefit4'),
     ];
 
     return (
@@ -21,13 +24,11 @@ export default function HeroSection() {
                 <div className="mx-auto max-w-4xl text-center">
                     <span className="text-secondary border-secondary bg-background mb-4 inline-flex items-center gap-2 rounded-full border bg-gradient-to-t from-[#FED6AD] to-white px-3 py-1 text-sm font-medium shadow-xs hover:text-[#FF925B]">
                         <Sparkles size={16} />
-                        Penawaran Spesial Paket Bundling
+                        {t('bundling.dashboard.hero.badge')}
                     </span>
 
                     <h1 className="mb-6 text-4xl leading-tight font-bold italic sm:text-5xl">
-                        Belajar Lebih Banyak,
-                        <br />
-                        Bayar Lebih Hemat! 🎉
+                        <Trans i18nKey="bundling.dashboard.hero.title" ns="user" components={{ br: <br /> }} />
                     </h1>
 
                     {/* Description */}
@@ -37,8 +38,7 @@ export default function HeroSection() {
                         transition={{ duration: 0.6, delay: 0.2 }}
                         className="mx-auto mb-8 max-w-2xl text-lg text-gray-600 dark:text-gray-400"
                     >
-                        Dapatkan akses ke beberapa program pembelajaran sekaligus dengan harga spesial. Tingkatkan skill-mu dengan paket bundling yang
-                        dirancang khusus untuk percepatan karirmu!
+                        {t('bundling.dashboard.hero.desc')}
                     </motion.p>
 
                     {/* Benefits Grid */}
@@ -50,7 +50,7 @@ export default function HeroSection() {
                     >
                         {benefits.map((benefit, index) => (
                             <motion.div
-                                key={benefit}
+                                key={index}
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.4, delay: 0.4 + index * 0.1 }}
@@ -74,12 +74,12 @@ export default function HeroSection() {
                         <a href="#bundles">
                             <Button size="lg" className="gap-2">
                                 <Package size={18} />
-                                Lihat Paket Bundling
+                                {t('bundling.dashboard.hero.btnViewBundles')}
                             </Button>
                         </a>
                         <a href="https://wa.me/+6285142505794" target="_blank" rel="noopener noreferrer">
                             <Button size="lg" variant="outline" className="gap-2">
-                                Konsultasi Gratis
+                                {t('bundling.dashboard.hero.btnFreeConsultation')}
                             </Button>
                         </a>
                     </motion.div>
@@ -93,17 +93,17 @@ export default function HeroSection() {
                     >
                         <div>
                             <p className="text-3xl font-bold text-gray-900 dark:text-white">70%</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Hemat Lebih Banyak</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{t('bundling.dashboard.hero.statSave')}</p>
                         </div>
                         <div className="h-12 w-px bg-gray-300 dark:bg-gray-700" />
                         <div>
                             <p className="text-3xl font-bold text-gray-900 dark:text-white">2+</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Program dalam 1 Paket</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{t('bundling.dashboard.hero.statPrograms')}</p>
                         </div>
                         <div className="h-12 w-px bg-gray-300 dark:bg-gray-700" />
                         <div>
                             <p className="text-3xl font-bold text-gray-900 dark:text-white">100%</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Akses Selamanya</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{t('bundling.dashboard.hero.statLifetime')}</p>
                         </div>
                     </motion.div>
                 </div>

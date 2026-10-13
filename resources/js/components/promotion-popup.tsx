@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Promotion {
     id: string;
@@ -18,6 +19,7 @@ interface PromotionPopupProps {
 }
 
 export default function PromotionPopup({ promotion, suppressDuration = 24 }: PromotionPopupProps) {
+    const { t } = useTranslation('home');
     const [isOpen, setIsOpen] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
 
@@ -103,7 +105,7 @@ export default function PromotionPopup({ promotion, suppressDuration = 24 }: Pro
                     >
                         <img
                             src={promotion.promotion_flyer}
-                            alt="Promosi Aksademy"
+                            alt={t('promotion.alt')}
                             className={`max-h-full max-w-full rounded-2xl object-contain transition-all duration-300 ${
                                 isHovered ? 'brightness-90' : ''
                             }`}
@@ -115,7 +117,7 @@ export default function PromotionPopup({ promotion, suppressDuration = 24 }: Pro
 
                         <div className={`absolute right-8 bottom-4 transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-60'}`}>
                             <div className="rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-gray-700 shadow-sm backdrop-blur-sm">
-                                Klik untuk {promotion.url_redirect ? 'detail' : 'tutup'}
+                                {promotion.url_redirect ? t('promotion.clickForDetail') : t('promotion.clickToClose')}
                             </div>
                         </div>
                     </div>

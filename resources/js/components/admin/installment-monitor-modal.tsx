@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
@@ -12,6 +13,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -31,10 +34,12 @@ import { toast } from 'sonner';
 import {
     AlertCircle,
     Calendar,
+    CalendarPlus,
     CheckCircle2,
     Clock,
     Copy,
     ExternalLink,
+    FileText,
     Loader2,
     MessageCircle,
     Send,
@@ -100,11 +105,27 @@ export default function InstallmentMonitorModal({
     const [internalOpen, setInternalOpen] = useState(false);
     const [sendingReminderId, setSendingReminderId] = useState<string | null>(null);
 
+    const [termsList, setTermsList] = useState<InstallmentTermItem[]>(
+        () => invoice.installment_terms || invoice.installmentTerms || []
+    );
+    const [accessSuspendedAt, setAccessSuspendedAt] = useState<string | null>(
+        invoice.access_suspended_at || null
+    );
+
+    const [editingTerm, setEditingTerm] = useState<InstallmentTermItem | null>(null);
+    const [newDueDate, setNewDueDate] = useState<string>('');
+    const [isUpdatingDueDate, setIsUpdatingDueDate] = useState(false);
+
+    useEffect(() => {
+        setTermsList(invoice.installment_terms || invoice.installmentTerms || []);
+        setAccessSuspendedAt(invoice.access_suspended_at || null);
+    }, [invoice]);
+
     const isControlled = controlledOpen !== undefined;
     const open = isControlled ? controlledOpen : internalOpen;
     const setOpen = isControlled ? setControlledOpen! : setInternalOpen;
 
-    const terms = invoice.installment_terms || invoice.installmentTerms || [];
+    const terms = termsList;
     const totalTerms = terms.length;
     const paidTerms = terms.filter((t) => t.status === 'paid');
     const paidCount = paidTerms.length;
@@ -113,8 +134,53 @@ export default function InstallmentMonitorModal({
     const paidAmount = paidTerms.reduce((acc, t) => acc + (t.amount || 0), 0);
     const remainingAmount = Math.max(0, totalAmount - paidAmount);
 
-    const isSuspended = !!invoice.access_suspended_at;
+    const isSuspended = !!accessSuspendedAt;
     const isCompleted = totalTerms > 0 && paidCount === totalTerms;
+
+    const handleOpenEditDueDate = (term: InstallmentTermItem) => {
+        setEditingTerm(term);
+        if (term.installment_due_date) {
+            try {
+                const d = new Date(term.installment_due_date);
+                if (!isNaN(d.getTime())) {
+                    setNewDueDate(format(d, 'yyyy-MM-dd'));
+                    return;
+                }
+            } catch {}
+        }
+        setNewDueDate(format(new Date(), 'yyyy-MM-dd'));
+    };
+
+    const handleSaveDueDate = async () => {
+        if (!editingTerm || !newDueDate) return;
+        setIsUpdatingDueDate(true);
+        try {
+            const res = await axios.post(`/admin/installments/${editingTerm.id}/update-due-date`, {
+                due_date: newDueDate,
+            });
+
+            if (res.data.success) {
+                toast.success(res.data.message);
+                setTermsList((prev) =>
+                    prev.map((t) =>
+                        t.id === editingTerm.id
+                            ? { ...t, installment_due_date: res.data.installment_due_date }
+                            : t
+                    )
+                );
+                if (res.data.is_access_suspended === false) {
+                    setAccessSuspendedAt(null);
+                }
+                setEditingTerm(null);
+            } else {
+                toast.error(res.data.message || 'Gagal memperbarui jatuh tempo');
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Gagal memperbarui tanggal jatuh tempo');
+        } finally {
+            setIsUpdatingDueDate(false);
+        }
+    };
 
     // Determine product title
     const resolvedProductTitle =
@@ -400,9 +466,46 @@ export default function InstallmentMonitorModal({
                                                 </div>
                                             </div>
 
-                                            {/* Action Buttons for Pending Terms */}
+                                            {/* Action Buttons */}
+                                            {isPaid && (
+                                                <div className="flex items-center gap-1.5 self-end sm:self-center">
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="h-8 px-2.5 text-xs gap-1.5"
+                                                                asChild
+                                                            >
+                                                                <a href={route('invoice.pdf', { id: term.id })} target="_blank" rel="noopener noreferrer">
+                                                                    <FileText className="size-3.5" />
+                                                                    <span>Invoice</span>
+                                                                </a>
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>Lihat Invoice Termin {term.installment_number}</TooltipContent>
+                                                    </Tooltip>
+                                                </div>
+                                            )}
+
                                             {!isPaid && (
                                                 <div className="flex items-center gap-1.5 self-end sm:self-center">
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="h-8 px-2 text-xs gap-1 border-primary/20 text-primary hover:bg-primary/5"
+                                                                onClick={() => handleOpenEditDueDate(term)}
+                                                            >
+                                                                <CalendarPlus className="size-3.5" />
+                                                                <span className="hidden sm:inline">Ubah Jatuh Tempo</span>
+                                                                <span className="sr-only sm:hidden">Ubah Jatuh Tempo</span>
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>Perpanjang / Ubah Tanggal Jatuh Tempo</TooltipContent>
+                                                    </Tooltip>
+
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
                                                             <Button
@@ -467,6 +570,38 @@ export default function InstallmentMonitorModal({
                     </div>
                 </div>
             </DialogContent>
+
+            {/* Modal Perpanjang / Ubah Tanggal Jatuh Tempo */}
+            <Dialog open={!!editingTerm} onOpenChange={(isOpen) => !isOpen && setEditingTerm(null)}>
+                <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Ubah Jatuh Tempo Termin ke-{editingTerm?.installment_number}</DialogTitle>
+                        <DialogDescription>
+                            Perpanjang batas waktu pembayaran termin. Jika tanggal diubah ke masa depan dan tidak lagi terlambat, status pembekuan akses peserta akan otomatis dipulihkan.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="input-new-due-date">Tanggal Jatuh Tempo Baru</Label>
+                            <Input
+                                id="input-new-due-date"
+                                type="date"
+                                value={newDueDate}
+                                onChange={(e) => setNewDueDate(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" size="sm" onClick={() => setEditingTerm(null)} disabled={isUpdatingDueDate}>
+                            Batal
+                        </Button>
+                        <Button size="sm" onClick={handleSaveDueDate} disabled={isUpdatingDueDate || !newDueDate}>
+                            {isUpdatingDueDate && <Loader2 className="mr-1.5 size-3.5 animate-spin" />}
+                            Simpan Perubahan
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </Dialog>
     );
 }

@@ -1,4 +1,5 @@
 import { InfiniteSlider } from '@/components/ui/infinite-slider';
+import { useTranslation } from 'react-i18next';
 
 interface Tool {
     id: string;
@@ -8,13 +9,15 @@ interface Tool {
 }
 
 export default function ToolsSection({ tools }: { tools: Tool[] }) {
+    const { t } = useTranslation('home');
+
     return (
-        <section className="w-fullpx-4 py-8">
+        <section className="w-full px-4 py-8">
             <p className="text-primary border-primary bg-background mx-auto mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                Tools & Framework
+                {t('tools.badge')}
             </p>
             <h2 className="dark:text-primary-foreground mx-auto mb-8 max-w-2xl text-center text-3xl font-bold italic md:text-4xl">
-                Tools up-to-date yang digunakan
+                {t('tools.title')}
             </h2>
             <InfiniteSlider speedOnHover={20} gap={24} className="p-4">
                 {tools.map((tool) => (
