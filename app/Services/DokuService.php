@@ -70,7 +70,21 @@ class DokuService
         return $cleaned;
     }
 
-/**
+    private static ?int $serverTimeOffset = null;
+
+    /**
+     * Get UTC timestamp adjusted by detected DOKU server clock skew
+     */
+    private function getRequestTimestamp(): string
+    {
+        $time = time();
+        if (self::$serverTimeOffset !== null) {
+            $time += self::$serverTimeOffset;
+        }
+        return gmdate("Y-m-d\TH:i:s\Z", $time);
+    }
+
+    /**
      * Create DOKU Checkout for standard and bundle purchases
      */
     public function createCheckout($orderId, $amount, $customerData = []): array
@@ -82,7 +96,7 @@ class DokuService
 
             $path = "/checkout/v1/payment";
             $requestId = 'REQ-' . $orderId;
-            $requestTimestamp = gmdate("Y-m-d\TH:i:s\Z");
+            $requestTimestamp = $this->getRequestTimestamp();
 
             $customerId = $customerData['customer_id'] ?? 'CUST-' . time();
             $customerName = $this->sanitizeForDoku($customerData['customer_name'] ?? 'Customer');
@@ -148,6 +162,47 @@ class DokuService
             $responseData = $response->json();
 
             if (!$response->successful()) {
+                $errorCode = $responseData['error']['code'] ?? '';
+                // Self-healing: jika DOKU menolak karena request_time_out_of_range,
+                // sinkronisasi timestamp secara otomatis dengan jam server DOKU dari header Date lalu retry 1x
+                if ($errorCode === 'request_time_out_of_range') {
+                    $dokuServerDate = $response->header('Date');
+                    if ($dokuServerDate) {
+                        $parsedServerTime = strtotime($dokuServerDate);
+                        if ($parsedServerTime) {
+                            self::$serverTimeOffset = $parsedServerTime - time();
+                            $requestTimestamp = gmdate("Y-m-d\TH:i:s\Z", $parsedServerTime);
+
+                            $componentSignature = "Client-Id:" . $this->clientId . "\n" .
+                                "Request-Id:" . $requestId . "\n" .
+                                "Request-Timestamp:" . $requestTimestamp . "\n" .
+                                "Request-Target:" . $path . "\n" .
+                                "Digest:" . $digest;
+
+                            $signature = base64_encode(hash_hmac('sha256', $componentSignature, $this->secretKey, true));
+
+                            $retryResponse = Http::withHeaders([
+                                "Client-Id" => $this->clientId,
+                                "Request-Id" => $requestId,
+                                "Request-Timestamp" => $requestTimestamp,
+                                "Signature" => "HMACSHA256=" . $signature,
+                                "Content-Type" => "application/json"
+                            ])->post($url, $body);
+
+                            if ($retryResponse->successful()) {
+                                $responseData = $retryResponse->json();
+                                Log::info('DOKU Checkout created successfully after clock sync retry', [
+                                    'order_id' => $orderId,
+                                    'payment_url' => $responseData['response']['payment']['url'] ?? null
+                                ]);
+                                return $responseData;
+                            }
+                            $responseData = $retryResponse->json();
+                            $response = $retryResponse;
+                        }
+                    }
+                }
+
                 throw new \Exception('DOKU API error: ' . $response->status() . ' - ' . json_encode($responseData));
             }
 
@@ -198,7 +253,7 @@ class DokuService
 
             $path = "/checkout/v3/cancellations";
             $requestId = uniqid('CAN-');
-            $requestTimestamp = gmdate("Y-m-d\TH:i:s\Z");
+            $requestTimestamp = $this->getRequestTimestamp();
             $origRequestId = $originalRequestId ?: ('REQ-' . $orderId);
 
             $body = [
