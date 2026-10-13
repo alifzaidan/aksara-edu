@@ -9,15 +9,20 @@ use App\Models\Setting;
 class ReferralService
 {
     /**
-     * Validate a referral code for a specific user or email.
+     * Validate a referral code for a specific user or email and optional product type.
      *
      * @param string $code
      * @param string|null $email
      * @param User|null $user
+     * @param string|null $productType
      * @return array
      */
-    public function validateReferralCode(string $code, ?string $email = null, ?User $user = null): array
-    {
+    public function validateReferralCode(
+        string $code,
+        ?string $email = null,
+        ?User $user = null,
+        ?string $productType = null
+    ): array {
         $code = strtoupper(trim($code));
 
         if (empty($code)) {
@@ -39,6 +44,34 @@ class ReferralService
             ];
         }
 
+        // Check if referral is enabled for this specific product type
+        $rewardInfo = null;
+        if (!empty($productType)) {
+            $normalizedType = match ($productType) {
+                'certification', 'certification_program' => 'certification_program',
+                'bootcamp' => 'bootcamp',
+                'course' => 'course',
+                'webinar' => 'webinar',
+                'bundle' => 'bundle',
+                'private' => 'private',
+                default => $productType,
+            };
+
+            $programSettings = Setting::getReferralProgramSettings();
+            if (isset($programSettings[$normalizedType])) {
+                $config = $programSettings[$normalizedType];
+                if (empty($config['is_enabled'])) {
+                    $programName = $config['name'] ?? 'program ini';
+                    return [
+                        'valid' => false,
+                        'message' => "Penggunaan kode referral tidak aktif untuk {$programName}.",
+                        'referrer' => null
+                    ];
+                }
+                $rewardInfo = $config;
+            }
+        }
+
         // Resolve user by email or $user
         if (!$user && !empty($email)) {
             $user = User::where('email', $email)->first();
@@ -53,15 +86,6 @@ class ReferralService
                     'referrer' => null
                 ];
             }
-
-            // // Check if user already has a permanent referrer assigned
-            // if ($user->referred_by_user_id) {
-            //     return [
-            //         'valid' => false,
-            //         'message' => 'Anda sudah terdaftar menggunakan referral lain sebelumnya.',
-            //         'referrer' => null
-            //     ];
-            // }
 
             // Check if it is the user's first purchase
             if (Setting::get('referral_only_first_purchase', true)) {
@@ -92,7 +116,8 @@ class ReferralService
         return [
             'valid' => true,
             'message' => 'Kode referral valid.',
-            'referrer' => $referrer
+            'referrer' => $referrer,
+            'reward_info' => $rewardInfo
         ];
     }
 }

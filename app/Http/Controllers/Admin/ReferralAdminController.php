@@ -29,6 +29,7 @@ class ReferralAdminController extends Controller
                 'referral_reward' => (int) Setting::get('referral_reward', 5000),
                 'buyer_reward' => (int) Setting::get('buyer_reward', 2000),
                 'referral_only_first_purchase' => (bool) Setting::get('referral_only_first_purchase', true),
+                'programs' => Setting::getReferralProgramSettings(),
             ]
         ]);
     }
@@ -42,11 +43,23 @@ class ReferralAdminController extends Controller
             'referral_reward' => 'required|integer|min:0',
             'buyer_reward' => 'required|integer|min:0',
             'referral_only_first_purchase' => 'required|boolean',
+            'programs' => 'nullable|array',
+            'programs.*.is_enabled' => 'nullable|boolean',
+            'programs.*.referrer_reward_type' => 'nullable|in:fixed,percentage',
+            'programs.*.referrer_rate' => 'nullable|integer|min:0',
+            'programs.*.referrer_max_reward' => 'nullable|integer|min:0',
+            'programs.*.buyer_reward_type' => 'nullable|in:fixed,percentage',
+            'programs.*.buyer_rate' => 'nullable|integer|min:0',
+            'programs.*.buyer_max_reward' => 'nullable|integer|min:0',
         ]);
 
         Setting::set('referral_reward', $request->referral_reward);
         Setting::set('buyer_reward', $request->buyer_reward);
         Setting::set('referral_only_first_purchase', $request->referral_only_first_purchase);
+
+        if ($request->has('programs')) {
+            Setting::set('referral_program_settings', $request->programs);
+        }
 
         return redirect()->back()->with('success', 'Pengaturan referral berhasil diperbarui.');
     }

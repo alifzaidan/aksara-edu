@@ -250,3 +250,206 @@ test('referral reward cannot be duplicated if event is fired multiple times or p
         ->and($buyerTxCount)->toBe(1);
 });
 
+test('validateReferralCode respects is_enabled per program', function () {
+    $referrer = User::factory()->create(['referral_code' => 'AKSA-TEST01']);
+
+    // Disable webinar referrals
+    $programs = Setting::getReferralProgramSettings();
+    $programs['webinar']['is_enabled'] = false;
+    Setting::set('referral_program_settings', $programs);
+
+    $service = app(\App\Services\ReferralService::class);
+
+    // Webinar should be rejected
+    $resultWebinar = $service->validateReferralCode('AKSA-TEST01', 'guest@example.com', null, 'webinar');
+    expect($resultWebinar['valid'])->toBeFalse()
+        ->and($resultWebinar['message'])->toContain('tidak aktif');
+
+    // Bootcamp should be accepted
+    $resultBootcamp = $service->validateReferralCode('AKSA-TEST01', 'guest@example.com', null, 'bootcamp');
+    expect($resultBootcamp['valid'])->toBeTrue();
+});
+
+test('referral reward calculates percentage and honors max cap for certification program', function () {
+    $programs = Setting::getReferralProgramSettings();
+    $programs['certification_program'] = [
+        'name' => 'Program Sertifikasi',
+        'is_enabled' => true,
+        'referrer_reward_type' => 'percentage',
+        'referrer_rate' => 10, // 10%
+        'referrer_max_reward' => 50000, // max 50,000 points
+        'buyer_reward_type' => 'percentage',
+        'buyer_rate' => 5, // 5%
+        'buyer_max_reward' => 20000, // max 20,000 points
+    ];
+    Setting::set('referral_program_settings', $programs);
+
+    $referrer = User::factory()->create(['point_balance' => 0]);
+    $buyer = User::factory()->create(['point_balance' => 0]);
+
+    // Transaction nett_amount = 800,000
+    // 10% of 800,000 = 80,000 -> capped at 50,000
+    // 5% of 800,000 = 40,000 -> capped at 20,000
+    $invoice = Invoice::create([
+        'invoice_code' => 'INV-CERT-01',
+        'user_id' => $buyer->id,
+        'amount' => 800000,
+        'nett_amount' => 800000,
+        'status' => 'pending',
+        'referral_user_id' => $referrer->id,
+    ]);
+
+    $category = \App\Models\Category::firstOrCreate(['slug' => 'tech'], ['name' => 'Tech']);
+    $program = \App\Models\CertificationProgram::create([
+        'title' => 'Sertifikasi Test',
+        'slug' => 'sertifikasi-test',
+        'price' => 800000,
+        'category_id' => $category->id,
+    ]);
+
+    // Attach certification item to invoice
+    \App\Models\EnrollmentCertificationProgram::create([
+        'invoice_id' => $invoice->id,
+        'certification_program_id' => $program->id,
+        'price' => 800000,
+    ]);
+
+    $invoice->update(['status' => 'paid']);
+    event(new TransactionPaid($invoice));
+
+    $referrer->refresh();
+    $buyer->refresh();
+
+    expect($referrer->point_balance)->toBe(50000)
+        ->and($buyer->point_balance)->toBe(20000);
+});
+
+test('referral reward calculates combination of percentage for referrer and fixed for buyer', function () {
+    $programs = Setting::getReferralProgramSettings();
+    $programs['bootcamp'] = [
+        'name' => 'Bootcamp',
+        'is_enabled' => true,
+        'referrer_reward_type' => 'percentage',
+        'referrer_rate' => 10, // 10%
+        'referrer_max_reward' => null,
+        'buyer_reward_type' => 'fixed',
+        'buyer_rate' => 15000, // flat 15,000 points
+        'buyer_max_reward' => null,
+    ];
+    Setting::set('referral_program_settings', $programs);
+
+    $referrer = User::factory()->create(['point_balance' => 0]);
+    $buyer = User::factory()->create(['point_balance' => 0]);
+
+    $invoice = Invoice::create([
+        'invoice_code' => 'INV-BOOT-01',
+        'user_id' => $buyer->id,
+        'amount' => 300000,
+        'nett_amount' => 300000,
+        'status' => 'pending',
+        'referral_user_id' => $referrer->id,
+    ]);
+
+    $category = \App\Models\Category::firstOrCreate(['slug' => 'tech'], ['name' => 'Tech']);
+    $bootcamp = \App\Models\Bootcamp::create([
+        'title' => 'Bootcamp Test',
+        'slug' => 'bootcamp-test',
+        'price' => 300000,
+        'category_id' => $category->id,
+        'start_date' => now(),
+        'end_date' => now()->addDays(30),
+    ]);
+
+    \App\Models\EnrollmentBootcamp::create([
+        'invoice_id' => $invoice->id,
+        'bootcamp_id' => $bootcamp->id,
+        'price' => 300000,
+    ]);
+
+    $invoice->update(['status' => 'paid']);
+    event(new TransactionPaid($invoice));
+
+    $referrer->refresh();
+    $buyer->refresh();
+
+    // Referrer: 10% of 300,000 = 30,000 points
+    // Buyer: flat 15,000 points
+    expect($referrer->point_balance)->toBe(30000)
+        ->and($buyer->point_balance)->toBe(15000);
+});
+
+test('admin can update modular referral program settings', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin);
+
+    $updatedPrograms = Setting::getReferralProgramSettings();
+    $updatedPrograms['webinar']['is_enabled'] = false;
+    $updatedPrograms['course']['referrer_reward_type'] = 'percentage';
+    $updatedPrograms['course']['referrer_rate'] = 12;
+
+    $this->post('/admin/referral/settings', [
+        'referral_reward' => 5000,
+        'buyer_reward' => 2000,
+        'referral_only_first_purchase' => true,
+        'programs' => $updatedPrograms,
+    ])->assertRedirect();
+
+    $saved = Setting::getReferralProgramSettings();
+    expect($saved['webinar']['is_enabled'])->toBeFalse()
+        ->and($saved['course']['referrer_reward_type'])->toBe('percentage')
+        ->and((int) $saved['course']['referrer_rate'])->toBe(12);
+});
+
+test('admin can view user show page with referral code and point balance and adjust points', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $targetUser = User::factory()->create([
+        'name' => 'Peserta Uji',
+        'email' => 'peserta.uji@example.com',
+        'point_balance' => 5000,
+        'referral_code' => 'AKSA-UJICOD',
+    ]);
+    $targetUser->assignRole('user');
+
+    $this->actingAs($admin);
+
+    $response = $this->get("/admin/users/{$targetUser->id}");
+    $response->assertOk();
+
+    // Verify user referral code & balance
+    $response->assertInertia(fn ($page) => $page
+        ->component('admin/users/show')
+        ->has('user', fn ($page) => $page
+            ->where('referral_code', 'AKSA-UJICOD')
+            ->where('point_balance', 5000)
+            ->etc()
+        )
+        ->has('pointTransactions')
+    );
+
+    // Now test adjust-points from show
+    $this->post('/admin/referral/adjust-points', [
+        'user_id' => $targetUser->id,
+        'amount' => 2500,
+        'description' => 'Penyesuaian manual bonus dari halaman show',
+    ])->assertRedirect();
+
+    $targetUser->refresh();
+    expect($targetUser->point_balance)->toBe(7500);
+
+    // Negative adjustment
+    $this->post('/admin/referral/adjust-points', [
+        'user_id' => $targetUser->id,
+        'amount' => -3000,
+        'description' => 'Koreksi penyesuaian',
+    ])->assertRedirect();
+
+    $targetUser->refresh();
+    expect($targetUser->point_balance)->toBe(4500);
+});
+
+
+

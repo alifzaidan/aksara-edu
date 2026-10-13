@@ -138,9 +138,49 @@ class RewardService
                         ]);
                     }
 
-                    // Get reward configurations
-                    $referrerRewardAmount = (int) Setting::get('referral_reward', 5000);
-                    $buyerRewardAmount = (int) Setting::get('buyer_reward', 2000);
+                    // Get product type and corresponding referral settings
+                    $productType = $lockedInvoice->getInvoiceType();
+                    $programSettings = Setting::getReferralProgramSettings();
+                    $programConfig = $programSettings[$productType] ?? null;
+
+                    // If referral is disabled for this program type, skip processing
+                    if ($programConfig && empty($programConfig['is_enabled'])) {
+                        Log::info('Referral reward skipped: referral disabled for program', [
+                            'invoice_code' => $lockedInvoice->invoice_code,
+                            'product_type' => $productType
+                        ]);
+                        return;
+                    }
+
+                    // Calculate Referrer reward
+                    $referrerRewardType = $programConfig['referrer_reward_type'] ?? 'fixed';
+                    $referrerRate = (int) ($programConfig['referrer_rate'] ?? Setting::get('referral_reward', 5000));
+                    $referrerMaxReward = !empty($programConfig['referrer_max_reward']) ? (int) $programConfig['referrer_max_reward'] : null;
+
+                    if ($referrerRewardType === 'percentage') {
+                        $referrerRewardAmount = (int) round($lockedInvoice->nett_amount * ($referrerRate / 100));
+                        if ($referrerMaxReward !== null && $referrerRewardAmount > $referrerMaxReward) {
+                            $referrerRewardAmount = $referrerMaxReward;
+                        }
+                    } else {
+                        $referrerRewardAmount = $referrerRate;
+                    }
+                    $referrerRewardAmount = max(0, $referrerRewardAmount);
+
+                    // Calculate Buyer reward
+                    $buyerRewardType = $programConfig['buyer_reward_type'] ?? 'fixed';
+                    $buyerRate = (int) ($programConfig['buyer_rate'] ?? Setting::get('buyer_reward', 2000));
+                    $buyerMaxReward = !empty($programConfig['buyer_max_reward']) ? (int) $programConfig['buyer_max_reward'] : null;
+
+                    if ($buyerRewardType === 'percentage') {
+                        $buyerRewardAmount = (int) round($lockedInvoice->nett_amount * ($buyerRate / 100));
+                        if ($buyerMaxReward !== null && $buyerRewardAmount > $buyerMaxReward) {
+                            $buyerRewardAmount = $buyerMaxReward;
+                        }
+                    } else {
+                        $buyerRewardAmount = $buyerRate;
+                    }
+                    $buyerRewardAmount = max(0, $buyerRewardAmount);
 
                     // Grant Referrer reward
                     if ($referrerRewardAmount > 0) {
@@ -170,8 +210,11 @@ class RewardService
 
                     Log::info('Referral reward successfully processed', [
                         'invoice_code' => $lockedInvoice->invoice_code,
+                        'product_type' => $productType,
                         'referrer' => $referrer->name,
-                        'buyer' => $buyer->name
+                        'referrer_amount' => $referrerRewardAmount,
+                        'buyer' => $buyer->name,
+                        'buyer_amount' => $buyerRewardAmount,
                     ]);
                 });
             });

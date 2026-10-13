@@ -34,6 +34,12 @@ class Setting extends Model
             return strpos($value, '.') !== false ? (float)$value : (int)$value;
         }
 
+        // Auto decode JSON if valid
+        $decoded = json_decode($value, true);
+        if (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) {
+            return $decoded;
+        }
+
         return $value;
     }
 
@@ -46,7 +52,9 @@ class Setting extends Model
      */
     public static function set(string $key, $value)
     {
-        if (is_bool($value)) {
+        if (is_array($value) || is_object($value)) {
+            $value = json_encode($value);
+        } elseif (is_bool($value)) {
             $value = $value ? 'true' : 'false';
         }
 
@@ -54,5 +62,96 @@ class Setting extends Model
             ['key' => $key],
             ['value' => (string)$value]
         );
+    }
+
+    /**
+     * Get referral settings for all product programs.
+     *
+     * @return array
+     */
+    public static function getReferralProgramSettings(): array
+    {
+        $defaultReferrer = (int) self::get('referral_reward', 5000);
+        $defaultBuyer = (int) self::get('buyer_reward', 2000);
+
+        $defaultProgramConfig = [
+            'certification_program' => [
+                'name' => 'Program Sertifikasi',
+                'is_enabled' => true,
+                'referrer_reward_type' => 'fixed',
+                'referrer_rate' => $defaultReferrer,
+                'referrer_max_reward' => null,
+                'buyer_reward_type' => 'fixed',
+                'buyer_rate' => $defaultBuyer,
+                'buyer_max_reward' => null,
+            ],
+            'bootcamp' => [
+                'name' => 'Bootcamp',
+                'is_enabled' => true,
+                'referrer_reward_type' => 'fixed',
+                'referrer_rate' => $defaultReferrer,
+                'referrer_max_reward' => null,
+                'buyer_reward_type' => 'fixed',
+                'buyer_rate' => $defaultBuyer,
+                'buyer_max_reward' => null,
+            ],
+            'course' => [
+                'name' => 'Kelas Online',
+                'is_enabled' => true,
+                'referrer_reward_type' => 'fixed',
+                'referrer_rate' => $defaultReferrer,
+                'referrer_max_reward' => null,
+                'buyer_reward_type' => 'fixed',
+                'buyer_rate' => $defaultBuyer,
+                'buyer_max_reward' => null,
+            ],
+            'webinar' => [
+                'name' => 'Webinar',
+                'is_enabled' => true,
+                'referrer_reward_type' => 'fixed',
+                'referrer_rate' => $defaultReferrer,
+                'referrer_max_reward' => null,
+                'buyer_reward_type' => 'fixed',
+                'buyer_rate' => $defaultBuyer,
+                'buyer_max_reward' => null,
+            ],
+            'bundle' => [
+                'name' => 'Paket Bundling',
+                'is_enabled' => true,
+                'referrer_reward_type' => 'fixed',
+                'referrer_rate' => $defaultReferrer,
+                'referrer_max_reward' => null,
+                'buyer_reward_type' => 'fixed',
+                'buyer_rate' => $defaultBuyer,
+                'buyer_max_reward' => null,
+            ],
+            'private' => [
+                'name' => 'Kelas Privat',
+                'is_enabled' => true,
+                'referrer_reward_type' => 'fixed',
+                'referrer_rate' => $defaultReferrer,
+                'referrer_max_reward' => null,
+                'buyer_reward_type' => 'fixed',
+                'buyer_rate' => $defaultBuyer,
+                'buyer_max_reward' => null,
+            ],
+        ];
+
+        $saved = self::get('referral_program_settings');
+        if (is_string($saved)) {
+            $saved = json_decode($saved, true);
+        }
+
+        if (!is_array($saved)) {
+            return $defaultProgramConfig;
+        }
+
+        foreach ($defaultProgramConfig as $key => $defaultValues) {
+            if (isset($saved[$key]) && is_array($saved[$key])) {
+                $defaultProgramConfig[$key] = array_merge($defaultValues, $saved[$key]);
+            }
+        }
+
+        return $defaultProgramConfig;
     }
 }

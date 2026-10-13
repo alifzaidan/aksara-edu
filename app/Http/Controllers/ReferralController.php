@@ -24,12 +24,13 @@ class ReferralController extends Controller
 
         $user = Auth::user();
         $email = $request->input('email');
+        $productType = $request->input('product_type');
 
         if ($user && !$email) {
             $email = $user->email;
         }
 
-        $result = $this->referralService->validateReferralCode($request->code, $email, $user);
+        $result = $this->referralService->validateReferralCode($request->code, $email, $user, $productType);
 
         return response()->json($result);
     }
