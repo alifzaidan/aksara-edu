@@ -193,10 +193,14 @@ class InstallmentController extends Controller
         }
 
         $dpTerm = $terms->first();
+        $dpDueDate = ($type !== 'course' && !empty($item->registration_deadline))
+            ? Carbon::parse($item->registration_deadline)
+            : ($dpTerm->due_date ? Carbon::parse($dpTerm->due_date) : null);
+
         $now = Carbon::now('Asia/Jakarta');
         foreach ($terms as $term) {
-            $termDueDate = ($term->term_number === 1 && $type !== 'course' && !empty($item->registration_deadline))
-                ? Carbon::parse($item->registration_deadline)
+            $termDueDate = ($term->term_number === 1 && $dpDueDate)
+                ? $dpDueDate
                 : ($term->due_date ? Carbon::parse($term->due_date) : null);
 
             if ($termDueDate && $now->gt($termDueDate->copy()->endOfDay())) {
