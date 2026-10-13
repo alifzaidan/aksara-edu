@@ -1,7 +1,0 @@
-import{j as e}from"./app-Bwsnl-8u.js";import{u as l}from"./useTranslation-CGIJ1CQr.js";import{B as o}from"./badge-check-CwBXEkA2.js";/* empty css            */import"./createLucideIcon-CLx2xvK-.js";function m(s){if(!s)return[];const i=String(s).trim();if(!i)return[];const r=i.match(/<li[^>]*>[\s\S]*?<\/li>/gi),n=i.replace(/<br\s*\/?\s*>/gi,`
-`).replace(/<\/p>/gi,`
-`).replace(/<\/div>/gi,`
-`).replace(/<[^>]+>/g,"").replace(/\r\n?/g,`
-`).split(`
-`).map(t=>t.trim()).filter(Boolean).map(t=>t.replace(/^[-*•–—\u2022]+\s+/,"").trim()).filter(Boolean);return r!=null&&r.length?r.map(t=>t.replace(/<li[^>]*>/gi,"").replace(/<\/li>/gi,"").replace(/<br\s*\/?\s*>/gi,`
-`).replace(/<[^>]+>/g,"").trim()).filter(Boolean):n}function u({webinar:s}){const{t:i}=l("user"),r=m(s.benefits);return e.jsx("section",{className:"mx-auto w-full max-w-5xl px-4",children:e.jsx("div",{className:"mt-6 w-full",children:e.jsxs("div",{children:[e.jsx("p",{className:"text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs",children:i("webinar.detail.benefitsGained")}),e.jsx("ul",{className:"space-y-2",children:r.map((a,n)=>e.jsxs("li",{className:"flex gap-2",children:[e.jsx(o,{className:"mt-1 min-w-12 text-green-600"}),e.jsx("div",{children:e.jsx("h4",{className:"text-lg font-semibold",children:a})})]},n))})]})})})}export{u as default};
