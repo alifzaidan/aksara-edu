@@ -256,7 +256,7 @@ export default function ShowBroadcast({ broadcast, categories, courses, bootcamp
         window.open(`https://api.whatsapp.com/send?phone=${user.formatted_phone}&text=${msg}`, '_blank');
     };
 
-    const sendSingleWablas = (user: FilteredUser) => {
+    const sendSingleMessara = (user: FilteredUser) => {
         setSendingSingle(user.id);
         const plainMsg = htmlToWhatsapp(broadcast.message);
         router.post(route('broadcasts.send-single', broadcast.id), {
@@ -529,7 +529,7 @@ export default function ShowBroadcast({ broadcast, categories, courses, bootcamp
                                     <Input type="number" min={fromIdx} max={users.length} value={toIdx} onChange={(e) => setToIdx(Math.max(fromIdx, parseInt(e.target.value) || fromIdx))} className="h-8 text-sm" />
                                 </div>
                                 <Button onClick={handleSend} disabled={sending || users.length === 0} size="sm" className="bg-green-600 border-green-600 hover:bg-green-700 hover:border-green-700">
-                                    {sending ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Mengirim...</> : <><Send className="mr-1 h-3 w-3" /> Kirim via Wablas</>}
+                                    {sending ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Mengirim...</> : <><Send className="mr-1 h-3 w-3" /> Kirim via Messara</>}
                                 </Button>
                             </div>
 
@@ -580,7 +580,7 @@ export default function ShowBroadcast({ broadcast, categories, courses, bootcamp
                                                                     variant="ghost"
                                                                     size="icon"
                                                                     className="h-7 w-7 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/20"
-                                                                    onClick={() => sendSingleWablas(u)}
+                                                                    onClick={() => sendSingleMessara(u)}
                                                                     disabled={sendingSingle !== null}
                                                                 >
                                                                     {sendingSingle === u.id ? (
@@ -590,7 +590,7 @@ export default function ShowBroadcast({ broadcast, categories, courses, bootcamp
                                                                     )}
                                                                 </Button>
                                                             </TooltipTrigger>
-                                                            <TooltipContent><p className="text-xs">Kirim manual via Wablas</p></TooltipContent>
+                                                            <TooltipContent><p className="text-xs">Kirim manual via Messara</p></TooltipContent>
                                                         </Tooltip>
                                                     </div>
                                                 </TableCell>

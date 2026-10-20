@@ -47,8 +47,14 @@ return [
 
     'wablas' => [
         'domain' => env('DOMAIN_SERVER_WABLAS'),
-        'token'  => env('SECURITY_TOKEN_WABLAS_AI'),
-        'secret' => env('SECRET_KEY_WABLAS_AI'),
+        'token'  => env('SECURITY_TOKEN_WABLAS_AI', env('SECURITY_TOKEN_WABLAS')),
+        'secret' => env('SECRET_KEY_WABLAS_AI', env('SECRET_KEY_WABLAS')),
+    ],
+
+    'messara' => [
+        'domain'     => env('MESSARA_DOMAIN_SERVER', env('DOMAIN_SERVER_MESSARA', 'https://messara.aksarateknologi.co.id')),
+        'api_key'    => env('MESSARA_API_KEY', env('API_KEY_MESSARA')),
+        'secret_key' => env('MESSARA_SECRET_KEY', env('SECRET_KEY_MESSARA')),
     ],
 
     'evolution' => [
@@ -57,7 +63,7 @@ return [
         'instance' => env('EVOLUTION_INSTANCE', 'sekolah-pajak'),
     ],
 
-    'default_wa_gateway' => env('DEFAULT_WA_GATEWAY', 'wablas'),
+    'default_wa_gateway' => env('DEFAULT_WA_GATEWAY', 'messara'),
 
     'openai' => [
         'key' => env('OPENAI_API_KEY'),

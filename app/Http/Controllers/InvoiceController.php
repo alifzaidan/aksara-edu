@@ -1330,7 +1330,7 @@ class InvoiceController extends Controller
 
             DB::commit();
 
-            // Kirim notifikasi WhatsApp via Wablas setelah transaksi berhasil di-approve
+            // Kirim notifikasi WhatsApp via Messara setelah transaksi berhasil di-approve
             try {
                 $this->sendWhatsAppNotification($invoice);
             } catch (\Exception $e) {

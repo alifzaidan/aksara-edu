@@ -16,17 +16,20 @@ trait MessaraTrait
     {
         try {
             $curl = curl_init();
-            $token = env('API_KEY_MESSARA');
-            $domain = env('DOMAIN_SERVER_MESSARA', 'https://messara.aksarateknologi.co.id');
+            $token = config('services.messara.api_key', env('MESSARA_API_KEY', env('API_KEY_MESSARA')));
+            $secretKey = config('services.messara.secret_key', env('MESSARA_SECRET_KEY', env('SECRET_KEY_MESSARA')));
+            $domain = config('services.messara.domain', env('MESSARA_DOMAIN_SERVER', env('DOMAIN_SERVER_MESSARA', 'https://messara.aksarateknologi.co.id')));
 
             if (!$token) {
                 Log::error('Messara API Key is missing');
                 return false;
             }
 
-            // Cegah deadlock di lingkungan local jika DOMAIN_SERVER_MESSARA mengarah ke localhost/127.0.0.1
-            if (app()->environment('local') && (str_contains($domain, 'localhost') || str_contains($domain, '127.0.0.1'))) {
-                Log::info('Messara skipped in local environment to prevent deadlock', ['data' => $data]);
+            // Cegah deadlock di lingkungan local hanya jika memanggil port yang sama (self-call pada single-threaded server)
+            $currentPort = app()->runningInConsole() ? null : request()->getPort();
+            $targetPort = parse_url($domain, PHP_URL_PORT) ?: 80;
+            if (app()->environment('local') && (str_contains($domain, 'localhost') || str_contains($domain, '127.0.0.1')) && $currentPort === $targetPort) {
+                Log::info('Messara skipped in local environment to prevent deadlock with self', ['data' => $data]);
                 return true;
             }
 
@@ -34,10 +37,20 @@ trait MessaraTrait
                 "data" => $data
             ];
 
-            curl_setopt($curl, CURLOPT_HTTPHEADER, [
-                "Authorization: {$token}", // Sesuai dengan format yang kita buat di Messara
+            $headers = [
                 "Content-Type: application/json"
-            ]);
+            ];
+
+            if (!empty($secretKey)) {
+                $headers[] = "Authorization: {$token}.{$secretKey}";
+                $headers[] = "X-Api-Key: {$token}";
+                $headers[] = "X-Secret-Key: {$secretKey}";
+            } else {
+                $headers[] = "Authorization: {$token}";
+                $headers[] = "X-Api-Key: {$token}";
+            }
+
+            curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
 
             curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "POST");
             curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -45,8 +58,8 @@ trait MessaraTrait
             curl_setopt($curl, CURLOPT_URL, rtrim($domain, '/') . "/api/v2/send-message");
             curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
             curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
-            curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 5);
-            curl_setopt($curl, CURLOPT_TIMEOUT, 5);
+            curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 10);
+            curl_setopt($curl, CURLOPT_TIMEOUT, 30);
 
             $result = curl_exec($curl);
             $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);

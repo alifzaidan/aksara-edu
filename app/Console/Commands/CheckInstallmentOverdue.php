@@ -3,14 +3,14 @@
 namespace App\Console\Commands;
 
 use App\Models\Invoice;
-use App\Traits\WablasTrait;
+use App\Traits\MessaraTrait;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
 class CheckInstallmentOverdue extends Command
 {
-    use WablasTrait;
+    use MessaraTrait;
 
     protected $signature = 'installment:check-overdue';
     protected $description = 'Cek jatuh tempo cicilan: kirim reminder H-7, H-3, H-0, dan bekukan akses jika melewati jatuh tempo';

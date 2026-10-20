@@ -1,8 +1,8 @@
 <?php
 namespace App\Jobs;
 
-use App\Services\WablasService;
-use App\Services\EvolutionApiService;
+use App\Traits\MessaraTrait;
+use App\Traits\WablasTrait;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -26,16 +26,38 @@ class SendWhatsAppJob implements ShouldQueue
     {
         Log::info("Memproses SendWhatsAppJob untuk {$this->phone}");
 
-        $gateway = config('services.default_wa_gateway', 'wablas');
+        $gateway = config('services.default_wa_gateway', 'messara');
 
-        if ($gateway === 'evolution') {
-            $service = app(\App\Services\EvolutionApiService::class);
-        } else {
-            $service = app(\App\Services\WablasService::class);
+        $phone = preg_replace('/[^0-9]/', '', $this->phone);
+        if (str_starts_with($phone, '0')) {
+            $phone = '62' . substr($phone, 1);
+        } elseif (!str_starts_with($phone, '62')) {
+            $phone = '62' . $phone;
         }
 
+        $success = false;
+
         try {
-            $success = $service->send($this->phone, $this->message);
+            if ($gateway === 'messara') {
+                $success = MessaraTrait::sendText([
+                    [
+                        'phone' => $phone,
+                        'message' => $this->message,
+                        'isGroup' => 'false',
+                    ]
+                ]);
+            } elseif ($gateway === 'evolution') {
+                $service = app(\App\Services\EvolutionApiService::class);
+                $success = $service->send($this->phone, $this->message);
+            } else {
+                $success = WablasTrait::sendText([
+                    [
+                        'phone' => $phone,
+                        'message' => $this->message,
+                        'isGroup' => 'false',
+                    ]
+                ]);
+            }
         } catch (\Exception $e) {
             if ($e->getMessage() === 'DAILY_LIMIT_REACHED') {
                 $this->fail($e);
@@ -47,7 +69,5 @@ class SendWhatsAppJob implements ShouldQueue
         if (!$success) {
             throw new \Exception("Gagal mengirim WhatsApp via {$gateway} ke {$this->phone}");
         }
-
-
     }
 }
