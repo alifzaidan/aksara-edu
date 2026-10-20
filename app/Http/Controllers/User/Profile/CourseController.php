@@ -60,6 +60,32 @@ class CourseController extends Controller
 
         $courseItem = $course->courseItems->first();
         $courseId = $courseItem->course_id;
+        $courseData = $courseItem->course;
+
+        // Auto-recalculate progress from lesson completions if out of sync
+        if ($courseData) {
+            $totalLessons = $courseData->modules()
+                ->withCount('lessons')
+                ->get()
+                ->sum('lessons_count');
+
+            if ($totalLessons > 0) {
+                $completedLessons = \App\Models\LessonCompletion::where('user_id', $userId)
+                    ->whereHas('lesson.module', function ($query) use ($courseId) {
+                        $query->where('course_id', $courseId);
+                    })
+                    ->count();
+
+                $actualProgress = round(($completedLessons / $totalLessons) * 100);
+                if ($actualProgress !== (int) $courseItem->progress) {
+                    $courseItem->update([
+                        'progress' => $actualProgress,
+                        'completed_at' => $actualProgress >= 100 ? ($courseItem->completed_at ?? now()) : null,
+                    ]);
+                    $courseItem->progress = $actualProgress;
+                }
+            }
+        }
 
         $courseRating = CourseRating::where('user_id', $userId)
             ->where('course_id', $courseId)
@@ -71,11 +97,17 @@ class CourseController extends Controller
             $certificateParticipant = CertificateParticipant::where('certificate_id', $certificate->id)
                 ->where('user_id', $userId)
                 ->first();
+
+            if (!$certificateParticipant && $course->isFullyPaid() && $courseItem->canDownloadCertificate()) {
+                $certificateParticipant = CertificateParticipant::create([
+                    'certificate_id' => $certificate->id,
+                    'user_id' => $userId,
+                ]);
+            }
         }
 
         $course->append(['has_active_access', 'is_fully_paid']);
 
-        $courseId = $course->courseItems->first()?->course_id;
         $activeInstallment = null;
         if ($courseId && $course->is_installment) {
             $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'course', $courseId);
@@ -147,6 +179,13 @@ class CourseController extends Controller
             $participant = CertificateParticipant::where('certificate_id', $certificate->id)
                 ->where('user_id', $userId)
                 ->first();
+
+            if (!$participant && $course->isFullyPaid() && $courseItem->canDownloadCertificate()) {
+                $participant = CertificateParticipant::create([
+                    'certificate_id' => $certificate->id,
+                    'user_id' => $userId,
+                ]);
+            }
 
             if (!$participant) {
                 return back()->with('error', 'Data participant sertifikat tidak ditemukan.');
@@ -220,6 +259,13 @@ class CourseController extends Controller
             $participant = CertificateParticipant::where('certificate_id', $certificate->id)
                 ->where('user_id', $userId)
                 ->first();
+
+            if (!$participant && $course->isFullyPaid() && $courseItem->canDownloadCertificate()) {
+                $participant = CertificateParticipant::create([
+                    'certificate_id' => $certificate->id,
+                    'user_id' => $userId,
+                ]);
+            }
 
             if (!$participant) {
                 return back()->with('error', 'Data participant sertifikat tidak ditemukan.');

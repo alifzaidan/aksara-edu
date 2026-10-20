@@ -39,10 +39,10 @@ class EnrollmentCourse extends Model
      */
     public function canDownloadCertificate(): bool
     {
-        if (!$this->invoice || $this->invoice->status !== 'paid') {
+        if (!$this->invoice || !$this->invoice->isFullyPaid()) {
             return false;
         }
 
-        return $this->progress === 100;
+        return (int) $this->progress >= 100;
     }
 }

@@ -16,10 +16,23 @@ class EnrollmentProgressController extends Controller
             $user = Auth::user();
             $course = Course::where('slug', $courseSlug)->firstOrFail();
             
-            // Find enrollment for this user and course
-            $enrollment = EnrollmentCourse::whereHas('invoice', function($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })->where('course_id', $course->id)->firstOrFail();
+            // Find valid enrollment for this user and course (accessible/purchased invoice prioritized)
+            $enrollment = EnrollmentCourse::where('course_id', $course->id)
+                ->whereHas('invoice', function ($query) use ($user) {
+                    $query->purchasedByUser($user->id);
+                })
+                ->latest('created_at')
+                ->first();
+
+            if (!$enrollment) {
+                // Fallback to any enrollment belonging to user
+                $enrollment = EnrollmentCourse::where('course_id', $course->id)
+                    ->whereHas('invoice', function ($query) use ($user) {
+                        $query->where('user_id', $user->id);
+                    })
+                    ->latest('created_at')
+                    ->firstOrFail();
+            }
 
             // Get total lessons count
             $totalLessons = $course->modules()
@@ -40,7 +53,7 @@ class EnrollmentProgressController extends Controller
             // Update enrollment progress
             $enrollment->update([
                 'progress' => $progressPercentage,
-                'completed_at' => $progressPercentage >= 100 ? now() : null
+                'completed_at' => $progressPercentage >= 100 ? ($enrollment->completed_at ?? now()) : null
             ]);
 
             return response()->json([
@@ -65,9 +78,21 @@ class EnrollmentProgressController extends Controller
             $course = Course::where('slug', $courseSlug)->firstOrFail();
             
             // Find enrollment for this user and course
-            $enrollment = EnrollmentCourse::whereHas('invoice', function($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })->where('course_id', $course->id)->firstOrFail();
+            $enrollment = EnrollmentCourse::where('course_id', $course->id)
+                ->whereHas('invoice', function ($query) use ($user) {
+                    $query->purchasedByUser($user->id);
+                })
+                ->latest('created_at')
+                ->first();
+
+            if (!$enrollment) {
+                $enrollment = EnrollmentCourse::where('course_id', $course->id)
+                    ->whereHas('invoice', function ($query) use ($user) {
+                        $query->where('user_id', $user->id);
+                    })
+                    ->latest('created_at')
+                    ->firstOrFail();
+            }
 
             return response()->json([
                 'success' => true,
