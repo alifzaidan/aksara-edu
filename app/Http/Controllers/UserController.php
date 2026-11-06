@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\EnrollmentBootcamp;
+use App\Models\EnrollmentCertificationProgram;
 use App\Models\EnrollmentCourse;
 use App\Models\EnrollmentWebinar;
 use App\Models\Invoice;
@@ -337,7 +338,9 @@ class UserController extends Controller
                 'bootcampItems.bootcamp:id,title,thumbnail,price',
                 'bootcampItems.bootcamp.mentors:id,name',
                 'webinarItems.webinar:id,title,thumbnail,price,user_id',
-                'webinarItems.webinar.user:id,name'
+                'webinarItems.webinar.user:id,name',
+                'certificationProgramItems.certificationProgram:id,title,thumbnail,price',
+                'certificationProgramItems.certificationProgram.mentors:id,name',
             ])
             ->latest()
             ->paginate($perPage, ['*'], 'invoices_page', $invoicesPage);
@@ -370,10 +373,23 @@ class UserController extends Controller
             ])
             ->get();
 
+        $certificationEnrollments = EnrollmentCertificationProgram::whereIn('invoice_id', $paidInvoiceIds)
+            ->with([
+                'certificationProgram:id,title,thumbnail,price',
+                'certificationProgram.mentors:id,name',
+                'invoice:id,status,paid_at'
+            ])
+            ->get();
+
         $allEnrollments = collect([
             ...$courseEnrollments->map(fn($e) => [...$e->toArray(), 'type' => 'course']),
             ...$bootcampEnrollments->map(fn($e) => [...$e->toArray(), 'type' => 'bootcamp']),
             ...$webinarEnrollments->map(fn($e) => [...$e->toArray(), 'type' => 'webinar']),
+            ...$certificationEnrollments->map(fn($e) => [
+                ...$e->toArray(),
+                'type' => 'certification',
+                'certification' => $e->certificationProgram?->toArray(),
+            ]),
         ])->sortByDesc('created_at');
 
         $enrollmentsTotal = $allEnrollments->count();
@@ -397,6 +413,7 @@ class UserController extends Controller
             'total_courses' => $courseEnrollments->count(),
             'total_bootcamps' => $bootcampEnrollments->count(),
             'total_webinars' => $webinarEnrollments->count(),
+            'total_certifications' => $certificationEnrollments->count(),
             'completed_courses' => $courseEnrollments->where('progress', 100)->count(),
             'active_courses' => $courseEnrollments->where('progress', '<', 100)->count(),
         ];

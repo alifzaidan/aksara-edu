@@ -21,6 +21,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     AlertCircle,
+    Award,
     BookText,
     Building,
     Calendar,
@@ -100,6 +101,22 @@ interface InvoiceItem {
             user: { id: string; name: string };
         };
     }>;
+    certificationProgramItems?: Array<{
+        certificationProgram?: {
+            id: string;
+            title: string;
+            thumbnail?: string;
+            price: number;
+            mentors?: Array<{ id: string; name: string }>;
+        };
+        certification_program?: {
+            id: string;
+            title: string;
+            thumbnail?: string;
+            price: number;
+            mentors?: Array<{ id: string; name: string }>;
+        };
+    }>;
 }
 
 interface PaginatedInvoices {
@@ -117,7 +134,7 @@ interface EnrollmentData {
     progress?: number;
     completed_at?: string;
     created_at: string;
-    type: 'course' | 'bootcamp' | 'webinar';
+    type: 'course' | 'bootcamp' | 'webinar' | 'certification';
     course?: {
         id: string;
         title: string;
@@ -139,6 +156,27 @@ interface EnrollmentData {
         thumbnail?: string;
         price: number;
         user: { id: string; name: string };
+    };
+    certification?: {
+        id: string;
+        title: string;
+        thumbnail?: string;
+        price: number;
+        mentors?: Array<{ id: string; name: string }>;
+    };
+    certificationProgram?: {
+        id: string;
+        title: string;
+        thumbnail?: string;
+        price: number;
+        mentors?: Array<{ id: string; name: string }>;
+    };
+    certification_program?: {
+        id: string;
+        title: string;
+        thumbnail?: string;
+        price: number;
+        mentors?: Array<{ id: string; name: string }>;
     };
     invoice: {
         id: string;
@@ -176,6 +214,7 @@ interface UserShowProps {
         total_courses: number;
         total_bootcamps: number;
         total_webinars: number;
+        total_certifications?: number;
         completed_courses: number;
         active_courses: number;
     };
@@ -235,12 +274,16 @@ const getProductTypeBadge = (type: string) => {
         course: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
         bootcamp: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
         webinar: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
+        certification: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',
+        certification_program: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',
     };
 
     const labels = {
         course: 'Kelas',
         bootcamp: 'Bootcamp',
         webinar: 'Webinar',
+        certification: 'Sertifikasi',
+        certification_program: 'Sertifikasi',
     };
 
     return <Badge className={styles[type as keyof typeof styles] || styles.course}>{labels[type as keyof typeof labels] || type}</Badge>;
@@ -286,6 +329,21 @@ const getInvoiceItems = (invoice: InvoiceItem) => {
         );
     }
 
+    if (invoice.certificationProgramItems) {
+        items.push(
+            ...invoice.certificationProgramItems.map((item) => {
+                const cert = item.certificationProgram || item.certification_program;
+                return {
+                    type: 'certification',
+                    title: cert?.title ?? 'Sertifikasi',
+                    mentor: cert?.mentors?.length ? cert.mentors.map((m) => m.name).join(', ') : '-',
+                    thumbnail: cert?.thumbnail,
+                    price: cert?.price ?? 0,
+                };
+            }),
+        );
+    }
+
     return items;
 };
 
@@ -297,6 +355,9 @@ const getTypeIcon = (type: string) => {
             return <Presentation className="h-4 w-4" />;
         case 'webinar':
             return <MonitorPlay className="h-4 w-4" />;
+        case 'certification':
+        case 'certification_program':
+            return <Award className="h-4 w-4" />;
         default:
             return <PlayCircle className="h-4 w-4" />;
     }
@@ -618,6 +679,13 @@ export default function UserShow({ user, invoices, enrollments, stats, pointTran
                                     </div>
                                     <span className="font-medium">{stats.total_webinars}</span>
                                 </div>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Award className="h-4 w-4 text-amber-600" />
+                                        <span className="text-sm">Sertifikasi Diikuti</span>
+                                    </div>
+                                    <span className="font-medium">{stats.total_certifications ?? 0}</span>
+                                </div>
                                 <Separator />
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
@@ -651,17 +719,25 @@ export default function UserShow({ user, invoices, enrollments, stats, pointTran
                                 <>
                                     <div className="mb-4 space-y-4">
                                         {enrollments.data.map((enrollment) => {
-                                            const content = enrollment.course || enrollment.bootcamp || enrollment.webinar;
+                                            const cert =
+                                                enrollment.certification ||
+                                                enrollment.certificationProgram ||
+                                                enrollment.certification_program;
+                                            const content = enrollment.course || enrollment.bootcamp || enrollment.webinar || cert;
 
                                             const mentorName =
                                                 enrollment.type === 'course'
                                                     ? enrollment.course?.user?.name
                                                     : enrollment.type === 'webinar'
                                                         ? enrollment.webinar?.user?.name
-                                                        : (enrollment.bootcamp?.host_name ??
-                                                            (enrollment.bootcamp?.mentors?.length
-                                                                ? enrollment.bootcamp.mentors.map((mentor) => mentor.name).join(', ')
-                                                                : undefined));
+                                                        : enrollment.type === 'bootcamp'
+                                                            ? (enrollment.bootcamp?.host_name ??
+                                                                (enrollment.bootcamp?.mentors?.length
+                                                                    ? enrollment.bootcamp.mentors.map((mentor) => mentor.name).join(', ')
+                                                                    : undefined))
+                                                            : (cert?.mentors?.length
+                                                                ? cert.mentors.map((mentor) => mentor.name).join(', ')
+                                                                : undefined);
                                             return (
                                                 <div key={enrollment.id} className="flex items-start gap-4 rounded-lg border p-4">
                                                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100">
@@ -681,7 +757,7 @@ export default function UserShow({ user, invoices, enrollments, stats, pointTran
                                                             </div>
                                                             <div className="text-right">
                                                                 <div className="mb-2">{formatCurrency(content?.price || 0)}</div>
-                                                                {enrollment.type === 'course' &&
+                                                                {(enrollment.type === 'course' || enrollment.type === 'certification') &&
                                                                     enrollment.progress !== undefined &&
                                                                     getProgressBadge(enrollment.progress)}
                                                             </div>
