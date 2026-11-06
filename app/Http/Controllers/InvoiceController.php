@@ -1970,6 +1970,24 @@ class InvoiceController extends Controller
             }
 
             $phoneNumber = $this->formatPhoneNumber($user->phone_number);
+
+            // Coba kirim via WhatsApp Official Template terlebih dahulu jika diaktifkan
+            $useTemplate = config('services.messara.use_template', env('WA_USE_TEMPLATE', true));
+            if ($useTemplate) {
+                $templateSent = $this->sendWhatsAppInvoiceTemplate($invoice);
+                if ($templateSent) {
+                    Log::info('WhatsApp notification (Official Template) sent successfully', [
+                        'invoice_code' => $invoice->invoice_code,
+                        'user_id' => $user->id,
+                        'phone' => $phoneNumber
+                    ]);
+                    return;
+                }
+                Log::warning('WhatsApp official template failed or skipped, attempting fallback to text message', [
+                    'invoice_code' => $invoice->invoice_code
+                ]);
+            }
+
             $message = $this->createWhatsAppMessage($invoice);
 
             $waData = [
@@ -2681,6 +2699,145 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Kirim notifikasi WhatsApp menggunakan WhatsApp Official Message Template (HSM)
+     *
+     * @param Invoice $invoice
+     * @return bool
+     */
+    private function sendWhatsAppInvoiceTemplate(Invoice $invoice): bool
+    {
+        try {
+            $user = $invoice->user;
+            if (!$user || !$user->phone_number) {
+                return false;
+            }
+
+            $phoneNumber = $this->formatPhoneNumber($user->phone_number);
+            $invoice->loadMissing([
+                'discountUsage.discountCode',
+                'bundleEnrollments.bundle.bundleItems.bundleable',
+                'courseItems.course',
+                'bootcampItems.bootcamp',
+                'webinarItems.webinar',
+                'certificationProgramItems.certificationProgram',
+            ]);
+
+            $itemType = 'Program';
+            $itemTitle = '-';
+            $periodText = '-';
+            $groupLink = '-';
+
+            if ($invoice->bundleEnrollments->count() > 0) {
+                $itemType = 'Paket Bundling';
+                $bundle = $invoice->bundleEnrollments->first()->bundle;
+                $itemTitle = $bundle->title ?? 'Paket Bundling';
+                $periodText = 'Akses Selamanya';
+
+                if (!empty($bundle->bundleItems)) {
+                    foreach ($bundle->bundleItems as $bItem) {
+                        $program = $bItem->bundleable;
+                        if ($program && !empty($program->group_url)) {
+                            $groupLink = $program->group_url;
+                            break;
+                        }
+                    }
+                }
+            } elseif ($invoice->bootcampItems->count() > 0) {
+                $itemType = 'Bootcamp';
+                $bootcamp = $invoice->bootcampItems->first()->bootcamp;
+                $itemTitle = $bootcamp->title ?? 'Bootcamp';
+                if (!empty($bootcamp->start_date) && !empty($bootcamp->end_date)) {
+                    $startDate = Carbon::parse($bootcamp->start_date)->format('d M Y');
+                    $endDate = Carbon::parse($bootcamp->end_date)->format('d M Y');
+                    $periodText = "{$startDate} - {$endDate}";
+                }
+                $groupLink = $bootcamp->group_url ?: '-';
+            } elseif ($invoice->courseItems->count() > 0) {
+                $itemType = 'Kelas Online';
+                $course = $invoice->courseItems->first()->course;
+                $itemTitle = $course->title ?? 'Kelas Online';
+                $periodText = 'Akses Selamanya';
+                $groupLink = $course->group_url ?: '-';
+            } elseif ($invoice->webinarItems->count() > 0) {
+                $itemType = 'Webinar';
+                $webinar = $invoice->webinarItems->first()->webinar;
+                $itemTitle = $webinar->title ?? 'Webinar';
+                if (!empty($webinar->start_time)) {
+                    $periodText = Carbon::parse($webinar->start_time)->format('d M Y H:i') . ' WIB';
+                }
+                $groupLink = $webinar->group_url ?: '-';
+            } elseif ($invoice->privateItems->count() > 0) {
+                $itemType = 'Private Class';
+                $privateItem = $invoice->privateItems()->with(['privateClass', 'privateClassSchedule'])->first();
+                $privateClass = $privateItem?->privateClass;
+                $itemTitle = $privateClass->title ?? 'Private Class';
+                $schedule = $privateItem?->privateClassSchedule;
+                if ($schedule && !empty($schedule->start_time)) {
+                    $periodText = Carbon::parse($schedule->start_time)->format('d M Y H:i') . ' WIB';
+                }
+                $groupLink = $privateClass?->group_url ?: '-';
+            } elseif ($invoice->certificationProgramItems->count() > 0) {
+                $itemType = 'Sertifikasi Program';
+                $certProgram = $invoice->certificationProgramItems->first()->certificationProgram;
+                $itemTitle = $certProgram->title ?? 'Sertifikasi Program';
+                $periodText = 'Jadwal Ditentukan';
+                $groupLink = $certProgram->group_url ?: '-';
+            }
+
+            // Diskon
+            $discountText = '-';
+            if ($invoice->discountUsage && $invoice->discountUsage->discountCode) {
+                $discountCode = $invoice->discountUsage->discountCode;
+                $discountText = "{$discountCode->code} (-Rp " . number_format($invoice->discountUsage->discount_amount, 0, ',', '.') . ")";
+            }
+
+            // Biaya & Tanggal Bayar
+            $isFreePurchase = (float)$invoice->amount == 0;
+            $amountText = $isFreePurchase ? 'GRATIS' : 'Rp ' . number_format($invoice->amount, 0, ',', '.');
+            $paidDate = Carbon::parse($invoice->paid_at ?? now())->format('d M Y H:i');
+
+            // 8 Variabel sesuai Template WhatsApp Official (invoice_pembayaran_berhasil):
+            // {{1}} = Nama User
+            // {{2}} = Nomor Invoice
+            // {{3}} = Judul Program
+            // {{4}} = Diskon Promo
+            // {{5}} = Total Biaya
+            // {{6}} = Tanggal Bayar
+            // {{7}} = Periode / Jadwal
+            // {{8}} = Link Grup WhatsApp
+            $params = [
+                $user->name,
+                $invoice->invoice_code,
+                $itemTitle,
+                $discountText,
+                $amountText,
+                $paidDate,
+                $periodText,
+                $groupLink,
+            ];
+
+            $templateName = config('services.messara.invoice_template_name', env('WA_INVOICE_TEMPLATE_NAME', 'invoice_pembayaran_berhasil'));
+
+            $waData = [
+                [
+                    'phone' => $phoneNumber,
+                    'template_name' => $templateName,
+                    'language' => 'id',
+                    'params' => $params,
+                ]
+            ];
+
+            return self::sendTemplate($waData);
+        } catch (\Exception $e) {
+            Log::error('Failed to send WhatsApp template notification', [
+                'invoice_code' => $invoice->invoice_code,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
      * Kirim notifikasi WhatsApp untuk pendaftaran gratis
      *
      * @param Invoice $invoice
@@ -2702,6 +2859,22 @@ class InvoiceController extends Controller
             }
 
             $phoneNumber = $this->formatPhoneNumber($user->phone_number);
+
+            // Coba kirim via WhatsApp Official Template terlebih dahulu jika diaktifkan
+            $useTemplate = config('services.messara.use_template', env('WA_USE_TEMPLATE', true));
+            if ($useTemplate) {
+                $templateSent = $this->sendWhatsAppInvoiceTemplate($invoice);
+                if ($templateSent) {
+                    Log::info('WhatsApp free enrollment template notification sent successfully', [
+                        'invoice_code' => $invoice->invoice_code,
+                        'user_id' => $user->id,
+                        'phone' => $phoneNumber,
+                        'type' => $type
+                    ]);
+                    return;
+                }
+            }
+
             $message = $this->createWhatsAppMessage($invoice);
 
             $waData = [

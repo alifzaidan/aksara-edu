@@ -52,9 +52,11 @@ return [
     ],
 
     'messara' => [
-        'domain'     => env('MESSARA_DOMAIN_SERVER', env('DOMAIN_SERVER_MESSARA', 'https://messara.aksarateknologi.co.id')),
-        'api_key'    => env('MESSARA_API_KEY', env('API_KEY_MESSARA')),
-        'secret_key' => env('MESSARA_SECRET_KEY', env('SECRET_KEY_MESSARA')),
+        'domain'                => env('MESSARA_DOMAIN_SERVER', env('DOMAIN_SERVER_MESSARA', 'https://messara.aksarateknologi.co.id')),
+        'api_key'               => env('MESSARA_API_KEY', env('API_KEY_MESSARA')),
+        'secret_key'            => env('MESSARA_SECRET_KEY', env('SECRET_KEY_MESSARA')),
+        'invoice_template_name' => env('WA_INVOICE_TEMPLATE_NAME', 'invoice_pembayaran_berhasil'),
+        'use_template'          => env('WA_USE_TEMPLATE', true),
     ],
 
     'evolution' => [
