@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\Agent\CatalogSummaryController;
+use App\Http\Controllers\Api\Agent\ScheduleController;
 use App\Http\Controllers\Api\InvoiceApiController;
 use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\InvoiceController;
@@ -29,6 +31,15 @@ Route::middleware(['auth:sanctum', 'token.ability:external-api'])->group(functio
     Route::get('/invoices/statistics', [InvoiceApiController::class, 'statistics'])->name('api.invoices.statistics');
     Route::get('/invoices/{id}', [InvoiceApiController::class, 'show'])->name('api.invoices.show');
 });
+
+// AI Agent (Hermes) — read-only, tanpa data pribadi. Token: php artisan agent:token <agent>
+Route::prefix('v1/agent')
+    ->middleware(['agent.audit', 'auth:sanctum', 'token.ability:agent:read', 'throttle:agent'])
+    ->name('api.agent.')
+    ->group(function () {
+        Route::get('/catalog-summary', CatalogSummaryController::class)->name('catalog-summary');
+        Route::get('/schedules-and-recordings', ScheduleController::class)->name('schedules-and-recordings');
+    });
 
 Route::post('/check-email', function (Request $request) {
     $user = \App\Models\User::where('email', $request->email)->first();

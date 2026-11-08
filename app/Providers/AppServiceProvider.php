@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -22,6 +25,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Batas request AI agent: 60/menit per token (fallback per IP).
+        RateLimiter::for('agent', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->currentAccessToken()?->id ?: $request->ip());
+        });
+
         // if (app()->environment('local')) {
         //     URL::forceScheme('https');
         // }

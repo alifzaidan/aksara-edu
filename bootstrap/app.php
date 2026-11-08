@@ -38,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'enrollment.check' => \App\Http\Middleware\CheckEnrollment::class,
             'quiz.access' => \App\Http\Middleware\CheckQuizAccess::class,
             'token.ability' => \App\Http\Middleware\EnsureTokenHasAbility::class,
+            'agent.audit' => \App\Http\Middleware\LogAgentRequest::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
