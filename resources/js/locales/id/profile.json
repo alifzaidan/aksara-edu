@@ -545,5 +545,10 @@
     "payOffWithAmount": "Lunasi Cicilan ({{amount}})",
     "payTermWithAmount": "Bayar Cicilan ke-{{term}} ({{amount}})",
     "viewScheduleAndHistory": "Lihat Riwayat & Jadwal Cicilan"
+  },
+  "zoom": {
+    "join": "Masuk Zoom",
+    "live": "Sedang berlangsung",
+    "ended": "Sesi Zoom sudah selesai"
   }
 }

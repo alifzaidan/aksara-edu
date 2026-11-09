@@ -13,6 +13,8 @@ import { id } from 'date-fns/locale';
 import { LinkIcon, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import AutoMeetingLinkSwitch from '@/components/admin/auto-meeting-link-switch';
+import MeetingLink from '@/components/admin/meeting-link-dialog';
 import AddRecordingDialog from './create-recording-url';
 
 interface Webinar {
@@ -31,6 +33,9 @@ interface Webinar {
     webinar_url: string;
     registration_url: string;
     recording_url?: string | null;
+    meeting_url?: string | null;
+    zoom_meeting_id?: string | null;
+    auto_meeting_link?: boolean;
     thumbnail?: string | null;
     description?: string | null;
     benefits?: string | null;
@@ -313,6 +318,21 @@ export default function WebinarDetail({ webinar }: { webinar: Webinar }) {
                             {format(new Date(webinar.end_time), 'HH:mm', { locale: id })}
                         </TableCell>
                     </TableRow>
+                    {!isAffiliate && (
+                        <TableRow>
+                            <TableCell>Link Zoom</TableCell>
+                            <TableCell className="space-y-4">
+                                <AutoMeetingLinkSwitch action={route('webinars.auto-meeting-link', webinar.id)} enabled={!!webinar.auto_meeting_link} />
+                                <MeetingLink
+                                    action={route('webinars.meeting-link', webinar.id)}
+                                    removeAction={route('webinars.meeting-link.remove', webinar.id)}
+                                    meetingUrl={webinar.meeting_url}
+                                    zoomMeetingId={webinar.zoom_meeting_id}
+                                    label={webinar.title}
+                                />
+                            </TableCell>
+                        </TableRow>
+                    )}
                     <TableRow>
                         <TableCell>Deadline Pendaftaran</TableCell>
                         <TableCell>{format(new Date(webinar.registration_deadline), 'dd MMMM yyyy HH:mm', { locale: id })}</TableCell>

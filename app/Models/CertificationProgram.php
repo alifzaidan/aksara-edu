@@ -33,6 +33,7 @@ class CertificationProgram extends Model
         'registration_deadline' => 'datetime',
         'socialization_registration_deadline' => 'datetime',
         'document_required' => 'boolean',
+        'auto_meeting_link' => 'boolean',
         'strikethrough_price' => 'integer',
         'price' => 'integer',
         'scholarship_price' => 'integer',

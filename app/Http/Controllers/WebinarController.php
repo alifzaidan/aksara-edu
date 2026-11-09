@@ -201,6 +201,7 @@ class WebinarController extends Controller
             'requirement_2' => 'nullable|string',
             'requirement_3' => 'nullable|string',
             'has_certificate' => 'nullable|boolean',
+            'auto_meeting_link' => 'nullable|boolean',
             'requires_review' => 'nullable|boolean',
             'next_step_type' => 'nullable|string|in:webinar,bootcamp,certification_program',
             'next_step_id' => 'nullable|string|max:36',
@@ -208,6 +209,7 @@ class WebinarController extends Controller
 
         $data = $request->all();
         $data['has_certificate'] = $request->boolean('has_certificate', true);
+        $data['auto_meeting_link'] = $request->boolean('auto_meeting_link');
         $data['requires_review'] = $data['has_certificate'] ? $request->boolean('requires_review', true) : false;
         $data['next_step_type'] = $request->input('next_step_type') ?: null;
         $data['next_step_id'] = $request->input('next_step_id') ?: null;
@@ -253,6 +255,10 @@ class WebinarController extends Controller
     public function show(string $id)
     {
         $webinar = Webinar::with(['category', 'user', 'tools', 'installmentTerms'])->findOrFail($id);
+        // Link Zoom tidak dibuka untuk afiliasi.
+        if (! auth()->user()?->hasRole('affiliate') || auth()->user()?->hasRole('admin')) {
+            $webinar->makeVisible(['meeting_url', 'zoom_meeting_id']);
+        }
 
         $transactionQuery = Invoice::with([
             'user.referrer',
@@ -403,6 +409,7 @@ class WebinarController extends Controller
             'requirement_2' => 'nullable|string',
             'requirement_3' => 'nullable|string',
             'has_certificate' => 'nullable|boolean',
+            'auto_meeting_link' => 'nullable|boolean',
             'requires_review' => 'nullable|boolean',
             'next_step_type' => 'nullable|string|in:webinar,bootcamp,certification_program',
             'next_step_id' => 'nullable|string|max:36',
@@ -411,6 +418,7 @@ class WebinarController extends Controller
         $webinar = Webinar::findOrFail($id);
         $data = $request->all();
         $data['has_certificate'] = $request->boolean('has_certificate', true);
+        $data['auto_meeting_link'] = $request->boolean('auto_meeting_link', (bool) $webinar->auto_meeting_link);
         $data['requires_review'] = $data['has_certificate'] ? $request->boolean('requires_review', true) : false;
         $data['next_step_type'] = $request->input('next_step_type') ?: null;
         $data['next_step_id'] = $request->input('next_step_id') ?: null;
@@ -493,6 +501,9 @@ class WebinarController extends Controller
         $newWebinar->status = 'draft';
         $newWebinar->webinar_url = url('/webinar/' . $slug);
         $newWebinar->registration_url = url('/webinar/' . $slug . '/register');
+        // Link Zoom milik batch lama tidak boleh ikut tersalin.
+        $newWebinar->meeting_url = null;
+        $newWebinar->zoom_meeting_id = null;
         $newWebinar->save();
 
         if ($webinar->tools && $webinar->tools->count() > 0) {

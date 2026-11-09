@@ -1,5 +1,7 @@
 import { Badge } from '@/components/ui/badge';
+import AutoMeetingLinkSwitch from '@/components/admin/auto-meeting-link-switch';
 import InstallmentConfig from '@/components/admin/installment-config';
+import MeetingLink from '@/components/admin/meeting-link-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
@@ -21,6 +23,8 @@ interface Schedule {
     start_time: string;
     end_time: string;
     recording_url?: string | null;
+    meeting_url?: string | null;
+    zoom_meeting_id?: string | null;
 }
 
 interface Mentor {
@@ -40,6 +44,7 @@ interface CertificationProgram {
     mentors?: Mentor[];
     schedules?: Schedule[];
     socializationSchedules?: Schedule[];
+    auto_meeting_link?: boolean;
     batch?: string | null;
     strikethrough_price: number;
     price: number;
@@ -123,7 +128,7 @@ export default function CertificationProgramDetail({ program }: { program: Certi
         }
     };
 
-    const renderSchedules = (schedules: Schedule[], title: string) => (
+    const renderSchedules = (schedules: Schedule[], title: string, withZoom = false) => (
         <div className="space-y-2">
             <h4 className="text-sm font-medium">{title}</h4>
             {schedules.length > 0 ? (
@@ -132,17 +137,28 @@ export default function CertificationProgramDetail({ program }: { program: Certi
                         const scheduleDate = new Date(sch.schedule_date);
                         const isPast = scheduleDate < new Date();
                         return (
-                            <div key={idx} className="flex items-start justify-between rounded-lg border p-3">
-                                <div>
-                                    <div className="font-medium">{sch.title || `Pertemuan ${idx + 1}`}</div>
-                                    <div className="text-sm text-gray-600">
-                                        {format(scheduleDate, 'dd MMM yyyy', { locale: id })} • <span className="capitalize">{sch.day}</span> •{' '}
-                                        {sch.start_time?.slice(0, 5)} – {sch.end_time?.slice(0, 5)} WIB
+                            <div key={idx} className="space-y-3 rounded-lg border p-3">
+                                <div className="flex items-start justify-between">
+                                    <div>
+                                        <div className="font-medium">{sch.title || `Pertemuan ${idx + 1}`}</div>
+                                        <div className="text-sm text-gray-600">
+                                            {format(scheduleDate, 'dd MMM yyyy', { locale: id })} • <span className="capitalize">{sch.day}</span> •{' '}
+                                            {sch.start_time?.slice(0, 5)} – {sch.end_time?.slice(0, 5)} WIB
+                                        </div>
                                     </div>
+                                    <Badge variant={isPast ? 'secondary' : 'default'} className="text-xs">
+                                        {isPast ? 'Selesai' : 'Akan Datang'}
+                                    </Badge>
                                 </div>
-                                <Badge variant={isPast ? 'secondary' : 'default'} className="text-xs">
-                                    {isPast ? 'Selesai' : 'Akan Datang'}
-                                </Badge>
+                                {withZoom && !isAffiliate && (
+                                    <MeetingLink
+                                        action={route('certification-programs.meeting-link', { program: program.id, schedule: sch.id })}
+                                        removeAction={route('certification-programs.meeting-link.remove', { program: program.id, schedule: sch.id })}
+                                        meetingUrl={sch.meeting_url}
+                                        zoomMeetingId={sch.zoom_meeting_id}
+                                        label={sch.title || `Pertemuan ${idx + 1}`}
+                                    />
+                                )}
                             </div>
                         );
                     })}
@@ -454,7 +470,16 @@ export default function CertificationProgramDetail({ program }: { program: Certi
 
             {/* Schedules */}
             <div className="space-y-4">
-                {renderSchedules(program.schedules ?? [], 'Jadwal Pelaksanaan')}
+                {!isAffiliate && (
+                    <div className="space-y-2">
+                        <h4 className="text-sm font-medium">Link Zoom Otomatis</h4>
+                        <AutoMeetingLinkSwitch
+                            action={route('certification-programs.auto-meeting-link', program.id)}
+                            enabled={!!program.auto_meeting_link}
+                        />
+                    </div>
+                )}
+                {renderSchedules(program.schedules ?? [], 'Jadwal Pelaksanaan', true)}
                 {program.type === 'scholarship' && renderSchedules(socializationSchedules, 'Jadwal Sosialisasi')}
             </div>
 

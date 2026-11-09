@@ -21,6 +21,7 @@ use App\Http\Controllers\DiscountCodeController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\LessonAssignmentController;
+use App\Http\Controllers\MeetingLinkController;
 use App\Http\Controllers\MentorController;
 use App\Http\Controllers\PrivateClassController;
 use App\Http\Controllers\QuestionController;
@@ -381,6 +382,9 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
         Route::post('/bootcamps/{bootcamp}/hidden', [BootcampController::class, 'hidden'])->name('bootcamps.hidden');
         Route::post('/bootcamps/{bootcamp}/schedules/{schedule}/recording', [BootcampController::class, 'addScheduleRecording'])->name('bootcamps.add-recording');
         Route::delete('/bootcamps/{bootcamp}/schedules/{schedule}/recording', [BootcampController::class, 'removeScheduleRecording'])->name('bootcamps.remove-recording');
+        Route::post('/bootcamps/{bootcamp}/auto-meeting-link', [MeetingLinkController::class, 'bootcampAuto'])->name('bootcamps.auto-meeting-link');
+        Route::post('/bootcamps/{bootcamp}/schedules/{schedule}/meeting-link', [MeetingLinkController::class, 'bootcampSession'])->name('bootcamps.meeting-link');
+        Route::delete('/bootcamps/{bootcamp}/schedules/{schedule}/meeting-link', [MeetingLinkController::class, 'bootcampSessionRemove'])->name('bootcamps.meeting-link.remove');
     });
     Route::middleware(['role_or_permission:admin|affiliate|bootcamps.view'])->group(function () {
         Route::get('bootcamps', [BootcampController::class, 'index'])->name('bootcamps.index');
@@ -399,6 +403,9 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
         Route::post('/certification-programs/{program}/hidden', [CertificationProgramController::class, 'hidden'])->name('certification-programs.hidden');
         Route::post('/certification-programs/{program}/schedules/{schedule}/recording', [CertificationProgramController::class, 'addScheduleRecording'])->name('certification-programs.add-recording');
         Route::delete('/certification-programs/{program}/schedules/{schedule}/recording', [CertificationProgramController::class, 'removeScheduleRecording'])->name('certification-programs.remove-recording');
+        Route::post('/certification-programs/{program}/auto-meeting-link', [MeetingLinkController::class, 'programAuto'])->name('certification-programs.auto-meeting-link');
+        Route::post('/certification-programs/{program}/schedules/{schedule}/meeting-link', [MeetingLinkController::class, 'programSession'])->name('certification-programs.meeting-link');
+        Route::delete('/certification-programs/{program}/schedules/{schedule}/meeting-link', [MeetingLinkController::class, 'programSessionRemove'])->name('certification-programs.meeting-link.remove');
         Route::post('/certification-programs/{program}/socialization-schedules/{schedule}/recording', [CertificationProgramController::class, 'addSocializationRecording'])->name('certification-programs.add-socialization-recording');
         Route::delete('/certification-programs/{program}/socialization-schedules/{schedule}/recording', [CertificationProgramController::class, 'removeSocializationRecording'])->name('certification-programs.remove-socialization-recording');
         Route::post('/certification-programs/{program}/applications/{application}/approve', [CertificationProgramController::class, 'approveApplication'])->name('certification-programs.applications.approve');
@@ -425,6 +432,9 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
         Route::post('/webinars/{webinar}/duplicate', [WebinarController::class, 'duplicate'])->name('webinars.duplicate');
         Route::patch('webinars/{webinar}/add-recording', [WebinarController::class, 'addRecording'])->name('webinars.add-recording');
         Route::delete('/webinars/{id}/recording', [WebinarController::class, 'removeRecording'])->name('webinars.recording.remove');
+        Route::post('/webinars/{webinar}/auto-meeting-link', [MeetingLinkController::class, 'webinarAuto'])->name('webinars.auto-meeting-link');
+        Route::post('/webinars/{webinar}/meeting-link', [MeetingLinkController::class, 'webinar'])->name('webinars.meeting-link');
+        Route::delete('/webinars/{webinar}/meeting-link', [MeetingLinkController::class, 'webinarRemove'])->name('webinars.meeting-link.remove');
     });
     Route::middleware(['role_or_permission:admin|affiliate|webinars.view'])->group(function () {
         Route::get('webinars', [WebinarController::class, 'index'])->name('webinars.index');

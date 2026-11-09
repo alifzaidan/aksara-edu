@@ -217,6 +217,7 @@ class BootcampController extends Controller
             'requirement_2' => 'nullable|string',
             'requirement_3' => 'nullable|string',
             'has_certificate' => 'nullable|boolean',
+            'auto_meeting_link' => 'nullable|boolean',
             'requires_review' => 'nullable|boolean',
             'next_step_type' => 'nullable|string|in:webinar,bootcamp,certification_program',
             'next_step_id' => 'nullable|string|max:36',
@@ -224,6 +225,7 @@ class BootcampController extends Controller
 
         $data = $request->except(['tools', 'schedules', 'mentor_ids', 'user_id']);
         $data['has_certificate'] = $request->boolean('has_certificate', true);
+        $data['auto_meeting_link'] = $request->boolean('auto_meeting_link');
         $data['requires_review'] = $data['has_certificate'] ? $request->boolean('requires_review', true) : false;
         $data['next_step_type'] = $request->input('next_step_type') ?: null;
         $data['next_step_id'] = $request->input('next_step_id') ?: null;
@@ -303,6 +305,10 @@ class BootcampController extends Controller
     public function show(string $id)
     {
         $bootcamp = Bootcamp::with(['category', 'mentors', 'schedules', 'tools', 'installmentTerms'])->findOrFail($id);
+        // Link Zoom tidak dibuka untuk afiliasi.
+        if (! auth()->user()?->hasRole('affiliate') || auth()->user()?->hasRole('admin')) {
+            $bootcamp->schedules->each->makeVisible(['meeting_url', 'zoom_meeting_id']);
+        }
 
         $transactionQuery = Invoice::with([
             'user.referrer',
@@ -477,6 +483,7 @@ class BootcampController extends Controller
             'requirement_2' => 'nullable|string',
             'requirement_3' => 'nullable|string',
             'has_certificate' => 'nullable|boolean',
+            'auto_meeting_link' => 'nullable|boolean',
             'requires_review' => 'nullable|boolean',
             'next_step_type' => 'nullable|string|in:webinar,bootcamp,certification_program',
             'next_step_id' => 'nullable|string|max:36',
@@ -487,6 +494,7 @@ class BootcampController extends Controller
         $bootcamp = Bootcamp::findOrFail($id);
         $data = $request->except(['tools', 'schedules', 'mentor_ids', 'user_id']);
         $data['has_certificate'] = $request->boolean('has_certificate', true);
+        $data['auto_meeting_link'] = $request->boolean('auto_meeting_link', (bool) $bootcamp->auto_meeting_link);
         $data['requires_review'] = $data['has_certificate'] ? $request->boolean('requires_review', true) : false;
         $data['next_step_type'] = $request->input('next_step_type') ?: null;
         $data['next_step_id'] = $request->input('next_step_id') ?: null;

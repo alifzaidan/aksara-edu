@@ -348,7 +348,9 @@ it('mengembalikan jadwal hari ini dan status rekaman hari sebelumnya', function 
 
     $webinar = collect($res->json('today'))->firstWhere('type', 'webinar');
     expect($webinar['end'])->toBeNull()
-        ->and($webinar)->not->toHaveKey('has_meeting_link');
+        ->and($webinar['has_meeting_link'])->toBeFalse()
+        ->and($webinar)->not->toHaveKey('zoom_meeting_id')
+        ->and($webinar)->not->toHaveKey('auto_meeting_link');
 });
 
 it('memakai hari ini bila date kosong dan menolak format tanggal salah', function () {
@@ -370,4 +372,270 @@ it('agent:token membuat token read-only dan mencabut token lama', function () {
     expect($user->tokens()->count())->toBe(1)
         ->and($user->tokens()->first()->abilities)->toBe(['agent:read'])
         ->and($user->roles()->count())->toBe(0);
+});
+
+// --- Fase F: link Zoom & rekaman ---------------------------------------
+
+function agentPost(string $uri, array $data, ?string $token, ?string $key = 'key-1')
+{
+    test()->flushHeaders();
+    app('auth')->forgetGuards();
+
+    return test()->withHeaders(array_filter([
+        'Accept' => 'application/json',
+        'Authorization' => $token ? "Bearer {$token}" : null,
+        'Idempotency-Key' => $key,
+    ]))->postJson($uri, $data);
+}
+
+function writerToken(): string
+{
+    return test()->agent->createToken('agent-academic', ['agent:read', 'agent:write-meeting', 'agent:write-recording'])->plainTextToken;
+}
+
+function makeSession(Bootcamp $bootcamp, string $day, string $start = '09:00:00', string $end = '12:00:00', array $attrs = []): BootcampSchedule
+{
+    return BootcampSchedule::create(array_merge([
+        'bootcamp_id' => $bootcamp->id,
+        'schedule_date' => $day,
+        'day' => 'senin',
+        'start_time' => $start,
+        'end_time' => $end,
+    ], $attrs));
+}
+
+it('melaporkan jadwal yang butuh link Zoom, terpisah otomatis dan manual', function () {
+    $auto = makeBootcamp(['auto_meeting_link' => true]);
+    $manual = makeBootcamp(['title' => 'Bootcamp Akun Pinjaman']);
+
+    $sesiLewat = makeSession($auto, '2026-11-09', '06:00:00', '07:00:00');   // sudah mulai
+    $sesiBaru = makeSession($auto, '2026-11-10');                              // butuh link
+    makeSession($auto, '2026-11-11', attrs: ['meeting_url' => 'https://us06web.zoom.us/j/1', 'zoom_meeting_id' => '123456789']);
+    makeSession($auto, '2026-11-30');                                          // di luar 7 hari
+    makeSession($manual, '2026-11-12');                                        // manual
+    makeWebinar(['auto_meeting_link' => true, 'start_time' => '2026-11-12 19:00:00', 'end_time' => '2026-11-12 21:00:00']);
+
+    $res = agentGet('/api/v1/agent/schedules-needing-meeting-link', $this->token)->assertOk();
+
+    $items = collect($res->json('items'));
+    expect($items->pluck('id'))->not->toContain($sesiLewat->id)
+        ->and($items)->toHaveCount(2)
+        ->and($items->firstWhere('id', $sesiBaru->id)['duration_minutes'])->toBe(180)
+        ->and($items->firstWhere('type', 'webinar')['duration_minutes'])->toBe(120)
+        ->and($items->first())->not->toHaveKey('auto_meeting_link')
+        ->and($res->json('manual_missing'))->toHaveCount(1)
+        ->and($res->json('manual_missing.0.title'))->toBe('Bootcamp Akun Pinjaman');
+
+    agentGet('/api/v1/agent/schedules-needing-meeting-link?days=30', $this->token)
+        ->assertOk()->assertJsonCount(3, 'items');
+    agentGet('/api/v1/agent/schedules-needing-meeting-link?days=99', $this->token)->assertUnprocessable();
+});
+
+it('melaporkan rekaman yang belum diisi hanya untuk meeting buatan agent dalam jendela 48 jam', function () {
+    $bootcamp = makeBootcamp(['auto_meeting_link' => true]);
+    $zoom = ['meeting_url' => 'https://us06web.zoom.us/j/1', 'zoom_meeting_id' => '98765432101'];
+
+    $pending = makeSession($bootcamp, '2026-11-08', attrs: $zoom);
+    makeSession($bootcamp, '2026-11-07', '19:00:00', '21:00:00', attrs: $zoom + ['recording_url' => 'https://youtu.be/x']);
+    makeSession($bootcamp, '2026-11-08', '13:00:00', '15:00:00');           // tanpa zoom_meeting_id
+    makeSession($bootcamp, '2026-11-06', attrs: $zoom);                     // > 48 jam
+    makeSession($bootcamp, '2026-11-09', '09:00:00', '12:00:00', attrs: $zoom); // belum selesai
+    makeSession(makeBootcamp(), '2026-11-08', attrs: $zoom);              // produk manual (akun pinjaman)
+
+    $res = agentGet('/api/v1/agent/recordings-pending', $this->token)->assertOk();
+
+    expect($res->json('items'))->toHaveCount(1)
+        ->and($res->json('items.0.id'))->toBe($pending->id)
+        ->and($res->json('items.0.zoom_meeting_id'))->toBe('98765432101');
+});
+
+it('menolak tulis tanpa ability, tanpa Idempotency-Key, dan payload tidak valid', function () {
+    $session = makeSession(makeBootcamp(['auto_meeting_link' => true]), '2026-11-10');
+    $body = ['type' => 'bootcamp_session', 'id' => $session->id, 'meeting_url' => 'https://us06web.zoom.us/j/123456789?pwd=x', 'zoom_meeting_id' => '123456789'];
+
+    agentPost('/api/v1/agent/update-meeting-link', $body, $this->token)->assertForbidden();
+
+    $writer = writerToken();
+    agentPost('/api/v1/agent/update-meeting-link', $body, $writer, key: null)->assertStatus(400);
+    agentPost('/api/v1/agent/update-meeting-link', array_merge($body, ['meeting_url' => 'https://evil.example/zoom.us/j/1']), $writer)->assertUnprocessable();
+    agentPost('/api/v1/agent/update-meeting-link', array_merge($body, ['type' => 'course']), $writer, 'k2')->assertUnprocessable();
+
+    expect($session->fresh()->meeting_url)->toBeNull();
+});
+
+it('mengisi link Zoom sekali, idempoten, dan tidak menimpa nilai lain', function () {
+    $webinar = makeWebinar(['auto_meeting_link' => true, 'webinar_url' => 'https://lms.aksademy.id/webinar/x']);
+    $writer = writerToken();
+    $body = ['type' => 'webinar', 'id' => $webinar->id, 'meeting_url' => 'https://us06web.zoom.us/j/123456789?pwd=x', 'zoom_meeting_id' => '123456789'];
+
+    agentPost('/api/v1/agent/update-meeting-link', $body, $writer, 'k1')->assertOk()->assertJsonPath('status', 'updated');
+
+    $webinar->refresh();
+    expect($webinar->meeting_url)->toBe($body['meeting_url'])
+        ->and($webinar->zoom_meeting_id)->toBe('123456789')
+        ->and($webinar->webinar_url)->toBe('https://lms.aksademy.id/webinar/x');
+
+    // Request ulang dengan kunci sama → respons sama, ditandai replay.
+    agentPost('/api/v1/agent/update-meeting-link', $body, $writer, 'k1')
+        ->assertOk()->assertHeader('Idempotent-Replayed', 'true')->assertJsonPath('status', 'updated');
+    // Kunci sama, payload lain → ditolak.
+    agentPost('/api/v1/agent/update-meeting-link', array_merge($body, ['zoom_meeting_id' => '999999999']), $writer, 'k1')
+        ->assertUnprocessable();
+    // Kunci baru, nilai sama → unchanged; nilai lain → 409.
+    agentPost('/api/v1/agent/update-meeting-link', $body, $writer, 'k2')->assertOk()->assertJsonPath('status', 'unchanged');
+    agentPost('/api/v1/agent/update-meeting-link', array_merge($body, ['zoom_meeting_id' => '999999999']), $writer, 'k3')
+        ->assertStatus(409)->assertJsonPath('status', 'conflict');
+
+    expect($webinar->fresh()->zoom_meeting_id)->toBe('123456789');
+
+    $log = AgentAuditLog::where('method', 'POST')->latest('id')->first();
+    expect($log->payload['type'])->toBe('webinar')
+        ->and($log->payload['idempotency_key'])->toBe('k3')
+        ->and($log->status)->toBe(409);
+});
+
+it('tidak membuat link untuk produk yang tidak dicentang otomatis', function () {
+    $session = makeSession(makeBootcamp(), '2026-11-10');
+
+    agentPost('/api/v1/agent/update-meeting-link', [
+        'type' => 'bootcamp_session', 'id' => $session->id,
+        'meeting_url' => 'https://us06web.zoom.us/j/123456789', 'zoom_meeting_id' => '123456789',
+    ], writerToken())->assertStatus(409)->assertJsonPath('status', 'manual');
+
+    expect($session->fresh()->meeting_url)->toBeNull();
+});
+
+it('mengisi recording_url hanya untuk sesi buatan agent', function () {
+    $bootcamp = makeBootcamp(['auto_meeting_link' => true]);
+    $agentSession = makeSession($bootcamp, '2026-11-08', attrs: ['meeting_url' => 'https://us06web.zoom.us/j/1', 'zoom_meeting_id' => '123456789']);
+    $manualSession = makeSession($bootcamp, '2026-11-08', '13:00:00', '15:00:00');
+    $writer = writerToken();
+
+    agentPost('/api/v1/agent/update-recording-url', ['type' => 'bootcamp_session', 'id' => $agentSession->id, 'recording_url' => 'https://youtu.be/abc'], $writer, 'r1')
+        ->assertOk()->assertJsonPath('status', 'updated');
+    agentPost('/api/v1/agent/update-recording-url', ['type' => 'bootcamp_session', 'id' => $agentSession->id, 'recording_url' => 'https://youtu.be/lain'], $writer, 'r2')
+        ->assertStatus(409);
+    agentPost('/api/v1/agent/update-recording-url', ['type' => 'bootcamp_session', 'id' => $manualSession->id, 'recording_url' => 'https://youtu.be/abc'], $writer, 'r3')
+        ->assertStatus(409)->assertJsonPath('status', 'manual');
+    agentPost('/api/v1/agent/update-recording-url', ['type' => 'bootcamp_session', 'id' => $manualSession->id, 'recording_url' => 'https://drive.google.com/x'], $writer, 'r4')
+        ->assertUnprocessable();
+    agentPost('/api/v1/agent/update-recording-url', ['type' => 'webinar', 'id' => (string) Str::uuid(), 'recording_url' => 'https://youtu.be/abc'], $writer, 'r5')
+        ->assertNotFound();
+
+    expect($agentSession->fresh()->recording_url)->toBe('https://youtu.be/abc')
+        ->and($manualSession->fresh()->recording_url)->toBeNull();
+});
+
+it('agent:token --write menambah ability tulis dan menolak nilai tak dikenal', function () {
+    Artisan::call('agent:token', ['agent' => 'academic', '--write' => 'meeting,recording']);
+
+    $user = User::where('email', 'agent-academic@agents.aksademy.local')->firstOrFail();
+    expect($user->tokens()->first()->abilities)->toBe(['agent:read', 'agent:write-meeting', 'agent:write-recording']);
+
+    expect(Artisan::call('agent:token', ['agent' => 'academic', '--write' => 'delete']))->toBe(1)
+        ->and($user->tokens()->count())->toBe(1);
+});
+
+it('menyembunyikan link Zoom dari serialisasi model secara default', function () {
+    $webinar = makeWebinar(['meeting_url' => 'https://us06web.zoom.us/j/1?pwd=rahasia', 'zoom_meeting_id' => '123456789']);
+    $session = makeSession(makeBootcamp(), '2026-11-10', attrs: ['meeting_url' => 'https://us06web.zoom.us/j/2?pwd=rahasia']);
+
+    expect($webinar->toArray())->not->toHaveKey('meeting_url')->not->toHaveKey('zoom_meeting_id')
+        ->and($session->toArray())->not->toHaveKey('meeting_url')
+        ->and($session->makeVisible('meeting_url')->toArray()['meeting_url'])->toContain('pwd=rahasia');
+});
+
+// --- Admin & peserta: link Zoom ----------------------------------------
+
+function adminUser(): User
+{
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin']);
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    return $admin;
+}
+
+it('admin menyalakan link otomatis dan mengisi/menghapus link Zoom per sesi', function () {
+    $bootcamp = makeBootcamp();
+    $session = makeSession($bootcamp, '2026-11-10');
+    $this->actingAs(adminUser());
+
+    $this->post(route('bootcamps.auto-meeting-link', $bootcamp->id), ['enabled' => true])->assertRedirect();
+    expect($bootcamp->fresh()->auto_meeting_link)->toBeTrue();
+
+    $this->post(route('bootcamps.meeting-link', [$bootcamp->id, $session->id]), [
+        'meeting_url' => 'https://us06web.zoom.us/j/81234567890?pwd=abc',
+    ])->assertRedirect()->assertSessionHasNoErrors();
+    expect($session->fresh()->zoom_meeting_id)->toBe('81234567890');
+
+    $this->post(route('bootcamps.meeting-link', [$bootcamp->id, $session->id]), ['meeting_url' => 'http://tidak-aman'])
+        ->assertSessionHasErrors('meeting_url');
+
+    $this->delete(route('bootcamps.meeting-link.remove', [$bootcamp->id, $session->id]))->assertRedirect();
+    expect($session->fresh()->meeting_url)->toBeNull()->and($session->fresh()->zoom_meeting_id)->toBeNull();
+
+    $webinar = makeWebinar();
+    $this->post(route('webinars.meeting-link', $webinar->id), ['meeting_url' => 'https://us06web.zoom.us/j/123456789', 'zoom_meeting_id' => '123456789'])
+        ->assertSessionHasNoErrors();
+    expect($webinar->fresh()->meeting_url)->toBe('https://us06web.zoom.us/j/123456789');
+});
+
+it('bukan admin tidak bisa mengubah link Zoom', function () {
+    $bootcamp = makeBootcamp();
+    $session = makeSession($bootcamp, '2026-11-10');
+    $this->actingAs(User::factory()->create());
+
+    $this->post(route('bootcamps.meeting-link', [$bootcamp->id, $session->id]), ['meeting_url' => 'https://us06web.zoom.us/j/123456789'])
+        ->assertForbidden();
+    expect($session->fresh()->meeting_url)->toBeNull();
+});
+
+it('peserta aktif melihat link Zoom sesi, pengunjung halaman publik tidak', function () {
+    $bootcamp = makeBootcamp();
+    makeSession($bootcamp, '2026-11-10', attrs: ['meeting_url' => 'https://us06web.zoom.us/j/1?pwd=rahasia', 'zoom_meeting_id' => '123456789']);
+
+    enroll('bootcamp', $bootcamp->id);
+    $buyer = Invoice::latest('id')->first()->user;
+
+    $this->actingAs($buyer)
+        ->get(route('profile.bootcamp.detail', $bootcamp->slug))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('bootcamp.bootcamp_items.0.bootcamp.schedules.0.meeting_url', 'https://us06web.zoom.us/j/1?pwd=rahasia')
+            ->missing('bootcamp.bootcamp_items.0.bootcamp.schedules.0.zoom_meeting_id'));
+
+    // Halaman publik memuat jadwal (tanggal sesi ada), tapi tanpa link Zoom.
+    $public = $this->get(route('bootcamp.detail', $bootcamp->slug))->assertOk();
+    expect($public->getContent())->toContain('2026-11-10')->not->toContain('pwd=rahasia');
+});
+
+it('duplikat webinar tidak membawa link Zoom batch lama', function () {
+    $webinar = makeWebinar(['meeting_url' => 'https://us06web.zoom.us/j/123456789', 'zoom_meeting_id' => '123456789']);
+    $this->actingAs(adminUser());
+
+    $this->post(route('webinars.duplicate', $webinar->id))->assertRedirect();
+
+    $copy = Webinar::where('id', '!=', $webinar->id)->latest('created_at')->firstOrFail();
+    expect($copy->meeting_url)->toBeNull()->and($copy->zoom_meeting_id)->toBeNull()
+        ->and($webinar->fresh()->meeting_url)->not->toBeNull();
+});
+
+it('mengosongkan link Zoom bila jadwal produk otomatis digeser, bukan produk manual', function () {
+    $zoom = ['meeting_url' => 'https://us06web.zoom.us/j/123456789', 'zoom_meeting_id' => '123456789'];
+    $auto = makeSession(makeBootcamp(['auto_meeting_link' => true]), '2026-11-10', attrs: $zoom);
+    $manual = makeSession(makeBootcamp(), '2026-11-10', attrs: $zoom);
+
+    // Format beda ("09:00" vs "09:00:00") tapi waktu sama → link tetap.
+    $auto->update(['start_time' => '09:00', 'schedule_date' => '2026-11-10']);
+    expect($auto->fresh()->meeting_url)->not->toBeNull();
+
+    $auto->update(['schedule_date' => '2026-11-12']);
+    $manual->update(['schedule_date' => '2026-11-12']);
+    expect($auto->fresh()->meeting_url)->toBeNull()->and($auto->fresh()->zoom_meeting_id)->toBeNull()
+        ->and($manual->fresh()->meeting_url)->not->toBeNull();
+
+    $webinar = makeWebinar(['auto_meeting_link' => true] + $zoom);
+    $webinar->update(['start_time' => '2026-11-12T20:00']);
+    expect($webinar->fresh()->meeting_url)->toBeNull();
 });

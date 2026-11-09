@@ -1,7 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\Agent\CatalogSummaryController;
+use App\Http\Controllers\Api\Agent\MeetingLinkNeededController;
+use App\Http\Controllers\Api\Agent\RecordingsPendingController;
 use App\Http\Controllers\Api\Agent\ScheduleController;
+use App\Http\Controllers\Api\Agent\UpdateMeetingLinkController;
+use App\Http\Controllers\Api\Agent\UpdateRecordingUrlController;
 use App\Http\Controllers\Api\InvoiceApiController;
 use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\InvoiceController;
@@ -34,11 +38,22 @@ Route::middleware(['auth:sanctum', 'token.ability:external-api'])->group(functio
 
 // AI Agent (Hermes) — read-only, tanpa data pribadi. Token: php artisan agent:token <agent>
 Route::prefix('v1/agent')
-    ->middleware(['agent.audit', 'auth:sanctum', 'token.ability:agent:read', 'throttle:agent'])
+    ->middleware(['agent.audit', 'auth:sanctum', 'throttle:agent'])
     ->name('api.agent.')
     ->group(function () {
-        Route::get('/catalog-summary', CatalogSummaryController::class)->name('catalog-summary');
-        Route::get('/schedules-and-recordings', ScheduleController::class)->name('schedules-and-recordings');
+        Route::middleware('token.ability:agent:read')->group(function () {
+            Route::get('/catalog-summary', CatalogSummaryController::class)->name('catalog-summary');
+            Route::get('/schedules-and-recordings', ScheduleController::class)->name('schedules-and-recordings');
+            Route::get('/schedules-needing-meeting-link', MeetingLinkNeededController::class)->name('schedules-needing-meeting-link');
+            Route::get('/recordings-pending', RecordingsPendingController::class)->name('recordings-pending');
+        });
+
+        Route::post('/update-meeting-link', UpdateMeetingLinkController::class)
+            ->middleware('token.ability:agent:write-meeting')
+            ->name('update-meeting-link');
+        Route::post('/update-recording-url', UpdateRecordingUrlController::class)
+            ->middleware('token.ability:agent:write-recording')
+            ->name('update-recording-url');
     });
 
 Route::post('/check-email', function (Request $request) {

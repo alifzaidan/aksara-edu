@@ -79,6 +79,11 @@ class WebinarController extends Controller
 
         $webinar->append(['has_active_access', 'is_fully_paid']);
 
+        // Link Zoom hanya untuk peserta dengan akses aktif.
+        if ($webinar->hasActiveAccess()) {
+            $webinar->webinarItems->each(fn ($item) => $item->webinar?->makeVisible('meeting_url'));
+        }
+
         $webinarId = $webinar->webinarItems->first()?->webinar_id;
         $activeInstallment = null;
         if ($webinarId && $webinar->is_installment) {

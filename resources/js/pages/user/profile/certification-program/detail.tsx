@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import ProfileInstallmentAction from '@/components/profile-installment-action';
 import { useTranslation } from 'react-i18next';
+import JoinZoomButton, { wibDate } from '@/components/join-zoom-button';
 
 interface Schedule {
     id: string;
@@ -35,6 +36,7 @@ interface Schedule {
     start_time: string;
     end_time: string;
     recording_url: string | null;
+    meeting_url?: string | null;
 }
 
 interface CertificationProgram {
@@ -384,6 +386,14 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                                                                     </div>
                                                                 </div>
                                                             </div>
+                                                            {!invoice.is_access_suspended && (
+                                                                <JoinZoomButton
+                                                                    className="mt-2 sm:mt-0"
+                                                                    meetingUrl={schedule.meeting_url}
+                                                                    start={wibDate(schedule.schedule_date, schedule.start_time)}
+                                                                    end={wibDate(schedule.schedule_date, schedule.end_time)}
+                                                                />
+                                                            )}
                                                             {schedule.recording_url && (
                                                                 invoice.is_access_suspended ? (
                                                                     <Button size="sm" variant="destructive" className="mt-2 w-full sm:mt-0 sm:w-auto" disabled>

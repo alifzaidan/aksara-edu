@@ -82,6 +82,11 @@ class BootcampController extends Controller
 
         $bootcamp->append(['has_active_access', 'is_fully_paid']);
 
+        // Link Zoom per sesi hanya untuk peserta dengan akses aktif.
+        if ($bootcamp->hasActiveAccess()) {
+            $bootcamp->bootcampItems->each(fn ($item) => $item->bootcamp?->schedules->each->makeVisible('meeting_url'));
+        }
+
         $bootcampId = $bootcamp->bootcampItems->first()?->bootcamp_id;
         $activeInstallment = null;
         if ($bootcampId && $bootcamp->is_installment) {

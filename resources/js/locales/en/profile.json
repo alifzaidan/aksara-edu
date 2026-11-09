@@ -545,5 +545,10 @@
     "payOffWithAmount": "Pay Off Installment ({{amount}})",
     "payTermWithAmount": "Pay Installment #{{term}} ({{amount}})",
     "viewScheduleAndHistory": "View Installment History & Schedule"
+  },
+  "zoom": {
+    "join": "Join Zoom",
+    "live": "Live now",
+    "ended": "Zoom session has ended"
   }
 }

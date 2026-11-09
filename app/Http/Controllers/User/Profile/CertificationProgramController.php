@@ -106,6 +106,9 @@ class CertificationProgramController extends Controller
             $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'certification_program', $programId);
         }
 
+        // Link Zoom per sesi hanya untuk peserta dengan akses aktif.
+        $showMeetingLink = $matchedInvoice->hasActiveAccess();
+
         // Explicitly structure data for Inertia serialization
         return Inertia::render('user/profile/certification-program/detail', [
             'invoice' => [
@@ -147,7 +150,7 @@ class CertificationProgramController extends Controller
                         'id' => $matchedItem->certificationProgram->category?->id,
                         'name' => $matchedItem->certificationProgram->category?->name,
                     ],
-                    'schedules' => $matchedItem->certificationProgram->schedules->map(function ($schedule) {
+                    'schedules' => $matchedItem->certificationProgram->schedules->map(function ($schedule) use ($showMeetingLink) {
                         return [
                             'id' => $schedule->id,
                             'title' => $schedule->title,
@@ -156,6 +159,7 @@ class CertificationProgramController extends Controller
                             'start_time' => $schedule->start_time,
                             'end_time' => $schedule->end_time,
                             'recording_url' => $schedule->recording_url,
+                            'meeting_url' => $showMeetingLink ? $schedule->meeting_url : null,
                         ];
                     })->toArray(),
                     'socializationSchedules' => $matchedItem->certificationProgram->socializationSchedules->map(function ($schedule) {

@@ -1,5 +1,6 @@
 'use client';
 
+import AutoMeetingLinkField from '@/components/admin/auto-meeting-link-field';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -74,6 +75,7 @@ interface CreateScholarshipProps {
 const formSchema = z
     .object({
         mentor_ids: z.array(z.string()).min(1, 'Minimal 1 mentor harus dipilih'),
+        auto_meeting_link: z.boolean(),
         title: z.string().nonempty('Judul harus diisi'),
         category_id: z.string().nonempty('Kategori harus dipilih'),
         short_description: z.string().nullable(),
@@ -170,6 +172,7 @@ export default function CreateScholarshipCertificationProgram({ categories, ment
         resolver: zodResolver(formSchema),
         defaultValues: {
             mentor_ids: [],
+            auto_meeting_link: false,
             title: '',
             category_id: '',
             short_description: '',
@@ -695,6 +698,7 @@ export default function CreateScholarshipCertificationProgram({ categories, ment
                                 <h3 className="mb-4 font-medium">Pengaturan Program</h3>
 
                                 <div className="space-y-4">
+                                    <AutoMeetingLinkField control={form.control} />
                                     <FormField
                                         control={form.control}
                                         name="category_id"

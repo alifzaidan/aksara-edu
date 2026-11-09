@@ -27,13 +27,22 @@ Artisan::command('api:generate-token {email : User email for token owner} {--nam
     return self::SUCCESS;
 })->purpose('Generate Sanctum token for external API access (no login flow)');
 
-Artisan::command('agent:token {agent : Nama agent, mis. supervisor atau academic} {--keep : Jangan cabut token lama agent ini}', function () {
+Artisan::command('agent:token {agent : Nama agent, mis. supervisor atau academic} {--keep : Jangan cabut token lama agent ini} {--write= : Izin tulis tambahan, pisahkan koma: meeting,recording}', function () {
     $agent = strtolower((string) $this->argument('agent'));
 
     if (!preg_match('/^[a-z][a-z0-9_]{1,30}$/', $agent)) {
         $this->error('Nama agent hanya boleh huruf kecil, angka, dan underscore.');
         return self::FAILURE;
     }
+
+    // Validasi izin tulis sebelum menyentuh token lama.
+    $writes = array_values(array_filter(array_map('trim', explode(',', strtolower((string) $this->option('write'))))));
+    $unknown = array_diff($writes, ['meeting', 'recording']);
+    if ($unknown) {
+        $this->error('Izin tulis tidak dikenal: '.implode(', ', $unknown).'. Pilihan: meeting, recording.');
+        return self::FAILURE;
+    }
+    $abilities = array_merge(['agent:read'], array_map(fn ($w) => "agent:write-{$w}", array_unique($writes)));
 
     // User khusus agent: tanpa role, password acak (tidak dipakai login).
     $user = User::firstOrCreate(
@@ -53,10 +62,10 @@ Artisan::command('agent:token {agent : Nama agent, mis. supervisor atau academic
         }
     }
 
-    $token = $user->createToken($tokenName, ['agent:read'])->plainTextToken;
+    $token = $user->createToken($tokenName, $abilities)->plainTextToken;
 
-    $this->info("Token {$tokenName} (ability agent:read). Simpan di .env profile Hermes; tidak akan ditampilkan lagi:");
+    $this->info("Token {$tokenName} (ability ".implode(', ', $abilities)."). Simpan di .env profile Hermes; tidak akan ditampilkan lagi:");
     $this->line($token);
 
     return self::SUCCESS;
-})->purpose('Buat/rotasi token Sanctum read-only untuk AI agent Hermes');
+})->purpose('Buat/rotasi token Sanctum untuk AI agent Hermes (read-only, opsional --write=meeting,recording)');

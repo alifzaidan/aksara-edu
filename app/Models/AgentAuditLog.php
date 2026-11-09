@@ -12,6 +12,7 @@ class AgentAuditLog extends Model
 
     protected $casts = [
         'query' => 'array',
+        'payload' => 'array',
         'created_at' => 'datetime',
     ];
 }

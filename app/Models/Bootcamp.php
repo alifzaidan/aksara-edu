@@ -30,6 +30,7 @@ class Bootcamp extends Model
         'end_date' => 'datetime',
         'registration_deadline' => 'datetime',
         'has_submission_link' => 'boolean',
+        'auto_meeting_link' => 'boolean',
     ];
 
     protected static function booted()

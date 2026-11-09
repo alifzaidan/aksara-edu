@@ -1,5 +1,7 @@
 import DeleteConfirmDialog from '@/components/delete-dialog';
+import AutoMeetingLinkSwitch from '@/components/admin/auto-meeting-link-switch';
 import InstallmentConfig from '@/components/admin/installment-config';
+import MeetingLink from '@/components/admin/meeting-link-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +24,8 @@ interface BootcampSchedule {
     start_time: string;
     end_time: string;
     recording_url?: string | null;
+    meeting_url?: string | null;
+    zoom_meeting_id?: string | null;
 }
 
 interface Bootcamp {
@@ -53,6 +57,7 @@ interface Bootcamp {
         avatar?: string;
     }>;
     has_submission_link?: boolean;
+    auto_meeting_link?: boolean;
     created_at: string | Date;
     has_certificate?: boolean;
     requires_review?: boolean;
@@ -346,8 +351,19 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                             {format(new Date(bootcamp.end_date), 'dd MMMM yyyy', { locale: id })}
                         </TableCell>
                     </TableRow>
+                    {!isAffiliate && (
+                        <TableRow>
+                            <TableCell>Link Zoom Otomatis</TableCell>
+                            <TableCell>
+                                <AutoMeetingLinkSwitch
+                                    action={route('bootcamps.auto-meeting-link', bootcamp.id)}
+                                    enabled={!!bootcamp.auto_meeting_link}
+                                />
+                            </TableCell>
+                        </TableRow>
+                    )}
                     <TableRow>
-                        <TableCell>Jadwal & Rekaman</TableCell>
+                        <TableCell>Jadwal, Zoom & Rekaman</TableCell>
                         <TableCell>
                             {bootcamp.schedules && bootcamp.schedules.length > 0 ? (
                                 <div className="space-y-4">
@@ -384,6 +400,16 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                                                         )}
                                                     </div>
                                                 </div>
+
+                                                {!isAffiliate && (
+                                                    <MeetingLink
+                                                        action={route('bootcamps.meeting-link', { bootcamp: bootcamp.id, schedule: sch.id })}
+                                                        removeAction={route('bootcamps.meeting-link.remove', { bootcamp: bootcamp.id, schedule: sch.id })}
+                                                        meetingUrl={sch.meeting_url}
+                                                        zoomMeetingId={sch.zoom_meeting_id}
+                                                        label={`Pertemuan ${idx + 1}`}
+                                                    />
+                                                )}
 
                                                 {/* Recording Section */}
                                                 <div className="space-y-2">

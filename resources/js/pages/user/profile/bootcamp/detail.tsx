@@ -25,6 +25,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import JoinZoomButton, { wibDate } from '@/components/join-zoom-button';
 import ProfileInstallmentAction from '@/components/profile-installment-action';
 
 interface Category {
@@ -39,6 +40,7 @@ interface BootcampSchedule {
     start_time: string;
     end_time: string;
     recording_url: string | null;
+    meeting_url?: string | null;
 }
 
 interface BootcampAttendance {
@@ -615,6 +617,13 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                         </div>
                                                     )}
                                                 </div>
+
+                                                <JoinZoomButton
+                                                    className="mt-3"
+                                                    meetingUrl={schedule.meeting_url}
+                                                    start={wibDate(schedule.schedule_date, schedule.start_time)}
+                                                    end={wibDate(schedule.schedule_date, schedule.end_time)}
+                                                />
 
                                                 {/* ✅ TAMBAHAN: Recording Video Section */}
                                                 {schedule.recording_url && embedUrl && (

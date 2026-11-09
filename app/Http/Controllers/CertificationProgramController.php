@@ -164,6 +164,7 @@ class CertificationProgramController extends Controller
             'terms_conditions' => 'nullable|string',
             'thumbnail' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
             'document_required' => 'nullable|boolean',
+            'auto_meeting_link' => 'nullable|boolean',
             'document_description' => 'nullable|string',
             'strikethrough_price' => 'required|numeric|min:0',
             'price' => 'nullable|numeric|min:0',
@@ -182,6 +183,7 @@ class CertificationProgramController extends Controller
         $request->validate($rules);
 
         $data = $request->except(['schedules', 'socialization_schedules', 'mentor_ids']);
+        $data['auto_meeting_link'] = $request->boolean('auto_meeting_link');
 
         foreach (['registration_deadline', 'socialization_registration_deadline'] as $field) {
             if (!empty($data[$field])) {
@@ -228,6 +230,10 @@ class CertificationProgramController extends Controller
     public function show(string $id)
     {
         $program = CertificationProgram::with(['category', 'mentors', 'schedules', 'socializationSchedules', 'installmentTerms'])->findOrFail($id);
+        // Link Zoom tidak dibuka untuk afiliasi.
+        if (! auth()->user()?->hasRole('affiliate') || auth()->user()?->hasRole('admin')) {
+            $program->schedules->each->makeVisible(['meeting_url', 'zoom_meeting_id']);
+        }
 
         $applications = [];
         if ($program->type === 'scholarship') {
@@ -318,6 +324,7 @@ class CertificationProgramController extends Controller
             'terms_conditions' => 'nullable|string',
             'thumbnail' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
             'document_required' => 'nullable|boolean',
+            'auto_meeting_link' => 'nullable|boolean',
             'document_description' => 'nullable|string',
             'strikethrough_price' => 'required|numeric|min:0',
             'price' => 'nullable|numeric|min:0',
@@ -335,6 +342,7 @@ class CertificationProgramController extends Controller
         $request->validate($rules);
 
         $data = $request->except(['schedules', 'socialization_schedules', 'mentor_ids']);
+        $data['auto_meeting_link'] = $request->boolean('auto_meeting_link', (bool) $program->auto_meeting_link);
 
         foreach (['registration_deadline', 'socialization_registration_deadline'] as $field) {
             if (!empty($data[$field])) {

@@ -1,5 +1,6 @@
 'use client';
 
+import AutoMeetingLinkField from '@/components/admin/auto-meeting-link-field';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -49,6 +50,7 @@ interface Webinar {
     requirement_2?: string | null;
     requirement_3?: string | null;
     has_certificate?: boolean;
+    auto_meeting_link?: boolean;
     requires_review?: boolean;
     next_step_type?: string | null;
     next_step_id?: string | null;
@@ -98,6 +100,7 @@ const formSchema = z
         requirement_2: z.string().nullable(),
         requirement_3: z.string().nullable(),
         has_certificate: z.boolean(),
+        auto_meeting_link: z.boolean(),
         requires_review: z.boolean(),
         next_step_type: z.string().nullable(),
         next_step_id: z.string().nullable(),
@@ -179,6 +182,7 @@ export default function EditWebinar({
             requirement_2: webinar.requirement_2 ?? '',
             requirement_3: webinar.requirement_3 ?? '',
             has_certificate: webinar.has_certificate ?? true,
+            auto_meeting_link: webinar.auto_meeting_link ?? false,
             requires_review: webinar.requires_review ?? true,
             next_step_type: webinar.next_step_type ?? '',
             next_step_id: webinar.next_step_id ?? '',
@@ -494,6 +498,11 @@ export default function EditWebinar({
                                         </FormItem>
                                     )}
                                 />
+                            </div>
+
+                            {/* Link Zoom otomatis */}
+                            <div className="rounded-lg border bg-card p-5 shadow-xs">
+                                <AutoMeetingLinkField control={form.control} />
                             </div>
 
                             {/* Card 3: Pengaturan Sertifikat & Review */}

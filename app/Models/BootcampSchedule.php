@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Agent\ScheduleItems;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -10,6 +11,14 @@ class BootcampSchedule extends Model
     use HasUuids;
 
     protected $guarded = ['created_at', 'updated_at'];
+
+    /** Link Zoom (memuat passcode) hanya dibuka di admin & halaman peserta aktif. */
+    protected $hidden = ['meeting_url', 'zoom_meeting_id'];
+
+    protected static function booted()
+    {
+        static::saving(fn ($schedule) => ScheduleItems::dropStaleMeetingLink($schedule));
+    }
 
     public function bootcamp()
     {

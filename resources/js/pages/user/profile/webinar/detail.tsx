@@ -10,6 +10,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import JoinZoomButton, { wibDate } from '@/components/join-zoom-button';
 import ProfileInstallmentAction from '@/components/profile-installment-action';
 
 interface Category {
@@ -29,6 +30,7 @@ interface Webinar {
     webinar_url: string;
     registration_url: string;
     recording_url: string | null;
+    meeting_url?: string | null;
     benefits: string;
     description: string | null;
     short_description: string | null;
@@ -586,6 +588,11 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                 </div>
                                             </div>
                                         </div>
+                                        <JoinZoomButton
+                                            meetingUrl={webinarData.meeting_url}
+                                            start={wibDate(webinarData.start_time, webinarData.start_time.slice(11))}
+                                            end={webinarData.end_time ? wibDate(webinarData.end_time, webinarData.end_time.slice(11)) : null}
+                                        />
                                     </div>
                                 </div>
 

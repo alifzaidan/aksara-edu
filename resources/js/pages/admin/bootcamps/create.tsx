@@ -1,5 +1,6 @@
 'use client';
 
+import AutoMeetingLinkField from '@/components/admin/auto-meeting-link-field';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -62,6 +63,7 @@ const formSchema = z
         requirement_2: z.string().nullable(),
         requirement_3: z.string().nullable(),
         has_certificate: z.boolean(),
+        auto_meeting_link: z.boolean(),
         requires_review: z.boolean(),
         next_step_type: z.string().nullable(),
         next_step_id: z.string().nullable(),
@@ -212,6 +214,7 @@ export default function CreateBootcamp({
             requirement_2: 'Follow TikTok @aksademy',
             requirement_3: 'Tag 3 teman di postingan Instagram kami',
             has_certificate: true,
+            auto_meeting_link: false,
             requires_review: true,
             next_step_type: '',
             next_step_id: '',
@@ -692,6 +695,11 @@ export default function CreateBootcamp({
                                     </FormItem>
                                 )}
                             />
+                        </div>
+
+                        {/* Link Zoom otomatis */}
+                        <div className="rounded-lg border bg-card p-5 shadow-xs">
+                            <AutoMeetingLinkField control={form.control} />
                         </div>
 
                         {/* Card 3: Pengaturan Sertifikat & Review */}

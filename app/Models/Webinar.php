@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use App\Services\Agent\ScheduleItems;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -20,16 +21,22 @@ class Webinar extends Model
 
     protected $guarded = ['created_at', 'updated_at'];
 
+    /** Link Zoom (memuat passcode) hanya dibuka di admin & halaman peserta aktif. */
+    protected $hidden = ['meeting_url', 'zoom_meeting_id'];
+
     protected $appends = ['next_step_product'];
 
     protected $casts = [
         'has_certificate' => 'boolean',
         'requires_review' => 'boolean',
         'installment_enabled' => 'boolean',
+        'auto_meeting_link' => 'boolean',
     ];
 
     protected static function booted()
     {
+        static::saving(fn ($webinar) => ScheduleItems::dropStaleMeetingLink($webinar));
+
         static::updated(function ($webinar) {
             if ($webinar->wasChanged('registration_deadline') && !empty($webinar->registration_deadline)) {
                 ProductInstallmentTerm::syncFirstTermRegistrationDeadline($webinar, $webinar->registration_deadline);

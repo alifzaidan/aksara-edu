@@ -35,6 +35,7 @@ class LogAgentRequest
                 'method' => $request->method(),
                 'path' => '/'.ltrim($request->path(), '/'),
                 'query' => $request->query() ?: null,
+                'payload' => $this->payload($request),
                 'status' => $response->getStatusCode(),
                 'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
                 'ip' => $request->ip(),
@@ -43,5 +44,23 @@ class LogAgentRequest
             // Pencatatan gagal tidak boleh mengganggu respons.
             Log::warning('Agent audit log gagal ditulis', ['error' => $e->getMessage()]);
         }
+    }
+
+    /** Body request tulis (field yang dikenal saja) + Idempotency-Key. GET → null. */
+    private function payload(Request $request): ?array
+    {
+        if ($request->isMethod('GET')) {
+            return null;
+        }
+
+        $payload = array_filter(
+            $request->only(['type', 'id', 'meeting_url', 'zoom_meeting_id', 'recording_url']),
+            fn ($v) => $v !== null,
+        );
+        if ($key = $request->header('Idempotency-Key')) {
+            $payload['idempotency_key'] = mb_substr((string) $key, 0, 100);
+        }
+
+        return $payload ?: null;
     }
 }
