@@ -174,6 +174,21 @@ class Invoice extends Model
      * Scope untuk invoice yang sudah dibeli oleh user (lunas atau cicilan dengan DP terbayar)
      * Termasuk yang aksesnya sedang dibekukan (agar tetap tampil di dashboard/daftar produk user)
      */
+    /**
+     * Pembayaran yang dihitung sebagai pendapatan (sama dengan dashboard admin):
+     * invoice biasa berstatus paid + setiap termin cicilan yang paid; invoice induk
+     * cicilan tidak dihitung agar tidak ganda.
+     */
+    public function scopePaidPayments($query)
+    {
+        return $query->where('status', 'paid')
+            ->where(function ($q) {
+                $q->where(function ($sq) {
+                    $sq->whereNull('parent_invoice_id')->where('is_installment', false);
+                })->orWhereNotNull('parent_invoice_id');
+            });
+    }
+
     public function scopePurchasedByUser($query, $userId)
     {
         return $query->where('user_id', $userId)

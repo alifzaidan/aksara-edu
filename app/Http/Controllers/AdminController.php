@@ -64,12 +64,7 @@ class AdminController extends Controller
      */
     private function paidPaymentsQuery()
     {
-        return Invoice::where('status', 'paid')
-            ->where(function ($q) {
-                $q->where(function ($sq) {
-                    $sq->whereNull('parent_invoice_id')->where('is_installment', false);
-                })->orWhereNotNull('parent_invoice_id');
-            });
+        return Invoice::paidPayments();
     }
 
     private function getRevenueData()

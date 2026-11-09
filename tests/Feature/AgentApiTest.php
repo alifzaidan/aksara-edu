@@ -639,3 +639,26 @@ it('mengosongkan link Zoom bila jadwal produk otomatis digeser, bukan produk man
     $webinar->update(['start_time' => '2026-11-12T20:00']);
     expect($webinar->fresh()->meeting_url)->toBeNull();
 });
+
+it('menghitung pendapatan kemarin dan bulan ini sama dengan dashboard admin', function () {
+    $pay = function (string $paidAt, int $nett, string $status = 'paid', array $extra = []) {
+        return Invoice::create(array_merge([
+            'user_id' => User::factory()->create()->id, 'amount' => $nett, 'nett_amount' => $nett,
+            'status' => $status, 'invoice_code' => 'INV-'.Str::random(8), 'paid_at' => $paidAt,
+        ], $extra));
+    };
+
+    $pay('2026-11-08 10:00:00', 100000);                       // kemarin
+    $pay('2026-11-08 23:59:00', 50000);                        // kemarin
+    $pay('2026-11-02 09:00:00', 200000);                       // awal bulan
+    $pay('2026-10-31 20:00:00', 999000);                       // bulan lalu
+    $pay('2026-11-08 12:00:00', 777000, 'pending');            // belum bayar
+    $parent = $pay('2026-11-08 08:00:00', 300000, 'paid', ['is_installment' => true]); // induk cicilan: tidak dihitung
+    $pay('2026-11-08 08:00:00', 150000, 'paid', ['is_installment' => true, 'parent_invoice_id' => $parent->id, 'installment_number' => 1]);
+
+    $res = agentGet('/api/v1/agent/revenue-summary?date=2026-11-09', $this->token)->assertOk();
+
+    expect($res->json('yesterday'))->toBe(['date' => '2026-11-08', 'amount' => 300000])
+        ->and($res->json('month_to_date.amount'))->toBe(500000)
+        ->and($res->json('month_to_date.from'))->toBe('2026-11-01');
+});
