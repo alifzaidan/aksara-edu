@@ -12,7 +12,8 @@ use Illuminate\Http\Request;
  * GET /api/v1/agent/revenue-summary?date=YYYY-MM-DD
  *
  * Pendapatan (rupiah, nett_amount, definisi sama dengan dashboard admin) untuk
- * hari sebelum `date` dan bulan berjalan sampai `date`. Hanya agregat.
+ * hari sebelum `date` dan bulan berjalan sampai `date`, plus jumlah pendaftar
+ * kemarin (berbayar vs gratis, orang unik). Hanya agregat.
  */
 class RevenueSummaryController extends Controller
 {
@@ -28,6 +29,16 @@ class RevenueSummaryController extends Controller
             ->whereBetween('paid_at', [$from, $to])
             ->sum('nett_amount'));
 
+        // Pendaftar kemarin (orang unik): invoice lunas, gratis = nominal 0. Cicilan dihitung saat termin 1 lunas.
+        $day = [$yesterday, $yesterday->copy()->endOfDay()];
+        $direct = Invoice::whereNull('parent_invoice_id')->where('is_installment', false)
+            ->whereIn('status', ['paid', 'completed'])->whereBetween('paid_at', $day);
+        $paidUsers = (clone $direct)->where('amount', '>', 0)->pluck('user_id')
+            ->merge(Invoice::whereNotNull('parent_invoice_id')->where('installment_number', 1)
+                ->where('status', 'paid')->whereBetween('paid_at', $day)->pluck('user_id'))
+            ->unique();
+        $freeUsers = (clone $direct)->where('amount', 0)->distinct()->pluck('user_id');
+
         return response()->json([
             'generated_at' => now()->toIso8601String(),
             'timezone' => config('app.timezone'),
@@ -36,6 +47,7 @@ class RevenueSummaryController extends Controller
             'yesterday' => [
                 'date' => $yesterday->toDateString(),
                 'amount' => $sum($yesterday, $yesterday->copy()->endOfDay()),
+                'registrations' => ['paid' => $paidUsers->count(), 'free' => $freeUsers->count()],
             ],
             'month_to_date' => [
                 'from' => $monthStart->toDateString(),

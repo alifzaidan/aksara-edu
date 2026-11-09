@@ -658,7 +658,28 @@ it('menghitung pendapatan kemarin dan bulan ini sama dengan dashboard admin', fu
 
     $res = agentGet('/api/v1/agent/revenue-summary?date=2026-11-09', $this->token)->assertOk();
 
-    expect($res->json('yesterday'))->toBe(['date' => '2026-11-08', 'amount' => 300000])
+    expect($res->json('yesterday.amount'))->toBe(300000)
         ->and($res->json('month_to_date.amount'))->toBe(500000)
         ->and($res->json('month_to_date.from'))->toBe('2026-11-01');
+});
+
+it('menghitung pendaftar kemarin berbayar dan gratis per orang', function () {
+    $user = fn () => User::factory()->create()->id;
+    $inv = fn (array $a) => Invoice::create(array_merge(['amount' => 100000, 'nett_amount' => 100000, 'status' => 'paid',
+        'invoice_code' => 'INV-'.Str::random(8), 'paid_at' => '2026-11-08 10:00:00'], $a));
+
+    $budi = $user();
+    $inv(['user_id' => $budi]);                                           // berbayar
+    $inv(['user_id' => $budi]);                                           // orang sama, dihitung 1
+    $inv(['user_id' => $user(), 'amount' => 0, 'nett_amount' => 0]);      // gratis
+    $inv(['user_id' => $user(), 'amount' => 0, 'nett_amount' => 0]);      // gratis
+    $inv(['user_id' => $user(), 'status' => 'pending']);                  // belum bayar
+    $inv(['user_id' => $user(), 'paid_at' => '2026-11-07 10:00:00']);     // lusa
+    $cicil = $user();
+    $parent = $inv(['user_id' => $cicil, 'status' => 'installment_pending', 'is_installment' => true, 'paid_at' => null]);
+    $inv(['user_id' => $cicil, 'is_installment' => true, 'parent_invoice_id' => $parent->id, 'installment_number' => 1]);
+
+    $res = agentGet('/api/v1/agent/revenue-summary?date=2026-11-09', $this->token)->assertOk();
+
+    expect($res->json('yesterday.registrations'))->toBe(['paid' => 2, 'free' => 2]);
 });
