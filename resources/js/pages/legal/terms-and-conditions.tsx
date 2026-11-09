@@ -18,7 +18,7 @@ export default function TermsAndConditions() {
                                 {isEn ? 'Terms and Conditions' : 'Syarat dan Ketentuan'}
                             </h1>
                             <p className="text-gray-600 dark:text-gray-400">
-                                {isEn ? 'Last updated: July 12, 2025' : 'Terakhir diperbarui: 12 Juli 2025'}
+                                {isEn ? 'Last updated: November 9, 2026' : 'Terakhir diperbarui: 9 November 2026'}
                             </p>
                         </div>
 
@@ -27,10 +27,12 @@ export default function TermsAndConditions() {
                                 <section className="mb-8">
                                     <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">1. Introduction</h2>
                                     <p className="mb-4 text-gray-700 dark:text-gray-300">
-                                        Welcome to Aksademy. These terms and conditions govern your use of the online learning services provided by CV. Aksara Teknologi Mandiri ("we", "us", or "Aksademy").
+                                        Welcome to Aksademy. These terms and conditions govern your use of the online learning services provided by
+                                        CV. Aksara Teknologi Mandiri ("we", "us", or "Aksademy").
                                     </p>
                                     <p className="text-gray-700 dark:text-gray-300">
-                                        By accessing and using the Aksademy platform, you agree to be bound by these terms and conditions. If you do not agree with any part of these terms, please refrain from using our services.
+                                        By accessing and using the Aksademy platform, you agree to be bound by these terms and conditions. If you do
+                                        not agree with any part of these terms, please refrain from using our services.
                                     </p>
                                 </section>
 
@@ -61,9 +63,7 @@ export default function TermsAndConditions() {
                                 <section className="mb-8">
                                     <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">3. Account Registration</h2>
                                     <div className="space-y-3 text-gray-700 dark:text-gray-300">
-                                        <p>
-                                            To access certain services, you must create an account by providing accurate and complete information.
-                                        </p>
+                                        <p>To access certain services, you must create an account by providing accurate and complete information.</p>
                                         <p>You are responsible for:</p>
                                         <ul className="ml-4 list-inside list-disc space-y-1">
                                             <li>Maintaining the confidentiality of your account credentials</li>
@@ -174,7 +174,9 @@ export default function TermsAndConditions() {
                                         The use of your personal data is governed by our{' '}
                                         <Link href={route('privacy-policy')} className="text-blue-600 underline hover:text-blue-800">
                                             Privacy Policy
-                                        </Link>. By using our services, you consent to our collection and usage of information in accordance with that policy.
+                                        </Link>
+                                        . By using our services, you consent to our collection and usage of information in accordance with that
+                                        policy.
                                     </p>
                                 </section>
 
@@ -194,23 +196,51 @@ export default function TermsAndConditions() {
                                 <section className="mb-8">
                                     <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">10. Modifications to Terms</h2>
                                     <p className="text-gray-700 dark:text-gray-300">
-                                        We reserve the right to amend these terms and conditions at any time. Updates will take effect immediately upon publication on this page. Users are advised to review this page periodically.
+                                        We reserve the right to amend these terms and conditions at any time. Updates will take effect immediately
+                                        upon publication on this page. Users are advised to review this page periodically.
                                     </p>
                                 </section>
 
                                 <section className="mb-8">
                                     <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">11. Governing Law</h2>
                                     <p className="text-gray-700 dark:text-gray-300">
-                                        These terms and conditions are governed by and construed in accordance with the laws of the Republic of Indonesia. Any disputes shall be submitted to the exclusive jurisdiction of Indonesian courts.
+                                        These terms and conditions are governed by and construed in accordance with the laws of the Republic of
+                                        Indonesia. Any disputes shall be submitted to the exclusive jurisdiction of Indonesian courts.
                                     </p>
                                 </section>
 
                                 <section className="mb-8">
-                                    <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">12. Contact Us</h2>
-                                    <div className="text-gray-700 dark:text-gray-300">
-                                        <p className="mb-3">
-                                            If you have questions regarding these terms, please contact us at:
+                                    <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">12. YouTube Content</h2>
+                                    <div className="space-y-3 text-gray-700 dark:text-gray-300">
+                                        <p>
+                                            Some class recordings are delivered through YouTube using YouTube API Services. By watching these
+                                            recordings, you also agree to be bound by the{' '}
+                                            <a
+                                                href="https://www.youtube.com/t/terms"
+                                                className="text-blue-600 underline hover:text-blue-800"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                YouTube Terms of Service
+                                            </a>
+                                            . Our use of YouTube API Services is described in our Privacy Policy, which refers to the{' '}
+                                            <a
+                                                href="https://policies.google.com/privacy"
+                                                className="text-blue-600 underline hover:text-blue-800"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                Google Privacy Policy
+                                            </a>
+                                            .
                                         </p>
+                                    </div>
+                                </section>
+
+                                <section className="mb-8">
+                                    <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">13. Contact Us</h2>
+                                    <div className="text-gray-700 dark:text-gray-300">
+                                        <p className="mb-3">If you have questions regarding these terms, please contact us at:</p>
                                         <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
                                             <p>
                                                 <strong>CV. Aksara Teknologi Mandiri</strong>
@@ -237,8 +267,8 @@ export default function TermsAndConditions() {
                                         disediakan oleh CV. Aksara Teknologi Mandiri ("kami", "kita", atau "Aksademy").
                                     </p>
                                     <p className="text-gray-700 dark:text-gray-300">
-                                        Dengan mengakses dan menggunakan platform Aksademy, Anda menyetujui untuk terikat dengan syarat dan ketentuan ini.
-                                        Jika Anda tidak menyetujui syarat dan ketentuan ini, mohon untuk tidak menggunakan layanan kami.
+                                        Dengan mengakses dan menggunakan platform Aksademy, Anda menyetujui untuk terikat dengan syarat dan ketentuan
+                                        ini. Jika Anda tidak menyetujui syarat dan ketentuan ini, mohon untuk tidak menggunakan layanan kami.
                                     </p>
                                 </section>
 
@@ -384,8 +414,8 @@ export default function TermsAndConditions() {
                                         <Link href={route('privacy-policy')} className="text-blue-600 underline hover:text-blue-800">
                                             Kebijakan Privasi
                                         </Link>{' '}
-                                        kami. Dengan menggunakan layanan ini, Anda menyetujui pengumpulan dan penggunaan informasi sesuai dengan kebijakan
-                                        tersebut.
+                                        kami. Dengan menggunakan layanan ini, Anda menyetujui pengumpulan dan penggunaan informasi sesuai dengan
+                                        kebijakan tersebut.
                                     </p>
                                 </section>
 
@@ -405,8 +435,9 @@ export default function TermsAndConditions() {
                                 <section className="mb-8">
                                     <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">10. Perubahan Syarat dan Ketentuan</h2>
                                     <p className="text-gray-700 dark:text-gray-300">
-                                        Kami berhak mengubah syarat dan ketentuan ini sewaktu-waktu. Perubahan akan berlaku efektif setelah dipublikasikan
-                                        di halaman ini. Pengguna dianjurkan untuk memeriksa halaman ini secara berkala untuk mengetahui perubahan terbaru.
+                                        Kami berhak mengubah syarat dan ketentuan ini sewaktu-waktu. Perubahan akan berlaku efektif setelah
+                                        dipublikasikan di halaman ini. Pengguna dianjurkan untuk memeriksa halaman ini secara berkala untuk mengetahui
+                                        perubahan terbaru.
                                     </p>
                                 </section>
 
@@ -419,7 +450,35 @@ export default function TermsAndConditions() {
                                 </section>
 
                                 <section className="mb-8">
-                                    <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">12. Hubungi Kami</h2>
+                                    <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">12. Konten YouTube</h2>
+                                    <div className="space-y-3 text-gray-700 dark:text-gray-300">
+                                        <p>
+                                            Sebagian rekaman kelas disajikan melalui YouTube menggunakan Layanan YouTube API. Dengan menonton rekaman
+                                            tersebut, Anda juga setuju untuk terikat pada{' '}
+                                            <a
+                                                href="https://www.youtube.com/t/terms"
+                                                className="text-blue-600 underline hover:text-blue-800"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                Persyaratan Layanan YouTube
+                                            </a>
+                                            . Penggunaan Layanan YouTube API kami dijelaskan dalam Kebijakan Privasi, yang merujuk pada{' '}
+                                            <a
+                                                href="https://policies.google.com/privacy"
+                                                className="text-blue-600 underline hover:text-blue-800"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                Kebijakan Privasi Google
+                                            </a>
+                                            .
+                                        </p>
+                                    </div>
+                                </section>
+
+                                <section className="mb-8">
+                                    <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">13. Hubungi Kami</h2>
                                     <div className="text-gray-700 dark:text-gray-300">
                                         <p className="mb-3">
                                             Jika Anda memiliki pertanyaan mengenai syarat dan ketentuan ini, silakan hubungi kami melalui:

@@ -14,11 +14,9 @@ export default function PrivacyPolicy() {
                 <div className="mx-auto max-w-7xl px-4">
                     <div className="rounded-lg bg-white p-8 shadow-lg dark:bg-gray-800">
                         <div className="mb-8 text-center">
-                            <h1 className="mb-4 text-3xl font-bold text-gray-900 dark:text-white">
-                                {isEn ? 'Privacy Policy' : 'Kebijakan Privasi'}
-                            </h1>
+                            <h1 className="mb-4 text-3xl font-bold text-gray-900 dark:text-white">{isEn ? 'Privacy Policy' : 'Kebijakan Privasi'}</h1>
                             <p className="text-gray-600 dark:text-gray-400">
-                                {isEn ? 'Last updated: July 12, 2025' : 'Terakhir diperbarui: 12 Juli 2025'}
+                                {isEn ? 'Last updated: November 9, 2026' : 'Terakhir diperbarui: 9 November 2026'}
                             </p>
                         </div>
 
@@ -27,10 +25,13 @@ export default function PrivacyPolicy() {
                                 <section className="mb-8">
                                     <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">1. Introduction</h2>
                                     <p className="mb-4 text-gray-700 dark:text-gray-300">
-                                        CV. Aksara Teknologi Mandiri ("we", "us", or "Aksademy") is committed to protecting the privacy and security of your personal information. This Privacy Policy explains how we collect, use, store, and safeguard your personal information when using our online learning platform.
+                                        CV. Aksara Teknologi Mandiri ("we", "us", or "Aksademy") is committed to protecting the privacy and security
+                                        of your personal information. This Privacy Policy explains how we collect, use, store, and safeguard your
+                                        personal information when using our online learning platform.
                                     </p>
                                     <p className="text-gray-700 dark:text-gray-300">
-                                        By using Aksademy services, you agree to the practices described in this Privacy Policy. If you do not agree with this policy, please refrain from using our services.
+                                        By using Aksademy services, you agree to the practices described in this Privacy Policy. If you do not agree
+                                        with this policy, please refrain from using our services.
                                     </p>
                                 </section>
 
@@ -99,7 +100,8 @@ export default function PrivacyPolicy() {
                                     <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">4. Information Sharing</h2>
                                     <div className="space-y-4 text-gray-700 dark:text-gray-300">
                                         <p>
-                                            We do not sell, rent, or trade your personal information to third parties. However, we may share your data under the following circumstances:
+                                            We do not sell, rent, or trade your personal information to third parties. However, we may share your data
+                                            under the following circumstances:
                                         </p>
 
                                         <div>
@@ -128,7 +130,8 @@ export default function PrivacyPolicy() {
                                     <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">5. Data Security</h2>
                                     <div className="space-y-3 text-gray-700 dark:text-gray-300">
                                         <p>
-                                            We implement appropriate technical and organizational security measures to protect your personal information, including:
+                                            We implement appropriate technical and organizational security measures to protect your personal
+                                            information, including:
                                         </p>
                                         <ul className="ml-4 list-inside list-disc space-y-1">
                                             <li>Data encryption in transit and at rest</li>
@@ -140,14 +143,62 @@ export default function PrivacyPolicy() {
                                 </section>
 
                                 <section className="mb-8">
-                                    <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">6. Contact Us</h2>
-                                    <div className="text-gray-700 dark:text-gray-300">
-                                        <p className="mb-3">
-                                            If you have questions or requests regarding this Privacy Policy, please contact us:
+                                    <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">6. YouTube API Services</h2>
+                                    <div className="space-y-3 text-gray-700 dark:text-gray-300">
+                                        <p>
+                                            Aksademy uses YouTube API Services to upload recordings of our live classes to Aksademy&apos;s own
+                                            official YouTube channel as unlisted videos. Links to these videos are shown only to participants enrolled
+                                            in the related program.
                                         </p>
+                                        <ul className="ml-4 list-inside list-disc space-y-1">
+                                            <li>
+                                                We only connect Aksademy&apos;s own YouTube channel. We never ask users to connect their YouTube or
+                                                Google accounts.
+                                            </li>
+                                            <li>
+                                                We do not access, collect, store or share any personal data of YouTube users or viewers through
+                                                YouTube API Services. We only store the video ID and link of the recordings we upload.
+                                            </li>
+                                            <li>
+                                                When you watch an embedded recording, YouTube may collect data according to the{' '}
+                                                <a
+                                                    href="https://policies.google.com/privacy"
+                                                    className="text-blue-600 underline hover:text-blue-800"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    Google Privacy Policy
+                                                </a>
+                                                .
+                                            </li>
+                                            <li>
+                                                Authorization granted to our application can be revoked at any time through the{' '}
+                                                <a
+                                                    href="https://myaccount.google.com/permissions"
+                                                    className="text-blue-600 underline hover:text-blue-800"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    Google security settings page
+                                                </a>
+                                                . When access is revoked or a recording is no longer needed, we delete the stored video link within 30
+                                                days and remove the video from our channel.
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </section>
+
+                                <section className="mb-8">
+                                    <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">7. Contact Us</h2>
+                                    <div className="text-gray-700 dark:text-gray-300">
+                                        <p className="mb-3">If you have questions or requests regarding this Privacy Policy, please contact us:</p>
                                         <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
-                                            <p><strong>Data Protection Team</strong></p>
-                                            <p><strong>CV. Aksara Teknologi Mandiri</strong></p>
+                                            <p>
+                                                <strong>Data Protection Team</strong>
+                                            </p>
+                                            <p>
+                                                <strong>CV. Aksara Teknologi Mandiri</strong>
+                                            </p>
                                             <p>Email: aksarateknologimandiri@gmail.com</p>
                                             <p>WhatsApp: +6285142505794</p>
                                         </div>
@@ -159,9 +210,9 @@ export default function PrivacyPolicy() {
                                 <section className="mb-8">
                                     <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">1. Pendahuluan</h2>
                                     <p className="mb-4 text-gray-700 dark:text-gray-300">
-                                        CV. Aksara Teknologi Mandiri ("kami", "kita", atau "Aksademy") berkomitmen untuk melindungi privasi dan keamanan
-                                        informasi pribadi Anda. Kebijakan Privasi ini menjelaskan bagaimana kami mengumpulkan, menggunakan, menyimpan, dan
-                                        melindungi informasi pribadi Anda ketika menggunakan platform pembelajaran online kami.
+                                        CV. Aksara Teknologi Mandiri ("kami", "kita", atau "Aksademy") berkomitmen untuk melindungi privasi dan
+                                        keamanan informasi pribadi Anda. Kebijakan Privasi ini menjelaskan bagaimana kami mengumpulkan, menggunakan,
+                                        menyimpan, dan melindungi informasi pribadi Anda ketika menggunakan platform pembelajaran online kami.
                                     </p>
                                     <p className="text-gray-700 dark:text-gray-300">
                                         Dengan menggunakan layanan Aksademy, Anda menyetujui praktik yang dijelaskan dalam Kebijakan Privasi ini. Jika
@@ -234,8 +285,8 @@ export default function PrivacyPolicy() {
                                     <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">4. Pembagian Informasi</h2>
                                     <div className="space-y-4 text-gray-700 dark:text-gray-300">
                                         <p>
-                                            Kami tidak menjual, menyewakan, atau memperdagangkan informasi pribadi Anda kepada pihak ketiga. Namun, kami
-                                            dapat membagikan informasi Anda dalam situasi berikut:
+                                            Kami tidak menjual, menyewakan, atau memperdagangkan informasi pribadi Anda kepada pihak ketiga. Namun,
+                                            kami dapat membagikan informasi Anda dalam situasi berikut:
                                         </p>
 
                                         <div>
@@ -269,8 +320,8 @@ export default function PrivacyPolicy() {
                                     <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">5. Keamanan Data</h2>
                                     <div className="space-y-3 text-gray-700 dark:text-gray-300">
                                         <p>
-                                            Kami menerapkan langkah-langkah keamanan teknis dan organisasi yang sesuai untuk melindungi informasi pribadi
-                                            Anda, termasuk:
+                                            Kami menerapkan langkah-langkah keamanan teknis dan organisasi yang sesuai untuk melindungi informasi
+                                            pribadi Anda, termasuk:
                                         </p>
                                         <ul className="ml-4 list-inside list-disc space-y-1">
                                             <li>Enkripsi data saat transit dan penyimpanan</li>
@@ -333,8 +384,8 @@ export default function PrivacyPolicy() {
                                             </li>
                                         </ul>
                                         <p>
-                                            Untuk menggunakan hak-hak ini, silakan hubungi kami melalui informasi kontak yang tercantum di bagian akhir
-                                            kebijakan ini.
+                                            Untuk menggunakan hak-hak ini, silakan hubungi kami melalui informasi kontak yang tercantum di bagian
+                                            akhir kebijakan ini.
                                         </p>
                                     </div>
                                 </section>
@@ -370,8 +421,8 @@ export default function PrivacyPolicy() {
                                         </div>
 
                                         <p>
-                                            Anda dapat mengatur preferensi cookies melalui pengaturan browser Anda. Namun, menonaktifkan cookies tertentu
-                                            dapat mempengaruhi fungsionalitas website.
+                                            Anda dapat mengatur preferensi cookies melalui pengaturan browser Anda. Namun, menonaktifkan cookies
+                                            tertentu dapat mempengaruhi fungsionalitas website.
                                         </p>
                                     </div>
                                 </section>
@@ -379,9 +430,9 @@ export default function PrivacyPolicy() {
                                 <section className="mb-8">
                                     <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">9. Transfer Data Internasional</h2>
                                     <p className="text-gray-700 dark:text-gray-300">
-                                        Data pribadi Anda dapat diproses dan disimpan di server yang berlokasi di luar Indonesia. Kami memastikan bahwa
-                                        setiap transfer data internasional dilakukan dengan perlindungan yang memadai sesuai dengan hukum yang berlaku,
-                                        termasuk melalui perjanjian perlindungan data yang sesuai.
+                                        Data pribadi Anda dapat diproses dan disimpan di server yang berlokasi di luar Indonesia. Kami memastikan
+                                        bahwa setiap transfer data internasional dilakukan dengan perlindungan yang memadai sesuai dengan hukum yang
+                                        berlaku, termasuk melalui perjanjian perlindungan data yang sesuai.
                                     </p>
                                 </section>
 
@@ -389,18 +440,19 @@ export default function PrivacyPolicy() {
                                     <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">10. Perlindungan Data Anak</h2>
                                     <p className="text-gray-700 dark:text-gray-300">
                                         Layanan kami tidak ditujukan untuk anak-anak di bawah usia 13 tahun. Kami tidak dengan sengaja mengumpulkan
-                                        informasi pribadi dari anak-anak di bawah usia 13 tahun. Jika Anda adalah orang tua atau wali dan mengetahui bahwa
-                                        anak Anda telah memberikan informasi pribadi kepada kami, silakan hubungi kami untuk menghapus informasi tersebut.
+                                        informasi pribadi dari anak-anak di bawah usia 13 tahun. Jika Anda adalah orang tua atau wali dan mengetahui
+                                        bahwa anak Anda telah memberikan informasi pribadi kepada kami, silakan hubungi kami untuk menghapus informasi
+                                        tersebut.
                                     </p>
                                 </section>
 
                                 <section className="mb-8">
                                     <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">11. Perubahan Kebijakan Privasi</h2>
                                     <p className="text-gray-700 dark:text-gray-300">
-                                        Kami dapat memperbarui Kebijakan Privasi ini dari waktu ke waktu untuk mencerminkan perubahan dalam praktik kami
-                                        atau karena alasan operasional, hukum, atau regulasi lainnya. Perubahan material akan diberitahukan kepada Anda
-                                        melalui email atau pemberitahuan di platform kami. Kebijakan yang diperbarui akan berlaku sejak tanggal "Terakhir
-                                        diperbarui" yang tercantum di bagian atas halaman ini.
+                                        Kami dapat memperbarui Kebijakan Privasi ini dari waktu ke waktu untuk mencerminkan perubahan dalam praktik
+                                        kami atau karena alasan operasional, hukum, atau regulasi lainnya. Perubahan material akan diberitahukan
+                                        kepada Anda melalui email atau pemberitahuan di platform kami. Kebijakan yang diperbarui akan berlaku sejak
+                                        tanggal "Terakhir diperbarui" yang tercantum di bagian atas halaman ini.
                                     </p>
                                 </section>
 
@@ -426,7 +478,54 @@ export default function PrivacyPolicy() {
                                 </section>
 
                                 <section className="mb-8">
-                                    <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">13. Hubungi Kami</h2>
+                                    <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">13. Layanan YouTube API</h2>
+                                    <div className="space-y-3 text-gray-700 dark:text-gray-300">
+                                        <p>
+                                            Aksademy menggunakan Layanan YouTube API (YouTube API Services) untuk mengunggah rekaman kelas live ke
+                                            kanal YouTube resmi milik Aksademy sebagai video <em>unlisted</em>. Tautan video hanya ditampilkan kepada
+                                            peserta yang terdaftar di program terkait.
+                                        </p>
+                                        <ul className="ml-4 list-inside list-disc space-y-1">
+                                            <li>
+                                                Kami hanya menghubungkan kanal YouTube milik Aksademy sendiri. Kami tidak pernah meminta pengguna
+                                                menghubungkan akun YouTube atau Google mereka.
+                                            </li>
+                                            <li>
+                                                Kami tidak mengakses, mengumpulkan, menyimpan, atau membagikan data pribadi pengguna atau penonton
+                                                YouTube melalui Layanan YouTube API. Kami hanya menyimpan ID dan tautan video rekaman yang kami
+                                                unggah.
+                                            </li>
+                                            <li>
+                                                Saat Anda menonton rekaman yang disematkan, YouTube dapat mengumpulkan data sesuai{' '}
+                                                <a
+                                                    href="https://policies.google.com/privacy"
+                                                    className="text-blue-600 underline hover:text-blue-800"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    Kebijakan Privasi Google
+                                                </a>
+                                                .
+                                            </li>
+                                            <li>
+                                                Izin yang diberikan kepada aplikasi kami dapat dicabut kapan saja melalui{' '}
+                                                <a
+                                                    href="https://myaccount.google.com/permissions"
+                                                    className="text-blue-600 underline hover:text-blue-800"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    halaman setelan keamanan Google
+                                                </a>
+                                                . Jika izin dicabut atau rekaman tidak lagi diperlukan, kami menghapus tautan video yang tersimpan
+                                                dalam 30 hari dan menghapus video dari kanal kami.
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </section>
+
+                                <section className="mb-8">
+                                    <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">14. Hubungi Kami</h2>
                                     <div className="text-gray-700 dark:text-gray-300">
                                         <p className="mb-3">
                                             Jika Anda memiliki pertanyaan, kekhawatiran, atau permintaan terkait kebijakan privasi ini atau pemrosesan
