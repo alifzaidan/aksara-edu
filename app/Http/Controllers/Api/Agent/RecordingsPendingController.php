@@ -41,7 +41,7 @@ class RecordingsPendingController extends Controller
             })
             ->map(fn (array $i) => Arr::only($i, [
                 'type', 'id', 'parent_id', 'title', 'session_title', 'batch',
-                'session_number', 'sessions_total', 'start', 'end', 'zoom_meeting_id',
+                'session_number', 'sessions_total', 'start', 'end', 'zoom_meeting_id', 'group_url',
             ]))
             ->values();
 

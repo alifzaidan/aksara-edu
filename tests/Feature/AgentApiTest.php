@@ -350,7 +350,8 @@ it('mengembalikan jadwal hari ini dan status rekaman hari sebelumnya', function 
     expect($webinar['end'])->toBeNull()
         ->and($webinar['has_meeting_link'])->toBeFalse()
         ->and($webinar)->not->toHaveKey('zoom_meeting_id')
-        ->and($webinar)->not->toHaveKey('auto_meeting_link');
+        ->and($webinar)->not->toHaveKey('auto_meeting_link')
+        ->and($webinar)->not->toHaveKey('group_url');
 });
 
 it('memakai hari ini bila date kosong dan menolak format tanggal salah', function () {
@@ -432,7 +433,7 @@ it('melaporkan jadwal yang butuh link Zoom, terpisah otomatis dan manual', funct
 });
 
 it('melaporkan rekaman yang belum diisi hanya untuk meeting buatan agent dalam jendela 48 jam', function () {
-    $bootcamp = makeBootcamp(['auto_meeting_link' => true]);
+    $bootcamp = makeBootcamp(['auto_meeting_link' => true, 'group_url' => 'https://chat.whatsapp.com/abc']);
     $zoom = ['meeting_url' => 'https://us06web.zoom.us/j/1', 'zoom_meeting_id' => '98765432101'];
 
     $pending = makeSession($bootcamp, '2026-11-08', attrs: $zoom);
@@ -446,7 +447,8 @@ it('melaporkan rekaman yang belum diisi hanya untuk meeting buatan agent dalam j
 
     expect($res->json('items'))->toHaveCount(1)
         ->and($res->json('items.0.id'))->toBe($pending->id)
-        ->and($res->json('items.0.zoom_meeting_id'))->toBe('98765432101');
+        ->and($res->json('items.0.zoom_meeting_id'))->toBe('98765432101')
+        ->and($res->json('items.0.group_url'))->toBe('https://chat.whatsapp.com/abc');
 });
 
 it('menolak tulis tanpa ability, tanpa Idempotency-Key, dan payload tidak valid', function () {

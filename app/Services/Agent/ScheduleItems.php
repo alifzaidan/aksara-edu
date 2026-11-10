@@ -27,7 +27,7 @@ class ScheduleItems
     ];
 
     /** Kunci yang tidak ikut di respons jadwal umum. */
-    public const INTERNAL_KEYS = ['zoom_meeting_id', 'auto_meeting_link'];
+    public const INTERNAL_KEYS = ['zoom_meeting_id', 'auto_meeting_link', 'group_url'];
 
     /** Semua sesi dengan tanggal mulai di antara $from dan $to (inklusif), urut waktu mulai. */
     public function between(Carbon $from, Carbon $to): Collection
@@ -97,12 +97,13 @@ class ScheduleItems
                 'has_meeting_link' => filled($w->meeting_url),
                 'zoom_meeting_id' => $w->zoom_meeting_id,
                 'auto_meeting_link' => (bool) $w->auto_meeting_link,
+                'group_url' => $w->group_url,
             ]);
     }
 
     private function bootcampSessions(Carbon $from, Carbon $to): Collection
     {
-        $sessions = BootcampSchedule::with('bootcamp:id,title,batch,status,auto_meeting_link')
+        $sessions = BootcampSchedule::with('bootcamp:id,title,batch,status,auto_meeting_link,group_url')
             ->whereBetween('schedule_date', [$from->toDateString(), $to->toDateString()])
             ->whereHas('bootcamp', fn ($q) => $q->whereIn('status', ['published', 'archived', 'hidden']))
             ->get();
@@ -121,7 +122,7 @@ class ScheduleItems
 
     private function certificationSessions(Carbon $from, Carbon $to): Collection
     {
-        $sessions = CertificationProgramSchedule::with('certificationProgram:id,title,batch,status,auto_meeting_link')
+        $sessions = CertificationProgramSchedule::with('certificationProgram:id,title,batch,status,auto_meeting_link,group_url')
             ->whereBetween('schedule_date', [$from->toDateString(), $to->toDateString()])
             ->whereHas('certificationProgram', fn ($q) => $q->whereIn('status', ['published', 'archived', 'hidden']))
             ->get();
@@ -176,6 +177,7 @@ class ScheduleItems
             'has_meeting_link' => filled($schedule->meeting_url),
             'zoom_meeting_id' => $schedule->zoom_meeting_id,
             'auto_meeting_link' => (bool) $parent?->auto_meeting_link,
+            'group_url' => $parent?->group_url,
         ];
     }
 }
