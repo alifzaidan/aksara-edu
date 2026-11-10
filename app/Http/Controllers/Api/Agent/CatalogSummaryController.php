@@ -205,6 +205,7 @@ class CatalogSummaryController extends Controller
                 'batch' => filled($m->batch ?? null) ? (string) $m->batch : null,
                 'category' => $category ? $category($m) : $m->category?->name,
                 'price' => (int) $m->price,
+                'registration_url' => $m->registration_url,
             ],
             $specific($m),
             $this->registration($deadline ? $deadline($m) : $m->registration_deadline),

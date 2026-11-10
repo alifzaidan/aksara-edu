@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Agent\CatalogSummaryController;
 use App\Http\Controllers\Api\Agent\MeetingLinkNeededController;
+use App\Http\Controllers\Api\Agent\ProductBriefController;
 use App\Http\Controllers\Api\Agent\RecordingsPendingController;
 use App\Http\Controllers\Api\Agent\RevenueSummaryController;
 use App\Http\Controllers\Api\Agent\ScheduleController;
@@ -48,6 +49,7 @@ Route::prefix('v1/agent')
             Route::get('/schedules-needing-meeting-link', MeetingLinkNeededController::class)->name('schedules-needing-meeting-link');
             Route::get('/recordings-pending', RecordingsPendingController::class)->name('recordings-pending');
             Route::get('/revenue-summary', RevenueSummaryController::class)->name('revenue-summary');
+            Route::get('/product-brief', ProductBriefController::class)->name('product-brief');
         });
 
         Route::post('/update-meeting-link', UpdateMeetingLinkController::class)

@@ -220,6 +220,16 @@ it('menghitung peserta, sisa kuota, dan tenggat sesuai aturan dashboard', functi
         ->and($res->json('timezone'))->toBe('Asia/Jakarta');
 });
 
+it('menyertakan kategori, harga, dan link pendaftaran produk', function () {
+    makeWebinar(['registration_url' => 'https://aksademy.id/webinar/x/register', 'price' => 99000]);
+
+    $item = collect(agentGet('/api/v1/agent/catalog-summary?types=webinar', $this->token)->json('items'))->first();
+
+    expect($item['registration_url'])->toBe('https://aksademy.id/webinar/x/register')
+        ->and($item['category'])->toBe('Pajak')
+        ->and($item['price'])->toBe(99000);
+});
+
 it('memperlakukan quota 0 sebagai tidak terbatas', function () {
     $bootcamp = makeBootcamp(['quota' => 0]);
     enroll('bootcamp', $bootcamp->id);
@@ -684,4 +694,24 @@ it('menghitung pendaftar kemarin berbayar dan gratis per orang', function () {
     $res = agentGet('/api/v1/agent/revenue-summary?date=2026-11-09', $this->token)->assertOk();
 
     expect($res->json('yesterday.registrations'))->toBe(['paid' => 2, 'free' => 2]);
+});
+
+it('mengembalikan isi produk sebagai teks polos untuk bahan konten', function () {
+    $bootcamp = makeBootcamp([
+        'description' => '<p>Belajar <strong>Laravel</strong> &amp; React</p><p>dari nol</p>',
+        'benefits' => '<ul><li>Sertifikat</li><li>Portofolio</li></ul>',
+        'curriculum' => '<ol><li>HTML</li><li>PHP</li></ol>',
+        'registration_url' => 'https://aksademy.id/bootcamp/x/register',
+    ]);
+
+    $res = agentGet("/api/v1/agent/product-brief?type=bootcamp&id={$bootcamp->id}", $this->token)->assertOk();
+
+    expect($res->json('brief.description'))->toBe("Belajar Laravel & React\ndari nol")
+        ->and($res->json('brief.benefits'))->toBe("Sertifikat\nPortofolio")
+        ->and($res->json('brief.curriculum'))->toBe("HTML\nPHP")
+        ->and($res->json('registration_url'))->toBe('https://aksademy.id/bootcamp/x/register')
+        ->and($res->json('brief'))->not->toHaveKey('key_points');
+
+    agentGet('/api/v1/agent/product-brief?type=course&id='.Str::uuid(), $this->token)->assertNotFound();
+    agentGet("/api/v1/agent/product-brief?type=invoice&id={$bootcamp->id}", $this->token)->assertUnprocessable();
 });
