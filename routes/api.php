@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Agent\CatalogSummaryController;
+use App\Http\Controllers\Api\Agent\FinancialMetricsController;
 use App\Http\Controllers\Api\Agent\MeetingLinkNeededController;
 use App\Http\Controllers\Api\Agent\ProductBriefController;
 use App\Http\Controllers\Api\Agent\RecordingsPendingController;
@@ -50,6 +51,7 @@ Route::prefix('v1/agent')
             Route::get('/recordings-pending', RecordingsPendingController::class)->name('recordings-pending');
             Route::get('/revenue-summary', RevenueSummaryController::class)->name('revenue-summary');
             Route::get('/product-brief', ProductBriefController::class)->name('product-brief');
+            Route::get('/financial-metrics', FinancialMetricsController::class)->name('financial-metrics');
         });
 
         Route::post('/update-meeting-link', UpdateMeetingLinkController::class)

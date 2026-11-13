@@ -715,3 +715,116 @@ it('mengembalikan isi produk sebagai teks polos untuk bahan konten', function ()
     agentGet('/api/v1/agent/product-brief?type=course&id='.Str::uuid(), $this->token)->assertNotFound();
     agentGet("/api/v1/agent/product-brief?type=invoice&id={$bootcamp->id}", $this->token)->assertUnprocessable();
 });
+
+// --- financial-metrics (D1) ---------------------------------------------
+
+function fmInvoice(array $attrs = []): Invoice
+{
+    return Invoice::create(array_merge([
+        'user_id' => User::factory()->create()->id,
+        'amount' => 100000,
+        'nett_amount' => 100000,
+        'status' => 'paid',
+        'invoice_code' => 'INV-'.Str::random(8),
+        'paid_at' => '2026-11-05 10:00:00',
+    ], $attrs));
+}
+
+it('merekap pendapatan rentang tanggal dan membaginya per produk tanpa hitung ganda bundle', function () {
+    $course = makeCourse(['title' => 'Excel Akuntansi']);
+    $webinar = makeWebinar(['title' => 'Webinar Coretax']);
+    $bootcamp = makeBootcamp(['title' => 'Bootcamp Fullstack']);
+    $bundle = makeBundle(['title' => 'Paket Pajak']);
+
+    $x = fmInvoice();                                                                   // 1 item
+    EnrollmentCourse::create(['invoice_id' => $x->id, 'course_id' => $course->id, 'price' => 100000]);
+
+    $y = fmInvoice(['amount' => 360000, 'nett_amount' => 360000, 'paid_at' => '2026-11-06 09:00:00']);  // 2 item, dibagi sebanding harga
+    EnrollmentCourse::create(['invoice_id' => $y->id, 'course_id' => $course->id, 'price' => 300000]);
+    EnrollmentWebinar::create(['invoice_id' => $y->id, 'webinar_id' => $webinar->id, 'price' => 100000]);
+
+    $z = fmInvoice(['amount' => 450000, 'nett_amount' => 450000, 'paid_at' => '2026-11-07 09:00:00']);  // bundle + enrollment per item
+    EnrollmentBundle::create(['invoice_id' => $z->id, 'bundle_id' => $bundle->id, 'price' => 500000]);
+    EnrollmentCourse::create(['invoice_id' => $z->id, 'course_id' => $course->id, 'price' => 0]);
+
+    $parent = fmInvoice(['amount' => 1000000, 'nett_amount' => 1000000, 'status' => 'installment_pending',
+        'is_installment' => true, 'paid_at' => null]);                                  // cicilan: termin dihitung, induk tidak
+    EnrollmentBootcamp::create(['invoice_id' => $parent->id, 'bootcamp_id' => $bootcamp->id, 'price' => 1000000]);
+    fmInvoice(['amount' => 500000, 'nett_amount' => 500000, 'is_installment' => true, 'parent_invoice_id' => $parent->id,
+        'installment_number' => 1, 'paid_at' => '2026-11-08 09:00:00']);
+    fmInvoice(['amount' => 500000, 'nett_amount' => 500000, 'is_installment' => true, 'parent_invoice_id' => $parent->id,
+        'installment_number' => 2, 'status' => 'pending', 'paid_at' => null]);
+
+    fmInvoice(['status' => 'pending', 'paid_at' => null]);                              // belum bayar
+    fmInvoice(['paid_at' => '2026-10-20 10:00:00']);                                     // di luar rentang
+
+    $res = agentGet('/api/v1/agent/financial-metrics?from=2026-11-01&to=2026-11-09', $this->token)->assertOk();
+
+    expect($res->json('totals.revenue'))->toBe(1410000)
+        ->and($res->json('totals.transactions'))->toBe(4)
+        ->and($res->json('group'))->toBe('day')
+        ->and($res->json('series'))->toHaveCount(9)
+        ->and($res->json('series.5'))->toBe(['period' => '2026-11-06', 'revenue' => 360000, 'transactions' => 1])
+        ->and($res->json('by_type.course.revenue'))->toBe(370000)
+        ->and($res->json('by_type.webinar.revenue'))->toBe(90000)
+        ->and($res->json('by_type.bundle.revenue'))->toBe(450000)
+        ->and($res->json('by_type.bootcamp.revenue'))->toBe(500000)
+        ->and($res->json('installments'))->toBe(['terms_paid' => 1, 'revenue' => 500000])
+        ->and(collect($res->json('products'))->pluck('title')->all())
+        ->toBe(['Bootcamp Fullstack', 'Paket Pajak', 'Excel Akuntansi', 'Webinar Coretax']);
+
+    $excel = collect($res->json('products'))->firstWhere('id', $course->id);
+    expect($excel['revenue'])->toBe(370000)
+        ->and($excel['registrations'])->toBe(['paid' => 3, 'free' => 0]);   // 3 pembeli, termasuk lewat bundle
+    expect(collect($res->json('products'))->firstWhere('id', $bootcamp->id)['registrations']['paid'])->toBe(1);
+});
+
+it('menghitung pendaftar gratis per produk dan memvalidasi rentang', function () {
+    $webinar = makeWebinar();
+    $free = fmInvoice(['amount' => 0, 'nett_amount' => 0]);
+    EnrollmentWebinar::create(['invoice_id' => $free->id, 'webinar_id' => $webinar->id, 'price' => 0]);
+
+    $res = agentGet('/api/v1/agent/financial-metrics?from=2026-11-01&to=2026-11-09', $this->token)->assertOk();
+    expect($res->json('totals.registrations'))->toBe(['paid' => 0, 'free' => 1])
+        ->and($res->json('products.0.registrations'))->toBe(['paid' => 0, 'free' => 1]);
+
+    agentGet('/api/v1/agent/financial-metrics?to=2026-11-09', $this->token)->assertUnprocessable();
+    agentGet('/api/v1/agent/financial-metrics?from=2026-11-09&to=2026-11-01', $this->token)->assertUnprocessable();
+    agentGet('/api/v1/agent/financial-metrics?from=2023-01-01&to=2026-11-09', $this->token)->assertUnprocessable();
+});
+
+it('mengelompokkan per bulan untuk rentang panjang, termasuk bulan awal yang terpotong', function () {
+    fmInvoice(['paid_at' => '2026-01-20 10:00:00']);
+    fmInvoice(['paid_at' => '2026-11-02 10:00:00', 'amount' => 250000, 'nett_amount' => 250000]);
+
+    $res = agentGet('/api/v1/agent/financial-metrics?from=2026-01-15&to=2026-11-09', $this->token)->assertOk();
+
+    expect($res->json('group'))->toBe('month')
+        ->and($res->json('series'))->toHaveCount(11)
+        ->and($res->json('series.0'))->toBe(['period' => '2026-01', 'revenue' => 100000, 'transactions' => 1])
+        ->and($res->json('series.10'))->toBe(['period' => '2026-11', 'revenue' => 250000, 'transactions' => 1])
+        ->and($res->json('totals.revenue'))->toBe(350000);
+});
+
+it('merinci metode bayar, kode diskon, referral tanpa data pribadi', function () {
+    $referrer = User::factory()->create(['email' => 'perujuk@contoh.id']);
+    $buyer = User::factory()->create(['email' => 'pembeli@contoh.id', 'phone_number' => '081234567890']);
+    $a = fmInvoice(['user_id' => $buyer->id, 'payment_method' => 'VIRTUAL_ACCOUNT', 'payment_channel' => 'BCA',
+        'discount_amount' => 50000, 'referral_user_id' => $referrer->id]);
+    fmInvoice(['payment_method' => 'QRIS']);
+    $code = \App\Models\DiscountCode::create(['code' => 'HEMAT50', 'name' => 'Hemat', 'type' => 'fixed', 'value' => 50000,
+        'starts_at' => '2026-11-01 00:00:00', 'expires_at' => '2026-12-01 00:00:00']);
+    \App\Models\DiscountUsage::create(['discount_code_id' => $code->id, 'user_id' => $buyer->id, 'invoice_id' => $a->id,
+        'discount_amount' => 50000]);
+
+    $res = agentGet('/api/v1/agent/financial-metrics?from=2026-11-01&to=2026-11-09', $this->token)->assertOk();
+
+    expect($res->json('payment_methods'))->toHaveCount(2)
+        ->and(collect($res->json('payment_methods'))->firstWhere('method', 'VIRTUAL_ACCOUNT')['channel'])->toBe('BCA')
+        ->and($res->json('discount_codes'))->toBe([['code' => 'HEMAT50', 'uses' => 1, 'discount' => 50000]])
+        ->and($res->json('totals.discount'))->toBe(50000)
+        ->and($res->json('referral'))->toBe(['transactions' => 1, 'revenue' => 100000]);
+
+    $body = $res->getContent();
+    expect($body)->not->toContain('contoh.id')->not->toContain('081234567890')->not->toContain($buyer->id);
+});
